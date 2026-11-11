@@ -15,7 +15,7 @@
             <span class="title">Activity</span>
             <span class="summary">@Summary</span>
         </button>
-        <button class="outline" @onclick="Copy" disabled="@(_entries.Count is 0)">
+        <button class="outline" @onclick="Copy" disabled="@(_rows.Count is 0)">
             @(_copied ? "Copied" : "Copy all")
         </button>
     </div>
@@ -31,34 +31,21 @@
             }
         </div>
 
-        <div class="log mono">
-            @{
-                var pass = 0;
-            }
-            @foreach (var entry in Shown)
-            {
-                if (entry.Pass != pass)
-                {
-                    pass = entry.Pass;
-                    <div class="divider">Pass @pass</div>
-                }
-                <div class="line @(entry.IsProblem ? "problem" : null)">
-                    <span class="at">@Stamp(entry.At)</span>
-                    <span class="source @(entry.Source == TrackActivity.You ? "you" : null)">@entry.Source</span>
-                    <span class="pass">@entry.Pass</span>
-                    <span class="message">@entry.Message@(entry.Count > 1 ? $" ×{entry.Count}" : null)</span>
-                </div>
-            }
-            @if (!Shown.Any())
-            {
-                <div class="line empty">Nothing here.</div>
-            }
-        </div>
+        @if (Shown.Count is 0)
+        {
+            <p class="empty">Nothing here.</p>
+        }
+        else
+        {
+            <div class="box">
+                <ActivityRows Actions="Shown" Now="DateTimeOffset.UtcNow" ShowTrack="false" />
+            </div>
+        }
     }
 </section>
 
 @code {
-    private IReadOnlyList<ActivityEntry> _entries = [];
+    private IReadOnlyList<ActivityAction> _rows = [];
     private bool _open;
     private bool _copied;
     private Filter _filter = Filter.All;
@@ -77,51 +64,44 @@
         You,
     }
 
-    private IEnumerable<ActivityEntry> Shown =>
+    private IReadOnlyList<ActivityAction> Shown =>
         _filter switch
         {
-            Filter.Problems => _entries.Where(entry => entry.IsProblem),
-            Filter.You => _entries.Where(entry => entry.Source == TrackActivity.You),
-            _ => _entries,
+            Filter.Problems => [.. _rows.Where(row => row.IsFailedOrCanceled)],
+            Filter.You => [.. _rows.Where(TrackActivity.IsYou)],
+            _ => _rows,
         };
 
     private string Summary =>
-        _entries is [.., var last]
-            ? $"{"entry".ToQuantity(_entries.Count)} across {"pass".ToQuantity(last.Pass)} · last {Stamp(last.At)}"
+        _rows is [var latest, ..]
+            ? $"{"entry".ToQuantity(_rows.Count)} · last {Stamp(latest.StartedAt)}"
             : "nothing recorded";
 
     protected override void OnParametersSet()
     {
         var uploads = Row.Facts.Uploads.ToHashSet(StringComparer.Ordinal);
 
-        _entries = TrackActivity.Build(
+        _rows = TrackActivity.Build(
             Jobs.History(Row.TrackKey),
             Deletions.All().Where(deletion => deletion.TrackKey is { } id && uploads.Contains(id)),
             Actions.For(Row.TrackKey),
-            [
-                .. Enum.GetValues<JobStage>()
-                    .Select(stage => Jobs.TryGet(Row.TrackKey, stage, out var job) ? job : null)
-                    .OfType<TrackJob>()
-                    .Where(job => job.IsOpen),
-            ],
             Notes.For(uploads)
         );
     }
 
     private async Task Copy()
     {
+        var now = DateTimeOffset.UtcNow;
         var text = new StringBuilder();
 
         foreach (var line in Header)
             text.AppendLine(line);
 
-        text.AppendLine($"copied {Stamp(DateTimeOffset.Now)}, {"entry".ToQuantity(_entries.Count)}");
+        text.AppendLine($"copied {Stamp(now)}, {"entry".ToQuantity(_rows.Count)}");
         text.AppendLine();
 
-        foreach (var entry in _entries)
-            text.AppendLine(
-                $"{Stamp(entry.At)}  {entry.Source, -10}  {entry.Pass, 2}  {entry.Message}{(entry.Count > 1 ? $" ×{entry.Count}" : null)}"
-            );
+        foreach (var row in _rows)
+            text.AppendLine(TrackActivity.CopyLine(row, now, Stamp));
 
         await Js.InvokeVoidAsync("navigator.clipboard.writeText", text.ToString());
         _copied = true;

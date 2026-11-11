@@ -12,6 +12,17 @@ public sealed record ActivityFeed(IReadOnlyList<ActivityAction> Actions)
 
     public static readonly int[] PageSizes = [12, 25, 50, 100];
 
+    /// <summary>The stages in the order the filter pills show them, with the names the person knows them by.</summary>
+    public static readonly (JobStage Stage, string Label)[] StageLabels =
+    [
+        (JobStage.Download, "Download"),
+        (JobStage.Evidence, "Detection"),
+        (JobStage.Verdict, "Judging"),
+        (JobStage.Separation, "Separation"),
+        (JobStage.Handoff, "Handoff"),
+        (JobStage.Tagging, "Tagging"),
+    ];
+
     public int Running => Actions.Count(action => action.IsRunning);
 
     public int FailedOrCanceled => Actions.Count(action => action.IsFailedOrCanceled);
@@ -80,6 +91,20 @@ public sealed record ActivityFeed(IReadOnlyList<ActivityAction> Actions)
         return new([.. actions.OrderByDescending(action => action.Sequence)]);
     }
 
+    public static string StageName(JobStage stage) =>
+        StageLabels.FirstOrDefault(entry => entry.Stage == stage).Label ?? stage.ToString();
+
+    /// <summary>A duration as the table shows it: <c>3 min 21 s</c>, <c>14 s</c>, <c>&lt;1 s</c>.</summary>
+    public static string Duration(TimeSpan span) =>
+        span.TotalSeconds switch
+        {
+            < 1 => "<1 s",
+            < 60 => $"{(int)span.TotalSeconds} s",
+            _ when span.Seconds is 0 && span.Hours is 0 => $"{(int)span.TotalMinutes} min",
+            _ when span.TotalHours < 1 => $"{(int)span.TotalMinutes} min {span.Seconds} s",
+            _ => $"{(int)span.TotalHours} h {span.Minutes} min",
+        };
+
     public int FinishedRecently(DateTimeOffset now) =>
         Actions.Count(action => action is { FinishedAt: { } finished } && now - finished < Recent);
 
@@ -95,7 +120,7 @@ public sealed record ActivityFeed(IReadOnlyList<ActivityAction> Actions)
     /// <summary>The actions a query matches, newest start first, none from after its anchor.</summary>
     public IEnumerable<ActivityAction> Matching(ActivityQuery query) =>
         Actions.Where(action =>
-            (query.Stages.Count is 0 || query.Stages.Contains(action.Stage))
+            (query.Stages.Count is 0 || action.Stage is { } stage && query.Stages.Contains(stage))
             && (!query.FailedOnly || action.IsFailedOrCanceled)
             && (query.AnchorSequence is not { } anchor || action.Sequence <= anchor)
         );
@@ -177,6 +202,8 @@ public sealed record ActivityFeed(IReadOnlyList<ActivityAction> Actions)
             { Status: JobStatus.Held, Error: { Length: > 0 } error } => $"held: {error}",
             { SummaryText: { Length: > 0 } summary } => summary,
             { Error: { Length: > 0 } error } => error,
+            // A line written before summaries (#170) has nothing to say but that it finished.
+            { Status: JobStatus.Succeeded } => "finished, no details recorded",
             _ => end.Status.Humanize(LetterCasing.LowerCase),
         };
 
@@ -210,9 +237,16 @@ public sealed record ActivityAction
 {
     /// <summary>Where the start sits in the file: orders by start, and never moves.</summary>
     public required int Sequence { get; init; }
+
+    /// <summary>The job's id; empty for a row that is not a job.</summary>
     public required string Id { get; init; }
     public required string TrackKey { get; init; }
-    public required JobStage Stage { get; init; }
+
+    /// <summary>The stage, or null for a row that is not a job: something the person did, a recycled file, a pass's note.</summary>
+    public JobStage? Stage { get; init; }
+
+    /// <summary>Who a row that is not a job is from: <c>you</c>, <c>crateside</c>, an API caller or a pass's name.</summary>
+    public string? Source { get; init; }
     public required DateTimeOffset StartedAt { get; init; }
     public DateTimeOffset? FinishedAt { get; init; }
 
@@ -222,6 +256,21 @@ public sealed record ActivityAction
 
     /// <summary>The summary, or for a failure its error, without the "failed: " lead the row adds.</summary>
     public required string Text { get; init; }
+
+    /// <summary>What the Stage column says: the stage's name, or who a row that is not a job is from.</summary>
+    public string Label =>
+        Stage is { } stage ? ActivityFeed.StageName(stage) : Source ?? string.Empty;
+
+    /// <summary>The lead a failure or cancellation puts before its text, so it reads as one in plain text too.</summary>
+    public string Lead =>
+        State switch
+        {
+            ActivityState.Failed => "failed: ",
+            ActivityState.Canceled => "canceled: ",
+            _ => string.Empty,
+        };
+
+    public string FullText => Lead + Text;
 
     public bool IsRunning => State is ActivityState.Running;
 

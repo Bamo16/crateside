@@ -1,0 +1,318 @@
+.rows {
+    container-type: inline-size;
+}
+
+.caps {
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-40);
+}
+
+.row-grid {
+    display: grid;
+    grid-template-columns: 16px 72px 92px 300px minmax(0, 1fr) 120px;
+    column-gap: 14px;
+    align-items: center;
+    padding: 0 14px;
+}
+
+.rows.no-track .row-grid {
+    grid-template-columns: 16px 72px 120px minmax(0, 1fr) 120px;
+}
+
+.head {
+    height: 30px;
+    background: rgba(236, 231, 220, 0.02);
+    border-bottom: 1px solid var(--line);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-40);
+}
+
+.took {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.bucket {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 14px 14px 6px;
+    border-bottom: 1px solid var(--line-strong);
+}
+
+.range {
+    font-size: 11.5px;
+    color: var(--text-35);
+}
+
+.row {
+    min-height: 38px;
+    border-bottom: 1px solid var(--line);
+}
+
+.row:hover {
+    background: rgba(236, 231, 220, 0.025);
+}
+
+.row.running {
+    background: rgba(111, 199, 214, 0.05);
+}
+
+.row.running:hover {
+    background: rgba(111, 199, 214, 0.08);
+}
+
+.glyph {
+    display: flex;
+    justify-content: center;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--teal);
+    animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    50% {
+        opacity: 0.35;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dot {
+        animation: none;
+    }
+}
+
+.check {
+    font-size: 12px;
+    color: var(--text-30);
+}
+
+.check.recent {
+    color: var(--green);
+}
+
+.cross {
+    font-weight: 600;
+    color: var(--red);
+}
+
+.dash {
+    color: var(--text-40);
+}
+
+.at {
+    font-size: 12px;
+    color: var(--text-50);
+}
+
+.stage {
+    overflow: hidden;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-60);
+}
+
+.stage.you {
+    color: var(--amber);
+}
+
+.track {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    text-decoration: none;
+    color: var(--text);
+}
+
+.track .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.track:hover .name {
+    text-decoration: underline;
+}
+
+.track.same {
+    align-self: stretch;
+    position: relative;
+}
+
+.rule {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 5px;
+    width: 1px;
+    background: rgba(236, 231, 220, 0.18);
+}
+
+.result {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    background: none;
+    border: 0;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    color: var(--text-75);
+    cursor: pointer;
+}
+
+.result .text {
+    min-width: 0;
+    flex: 0 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.caret {
+    font-size: 11px;
+    color: var(--text-30);
+}
+
+.running .result,
+.running .took {
+    color: var(--text-60);
+}
+
+.running .took {
+    color: var(--teal);
+}
+
+.failed .result {
+    color: var(--red);
+}
+
+.canceled .result,
+.held .result {
+    color: var(--text-50);
+}
+
+.row .took {
+    font-size: 12px;
+    color: var(--text-50);
+}
+
+.row.running .took {
+    color: var(--teal);
+}
+
+.detail {
+    padding-top: 0;
+    padding-bottom: 12px;
+    background: rgba(236, 231, 220, 0.02);
+    border-bottom: 1px solid var(--line);
+}
+
+.detail .body {
+    grid-column: 5 / 7;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 10px;
+}
+
+.rows.no-track .detail .body {
+    grid-column: 4 / 6;
+}
+
+.detail p {
+    margin: 0;
+}
+
+.whole {
+    font-size: 13px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+
+.failed + .detail .whole {
+    color: var(--red);
+}
+
+.meta {
+    font-size: 11.5px;
+    color: var(--text-40);
+}
+
+.links {
+    display: flex;
+    gap: 14px;
+    font-size: 12.5px;
+}
+
+.links .quiet {
+    color: var(--text-60);
+}
+
+/* Under 1100px of the list's own width each row stacks: status, times and duration, then the track, then the result. */
+@container (max-width: 1100px) {
+    .head {
+        display: none;
+    }
+
+    .row-grid,
+    .rows.no-track .row-grid {
+        grid-template-columns: 16px auto 1fr auto;
+        column-gap: 10px;
+        padding: 10px 14px;
+    }
+
+    .row .track {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        margin-top: 4px;
+    }
+
+    .row .track.same {
+        display: none;
+    }
+
+    .row .result {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        margin-top: 2px;
+        align-items: flex-start;
+    }
+
+    .row .result .text {
+        display: -webkit-box;
+        overflow: hidden;
+        white-space: normal;
+        line-height: 1.45;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+
+    .row .took {
+        grid-column: 4;
+        grid-row: 1;
+    }
+
+    .detail .body,
+    .rows.no-track .detail .body {
+        grid-column: 1 / -1;
+    }
+}

@@ -158,7 +158,7 @@
                     }
                     @if (_feed.LastFinished is { } finished)
                     {
-                        <text> · last finished <span class="mono">@finished.FinishedAt?.ToLocalTime().ToString("t")</span>, @ActivitySection.StageName(finished.Stage), @ActivityName(finished.TrackKey)</text>
+                        <text> · last finished <span class="mono">@finished.FinishedAt?.ToLocalTime().ToString("t")</span>, @finished.Label, @ActivityName(finished.TrackKey)</text>
                     }
                     @if (_feed.FailedSince(DateTimeOffset.Now.Date.ToUniversalTime()) is > 0 and var failedToday)
                     {

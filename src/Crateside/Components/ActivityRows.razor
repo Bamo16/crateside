@@ -1,0 +1,162 @@
+@using Crateside.Core.Orchestration.Jobs
+@using Humanizer
+
+@* The dashboard's Activity rows, shared with a track's page (#59): one row per action, expandable, with its duration. *@
+
+<div class="rows @(ShowTrack ? null : "no-track")">
+    <div class="head row-grid" aria-hidden="true">
+        <span></span>
+        <span>Started</span>
+        <span>Stage</span>
+        @if (ShowTrack)
+        {
+            <span>Track</span>
+        }
+        <span>Result · click for all of it</span>
+        <span class="took">Took</span>
+    </div>
+
+    @{
+        string? bucket = null;
+        ActivityAction? above = null;
+    }
+
+    @foreach (var action in Actions)
+    {
+        var group = ActivityFeed.BucketOf(action.StartedAt, Now);
+        var starts = group.Label != bucket;
+        var name = ShowTrack ? NameOf(action.TrackKey) : string.Empty;
+        var open = _open.Contains(action.Sequence);
+        var took = action.Took(Now);
+        var recent = action.State is ActivityState.Done && Now - action.FinishedAt < ActivityFeed.Recent;
+
+        if (starts)
+        {
+            bucket = group.Label;
+            <div class="bucket">
+                <span class="caps">@group.Label</span>
+                @if (group.Range.Length > 0)
+                {
+                    <span class="mono range">@group.Range</span>
+                }
+            </div>
+        }
+
+        <div class="row row-grid @action.State.ToString().ToLowerInvariant()">
+            <span class="glyph" aria-label="@action.State.ToString().ToLowerInvariant()">
+                @switch (action.State)
+                {
+                    case ActivityState.Running:
+                        <span class="dot"></span>
+                        break;
+                    case ActivityState.Done:
+                        <span class="mono check @(recent ? "recent" : null)">✓</span>
+                        break;
+                    case ActivityState.Failed:
+                        <span class="cross">✕</span>
+                        break;
+                    default:
+                        <span class="mono dash">–</span>
+                        break;
+                }
+            </span>
+            <span class="mono at" title="@Ago(action)">@action.StartedAt.ToLocalTime().ToString("t")</span>
+            <span class="stage @(TrackActivity.IsYou(action) ? "you" : null)" title="@action.Label">@action.Label</span>
+            @if (ShowTrack)
+            {
+                if (!starts && above is { } previous && previous.TrackKey == action.TrackKey)
+                {
+                    <span class="track same" aria-label="@name"><span class="rule"></span></span>
+                }
+                else
+                {
+                    <a class="track" href="song/@Uri.EscapeDataString(action.TrackKey)" title="@name"><Cover TrackKey="@action.TrackKey" Side="28" /><span class="name">@name</span></a>
+                }
+            }
+            <button class="result" aria-expanded="@open" title="@action.FullText"
+                    @onclick="() => Toggle(action.Sequence)">
+                <span class="text">@action.FullText@(action.IsRunning ? " …" : null)</span>
+                <span class="mono caret">@(open ? "▾" : "▸")</span>
+            </button>
+            <span class="mono took">@Took(took, action.IsRunning)</span>
+        </div>
+
+        if (open)
+        {
+            <div class="detail row-grid">
+                <div class="body">
+                    <p class="whole">@action.FullText</p>
+                    <p class="mono meta">@Meta(action, took)</p>
+                    @if (ShowTrack)
+                    {
+                        <p class="links">
+                            <a href="song/@Uri.EscapeDataString(action.TrackKey)">Track details →</a>
+                            <a class="quiet" href="song/@Uri.EscapeDataString(action.TrackKey)#activity">Its activity log →</a>
+                        </p>
+                    }
+                </div>
+            </div>
+        }
+
+        above = action;
+    }
+</div>
+
+@code {
+    private readonly HashSet<int> _open = [];
+
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<ActivityAction> Actions { get; set; }
+
+    [Parameter, EditorRequired]
+    public required DateTimeOffset Now { get; set; }
+
+    /// <summary>The Track column and the links to the track's page; off on the track's own page, where every row is that track.</summary>
+    [Parameter]
+    public bool ShowTrack { get; set; } = true;
+
+    [Parameter]
+    public Func<string, string> NameOf { get; set; } = key => key;
+
+    private static string Took(TimeSpan? took, bool running) =>
+        took is not { } span ? "—" : running ? $"{ActivityFeed.Duration(span)} so far" : ActivityFeed.Duration(span);
+
+    private string Ago(ActivityAction action) =>
+        Now - action.StartedAt is { TotalMinutes: < 1 }
+            ? "just now"
+            : $"{(Now - action.StartedAt).Humanize(minUnit: TimeUnit.Minute)} ago";
+
+    private static string Meta(ActivityAction action, TimeSpan? took)
+    {
+        // A row that is not a job has one moment and no id.
+        if (action.Stage is null)
+            return $"at {action.StartedAt.ToLocalTime():T}";
+
+        var parts = new List<string> { $"started {action.StartedAt.ToLocalTime():T}" };
+
+        if (action.FinishedAt is { } finished)
+        {
+            var verb = action.State switch
+            {
+                ActivityState.Failed => "failed",
+                ActivityState.Canceled => "canceled",
+                ActivityState.Held => "held",
+                _ => "finished",
+            };
+            parts.Add($"{verb} {finished.ToLocalTime():T}");
+        }
+
+        if (took is { } span)
+            parts.Add(action.IsRunning ? $"running {ActivityFeed.Duration(span)}" : ActivityFeed.Duration(span));
+
+        parts.Add(action.Id);
+
+        return string.Join(" · ", parts);
+    }
+
+    private void Toggle(int sequence)
+    {
+        if (!_open.Remove(sequence))
+            _open.Add(sequence);
+    }
+}
