@@ -1,0 +1,13 @@
+<img class="cover" src="@Source" width="@Side" height="@Side" loading="lazy" alt="" />
+
+@code {
+    [Parameter, EditorRequired]
+    public required string TrackKey { get; set; }
+
+    /// <summary>The picture's width and height in pixels; the full image is served above 160.</summary>
+    [Parameter]
+    public int Side { get; set; } = 32;
+
+    private string Source =>
+        $"art/{Uri.EscapeDataString(TrackKey)}?size={(Side > 160 ? "full" : "small")}";
+}

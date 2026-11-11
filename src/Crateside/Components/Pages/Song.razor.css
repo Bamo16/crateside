@@ -16,6 +16,22 @@
     color: var(--text);
 }
 
+.heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.heading-text {
+    min-width: 0;
+}
+
+.heading-text .meta {
+    margin-bottom: 0;
+}
+
 h1 {
     margin: 0;
     font-size: 28px;

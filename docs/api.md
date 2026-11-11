@@ -578,6 +578,15 @@ means leave out each stretch, in seconds of the source file. `typed` is what the
 (Live's bars, or `m:ss` for a track with no warp) and is for display. The same record is in
 `GET /api/tracks/{trackKey}` at `records.measuringExclusions`.
 
+## `GET /art/{trackKey}`
+
+A track's cover as an image, outside the JSON schema and the OpenAPI document. `size=small` (the
+default) is 160 px square, centre-cropped; `size=full` is the embedded picture unscaled. The picture is
+taken from the track's own audio on the first request and kept under `%LOCALAPPDATA%\crateside\art\`
+until the file changes (length and modified time). A track with no picture, or none on disk, gets a
+plain grey SVG tile with status 200, never a 404. Pictures carry an `ETag` and a week of
+`Cache-Control`; the tile carries a minute.
+
 ## Investigating a track
 
 Start here: `curl` the track, then read `row.state`, `row.next` and `jobs` for where it is and

@@ -1,6 +1,7 @@
 using AbleKit.Tags;
 using Crateside.Core;
 using Crateside.Core.Ableton;
+using Crateside.Core.Art;
 using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
@@ -152,6 +153,7 @@ public static class ServiceRegistration
         services
             .AddAppWide()
             .AddAbleton()
+            .AddArt()
             .AddBeats()
             .AddFamiliarity()
             .AddGenres()
@@ -190,6 +192,13 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new FileIndexReader(
             sp.GetRequiredService<IOptions<CratesidePaths>>().Value.AbletonIndex
         ));
+
+        return services;
+    }
+
+    private static IServiceCollection AddArt(this IServiceCollection services)
+    {
+        services.AddSingleton<CoverArt>();
 
         return services;
     }

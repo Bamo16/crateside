@@ -2,11 +2,14 @@ using System.Text.Json;
 using AbleKit.Analysis;
 using AbleKit.Tags;
 using Crateside.Api;
+using Crateside.Core;
+using Crateside.Core.Art;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Marks;
 using Crateside.Core.Naming;
+using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Verdict;
@@ -283,9 +286,24 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         builder.Services.AddSingleton(_tracks);
         builder.Services.AddSingleton(details);
         builder.Services.AddSingleton(new MeasuringExclusionsReader(_tracks, exclusions));
+        builder.Services.AddSingleton(
+            new CoverArt(
+                new ProcessRunner(),
+                new CratesidePaths { ArtFolder = Path.Combine(_root, "art") }
+            )
+        );
+        builder.Services.AddSingleton(
+            new SourceIndex(
+                new WorkingSet(
+                    new CratesidePaths { WorkingFolder = Path.Combine(_root, "working") }
+                ),
+                Path.Combine(_root, "source-index.json")
+            )
+        );
 
         _app = builder.Build();
         _app.MapCratesideApi();
+        _app.MapCoverArt();
         await _app.StartAsync(TestContext.Current.CancellationToken);
 
         Client = _app.GetTestClient();

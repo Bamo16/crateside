@@ -157,16 +157,23 @@
 }
 
 .track {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     overflow: hidden;
     font-size: 13px;
     font-weight: 500;
-    text-overflow: ellipsis;
     white-space: nowrap;
     text-decoration: none;
     color: var(--text);
 }
 
-.track:hover {
+.track .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.track:hover .name {
     text-decoration: underline;
 }
 

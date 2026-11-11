@@ -315,6 +315,13 @@ public sealed class CratesidePaths
         set;
     }
 
+    /// <summary>The cover pictures taken from the audio files, in two sizes per track (#159).</summary>
+    public string ArtFolder
+    {
+        get => field ?? Local("art");
+        set;
+    }
+
     /// <summary>The folder crateside consumes: audio files and zips saved here become tracks (ADR 0077).</summary>
     public string Inbox
     {
