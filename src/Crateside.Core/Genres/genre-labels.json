@@ -505,6 +505,9 @@
   "industrial rock": [
     "Rock"
   ],
+  "international pop": [
+    "Pop"
+  ],
   "italo house": [
     "House"
   ],
@@ -803,6 +806,10 @@
   ],
   "techno": [
     "Techno"
+  ],
+  "techno house": [
+    "Techno",
+    "House"
   ],
   "teen pop": [
     "Pop"

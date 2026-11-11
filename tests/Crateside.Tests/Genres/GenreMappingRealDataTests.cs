@@ -1,13 +1,26 @@
+using System.Text.RegularExpressions;
+using Crateside.Core;
 using Crateside.Core.Genres;
+using Crateside.Core.Ledger;
 using Crateside.Tests.Ledger;
+using Microsoft.Data.Sqlite;
 
 namespace Crateside.Tests.Genres;
 
 /// <summary>The table against the labels the ledger's lookups actually kept, on a snapshot of this machine's ledger.</summary>
-public sealed class GenreMappingRealDataTests
+public sealed partial class GenreMappingRealDataTests
 {
-    /// <summary>Labels that describe what a recording is for, not what it sounds like.</summary>
-    private static readonly string[] NotGenres = ["soundtrack", "comedy", "instrumental", "ballad"];
+    /// <summary>Labels that describe what a recording is for, or where it is from, not what it sounds like.</summary>
+    private static readonly string[] NotGenres =
+    [
+        "asian music",
+        "ballad",
+        "comedy",
+        "film scores",
+        "films games",
+        "instrumental",
+        "soundtrack",
+    ];
 
     private static IReadOnlyList<GenreRecord> Records()
     {
@@ -61,22 +74,80 @@ public sealed class GenreMappingRealDataTests
     }
 
     [Fact]
-    public void The_migration_leaves_no_answer_and_no_learned_genre_on_a_snapshot_of_the_real_ledger()
+    public void The_migration_leaves_no_answer_and_no_learned_genre_on_a_copy_of_the_ledger_from_before_it()
     {
-        Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
+        var backup = PreGenreBackup();
 
-        using var ledger = TestLedger.StoreReal();
-        var records = new GenreStore(ledger).Read().Values;
+        Assert.SkipUnless(backup is not null, "No ledger backup from before the genre migration.");
 
-        Assert.All(
-            records,
-            record =>
-            {
-                Assert.False(record.IsTheUsersAnswer);
-                Assert.Null(record.LearnedFrom);
-                Assert.Null(record.LookedUpAt);
-                Assert.Empty(record.Mine);
-            }
+        var folder = Path.Combine(
+            Path.GetTempPath(),
+            "crateside-tests",
+            Guid.NewGuid().ToString("n")
         );
+
+        Directory.CreateDirectory(folder);
+
+        try
+        {
+            var copy = Path.Combine(folder, "ledger.db");
+
+            File.Copy(backup, copy);
+
+            using var ledger = new LedgerStore(copy, TimeProvider.System);
+            var records = new GenreStore(ledger).Read().Values;
+
+            Assert.NotEmpty(records);
+            Assert.All(
+                records,
+                record =>
+                {
+                    Assert.False(record.IsTheUsersAnswer);
+                    Assert.Null(record.LearnedFrom);
+                    Assert.Null(record.LookedUpAt);
+                    Assert.Empty(record.Mine);
+                }
+            );
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
+            Directory.Delete(folder, recursive: true);
+        }
     }
+
+    /// <summary>The newest automatic backup whose Genres table still has the answer columns the migration drops.</summary>
+    private static string? PreGenreBackup()
+    {
+        var folder = Path.Combine(
+            Path.GetDirectoryName(new CratesidePaths().LedgerDatabase)!,
+            "ledger-backups"
+        );
+
+        return Directory.Exists(folder)
+            ? Directory
+                .EnumerateFiles(folder, "before-*.db")
+                .Where(path => BackupName.IsMatch(Path.GetFileName(path)))
+                .OrderDescending()
+                .FirstOrDefault(HasGenreAnswers)
+            : null;
+    }
+
+    private static bool HasGenreAnswers(string path)
+    {
+        using var connection = new SqliteConnection(
+            $"Data Source={path};Mode=ReadOnly;Pooling=False"
+        );
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+
+        command.CommandText =
+            "SELECT COUNT(*) FROM pragma_table_info('Genres') WHERE name = 'IsSettled'";
+
+        return (long)command.ExecuteScalar()! > 0;
+    }
+
+    [GeneratedRegex(@"^before-\d{14}_")]
+    private static partial Regex BackupName { get; }
 }
