@@ -279,7 +279,7 @@ public sealed class SidecarWriterTests : IDisposable
 
         Assert.Equal(new WarpOutcome.Unwarped(null, "no beat to put a marker on"), outcome);
         Assert.False(_written.IsStarter(Target));
-        Assert.Empty(AnalysisFile.Read($"{Target}.asd").Warp.Markers);
+        Assert.Equal(Warp.Off(0).Markers, AnalysisFile.Read($"{Target}.asd").Warp.Markers);
     }
 
     [Fact]
@@ -667,7 +667,7 @@ public sealed class SidecarWriterTests : IDisposable
         var written = AnalysisFile.Read($"{Target}.asd");
         Assert.True(written.IsDefaultClipSaved);
         Assert.False(written.Warp.IsWarped);
-        Assert.Empty(written.Warp.Markers);
+        Assert.Equal(Warp.Off(0).Markers, written.Warp.Markers);
         Assert.Equal(
             (0.0, 1.0, 1.0, false),
             (
@@ -736,8 +736,38 @@ public sealed class SidecarWriterTests : IDisposable
             @"^(the tempo steps part-way|one tempo misses by \d+ ms)$",
             unwarped.Because
         );
-        Assert.False(AnalysisFile.Read($"{Target}.asd").Warp.IsWarped);
+        var written = AnalysisFile.Read($"{Target}.asd");
+        Assert.False(written.Warp.IsWarped);
+        Assert.Equal(Warp.Off(0, 120).Markers, written.Warp.Markers);
         Assert.True(_written.Of(Target) is { IsUnwarped: true });
+    }
+
+    [Fact]
+    public async Task A_clip_with_Warp_off_after_a_starter_that_does_not_hold_spaces_its_pair_at_the_tempo()
+    {
+        Audio(Target);
+
+        await Steady(jumpAt: 35, jumpSeconds: 0.04)
+            .StartAsync(
+                Target,
+                [],
+                new(150, null, null),
+                ct: TestContext.Current.CancellationToken
+            );
+
+        Assert.Equal(Warp.Off(0, 150).Markers, AnalysisFile.Read($"{Target}.asd").Warp.Markers);
+    }
+
+    [Fact]
+    public void Setting_the_gain_of_a_clip_with_Warp_off_that_lacks_its_pair_leaves_it_alone()
+    {
+        Audio(Target);
+        File.WriteAllBytes($"{Target}.asd", CrashingSidecar.Bytes());
+
+        var before = File.ReadAllBytes($"{Target}.asd");
+
+        Assert.False(Leveling(lufs: -20).Level(Target, PlusSixDb));
+        Assert.Equal(before, File.ReadAllBytes($"{Target}.asd"));
     }
 
     [Fact]

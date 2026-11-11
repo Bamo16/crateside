@@ -296,7 +296,10 @@ by hand; everything below describes candidates against it.
   ([ADR 0059](docs/adr/0059-a-sample-arrives-at-one-loudness.md)).
 - **Warp off clip** — the analysis file crateside writes for a staged stem that gets no **starter
   warp** (one tempo does not hold on its beats, or its tempo is not read yet): a saved clip over the
-  whole file with Warp off, carrying only its **clip color** and **clip gain**. It is not a warp:
+  whole file with Warp off, carrying its **clip color** and **clip gain** and the pair of markers
+  Live writes at a clip's start, without which Live crashes
+  ([ADR 0091](docs/adr/0091-a-saved-clip-with-warp-off-carries-the-marker-pair-live-writes.md)).
+  It is not a warp:
   the stem still waits to be warped by hand, it never lends, a starter whose tempo holds or a lent
   warp replaces it, and it becomes the user's once Live saves over it
   ([ADR 0059](docs/adr/0059-a-sample-arrives-at-one-loudness.md),

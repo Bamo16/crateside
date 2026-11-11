@@ -70,7 +70,8 @@ public sealed record WarpTempo(
         int sampleRate
     )
     {
-        if (warp is not { Markers.Count: > 1 })
+        // A Warp-off clip carries the marker pair Live needs; its spacing is no tempo of the user's.
+        if (warp is not { IsWarped: true, Markers.Count: > 1 })
             return null;
 
         var first = Math.Floor(clip.Start / BeatsPerBar) * BeatsPerBar;

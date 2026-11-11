@@ -1418,7 +1418,7 @@
         var tempo = sample?.Tempo is { } warp ? TrackTempo.Of(warp, null, null) : null;
         yield return tempo is not null && TempoFormat.Format(tempo) is var formatted
             ? ("Tempo", formatted.Text, formatted.Brief, formatted.IsApproximate ? "approx" : null)
-            : sidecar.Warp.TempoAt(stem.Clip.Start) is { } own
+            : sidecar.Warp is { IsWarped: true } && sidecar.Warp.TempoAt(stem.Clip.Start) is { } own
                 ? ("Tempo", WarpWording.Tempo(own), stem.Owner is WarpOwner.Starter ? "crateside's reading" : string.Empty, null)
                 : ("Tempo", "—", string.Empty, "faint");
 

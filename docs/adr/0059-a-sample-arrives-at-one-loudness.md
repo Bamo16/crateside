@@ -49,7 +49,9 @@ integrated loudness.** The audio is never touched; crateside writes the one fiel
   and Warp switched on as it does for a sample never warped (one marker at the start, the set's
   tempo). The same clip with Warp **on** and no markers was ignored whole, gain and color, at
   zero and at the clip's end in beats alike; a guess is that Live checks the sidecar and rejects a
-  warped clip with no markers, which Live's own editor cannot make.
+  warped clip with no markers, which Live's own editor cannot make. **Corrected 2026-11-10 (ADR
+  0091):** the Warp off clip needs the two-marker pair Live always writes; without it, selecting
+  the stem crashes Live.
 - **The loudness reading lives in `Crateside.Core`**, not AbleKit, and is shared with #39.
 
 **Amended 2026-10-19, as built:**

@@ -159,5 +159,7 @@ pass it (MEASURED, ADR 0048).
 - [ADR 0058](adr/0058-a-staged-stem-shows-its-state-in-live.md): Collections
 - [ADR 0059](adr/0059-a-sample-arrives-at-one-loudness.md): clip gain, and Warp off when there is
   no starter
+- [ADR 0091](adr/0091-a-saved-clip-with-warp-off-carries-the-marker-pair-live-writes.md): the Warp
+  off clip carries Live's marker pair, or Live crashes (2026-11-10)
 - [ADR 0065](adr/0065-the-starter-warps-beats-are-read-on-the-source.md): beatdetect reads the
   source, else the instrumental
