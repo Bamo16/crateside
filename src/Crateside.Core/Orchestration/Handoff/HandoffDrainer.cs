@@ -60,17 +60,11 @@ public sealed class HandoffDrainer(
             JobStage.Handoff,
             result.IsSuccess ? JobStatus.Succeeded : JobStatus.Failed,
             error: result.Error,
-            summary: result.IsSuccess ? Summarize(result) : null
+            facts: result.IsSuccess ? new HandoffFacts(result.Moved, result.Cleared) : null
         );
 
         return StageTick.Ran(subject, result.IsSuccess, result.Error, Cleared(result.Cleared));
     }
-
-    /// <summary>What a finished handoff moved, for the activity feed (#170).</summary>
-    internal static string Summarize(HandoffResult result) =>
-        result.Cleared is 0
-            ? $"staged {"stem".ToQuantity(result.Moved)}"
-            : $"staged {"stem".ToQuantity(result.Moved)}, removed {"superseded file".ToQuantity(result.Cleared)}";
 
     /// <summary>
     /// Said out loud because crateside deleted the user's audio to make room, and the only other

@@ -1,5 +1,5 @@
-using System.Globalization;
 using System.Text.Json.Nodes;
+using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -133,10 +133,7 @@ internal sealed class SessionTally
     public long OutputTokens { get; set; }
 
     /// <summary>", 30k in (27k cached) · 1.6k out", or empty when the endpoint reported no usage.</summary>
-    public string TokensText =>
-        InputTokens + OutputTokens is 0
-            ? string.Empty
-            : $", {Abbreviate(InputTokens)} in ({Abbreviate(CachedTokens)} cached) · {Abbreviate(OutputTokens)} out";
+    public string TokensText => JudgeFacts.Tokens(InputTokens, CachedTokens, OutputTokens);
 
     public void Add(SessionTally other)
     {
@@ -146,12 +143,4 @@ internal sealed class SessionTally
         CachedTokens += other.CachedTokens;
         OutputTokens += other.OutputTokens;
     }
-
-    private static string Abbreviate(long tokens) =>
-        tokens switch
-        {
-            < 1000 => tokens.ToString(CultureInfo.InvariantCulture),
-            < 10_000 => $"{(tokens / 1000.0).ToString("0.0", CultureInfo.InvariantCulture)}k",
-            _ => $"{Math.Round(tokens / 1000.0).ToString(CultureInfo.InvariantCulture)}k",
-        };
 }

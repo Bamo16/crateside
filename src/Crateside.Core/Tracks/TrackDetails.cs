@@ -82,7 +82,12 @@ public sealed class TrackDetailsReader(
             TrackKey = trackKey,
             Row = row,
             Evidence = evidence,
-            Jobs = [.. jobs.Updates().Where(update => uploads.Contains(update.TrackKey))],
+            Jobs =
+            [
+                .. jobs.Updates()
+                    .Where(update => uploads.Contains(update.TrackKey))
+                    .Select(update => update with { Summary = update.SummaryText }),
+            ],
             StageNotes = stageNotes.For(uploads),
             Stems = [.. (row?.Samples ?? []).Select(stems.Read)],
             Records = records.Read([

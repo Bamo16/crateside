@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Evidence;
+using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Playlist;
 using Humanizer;
@@ -263,19 +264,20 @@ public sealed class VerdictRunner(
 
         VerdictRecording.LinkSwappedSource(store, order);
 
-        return VerdictResult.Succeeded(Summarize(run, _model, tally));
+        return VerdictResult.Succeeded(facts: FactsOf(run, _model, tally));
     }
 
-    /// <summary>The verdict a run recorded and what the judge spent on it, for the activity feed (#170).</summary>
-    internal static string Summarize(RunRecord run, string model, SessionTally tally)
-    {
-        var verdict = run.Center is { Name: var name }
-            ? $"{name}, {run.Confidence.ToString().ToUpperInvariant()}"
-            : $"key withheld, {run.Confidence.ToString().ToUpperInvariant()}";
-
-        return string.Create(
-            CultureInfo.InvariantCulture,
-            $"{verdict}, {"section".ToQuantity(run.Sections.Count)}; {"turn".ToQuantity(tally.Turns)} on {model}, {tally.Seconds:0} s{tally.TokensText}"
+    /// <summary>The verdict a run recorded and what the judge spent on it, which the activity feed words (#170, #197).</summary>
+    internal static JudgeFacts FactsOf(RunRecord run, string model, SessionTally tally) =>
+        new(
+            run.Center?.Name,
+            run.Confidence.ToString(),
+            run.Sections.Count,
+            tally.Turns,
+            model,
+            tally.Seconds,
+            tally.InputTokens,
+            tally.CachedTokens,
+            tally.OutputTokens
         );
-    }
 }

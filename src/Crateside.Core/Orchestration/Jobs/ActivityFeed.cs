@@ -175,7 +175,7 @@ public sealed record ActivityFeed(IReadOnlyList<ActivityAction> Actions)
         {
             { Status: JobStatus.AwaitingPerson } => "waiting for you",
             { Status: JobStatus.Held, Error: { Length: > 0 } error } => $"held: {error}",
-            { Summary: { Length: > 0 } summary } => summary,
+            { SummaryText: { Length: > 0 } summary } => summary,
             { Error: { Length: > 0 } error } => error,
             _ => end.Status.Humanize(LetterCasing.LowerCase),
         };

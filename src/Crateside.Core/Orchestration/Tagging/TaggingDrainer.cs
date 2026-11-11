@@ -51,17 +51,15 @@ public sealed class TaggingDrainer(
             JobStage.Tagging,
             status,
             error: error,
-            summary: outcome is TagWriteOutcome.Written(var applied)
-                ? Summarize(applied, stems)
+            facts: outcome is TagWriteOutcome.Written(var applied)
+                ? new TaggingFacts(applied, KeyOf(stems))
                 : null
         );
 
         return Task.FromResult(StageTick.Ran(subject, outcome is TagWriteOutcome.Written, error));
     }
 
-    /// <summary>What a finished tagging pass wrote, for the activity feed (#170).</summary>
-    internal static string Summarize(int applied, IReadOnlyList<TaggedStem> stems) =>
-        stems.Select(stem => stem.LedgerKey).Distinct().ToList() is [{ } key]
-            ? $"tagged {"file".ToQuantity(applied)} {key}"
-            : $"tagged {"file".ToQuantity(applied)}";
+    /// <summary>The one key every file carries, or null when they differ.</summary>
+    internal static string? KeyOf(IReadOnlyList<TaggedStem> stems) =>
+        stems.Select(stem => stem.LedgerKey).Distinct().ToList() is [{ } key] ? key : null;
 }
