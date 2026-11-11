@@ -189,6 +189,36 @@ public sealed class CratesideApiTests : IAsyncLifetime
                 .Select(row => row!["videoId"]!.GetValue<string>()),
         ];
 
+    [Fact]
+    public async Task A_filter_that_is_not_a_filter_is_a_400_listing_the_valid_values()
+    {
+        using var response = await _crateside.Client.GetAsync(
+            $"/api/tracks?filter=bogus",
+            TestContext.Current.CancellationToken
+        );
+        var problem = JsonNode.Parse(
+            await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
+        )!;
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(400, (int?)problem["status"]);
+        Assert.StartsWith(
+            "filter must be one of: Unfinished, InStaging, ",
+            (string?)problem["detail"]
+        );
+    }
+
+    [Fact]
+    public async Task A_filter_is_matched_ignoring_case()
+    {
+        using var response = await _crateside.Client.GetAsync(
+            "/api/tracks?filter=instaging",
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     private async Task<JsonNode> GetAsync(string url)
     {
         using var response = await _crateside.Client.GetAsync(
