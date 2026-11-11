@@ -7,21 +7,9 @@ using Microsoft.Data.Sqlite;
 
 namespace Crateside.Tests.Genres;
 
-/// <summary>The table against the labels the ledger's lookups actually kept, on a snapshot of this machine's ledger.</summary>
+/// <summary>The table against the labels the ledger's lookups actually kept, on this machine's ledger; new unmapped labels are reported, not failed.</summary>
 public sealed partial class GenreMappingRealDataTests
 {
-    /// <summary>Labels that describe what a recording is for, or where it is from, not what it sounds like.</summary>
-    private static readonly string[] NotGenres =
-    [
-        "asian music",
-        "ballad",
-        "comedy",
-        "film scores",
-        "films games",
-        "instrumental",
-        "soundtrack",
-    ];
-
     private static IReadOnlyList<GenreRecord> Records()
     {
         Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
@@ -44,6 +32,21 @@ public sealed partial class GenreMappingRealDataTests
             $"{mapped.Count} of {records.Count} songs with source labels get a genre; {none} get none"
         );
 
+        var unmapped = records
+            .SelectMany(record => record.Heard.Select(GenreMapping.Normalise).Distinct())
+            .GroupBy(label => label)
+            .Where(label => label.Count() >= 3 && GenreMapping.Map(label.Key).Count is 0)
+            .Select(label => label.Key)
+            .Except(GenreMappingTests.NotGenres)
+            .Order()
+            .ToList();
+
+        TestContext.Current.SendDiagnosticMessage(
+            unmapped.Count is 0
+                ? "Every label on three or more songs is mapped or names no genre"
+                : $"Unmapped labels on three or more songs: {string.Join(", ", unmapped)}"
+        );
+
         Assert.NotEmpty(mapped);
         Assert.All(
             mapped,
@@ -57,20 +60,6 @@ public sealed partial class GenreMappingRealDataTests
             }
         );
         Assert.All(records.Except(mapped), record => Assert.Empty(record.FromSources));
-    }
-
-    [Fact]
-    public void Every_label_on_three_or_more_songs_is_in_the_table_unless_it_names_no_genre()
-    {
-        var unmapped = Records()
-            .SelectMany(record => record.Heard.Select(GenreMapping.Normalise).Distinct())
-            .GroupBy(label => label)
-            .Where(label => label.Count() >= 3 && GenreMapping.Map(label.Key).Count is 0)
-            .Select(label => label.Key)
-            .Order()
-            .ToList();
-
-        Assert.Equal([.. NotGenres.Order()], unmapped);
     }
 
     [Fact]

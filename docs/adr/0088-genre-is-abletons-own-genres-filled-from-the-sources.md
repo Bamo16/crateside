@@ -81,7 +81,10 @@ choose:
   were entered from what Deezer is known to call them and are **unmeasured** until the lookup has
   run. On 2026-11-10 the ledger had five more labels on three or more songs: `international pop`
   and `techno house` joined the table, and `asian music`, `film scores` and `films games` joined
-  the labels that name no genre.
+  the labels that name no genre. On 2026-11-11 `indie rock rock pop` (a joined "Indie Rock/Rock-Pop")
+  joined the table as Indie and Rock; no label was added to the set that names no genre. The
+  three-or-more check now runs on a committed snapshot of the label counts
+  (`Fixtures/genre-label-counts.json`), and the real ledger only reports labels the table lacks.
 - **A genre dropped later is taken off the files** only if crateside asked for it before: the song's
   record keeps every genre it has asked to be written (`Tagged`). That is how a `Genres|` tag of
   Live's own stays, and how a changed mapping or the person's replacement takes crateside's off.

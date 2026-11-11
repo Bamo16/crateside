@@ -1,9 +1,36 @@
+using System.Text.Json;
 using Crateside.Core.Genres;
 
 namespace Crateside.Tests.Genres;
 
 public sealed class GenreMappingTests
 {
+    /// <summary>Labels that describe what a recording is for, or where it is from, not what it sounds like (ADR 0088).</summary>
+    internal static readonly string[] NotGenres =
+    [
+        "asian music",
+        "ballad",
+        "comedy",
+        "film scores",
+        "films games",
+        "instrumental",
+        "soundtrack",
+    ];
+
+    [Fact]
+    public void Every_label_in_the_committed_snapshot_is_mapped_unless_it_names_no_genre()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "genre-label-counts.json");
+        var counts = JsonSerializer.Deserialize<Dictionary<string, int>>(File.ReadAllText(path))!;
+        var unmapped = counts
+            .Where(label => GenreMapping.Map(label.Key).Count is 0)
+            .Select(label => label.Key)
+            .Order()
+            .ToList();
+
+        Assert.Equal([.. NotGenres.Order()], unmapped);
+    }
+
     [Theory]
     [InlineData("drum and bass", "Drum & Bass")]
     [InlineData("dancefloor drum and bass", "Drum & Bass")]
