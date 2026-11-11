@@ -19,9 +19,6 @@ public enum TrackFilter
     /// <summary>Stopped, parked, or carrying a finding.</summary>
     NeedsAttention,
 
-    /// <summary>A genre with no answer, or a familiarity the numbers leave to the user (#65).</summary>
-    TagsToAnswer,
-
     /// <summary>Not warped yet, and beatdetect reads the tempo drifting: expect a hard warp (#75).</summary>
     TempoDrifts,
 
@@ -63,7 +60,6 @@ public static class TrackFilters
                 || row.Lookalike is not null
                 || row.WaitingForPerson
                 || row.AwaitingRename > 0,
-            TrackFilter.TagsToAnswer => row.HasTagsToAnswer,
             TrackFilter.TempoDrifts => row.TempoDrifts,
             TrackFilter.OffItsTempo => row.OffItsTempo,
             TrackFilter.ClipOffBarLine => row.ClipStartsOffBarLine,

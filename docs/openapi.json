@@ -3234,7 +3234,6 @@
           "InStaging",
           "InFlight",
           "NeedsAttention",
-          "TagsToAnswer",
           "TempoDrifts",
           "OffItsTempo",
           "ClipOffBarLine",
@@ -3515,9 +3514,6 @@
               "$ref": "#/components/schemas/TrackMark"
             },
             "description": "What the maintainer has marked this track as."
-          },
-          "hasTagsToAnswer": {
-            "type": "boolean"
           },
           "artistAndTitle": {
             "description": "The ledger's artist and title, else the row's own name split at its dash. Null while the row\r\nhas only the upload's title, whose artist is a guess.",

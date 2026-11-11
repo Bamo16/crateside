@@ -7,17 +7,13 @@
 
 <ChoiceStrip Label="Familiarity" Choices="Choices" Value="@Row.Familiarity?.Written"
              Quiet="Row.Familiarity is null or { Written: null, LookedUpAt: null }"
-             Note="@Note(Row.Familiarity)" Disabled="_working" OnChoose="Settle" Inline="Inline" />
+             Note="@Note(Row.Familiarity)" Disabled="_working" OnChoose="Settle" />
 
 @code {
     private bool _working;
 
     [Parameter, EditorRequired]
     public required TrackRow Row { get; set; }
-
-    /// <summary>Chips alone, for the Tags to answer view.</summary>
-    [Parameter]
-    public bool Inline { get; set; }
 
     private IReadOnlyList<ChoiceStrip.Choice> Choices =>
         [

@@ -344,38 +344,11 @@
     color: var(--text-50);
 }
 
-/* Tags to answer: every chip in reach, so a song is one click (#65). */
-.heads.tags,
-.row.tags {
-    grid-template-columns: 24px minmax(0, 300px) minmax(0, 1fr) 220px;
-}
-
-.row.tags {
-    height: auto;
-    min-height: 46px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-}
-
-.row.tags.answered {
-    opacity: 0.45;
-}
-
 .song-cell {
     display: flex;
     flex-direction: column;
     gap: 2px;
     min-width: 0;
-}
-
-.tag-note {
-    font-size: 12px;
-    color: var(--text-50);
-}
-
-.tag-cell {
-    min-width: 0;
-    cursor: default;
 }
 
 /* The warping view is the one the user lives in, so it gets room. */

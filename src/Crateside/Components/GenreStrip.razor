@@ -15,7 +15,7 @@
 else
 {
     <ChoiceStrip Label="Genre" Choices="Choices" Value="@Chosen(Row.Genre)" Quiet="IsQuiet(Row.Genre)"
-                 Note="@Note(Row.Genre)" Disabled="_working" OnChoose="SettleGenre" Inline="Shape is Shapes.Chips" />
+                 Note="@Note(Row.Genre)" Disabled="_working" OnChoose="SettleGenre" />
 }
 
 @code {
@@ -74,11 +74,10 @@ else
         }
     }
 
-    /// <summary>The stack's strip, chips alone for the Tags to answer view, or the collapsed row's cell (#65).</summary>
+    /// <summary>The stack's strip, or the collapsed row's cell (#65).</summary>
     public enum Shapes
     {
         Strip,
-        Chips,
         Cell,
     }
 }
