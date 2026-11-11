@@ -285,6 +285,7 @@ public static class ServiceRegistration
     private static IServiceCollection AddMarks(this IServiceCollection services)
     {
         services.AddSingleton<TrackMarkStore>();
+        services.AddSingleton<MeterStore>();
         services.AddSingleton<MeasuringExclusionStore>();
         services.AddSingleton<MeasuringExclusionsReader>();
 

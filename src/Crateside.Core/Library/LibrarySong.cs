@@ -22,6 +22,9 @@ public sealed record LibrarySong
     /// <summary>The song's <c>Genres</c> tags, read from its samples (ADR 0088).</summary>
     public IReadOnlyList<string> Genres { get; init; } = [];
 
+    /// <summary>The song's <c>Meter</c> tags, read from its samples; none means nobody has checked the meter (#154).</summary>
+    public IReadOnlyList<string> Meter { get; init; } = [];
+
     /// <summary>The finished warp's tempo, the instrumental's where there is one (ADR 0038).</summary>
     public WarpTempo? Tempo { get; init; }
 

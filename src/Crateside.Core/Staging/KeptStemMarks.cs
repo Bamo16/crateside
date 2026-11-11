@@ -18,7 +18,8 @@ public sealed class KeptStemMarks(
     FolderInfoReader reader,
     FileIndexReader index,
     FolderInfoWriter writer,
-    TagStoreBackups backups
+    TagStoreBackups backups,
+    MeterStore? meters = null
 )
 {
     public TagWriteOutcome Collect()
@@ -60,7 +61,7 @@ public sealed class KeptStemMarks(
                     Has = has,
                     Wanted = BrowserCollections.Merged(
                         has,
-                        MarksOf(path, ledger, marked),
+                        MarksOf(path, ledger, marked, meters),
                         BrowserCollections.TrackMarks
                     ),
                 };
@@ -105,7 +106,8 @@ public sealed class KeptStemMarks(
     private static IReadOnlyList<BrowserCollection> MarksOf(
         string path,
         KeyLedger ledger,
-        IReadOnlyDictionary<string, TrackMarkRecord> marked
+        IReadOnlyDictionary<string, TrackMarkRecord> marked,
+        MeterStore? meters
     )
     {
         LedgerRun? verdict = null;
@@ -114,7 +116,10 @@ public sealed class KeptStemMarks(
         if (StemTagReader.Read(path)?.SourceTrackKey is { } trackKey)
         {
             ledger.TryGetLatestByTrackKey(trackKey, out verdict);
-            mine = marked.GetValueOrDefault(verdict?.Song ?? trackKey)?.Marks ?? [];
+            var song = verdict?.Song ?? trackKey;
+
+            mine = marked.GetValueOrDefault(song)?.Marks ?? [];
+            mine = meters?.MarksFor(song, mine) ?? mine;
         }
 
         return BrowserCollections.TrackMarksFor(verdict, mine);

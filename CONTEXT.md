@@ -313,6 +313,11 @@ by hand; everything below describes candidates against it.
   may mislead, or that the user marked as changing key, in *Key caveat*. *Mine* is the user's.
   *Odd bars* is every stem of a track the user marked as not consistent 4/4
   ([ADR 0058](docs/adr/0058-a-staged-stem-shows-its-state-in-live.md)).
+- **Meter** — the `Meter|` tag group the user sets in Live: a base (`4/4`, `3/4`, any `n/d`, or
+  `Mixed`) and optionally `Odd bars`. Any Meter tag means the user heard the track through and
+  signed off its meter; none means unchecked. crateside copies a change on one stem to the track's
+  others and shows *Odd bars* for anything but plain 4/4
+  ([ADR 0092](docs/adr/0092-a-meter-tag-set-in-live-records-that-the-track-was-heard-through.md)).
 - **Track mark** — a yes/no the user sets on a track in crateside (*Changes key*, *Odd bars*), kept
   in the ledger's `TrackMarks` table by song ([ADR 0082](docs/adr/0082-the-persons-decisions-live-in-the-ledger-database.md)) and never read from Ableton. It records no place and no amount, and
   "not marked" means "not noticed yet". Live shows it as the matching **Collection**.

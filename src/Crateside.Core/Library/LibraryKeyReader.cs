@@ -147,6 +147,13 @@ public sealed class LibraryKeyReader(
                     .SelectMany(s => s.Tags?.Genres ?? [])
                     .Distinct(StringComparer.OrdinalIgnoreCase),
             ],
+            Meter =
+            [
+                .. samples
+                    .SelectMany(s => s.Tags?.Meter ?? [])
+                    .Distinct(StringComparer.Ordinal)
+                    .Order(StringComparer.Ordinal),
+            ],
             Tempo = tempo,
             Beats = reading,
             Starter = StarterFates.Of(reading, tempo),

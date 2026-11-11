@@ -27,6 +27,9 @@ public static class FileTagsReading
         public string? Type =>
             Values(tags.Keywords, TypeCategory).FirstOrDefault(value => !value.Contains('|'));
 
+        /// <summary>The <c>Meter|</c> values the maintainer set in Live (#154).</summary>
+        public IReadOnlyList<string> Meter => [.. Values(tags.Keywords, MeterTags.Group)];
+
         /// <summary>The <c>Genres|</c> keywords, in the order the entry holds them (ADR 0088).</summary>
         public IReadOnlyList<string> Genres => [.. Values(tags.Keywords, GenreVocabulary.Group)];
     }

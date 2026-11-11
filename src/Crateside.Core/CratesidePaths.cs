@@ -126,6 +126,13 @@ public sealed class CratesidePaths
         set;
     }
 
+    /// <summary>The Meter tags crateside last applied to each song's stems (#154).</summary>
+    public string MetersFile
+    {
+        get => field ?? Roaming("meters.json");
+        set;
+    }
+
     /// <summary>The file the page choices were kept in, read once by the import (ADR 0082).</summary>
     public string PageChoicesFile
     {

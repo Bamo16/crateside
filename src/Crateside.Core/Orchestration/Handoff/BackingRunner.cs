@@ -190,6 +190,61 @@ public sealed class BackingRunner(
         return edits;
     }
 
+    /// <summary>
+    /// The Meter keywords the person set in Live on the files of a keyed track, and the ones they
+    /// took off (#154). An unreadable store reads as none; the next pass reads it again.
+    /// </summary>
+    /// <param name="index">Live's index of the root, which holds an addition before the store does; null reads the store alone.</param>
+    public IReadOnlyList<StemMeter> MeterReadings(string root, KeyLedger ledger, FolderInfo? index)
+    {
+        if (!Directory.Exists(root))
+            return [];
+
+        FolderInfo backed;
+
+        try
+        {
+            backed = folderInfo.Read(root);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+
+        var found = new List<StemMeter>();
+
+        foreach (var path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+        {
+            if (!SampleFiles.IsAudio(path))
+                continue;
+
+            var stored = backed.TryGet(path, out var held) ? held : null;
+            var indexed = index is not null && index.TryGet(path, out var seen) ? seen : null;
+            var present = Meters((stored?.Keywords ?? []).Concat(indexed?.Keywords ?? []));
+            var removed = Meters(stored?.HiddenKeywords ?? []);
+
+            if (
+                present.Count + removed.Count is 0
+                || ProvenanceOf(path) is not { SourceTrackKey: { } trackKey } provenance
+            )
+                continue;
+
+            found.Add(
+                new StemMeter(
+                    ledger.SongFor(trackKey) ?? trackKey,
+                    $"{trackKey}|{provenance.Preset ?? provenance.Model ?? provenance.Label}",
+                    present.Except(removed).ToHashSet(StringComparer.Ordinal),
+                    removed
+                )
+            );
+        }
+
+        return found;
+    }
+
+    private static HashSet<string> Meters(IEnumerable<string> keywords) =>
+        [.. keywords.Select(MeterTags.ValueOf).OfType<string>()];
+
     private static bool IsDescriptive(string keyword) =>
         IsOwned(keyword) || VocalVocabulary.IsKeyword(keyword);
 
@@ -387,7 +442,10 @@ public sealed class BackingRunner(
     {
         var hidden = existing?.HiddenKeywords ?? [];
         var owned = keywords
-            .Where(keyword => IsOwned(keyword) && !hidden.Contains(keyword, StringComparer.Ordinal))
+            .Where(keyword =>
+                (IsOwned(keyword) || IsMeter(keyword))
+                && !hidden.Contains(keyword, StringComparer.Ordinal)
+            )
             .ToArray();
         var replaced = owned
             .Select(GroupOf)
@@ -398,7 +456,7 @@ public sealed class BackingRunner(
             replaced.Add("Key");
 
         IReadOnlyList<string> kept = existing is null
-            ? keywords.Where(keyword => !IsOwned(keyword)).ToArray()
+            ? keywords.Where(keyword => !IsOwned(keyword) && !IsMeter(keyword)).ToArray()
             :
             [
                 .. existing.Keywords.Where(keyword =>
@@ -461,6 +519,9 @@ public sealed class BackingRunner(
 
     private static bool IsKey(string keyword) =>
         keyword.StartsWith("Key|", StringComparison.Ordinal);
+
+    private static bool IsMeter(string keyword) =>
+        keyword.StartsWith($"{MeterTags.Group}|", StringComparison.Ordinal);
 
     private static bool IsOwned(string keyword) =>
         GenreVocabulary.IsGenreKeyword(keyword) || FamiliarityVocabulary.IsKeyword(keyword);
