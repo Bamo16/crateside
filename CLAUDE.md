@@ -51,7 +51,7 @@ When the app is running, ask it before reading any store: `curl http://localhost
 gives the track's row, the evidence behind its verdict, its job history, each stem's tags and parsed
 warp with crateside's records about that warp, and its entry in every per-song store under each key
 it is filed under. `/api/tracks?filter=<filter>` gives the Tracks page's rows. Shapes and examples
-are in [docs/api.md](docs/api.md); `/scalar` browses them. The API only reads.
+are in [docs/api.md](docs/api.md); `/scalar` browses them. The API reads, and writes only through named action endpoints: `POST /api/tracks/{videoId}/rejudge` queues a re-judge under a `requestedBy`, and an agent uses it only when the maintainer has OK'd re-judging that track, or the track's earlier judging had a real flaw it can name. The no-re-judging rule still holds.
 
 Fall back to the files (`ledger.db`, which holds the person's decisions as well as the verdicts, `jobs.jsonl`, the stores under `%APPDATA%\crateside`, the
 `.asd` sidecars through AbleKit) when the app is not running, or for what the API does not serve:

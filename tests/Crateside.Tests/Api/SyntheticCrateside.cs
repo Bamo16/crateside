@@ -53,6 +53,14 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
 
     public string WarpBackups => Path.Combine(_root, "warp-backups");
 
+    public FakeTimeProvider Time { get; } = new(At);
+
+    public RejudgeQueue Rejudges { get; private set; } = null!;
+
+    public ActionLog Actions { get; private set; } = null!;
+
+    public RecordingBarRuns BarRuns { get; } = new();
+
     public static async Task<SyntheticCrateside> StartAsync()
     {
         var crateside = new SyntheticCrateside();
@@ -118,7 +126,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(Instrumental)!);
         Directory.CreateDirectory(WarpBackups);
 
-        var time = new FakeTimeProvider(At);
+        var time = Time;
         var ledger = new LedgerStore(LedgerStore.InMemory, time);
         ledger.Record(
             new RunRecord
@@ -286,6 +294,20 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         builder.Services.AddSingleton(_tracks);
         builder.Services.AddSingleton(details);
         builder.Services.AddSingleton<IStagesReader>(new CannedStages());
+        Rejudges = new RejudgeQueue(Path.Combine(_root, "rejudge.json"));
+        Actions = new ActionLog(Path.Combine(_root, "actions.jsonl"), time);
+        builder.Services.AddSingleton<IRejudgeRequests>(
+            new RejudgeRequests(
+                ledger,
+                Rejudges,
+                BarRuns,
+                new StemWarpReader(written, new TransientOrigins(), new LiveAnalyses()),
+                jobs,
+                Actions,
+                Options.Create(new JudgeOptions()),
+                time
+            )
+        );
         builder.Services.AddSingleton(new MeasuringExclusionsReader(_tracks, exclusions));
         builder.Services.AddSingleton(
             new CoverArt(
@@ -330,6 +352,26 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
             },
             IsDefaultClipSaved = true,
         };
+}
+
+/// <summary>Takes the runs the API starts and keeps them, so a test can read what the judge would have been given.</summary>
+internal sealed class RecordingBarRuns : IBarRuns
+{
+    public List<(WorkOrder Order, JudgeDirection Direction)> Started { get; } = [];
+
+    public bool Busy { get; set; }
+
+    public string? AudioFor(TrackRow row) => "audio.flac";
+
+    public bool TryStart(WorkOrder order, JudgeDirection direction)
+    {
+        if (Busy)
+            return false;
+
+        Started.Add((order, direction));
+
+        return true;
+    }
 }
 
 /// <summary>Stands in for the stages reader, which needs the whole queue to build.</summary>

@@ -14,7 +14,7 @@ public sealed class BarJudging(
     WorkingSet workingSet,
     DownloadRunner downloads,
     TimeProvider time
-) : IDisposable
+) : IBarRuns, IDisposable
 {
     private readonly Dictionary<string, BarRun> _runs = new(StringComparer.Ordinal);
     private readonly Lock _gate = new();
@@ -140,6 +140,16 @@ public sealed class BarJudging(
 
         Changed?.Invoke();
     }
+}
+
+/// <summary>Starts a judgment from these bars; the song page and the API both go through it.</summary>
+public interface IBarRuns
+{
+    /// <summary>The full mix to detect over; null when it has to be downloaded again.</summary>
+    string? AudioFor(TrackRow row);
+
+    /// <summary>Starts a run in the background; false when one for this track is already going.</summary>
+    bool TryStart(WorkOrder order, JudgeDirection direction);
 }
 
 /// <summary>One judgment from these bars, as far as it has got.</summary>

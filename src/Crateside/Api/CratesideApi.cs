@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Crateside.Core.Marks;
@@ -9,7 +10,7 @@ using Scalar.AspNetCore;
 
 namespace Crateside.Api;
 
-/// <summary>The read-only JSON API under <c>/api</c>: what the pages read, serialized as they read it (#167).</summary>
+/// <summary>The JSON API under <c>/api</c>: what the pages read, serialized as they read it (#167), and named actions (#172).</summary>
 public static class CratesideApi
 {
     /// <summary>How old the rows may be before a request rebuilds them first, as the pages allow.</summary>
@@ -29,7 +30,7 @@ public static class CratesideApi
                 {
                     document.Info.Title = "crateside";
                     document.Info.Description =
-                        "Read-only JSON over what crateside's pages show, on localhost only. See docs/api.md.";
+                        "JSON over what crateside's pages show and a few named actions, on localhost only. See docs/api.md.";
 
                     return Task.CompletedTask;
                 }
@@ -58,6 +59,13 @@ public static class CratesideApi
                 "One track: its row, verdict evidence, job history, stems with their warps, and its store records."
             );
 
+        tracks
+            .MapPost("/{trackKey}/rejudge", RejudgeAsync)
+            .WithName("RejudgeTrack")
+            .WithSummary(
+                "Queue a re-judge of a track, or judge chosen stretches of it now, recorded under who asked."
+            );
+
         endpoints
             .MapGet("/api/stages", ReadStagesAsync)
             .WithTags("Stages")
@@ -75,6 +83,47 @@ public static class CratesideApi
             );
 
         return endpoints;
+    }
+
+    private static async Task<
+        Results<Accepted<RejudgeAccepted>, NotFound<ProblemDetails>, ProblemHttpResult>
+    > RejudgeAsync(
+        [Description("The track key, as in /song/{trackKey}.")] string trackKey,
+        RejudgeRequest request,
+        TracksService tracks,
+        IRejudgeRequests rejudges,
+        CancellationToken ct
+    )
+    {
+        await tracks.EnsureFreshAsync(Freshness, ct);
+
+        if (
+            tracks.Current?.Rows.FirstOrDefault(row =>
+                row.TrackKey.Equals(trackKey, StringComparison.Ordinal)
+            )
+            is not { } found
+        )
+            return TypedResults.NotFound(
+                new ProblemDetails
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Title = $"crateside has no track for {trackKey}",
+                }
+            );
+
+        return rejudges.Request(found, request) switch
+        {
+            RejudgeOutcome.Accepted(var result) => TypedResults.Accepted(
+                $"/api/tracks/{trackKey}",
+                result
+            ),
+            RejudgeOutcome.Refused(var status, var why) => TypedResults.Problem(
+                why,
+                statusCode: status,
+                title: "The re-judge was not queued"
+            ),
+            _ => throw new UnreachableException(),
+        };
     }
 
     private static async Task<Ok<StagesView>> ReadStagesAsync(
@@ -155,4 +204,6 @@ public static class CratesideApi
 [JsonSerializable(typeof(TrackDetails))]
 [JsonSerializable(typeof(MeasuringExclusionsView))]
 [JsonSerializable(typeof(StagesView))]
+[JsonSerializable(typeof(RejudgeRequest))]
+[JsonSerializable(typeof(RejudgeAccepted))]
 internal sealed partial class ApiJsonContext : JsonSerializerContext { }

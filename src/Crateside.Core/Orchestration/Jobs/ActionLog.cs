@@ -20,11 +20,13 @@ public sealed class ActionLog(CratesidePaths paths, TimeProvider? time = null)
     public static ActionLog None { get; } = new(string.Empty);
 
     /// <param name="passFrom">The stage this action sends the track back to, if it starts a pass.</param>
+    /// <param name="by">Who asked through the API; null for the person at the pages.</param>
     public void Record(
         string trackKey,
         UserActionKind kind,
         string? detail = null,
-        JobStage? passFrom = null
+        JobStage? passFrom = null,
+        string? by = null
     ) =>
         Append(
             new UserAction
@@ -34,6 +36,7 @@ public sealed class ActionLog(CratesidePaths paths, TimeProvider? time = null)
                 Kind = kind,
                 Detail = detail,
                 PassFrom = passFrom,
+                By = by,
             }
         );
 
@@ -113,6 +116,9 @@ public sealed record UserAction
 
     /// <summary>The stage the track went back to, when the action started a pass.</summary>
     public JobStage? PassFrom { get; init; }
+
+    /// <summary>Who asked, when it came through the API; null for the person at the pages.</summary>
+    public string? By { get; init; }
 }
 
 public enum UserActionKind
@@ -148,4 +154,5 @@ public enum UserActionKind
     PageChoiceUndone,
     SourceRemoved,
     SourceRestored,
+    Rejudged,
 }

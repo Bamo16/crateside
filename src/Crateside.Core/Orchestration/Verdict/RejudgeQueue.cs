@@ -29,7 +29,7 @@ public sealed class RejudgeQueue
     }
 
     /// <summary>Queues a song to be judged again unless a run from <paramref name="before"/> on is already recorded; a song already queued keeps the later cutoff.</summary>
-    public void Add(string song, DateTimeOffset before, string reason)
+    public void Add(string song, DateTimeOffset before, string reason, string? requestedBy = null)
     {
         lock (_gate)
         {
@@ -49,6 +49,7 @@ public sealed class RejudgeQueue
                     Song = song,
                     Before = before,
                     Reason = reason,
+                    RequestedBy = requestedBy,
                 }
             );
             Save(entries);
@@ -103,6 +104,9 @@ public sealed record RejudgeEntry
     public required DateTimeOffset Before { get; init; }
 
     public required string Reason { get; init; }
+
+    /// <summary>Who queued it through the API; null for the maintainer or a correction.</summary>
+    public string? RequestedBy { get; init; }
 }
 
 internal sealed record RejudgeFile

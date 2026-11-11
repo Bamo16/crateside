@@ -366,7 +366,9 @@ public static class ServiceRegistration
         services.AddSingleton<JudgeAvailability>();
         services.AddSingleton<IVerdictJudge, VerdictRunner>();
         services.AddSingleton<VerdictDrainer>();
-        services.AddSingleton<BarJudging>();
+        services
+            .AddSingleton<BarJudging>()
+            .AddSingleton<IBarRuns>(sp => sp.GetRequiredService<BarJudging>());
         services.AddSingleton<LookalikeAnswer>();
         services.AddHostedService<StageWorker<VerdictDrainer>>();
 
@@ -475,6 +477,7 @@ public static class ServiceRegistration
         services.AddSingleton<CacheKeeper>();
         services.AddSingleton<TrackDetailsReader>();
         services.AddSingleton<IStagesReader, StagesReader>();
+        services.AddSingleton<IRejudgeRequests, RejudgeRequests>();
         services.AddSingleton<StemDetailsReader>();
         services.AddSingleton<FiledRecordsReader>();
 
