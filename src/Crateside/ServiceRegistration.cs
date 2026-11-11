@@ -486,6 +486,8 @@ public static class ServiceRegistration
         services.AddSingleton<LiveAnalyses>();
         services.AddSingleton<RetypedWarps>();
         services.AddSingleton<SidecarBackups>();
+        services.AddSingleton<WarpOffRepair>();
+        services.AddHostedService<WarpOffRepairWorker>();
         services.AddSingleton<IAudioDecoder, FfmpegAudioDecoder>();
         services.AddSingleton<ITransientDetector, OnsetDetector>();
         services.AddSingleton<SidecarWriter>();

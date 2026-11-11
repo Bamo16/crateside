@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="AbleKit" Version="0.1.0-preview.2" />
+    <PackageVersion Include="AbleKit" Version="0.1.0-preview.4" />
     <PackageVersion Include="CliWrap" Version="3.10.5" />
     <PackageVersion Include="Google.Apis.Auth" Version="1.75.0" />
     <PackageVersion Include="Google.Apis.YouTube.v3" Version="1.75.0.4234" />

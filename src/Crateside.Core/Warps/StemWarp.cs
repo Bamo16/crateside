@@ -41,7 +41,8 @@ public sealed record StemWarp
 
     /// <summary>The clip's start and end in seconds of audio; the whole file when no clip is saved.</summary>
     public (double Start, double End) Clip =>
-        Sidecar is { DefaultClip: { } clip, Warp: var warp }
+        // With Warp off the clip is in seconds, and the marker pair Live needs says nothing of beats.
+        Sidecar is { DefaultClip: { } clip, Warp: { IsWarped: true } warp }
         && warp.SecondsAt(clip.Start) is { } start
         && warp.SecondsAt(clip.End) is { } end
             ? (start, end)
@@ -49,7 +50,7 @@ public sealed record StemWarp
 
     /// <summary>The loop in seconds of audio, and whether it is on; null without a saved clip.</summary>
     public (double Start, double End, bool On)? Loop =>
-        Sidecar is { IsDefaultClipSaved: true, Clip: var clip, Warp: var warp }
+        Sidecar is { IsDefaultClipSaved: true, Clip: var clip, Warp: { IsWarped: true } warp }
         && (
             clip.LoopOn
                 ? (clip.LoopStart, clip.LoopEnd)

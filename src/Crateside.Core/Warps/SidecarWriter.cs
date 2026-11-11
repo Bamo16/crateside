@@ -186,6 +186,7 @@ public sealed class SidecarWriter(
                         target,
                         sameKind,
                         timing.WarpOffBecause ?? "no beat to put a marker on",
+                        grid.Bpm,
                         ct
                     );
 
@@ -238,7 +239,7 @@ public sealed class SidecarWriter(
         {
             return Own(target) is { IsUsers: true } || written.Of(target) is { IsStarter: false }
                 ? Refuse(new WarpOutcome.AlreadyWarped())
-                : await UnwarpedAsync(target, sameKind, null, ct);
+                : await UnwarpedAsync(target, sameKind, null, null, ct);
         }
         catch (Exception ex)
             when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
@@ -251,6 +252,7 @@ public sealed class SidecarWriter(
         string target,
         IReadOnlyList<string> sameKind,
         string? warpOffBecause,
+        double? bpm,
         CancellationToken ct
     ) =>
         await decoder.DecodeAsync(target, ct) is not { } audio
@@ -261,7 +263,8 @@ public sealed class SidecarWriter(
                 audio,
                 null,
                 await GainAsync(target, ct),
-                analysis => (Unwarped((double)audio.Frames / audio.SampleRate, analysis), null),
+                analysis =>
+                    (Unwarped((double)audio.Frames / audio.SampleRate, analysis, bpm), null),
                 warpOffBecause
             );
 
@@ -346,8 +349,44 @@ public sealed class SidecarWriter(
                     }
         );
 
-    /// <param name="change">The clip to write, or null when the saved one needs nothing.</param>
-    private bool Rewrite(string audioPath, Func<Clip, Clip?> change)
+    /// <summary>
+    /// Gives a saved clip with Warp off and fewer than 2 markers the pair Live writes, changing
+    /// nothing else (ADR 0091). True when it was rewritten; <paramref name="bpm"/> spaces the pair.
+    /// </summary>
+    public bool GiveWarpOffMarkers(string audioPath, double? bpm) =>
+        RewriteFile(
+            audioPath,
+            analysis =>
+                analysis is { Warp: { IsWarped: false, Markers.Count: < 2 } warp }
+                    ? analysis with
+                    {
+                        Warp = warp with
+                        {
+                            Markers =
+                            [
+                                .. (
+                                    bpm is { } tempo
+                                        ? Warp.Off(ClipStart(analysis), tempo)
+                                        : Warp.Off(ClipStart(analysis))
+                                ).Markers,
+                            ],
+                        },
+                    }
+                    : null
+        );
+
+    /// <summary>With Warp off the clip's positions are seconds of audio.</summary>
+    private static double ClipStart(AnalysisFile analysis) =>
+        analysis.DefaultClip is { Start: >= 0 and var start } ? start : 0;
+
+    private bool Rewrite(string audioPath, Func<Clip, Clip?> change) =>
+        RewriteFile(
+            audioPath,
+            analysis => change(analysis.Clip) is { } clip ? analysis with { Clip = clip } : null
+        );
+
+    /// <param name="change">The file to write, or null when the saved one needs nothing.</param>
+    private bool RewriteFile(string audioPath, Func<AnalysisFile, AnalysisFile?> change)
     {
         var path = StemFileName.AnalysisFor(audioPath);
 
@@ -358,13 +397,13 @@ public sealed class SidecarWriter(
                 if (
                     !AnalysisFile.TryRead(path, out var analysis)
                     || analysis is not { IsDefaultClipSaved: true }
-                    || change(analysis.Clip) is not { } clip
+                    || change(analysis) is not { } changed
                 )
                     return false;
 
                 var ours = written.Of(audioPath);
 
-                (analysis with { Clip = clip }).Write(path);
+                changed.Write(path);
 
                 if (ours is not null)
                     written.Rerecord(audioPath, ours);
@@ -372,8 +411,14 @@ public sealed class SidecarWriter(
                 return true;
             }
         }
+        // The writer refuses a saved clip without its marker pair; GiveWarpOffMarkers is what repairs one.
         catch (Exception ex)
-            when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+            when (ex
+                    is IOException
+                        or UnauthorizedAccessException
+                        or InvalidDataException
+                        or InvalidOperationException
+            )
         {
             return false;
         }
@@ -448,13 +493,14 @@ public sealed class SidecarWriter(
 
     /// <summary>
     /// A clip over the whole file with Warp off, which Live applies, gain and color, then warps as a
-    /// sample never warped; it ignores a warped clip with no markers whole (ADR 0059).
+    /// sample never warped; it ignores a warped clip with no markers whole, and crashes on a Warp-off
+    /// one without the marker pair Live writes (ADR 0059, ADR 0091).
     /// </summary>
-    private static AnalysisFile Unwarped(double seconds, AudioAnalysis audio) =>
+    private static AnalysisFile Unwarped(double seconds, AudioAnalysis audio, double? bpm) =>
         new()
         {
             Audio = audio,
-            Warp = new Warp { IsWarped = false },
+            Warp = bpm is { } tempo ? Warp.Off(0, tempo) : Warp.Off(0),
             Clip = new Clip
             {
                 LoopEnd = seconds,
