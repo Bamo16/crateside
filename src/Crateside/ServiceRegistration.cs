@@ -1,4 +1,5 @@
 using AbleKit.Tags;
+using Crateside.Api;
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Art;
@@ -473,6 +474,7 @@ public static class ServiceRegistration
         services.AddSingleton<SampleReadingsReader>();
         services.AddSingleton<CacheKeeper>();
         services.AddSingleton<TrackDetailsReader>();
+        services.AddSingleton<IStagesReader, StagesReader>();
         services.AddSingleton<StemDetailsReader>();
         services.AddSingleton<FiledRecordsReader>();
 

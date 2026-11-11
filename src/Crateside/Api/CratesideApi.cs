@@ -59,6 +59,14 @@ public static class CratesideApi
             );
 
         endpoints
+            .MapGet("/api/stages", ReadStagesAsync)
+            .WithTags("Stages")
+            .WithName("ListStages")
+            .WithSummary(
+                "Each worker's state and, for every track waiting on it, whether the selector picks it and why not."
+            );
+
+        endpoints
             .MapGet("/api/measuring-exclusions", ReadExclusionsAsync)
             .WithTags("Tracks")
             .WithName("ListMeasuringExclusions")
@@ -68,6 +76,11 @@ public static class CratesideApi
 
         return endpoints;
     }
+
+    private static async Task<Ok<StagesView>> ReadStagesAsync(
+        IStagesReader stages,
+        CancellationToken ct
+    ) => TypedResults.Ok(await stages.ReadAsync(ct));
 
     private static async Task<Ok<MeasuringExclusionsView>> ReadExclusionsAsync(
         TracksService tracks,
@@ -141,4 +154,5 @@ public static class CratesideApi
 [JsonSerializable(typeof(TracksView))]
 [JsonSerializable(typeof(TrackDetails))]
 [JsonSerializable(typeof(MeasuringExclusionsView))]
+[JsonSerializable(typeof(StagesView))]
 internal sealed partial class ApiJsonContext : JsonSerializerContext { }

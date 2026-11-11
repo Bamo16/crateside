@@ -33,16 +33,8 @@ public sealed class DownloadSelector(
     /// and an empty working set.
     /// </summary>
     private WantedDownload? Audio(WorkListsView view) =>
-        view
-            .Outstanding.Concat(view.AwaitingSeparation)
-            .DistinctBy(item => item.TrackKey, StringComparer.Ordinal)
-            .Where(item =>
-                !item.IsUnavailable
-                && item.CanBeFetched
-                && !workingSet.TryGetSource(item.TrackKey, out _)
-                && !IsSweptUp(item)
-                && IsEligible(item.TrackKey)
-            )
+        AudioCandidates(view)
+            .Where(item => WhyNotAudio(item) is null)
             .Select(item => new WantedDownload
             {
                 TrackKey = item.TrackKey,
@@ -51,6 +43,29 @@ public sealed class DownloadSelector(
                 Track = item,
             })
             .FirstOrDefault();
+
+    /// <summary>Every track that could need audio, with why the audio pass will or will not fetch it.</summary>
+    public IReadOnlyList<Decision> Decisions(WorkListsView view) =>
+        [
+            .. AudioCandidates(view)
+                .Select(item => new Decision(
+                    item.TrackKey,
+                    item.Title,
+                    Selection.From(WhyNotAudio(item))
+                )),
+        ];
+
+    private static IEnumerable<WorkItem> AudioCandidates(WorkListsView view) =>
+        view
+            .Outstanding.Concat(view.AwaitingSeparation)
+            .DistinctBy(item => item.TrackKey, StringComparer.Ordinal);
+
+    private SkipCause? WhyNotAudio(WorkItem item) =>
+        item.IsUnavailable ? SkipCause.Unavailable
+        : !item.CanBeFetched ? SkipCause.NotFetchable
+        : workingSet.TryGetSource(item.TrackKey, out _) ? SkipCause.AlreadyHasAudio
+        : IsSweptUp(item) ? SkipCause.SweptUp
+        : WhyNotEligible(item.TrackKey);
 
     /// <summary>
     /// A track whose plan keeps its separation source and has no copy made: copied from the audio
@@ -141,9 +156,11 @@ public sealed class DownloadSelector(
         };
 
     /// <summary>Retries even a succeeded download, since every caller has already found its file gone.</summary>
-    private bool IsEligible(string trackKey) =>
-        StageEligibility.Allows(jobs, trackKey, JobStage.Download, maxStrikes, retrySucceeded: true)
-        && !IsWaitingOut(trackKey);
+    private bool IsEligible(string trackKey) => WhyNotEligible(trackKey) is null;
+
+    private SkipCause? WhyNotEligible(string trackKey) =>
+        StageEligibility.WhyNot(jobs, trackKey, JobStage.Download, maxStrikes, retrySucceeded: true)
+        ?? (IsWaitingOut(trackKey) ? SkipCause.WaitingOutBackoff : null);
 
     private bool IsWaitingOut(string trackKey) =>
         jobs.TryGet(trackKey, JobStage.Download, out var job)

@@ -68,15 +68,27 @@ public static class StageEligibility
         JobStage stage,
         int maxStrikes,
         bool retrySucceeded
+    ) => WhyNot(jobs, trackKey, stage, maxStrikes, retrySucceeded) is null;
+
+    /// <summary>What stops the stage attempting the track, or null when it may.</summary>
+    public static SkipCause? WhyNot(
+        JobStore jobs,
+        string trackKey,
+        JobStage stage,
+        int maxStrikes,
+        bool retrySucceeded
     ) =>
         !jobs.TryGet(trackKey, stage, out var job)
-        || job.Status switch
-        {
-            JobStatus.Succeeded => retrySucceeded,
-            // Something is on it — or a previous crateside was, and it is being adopted.
-            JobStatus.Queued or JobStatus.Running or JobStatus.AwaitingPerson => false,
-            // Canceling is the user's call, not the track's fault, so it is simply next again.
-            JobStatus.Canceled or JobStatus.Held => true,
-            _ => job.Strikes < maxStrikes && !IsPermanent(job, out _),
-        };
+            ? null
+            : job.Status switch
+            {
+                JobStatus.Succeeded => retrySucceeded ? null : SkipCause.AlreadyDone,
+                // Something is on it — or a previous crateside was, and it is being adopted.
+                JobStatus.Queued or JobStatus.Running => SkipCause.InFlight,
+                JobStatus.AwaitingPerson => SkipCause.AwaitingPerson,
+                // Canceling is the user's call, not the track's fault, so it is simply next again.
+                JobStatus.Canceled or JobStatus.Held => null,
+                _ when IsPermanent(job, out _) => SkipCause.FailedPermanently,
+                _ => job.Strikes < maxStrikes ? null : SkipCause.GaveUp,
+            };
 }

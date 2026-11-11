@@ -19,35 +19,41 @@ public sealed class HandoffSelector(
         trackKey = null!;
         stems = [];
 
-        if (!Directory.Exists(paths.StemsKeyIdentified))
+        var next = Groups().FirstOrDefault(g => WhyNot(g.Key) is null);
+
+        if (next is null)
             return false;
 
-        var byTrackKey = Directory
-            .EnumerateFiles(paths.StemsKeyIdentified)
-            .Select(StemTagReader.Read)
-            .OfType<StemTags>()
-            .Where(t => t.SourceTrackKey is { Length: > 0 })
-            .GroupBy(t => t.SourceTrackKey!, StringComparer.Ordinal)
-            .FirstOrDefault(g => IsEligible(g.Key));
-
-        if (byTrackKey is null)
-            return false;
-
-        trackKey = byTrackKey.Key;
-        stems = [.. byTrackKey.Select(t => t.Path)];
+        trackKey = next.Key;
+        stems = [.. next.Select(t => t.Path)];
 
         return true;
     }
 
-    private bool IsEligible(string trackKey) =>
-        SeparationOwesNothingMore(trackKey)
-        && StageEligibility.Allows(
-            jobs,
-            trackKey,
-            JobStage.Handoff,
-            maxStrikes,
-            retrySucceeded: true
-        );
+    /// <summary>Every track with stems waiting on disk, with why the handoff will or will not take it.</summary>
+    public IReadOnlyList<Decision> Decisions() =>
+        [.. Groups().Select(g => new Decision(g.Key, g.Key, Selection.From(WhyNot(g.Key))))];
+
+    private IEnumerable<IGrouping<string, StemTags>> Groups() =>
+        Directory.Exists(paths.StemsKeyIdentified)
+            ? Directory
+                .EnumerateFiles(paths.StemsKeyIdentified)
+                .Select(StemTagReader.Read)
+                .OfType<StemTags>()
+                .Where(t => t.SourceTrackKey is { Length: > 0 })
+                .GroupBy(t => t.SourceTrackKey!, StringComparer.Ordinal)
+            : [];
+
+    private SkipCause? WhyNot(string trackKey) =>
+        !SeparationOwesNothingMore(trackKey)
+            ? SkipCause.SeparationNotSettled
+            : StageEligibility.WhyNot(
+                jobs,
+                trackKey,
+                JobStage.Handoff,
+                maxStrikes,
+                retrySucceeded: true
+            );
 
     /// <summary>
     /// Whether what is on disk for this track is all there is going to be: not while its

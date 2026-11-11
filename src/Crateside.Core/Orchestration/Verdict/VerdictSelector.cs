@@ -42,6 +42,20 @@ public sealed class VerdictSelector(
         return next is not null;
     }
 
+    /// <summary>Every outstanding track, with why intake judging will or will not take it.</summary>
+    public IReadOnlyList<Decision> Decisions(WorkListsView view, KeyLedger ledger) =>
+        [
+            .. view.Outstanding.Select(i => new Decision(
+                i.TrackKey,
+                i.Title,
+                Selection.From(
+                    i.IsBackfill && i.TrackKey != view.Bumped
+                        ? SkipCause.BackfillWaitsForSpendDown
+                        : WhyNotJudgeable(i, ledger)
+                )
+            )),
+        ];
+
     /// <summary>This one track, if it is outstanding and judgeable.</summary>
     public bool TryPick(WorkListsView view, KeyLedger ledger, string trackKey, out WorkItem next)
     {
@@ -109,29 +123,39 @@ public sealed class VerdictSelector(
         return next is not null;
     }
 
-    private bool IsJudgeable(WorkItem i, KeyLedger ledger) =>
-        !i.IsUnavailable
-        && workingSet.HasEvidence(i.TrackKey)
-        && !ledger.HasRunFor(i.TrackKey)
-        && (
-            jobs.TryGet(i.TrackKey, JobStage.Verdict, out var job)
-            && job.Status is JobStatus.AwaitingPerson
-                ? _hasJudge
-                : StageEligibility.Allows(
-                    jobs,
-                    i.TrackKey,
-                    JobStage.Verdict,
-                    maxStrikes,
-                    // A prior success here produced nothing that survived the ledger check, so
-                    // retrying is the only way the track moves.
-                    retrySucceeded: true
-                )
-        )
-        // Last, because it opens a file: a swap copies the verdict forward, so judging poor
-        // audio first would restate that key onto the better upload rather than re-derive it.
-        && workingSet.AcquisitionFor(i.TrackKey)?.Stops is not true
-        && LookalikeOf(i, ledger, names?.Read().GetValueOrDefault(i.TrackKey)?.DisplayTitle)
-            is null;
+    private bool IsJudgeable(WorkItem i, KeyLedger ledger) => WhyNotJudgeable(i, ledger) is null;
+
+    private SkipCause? WhyNotJudgeable(WorkItem i, KeyLedger ledger) =>
+        i.IsUnavailable ? SkipCause.Unavailable
+        : !workingSet.HasEvidence(i.TrackKey) ? SkipCause.NoEvidence
+        : ledger.HasRunFor(i.TrackKey) ? SkipCause.AlreadyJudged
+        : WhyNotAttempted(i.TrackKey)
+            // Last, because it opens a file: a swap copies the verdict forward, so judging poor
+            // audio first would restate that key onto the better upload rather than re-derive it.
+            ?? (
+                workingSet.AcquisitionFor(i.TrackKey)?.Stops is true
+                    ? SkipCause.PoorSourceAwaitingSwap
+                : LookalikeOf(i, ledger, names?.Read().GetValueOrDefault(i.TrackKey)?.DisplayTitle)
+                    is not null
+                    ? SkipCause.LooksLikeJudgedSong
+                : null
+            );
+
+    private SkipCause? WhyNotAttempted(string trackKey) =>
+        jobs.TryGet(trackKey, JobStage.Verdict, out var job)
+        && job.Status is JobStatus.AwaitingPerson
+            ? _hasJudge
+                ? null
+                : SkipCause.NoJudgeConfigured
+            : StageEligibility.WhyNot(
+                jobs,
+                trackKey,
+                JobStage.Verdict,
+                maxStrikes,
+                // A prior success here produced nothing that survived the ledger check, so
+                // retrying is the only way the track moves.
+                retrySucceeded: true
+            );
 
     /// <summary>
     /// The judged song this track's name, or StemForge's name for it once resolved, looks like,

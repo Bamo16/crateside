@@ -148,6 +148,15 @@ public sealed class CratesideApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_waiting_track_a_stage_passes_over_is_listed_with_the_reason()
+    {
+        var stages = await GetAsync("/api/stages");
+        var waiting = Assert.Single(stages["stages"]!.AsArray())!["waiting"]!.AsArray();
+
+        Assert.Equal("AlreadyDone", (string?)Assert.Single(waiting)!["reason"]);
+    }
+
+    [Fact]
     public async Task A_stretch_marked_as_unfit_for_measuring_is_listed_by_video_ID_in_seconds_of_the_source()
     {
         var listed = await GetAsync("/api/measuring-exclusions");

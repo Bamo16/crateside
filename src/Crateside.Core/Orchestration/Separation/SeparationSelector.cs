@@ -19,10 +19,26 @@ public sealed class SeparationSelector(
     /// </summary>
     public IReadOnlyList<WorkItem> Line(WorkListsView view) =>
         [
-            .. view
-                .AwaitingSeparation.Where(item => !item.IsUnavailable && IsEligible(item))
-                .DistinctBy(item => item.TrackKey, StringComparer.Ordinal),
+            .. Candidates(view)
+                .Where(candidate => candidate.Selection is Selection.Picked)
+                .Select(candidate => candidate.Item),
         ];
+
+    /// <summary>Every track waiting for separation, once each, with why it is or is not in the line.</summary>
+    public IReadOnlyList<Decision> Decisions(WorkListsView view) =>
+        [
+            .. Candidates(view)
+                .Select(candidate => new Decision(
+                    candidate.Item.TrackKey,
+                    candidate.Item.Title,
+                    candidate.Selection
+                )),
+        ];
+
+    private IEnumerable<(WorkItem Item, Selection Selection)> Candidates(WorkListsView view) =>
+        view
+            .AwaitingSeparation.DistinctBy(item => item.TrackKey, StringComparer.Ordinal)
+            .Select(item => (item, Selection.From(WhyNot(item))));
 
     /// <summary>
     /// The next judged track to separate, even LOW or WITHHELD: oldest-added first, skipping
@@ -46,12 +62,14 @@ public sealed class SeparationSelector(
     /// Never retries a success unasked, unlike the other selectors: stems gone after one were most
     /// likely deleted on purpose. A re-cut or swap since then is the asking (#50).
     /// </summary>
-    private bool IsEligible(WorkItem item) =>
-        StageEligibility.Allows(
+    private SkipCause? WhyNot(WorkItem item) =>
+        item.IsUnavailable ? SkipCause.Unavailable
+        : CutRequests.OwesCut(item, jobs) ? null
+        : StageEligibility.WhyNot(
             jobs,
             item.TrackKey,
             JobStage.Separation,
             maxStrikes,
             retrySucceeded: false
-        ) || CutRequests.OwesCut(item, jobs);
+        );
 }
