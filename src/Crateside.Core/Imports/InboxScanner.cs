@@ -22,6 +22,7 @@ public sealed class InboxScanner(TrackIntake intake, CratesidePaths paths, TimeP
 
         List<IntakeOutcome> taken = [];
         List<string> left = [];
+        HashSet<string> consumedFrom = [];
         var now = time.GetUtcNow();
 
         foreach (
@@ -60,7 +61,13 @@ public sealed class InboxScanner(TrackIntake intake, CratesidePaths paths, TimeP
                 if (outcome is IntakeOutcome.Refused)
                     _unreadable.Add(file);
             }
+
+            if (!File.Exists(file) && Path.GetDirectoryName(file) is { } folder)
+                consumedFrom.Add(folder);
         }
+
+        foreach (var folder in consumedFrom)
+            RemoveEmptied(folder);
 
         return new InboxScan(taken, left);
     }
@@ -72,6 +79,35 @@ public sealed class InboxScanner(TrackIntake intake, CratesidePaths paths, TimeP
         && Recipes.TryParse(folder, out var recipe)
             ? recipe
             : null;
+
+    /// <summary>Removes a folder the intake emptied and its emptied parents, never the inbox or a recipe folder.</summary>
+    private void RemoveEmptied(string folder)
+    {
+        while (IsRemovable(folder))
+        {
+            try
+            {
+                if (Directory.EnumerateFileSystemEntries(folder).Any())
+                    return;
+
+                Directory.Delete(folder);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return;
+            }
+
+            folder = Path.GetDirectoryName(folder)!;
+        }
+    }
+
+    private bool IsRemovable(string folder) =>
+        Path.GetRelativePath(paths.Inbox, folder).Split(Path.DirectorySeparatorChar) switch
+        {
+            ["."] or [".." or ".", ..] => false, // the inbox itself, or outside it
+            [var top] => !Recipes.TryParse(top, out _),
+            _ => true,
+        };
 
     private bool IsReady(string file, DateTimeOffset now)
     {
