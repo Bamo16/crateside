@@ -325,6 +325,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         );
 
         _app = builder.Build();
+        _app.UseCratesideApiBindingErrors();
         _app.MapCratesideApi();
         _app.MapCoverArt();
         await _app.StartAsync(TestContext.Current.CancellationToken);

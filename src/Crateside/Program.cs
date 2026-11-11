@@ -37,6 +37,7 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+app.UseCratesideApiBindingErrors();
 app.MapCratesideApi();
 app.MapCoverArt();
 

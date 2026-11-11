@@ -24,6 +24,8 @@ public static class CratesideApi
             options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
             options.SerializerOptions.IncludeFields = true;
         });
+        // Binding failures throw in every environment, so ApiBindingErrors answers them with a body.
+        services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = true);
         services.AddOpenApi(options =>
             options.AddDocumentTransformer(
                 (document, _, _) =>
