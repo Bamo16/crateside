@@ -1,11 +1,11 @@
 # The API
 
-crateside serves what its pages show as read-only JSON, so a script or an agent can ask what state a
+crateside serves what its pages show as JSON, so a script or an agent can ask what state a
 track is in without reading `ledger.db` (which holds the person's decisions too), `jobs.jsonl`, the stores under `%APPDATA%\crateside` and
 the `.asd` sidecars one by one. It is on the app's own listener, `http://localhost:5027` when started
 from the `run` task, and like the pages it answers on this machine only.
 
-Nothing here writes. Each endpoint calls the services the pages use and serializes their result, so
+Reads are read-only; the only writes are named action endpoints, such as the re-judge below. Each endpoint calls the services the pages use and serializes their result, so
 the API and the pages cannot disagree. A request first rebuilds the rows if they are more than 30
 seconds old, as opening a page does.
 
@@ -610,6 +610,38 @@ when). `waiting` is in the stage's order; `position` counts the picked ones. `re
 `PoorSourceAwaitingSwap`, `LooksLikeJudgedSong`, `BackfillWaitsForSpendDown`,
 `SeparationNotSettled`. `Download` covers the audio pass only (kept and added sources are not
 listed), and `Verdict` is intake judging, not the spend-down's re-judges.
+
+## `POST /api/tracks/{trackKey}/rejudge`
+
+Asks for another judgment of a track, recorded under who asked (#172). It goes through the services
+the song page's "Judge from these bars" uses, so the page and the API cannot diverge.
+
+```json
+{
+  "requestedBy": "agent: coordination",
+  "reason": "judged on the wrong stretches (ADR 0072)",
+  "windows": [{ "start": "-4", "end": "17", "label": "verse" }, { "start": 95.5, "end": 130 }]
+}
+```
+
+- **`requestedBy`** is required free text (`agent: coordination`, `maintainer`); blank is a 400.
+  It is the source of the line in the song's activity and `actions.jsonl` (`by`). The song page's own
+  buttons stay "you".
+- **`reason`** is optional and shown beside it.
+- **No `windows`**: the song joins the re-judge queue (`rejudge.json`) and is judged by the spend-down
+  when it is idle, as a re-judge from a correction is. The answer (`mode: "Queued"`) gives the `song`,
+  the `cutoff` (a run from then on settles the entry), its `position` in the queue, and `whyNot`, the
+  `SkipCause` the Verdict stage would pass it over for as things stand (`/api/stages` names the
+  causes). A track with no earlier judgment is a 409.
+- **`windows`** judge those stretches now, as the page's form does, even while judging is paused
+  or held. `start` and `end` are both bars (strings, as typed in the form: `"106"`, `"-4"`,
+  `"155.1.1"`, `"start"`, `"end"`; the end is where the selection stops, so `"65"`–`"66"` is bar 65)
+  or both seconds (numbers). Bars need a warp; a window that does not read is a 400 naming it. The
+  answer (`mode: "Started"`) gives each window in seconds. A run already going for the track is a 409.
+
+A judge that is not configured is a 409 and an unknown track a 404. Each is a judge session of about
+37k tokens, so an agent asks only when the maintainer has OK'd re-judging that track, or the track's
+earlier judging had a real flaw it can name.
 
 ## `GET /art/{trackKey}`
 

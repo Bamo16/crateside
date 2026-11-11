@@ -131,7 +131,7 @@ public static class TrackActivity
             new ActivityEntry
             {
                 At = action.At,
-                Source = You,
+                Source = action.By ?? You,
                 Message = action.Detail is { Length: > 0 } detail
                     ? $"{action.Kind.Humanize(LetterCasing.LowerCase)}: {detail}"
                     : action.Kind.Humanize(LetterCasing.LowerCase),

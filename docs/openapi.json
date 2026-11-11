@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "crateside",
-    "description": "Read-only JSON over what crateside's pages show, on localhost only. See docs/api.md.",
+    "description": "JSON over what crateside's pages show and a few named actions, on localhost only. See docs/api.md.",
     "version": "1.0.0"
   },
   "paths": {
@@ -121,6 +121,58 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TrackDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tracks/{trackKey}/rejudge": {
+      "post": {
+        "tags": [
+          "Tracks"
+        ],
+        "summary": "Queue a re-judge of a track, or judge chosen stretches of it now, recorded under who asked.",
+        "operationId": "RejudgeTrack",
+        "parameters": [
+          {
+            "name": "trackKey",
+            "in": "path",
+            "description": "The track key, as in /song/{trackKey}.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejudgeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RejudgeAccepted"
                 }
               }
             }
@@ -1413,6 +1465,7 @@
         },
         "description": "One appended line: a single state change to a job. Lines are never edited or removed, so the\r\nfile is a history and TrackJob is the fold over it."
       },
+      "JsonElement": { },
       "JudgeRefusal": {
         "required": [
           "reason",
@@ -1839,6 +1892,160 @@
           }
         },
         "description": "A downbeat as the filter read it, in seconds into the file."
+      },
+      "RejudgeAccepted": {
+        "required": [
+          "mode",
+          "videoId",
+          "requestedBy",
+          "reason",
+          "windows"
+        ],
+        "type": "object",
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/RejudgeMode"
+          },
+          "videoId": {
+            "type": "string"
+          },
+          "song": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "requestedBy": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "cutoff": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Queued: a run from this moment on settles the entry.",
+            "format": "date-time"
+          },
+          "position": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "Queued: its place among the songs owed a re-judge, from 1.",
+            "format": "int32"
+          },
+          "whyNot": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Queued: what stops the verdict stage taking it up as things stand, as in `/api/stages`.",
+                "$ref": "#/components/schemas/SkipCause"
+              }
+            ]
+          },
+          "windows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RejudgeWindowView"
+            },
+            "description": "Started: the windows the run was given, in seconds."
+          }
+        }
+      },
+      "RejudgeMode": {
+        "enum": [
+          "Queued",
+          "Started"
+        ]
+      },
+      "RejudgeRequest": {
+        "type": "object",
+        "properties": {
+          "requestedBy": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Who is asking, as free text: `agent: coordination`, `maintainer`."
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "windows": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/RejudgeWindow"
+            }
+          }
+        }
+      },
+      "RejudgeWindow": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "end": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "One stretch to judge: both ends bars in Live's positions (strings) or both seconds (numbers)."
+      },
+      "RejudgeWindowView": {
+        "required": [
+          "startSeconds",
+          "endSeconds"
+        ],
+        "type": "object",
+        "properties": {
+          "startSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "endSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "bars": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
       },
       "Release": {
         "type": "object",
