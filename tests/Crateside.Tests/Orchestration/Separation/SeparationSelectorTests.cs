@@ -280,4 +280,58 @@ public sealed class SeparationSelectorTests : IDisposable
 
         Assert.Equal(StemDestination.KeyIdentified, order.Destination);
     }
+
+    [Fact]
+    public void A_track_already_separated_with_untagged_stems_is_listed_as_not_picked()
+    {
+        Jobs.Record("aaaaaaaaaaa", JobStage.Separation, JobStatus.Succeeded);
+
+        var decisions = new SeparationSelector(Jobs).Decisions(
+            View(Item("aaaaaaaaaaa"), Item("bbbbbbbbbbb"))
+        );
+
+        Assert.Equal(
+            new Selection.Skipped(SkipCause.AlreadyDone),
+            decisions.Single(d => d.TrackKey is "aaaaaaaaaaa").Selection
+        );
+        Assert.IsType<Selection.Picked>(
+            decisions.Single(d => d.TrackKey is "bbbbbbbbbbb").Selection
+        );
+    }
+
+    [Fact]
+    public void Each_reason_a_separation_is_skipped_is_named()
+    {
+        Jobs.Record("aaaaaaaaaaa", JobStage.Separation, JobStatus.Running);
+
+        for (var i = 0; i < SeparationSelector.DefaultMaxStrikes; i++)
+        {
+            Jobs.Record("bbbbbbbbbbb", JobStage.Separation, JobStatus.Failed, error: "cuda");
+        }
+
+        var decisions = new SeparationSelector(Jobs).Decisions(
+            View(Item("aaaaaaaaaaa"), Item("bbbbbbbbbbb"), Item("ccccccccccc", unavailable: true))
+        );
+
+        Assert.Equal(
+            [SkipCause.InFlight, SkipCause.GaveUp, SkipCause.Unavailable],
+            decisions.Select(d => ((Selection.Skipped)d.Selection).Cause)
+        );
+    }
+
+    [Fact]
+    public void The_line_is_exactly_the_decisions_that_were_picked()
+    {
+        Jobs.Record("aaaaaaaaaaa", JobStage.Separation, JobStatus.Succeeded);
+        var view = View(Item("aaaaaaaaaaa"), Item("bbbbbbbbbbb"));
+        var selector = new SeparationSelector(Jobs);
+
+        Assert.Equal(
+            selector
+                .Decisions(view)
+                .Where(d => d.Selection is Selection.Picked)
+                .Select(d => d.TrackKey),
+            selector.Line(view).Select(item => item.TrackKey)
+        );
+    }
 }

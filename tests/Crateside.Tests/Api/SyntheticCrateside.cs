@@ -285,6 +285,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         builder.Services.AddCratesideApi();
         builder.Services.AddSingleton(_tracks);
         builder.Services.AddSingleton(details);
+        builder.Services.AddSingleton<IStagesReader>(new CannedStages());
         builder.Services.AddSingleton(new MeasuringExclusionsReader(_tracks, exclusions));
         builder.Services.AddSingleton(
             new CoverArt(
@@ -329,4 +330,34 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
             },
             IsDefaultClipSaved = true,
         };
+}
+
+/// <summary>Stands in for the stages reader, which needs the whole queue to build.</summary>
+internal sealed class CannedStages : IStagesReader
+{
+    public Task<StagesView> ReadAsync(CancellationToken ct) =>
+        Task.FromResult(
+            new StagesView
+            {
+                Stages =
+                [
+                    new StageView
+                    {
+                        Stage = JobStage.Separation,
+                        State = StageState.Idle,
+                        Running = [],
+                        Waiting =
+                        [
+                            new StageTrack
+                            {
+                                VideoId = "aaaaaaaaaaa",
+                                Title = "Done already",
+                                Picked = false,
+                                Reason = SkipCause.AlreadyDone,
+                            },
+                        ],
+                    },
+                ],
+            }
+        );
 }

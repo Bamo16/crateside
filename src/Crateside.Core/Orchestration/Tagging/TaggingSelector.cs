@@ -31,14 +31,7 @@ public sealed class TaggingSelector(
         trackKey = null!;
         stems = [];
 
-        var next = TagAudit
-            .Run(
-                ledger,
-                [AuditRoot.Written(paths.StagingFolder)],
-                TagAudit.Using(index, folderInfo)
-            )
-            .Untagged.GroupBy(s => s.SourceTrackKey, StringComparer.Ordinal)
-            .FirstOrDefault(g => IsEligible(g.Key));
+        var next = Groups(ledger).FirstOrDefault(g => WhyNot(g.Key) is null);
 
         if (next is null)
             return false;
@@ -49,6 +42,19 @@ public sealed class TaggingSelector(
         return true;
     }
 
-    private bool IsEligible(string trackKey) =>
-        StageEligibility.Allows(jobs, trackKey, JobStage.Tagging, maxStrikes, retrySucceeded: true);
+    /// <summary>Every track with staged files owing a key, with why tagging will or will not take it.</summary>
+    public IReadOnlyList<Decision> Decisions(KeyLedger ledger) =>
+        [.. Groups(ledger).Select(g => new Decision(g.Key, g.Key, Selection.From(WhyNot(g.Key))))];
+
+    private IEnumerable<IGrouping<string, TaggedStem>> Groups(KeyLedger ledger) =>
+        TagAudit
+            .Run(
+                ledger,
+                [AuditRoot.Written(paths.StagingFolder)],
+                TagAudit.Using(index, folderInfo)
+            )
+            .Untagged.GroupBy(s => s.SourceTrackKey, StringComparer.Ordinal);
+
+    private SkipCause? WhyNot(string trackKey) =>
+        StageEligibility.WhyNot(jobs, trackKey, JobStage.Tagging, maxStrikes, retrySucceeded: true);
 }

@@ -577,6 +577,40 @@ means leave out each stretch, in seconds of the source file. `typed` is what the
 (Live's bars, or `m:ss` for a track with no warp) and is for display. The same record is in
 `GET /api/tracks/{trackKey}` at `records.measuringExclusions`.
 
+## `GET /api/stages`
+
+Each worker (`Download`, `Evidence`, `Verdict`, `Separation`, `Handoff`, `Tagging`) with its state,
+and for every track counted as waiting on it, whether its selector will take it and, if not, why
+(#168). The selectors compute this themselves and the workers, the Tracks page's GPU line and this
+endpoint all read the same decision, so they cannot disagree.
+
+```json
+{
+  "stages": [
+    {
+      "stage": "Separation",
+      "state": "Idle",
+      "running": [],
+      "next": { "videoId": "Zx3TrackB02", "title": "…", "picked": true, "position": 1 },
+      "waiting": [
+        { "videoId": "Zx3TrackA01", "title": "…", "picked": false, "reason": "AlreadyDone" },
+        { "videoId": "Zx3TrackB02", "title": "…", "picked": true, "position": 1 }
+      ]
+    }
+  ]
+}
+```
+
+`state` is `Idle`, `Running` (a job is open), `Paused` (separation and judging, as the person left
+them) or `Held` (judging refused by its endpoint; `heldBecause` and `heldUntil` say why and until
+when). `waiting` is in the stage's order; `position` counts the picked ones. `reason` is a
+`SkipCause`: `Unavailable`, `AlreadyDone`, `InFlight`, `AwaitingPerson`, `GaveUp`,
+`FailedPermanently`, `WaitingOutBackoff`, `NoAudioYet`, `AlreadyHasAudio`, `NotFetchable`,
+`SweptUp`, `AlreadyHasEvidence`, `Downloading`, `NoEvidence`, `AlreadyJudged`, `NoJudgeConfigured`,
+`PoorSourceAwaitingSwap`, `LooksLikeJudgedSong`, `BackfillWaitsForSpendDown`,
+`SeparationNotSettled`. `Download` covers the audio pass only (kept and added sources are not
+listed), and `Verdict` is intake judging, not the spend-down's re-judges.
+
 ## `GET /art/{trackKey}`
 
 A track's cover as an image, outside the JSON schema and the OpenAPI document. `size=small` (the

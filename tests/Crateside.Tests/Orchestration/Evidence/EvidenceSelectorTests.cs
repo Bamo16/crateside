@@ -191,4 +191,28 @@ public sealed class EvidenceSelectorTests : IDisposable
 
         Assert.Equal("bbbbbbbbbbb", next.TrackKey);
     }
+
+    [Fact]
+    public void Decisions_name_why_each_outstanding_track_is_or_is_not_taken()
+    {
+        GiveEvidence("aaaaaaaaaaa");
+        var view = View(
+            Item("aaaaaaaaaaa"),
+            Item("bbbbbbbbbbb"),
+            Item("ccccccccccc", unavailable: true)
+        );
+        File.Delete(Directory.EnumerateFiles(Set.Prepare("bbbbbbbbbbb")).Single());
+        Jobs.Record("ddddddddddd", JobStage.Evidence, JobStatus.Running);
+
+        var decisions = new EvidenceSelector(Jobs, Set).Decisions(view);
+
+        Assert.Equal(
+            [
+                new Selection.Skipped(SkipCause.AlreadyHasEvidence),
+                new Selection.Skipped(SkipCause.NoAudioYet),
+                new Selection.Skipped(SkipCause.Unavailable),
+            ],
+            decisions.Select(d => d.Selection)
+        );
+    }
 }

@@ -6,6 +6,27 @@
     "version": "1.0.0"
   },
   "paths": {
+    "/api/stages": {
+      "get": {
+        "tags": [
+          "Stages"
+        ],
+        "summary": "Each worker's state and, for every track waiting on it, whether the selector picks it and why not.",
+        "operationId": "ListStages",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StagesView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/measuring-exclusions": {
       "get": {
         "tags": [
@@ -1283,9 +1304,9 @@
           "Verdict",
           "Separation",
           "Handoff",
-          "Tagging",
-          null
-        ]
+          "Tagging"
+        ],
+        "description": "Which kind of work a job is. Named separately because each contends for a different scarce\r\nresource: nothing, Claude quota, or the GPU."
       },
       "JobStatus": {
         "enum": [
@@ -2405,6 +2426,31 @@
         },
         "description": "What one site gave for a song."
       },
+      "SkipCause": {
+        "enum": [
+          "Unavailable",
+          "AlreadyDone",
+          "InFlight",
+          "AwaitingPerson",
+          "GaveUp",
+          "FailedPermanently",
+          "WaitingOutBackoff",
+          "NoAudioYet",
+          "AlreadyHasAudio",
+          "NotFetchable",
+          "SweptUp",
+          "AlreadyHasEvidence",
+          "Downloading",
+          "NoEvidence",
+          "AlreadyJudged",
+          "NoJudgeConfigured",
+          "PoorSourceAwaitingSwap",
+          "LooksLikeJudgedSong",
+          "BackfillWaitsForSpendDown",
+          "SeparationNotSettled",
+          null
+        ]
+      },
       "SourceKind": {
         "enum": [
           "Unknown",
@@ -2500,6 +2546,124 @@
           }
         },
         "description": "What one pass did to one song, in about eighty characters."
+      },
+      "StageState": {
+        "enum": [
+          "Idle",
+          "Running",
+          "Paused",
+          "Held"
+        ]
+      },
+      "StagesView": {
+        "required": [
+          "stages"
+        ],
+        "type": "object",
+        "properties": {
+          "stages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StageView"
+            }
+          }
+        }
+      },
+      "StageTrack": {
+        "required": [
+          "videoId",
+          "title",
+          "picked"
+        ],
+        "type": "object",
+        "properties": {
+          "videoId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "picked": {
+            "type": "boolean",
+            "description": "Whether the stage's selector will take it, in order."
+          },
+          "position": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "Its place in the stage's line when picked.",
+            "format": "int32"
+          },
+          "reason": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Why the selector passes it over, when it does.",
+                "$ref": "#/components/schemas/SkipCause"
+              }
+            ]
+          }
+        }
+      },
+      "StageView": {
+        "required": [
+          "stage",
+          "state",
+          "running",
+          "waiting"
+        ],
+        "type": "object",
+        "properties": {
+          "stage": {
+            "$ref": "#/components/schemas/JobStage"
+          },
+          "state": {
+            "$ref": "#/components/schemas/StageState"
+          },
+          "heldBecause": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "heldUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "running": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The video IDs the stage has a job open for."
+          },
+          "next": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "What the stage would take next, when it is allowed to run.",
+                "$ref": "#/components/schemas/StageTrack"
+              }
+            ]
+          },
+          "waiting": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StageTrack"
+            },
+            "description": "Every track counted as waiting for this stage, picked or not."
+          }
+        }
       },
       "StarterBar": {
         "enum": [
@@ -4771,6 +4935,9 @@
     }
   },
   "tags": [
+    {
+      "name": "Stages"
+    },
     {
       "name": "Tracks"
     }
