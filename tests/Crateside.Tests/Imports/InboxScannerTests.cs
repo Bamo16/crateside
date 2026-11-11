@@ -135,6 +135,38 @@ public sealed class InboxScannerTests : IDisposable
     }
 
     [Fact]
+    public void A_subfolder_the_intake_emptied_is_removed_but_never_the_inbox_or_a_recipe_folder()
+    {
+        IntakeWorld.TaggedFlac(
+            Path.Combine(Inbox, "Instrumental", "Album", "disc 1"),
+            "a.flac",
+            seed: "1"
+        );
+        IntakeWorld.TaggedFlac(Path.Combine(Inbox, "Some Album"), "b.flac", seed: "2");
+
+        SettleAndScan();
+
+        Assert.True(Directory.Exists(Inbox));
+        Assert.True(Directory.Exists(Path.Combine(Inbox, "Instrumental")));
+        Assert.False(Directory.Exists(Path.Combine(Inbox, "Instrumental", "Album")));
+        Assert.False(Directory.Exists(Path.Combine(Inbox, "Some Album")));
+    }
+
+    [Fact]
+    public void A_subfolder_that_still_holds_something_is_kept()
+    {
+        var album = Path.Combine(Inbox, "Instrumental", "Album");
+        var note = Path.Combine(album, "cover.txt");
+
+        IntakeWorld.TaggedFlac(album, "a.flac", seed: "1");
+        File.WriteAllText(note, "x");
+
+        SettleAndScan();
+
+        Assert.True(File.Exists(note));
+    }
+
+    [Fact]
     public void An_unreadable_audio_file_is_reported_once_and_left()
     {
         var file = Path.Combine(Directory.CreateDirectory(Inbox).FullName, "broken.flac");
