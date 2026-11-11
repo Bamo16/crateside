@@ -214,6 +214,12 @@ public static class ServiceRegistration
 
     private static IServiceCollection AddBeats(this IServiceCollection services)
     {
+        services.AddHttpClient(
+            HttpBuildDownloader.ClientName,
+            client => client.Timeout = TimeSpan.FromMinutes(5)
+        );
+        services.AddSingleton<IBuildDownloader, HttpBuildDownloader>();
+        services.AddSingleton<BuildFetcher>();
         services.AddSingleton<KnownBuilds>();
         services.AddSingleton<BeatReader>();
         // Unattended: beatdetect runs on the CPU and contends for nothing (#75, #76).

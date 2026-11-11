@@ -23,6 +23,10 @@ internal sealed class FakeFfmpegBuilds(string folder) : IProcessRunner
         return path;
     }
 
+    /// <summary>Makes the executable that will be at <paramref name="path"/> answer for the filter at that version.</summary>
+    public void Know(string path, FfmpegFilter filter, string version) =>
+        _builds[path] = (FfmpegBuild.NameOf(filter), version);
+
     public Task<ProcessOutcome> RunAsync(ProcessRequest request, CancellationToken ct = default) =>
         Task.FromResult(
             request.Arguments switch

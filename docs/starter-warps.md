@@ -58,8 +58,8 @@ replaces a lent warp or the maintainer's own.
    The beats are read on the upload's source on disk (the working set's download or the kept
    sample, from `source-index.json`) when there is one, else on that stem
    (`BeatReader.ReferenceFor`, [ADR 0065](adr/0065-the-starter-warps-beats-are-read-on-the-source.md)).
-2. **Read the reference's tempo with beatdetect.** The pinned build (`BeatdetectFfmpeg`, today
-   `1.4.0-0fc32ce`, the v1.4.0 release's code) runs `beatdetect=hpss=1` over the whole file, then over each full 30 s of it
+2. **Read the reference's tempo with beatdetect.** The pinned build (`builds.json`, which holds the
+   built-in v1.4.0 release unless the maintainer pinned another, [ADR 0093](adr/0093-the-filter-builds-are-fetched-by-pin-on-first-run.md)) runs `beatdetect=hpss=1` over the whole file, then over each full 30 s of it
    (`BeatReader`). Each file's reading is kept until that file changes, so a new reference (a source
    where the instrumental was) is read once, and one that falls back is read by its own. A reading from an older build than
    the pin is used until the beat worker reads the file again, which it does once every file with

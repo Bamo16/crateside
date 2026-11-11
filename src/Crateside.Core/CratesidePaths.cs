@@ -360,6 +360,13 @@ public sealed class CratesidePaths
         set;
     }
 
+    /// <summary>Where the ffmpeg builds crateside fetches are kept (#163).</summary>
+    public string ToolsFolder
+    {
+        get => field ?? Local("tools");
+        set;
+    }
+
     /// <summary>The encrypted playlist credential.</summary>
     public string TokensFolder
     {
