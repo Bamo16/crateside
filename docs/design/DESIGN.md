@@ -251,6 +251,9 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
 - **Tags.** Settled is one line with **Change**; unsettled, or Change pressed, shows every chip, and a
   pick folds it again. Not looked up yet is one quiet line with no button. Familiarity counts a
   derived value as settled, since it is what gets written.
+- **Meter** (#154, `MeterStrip`): in Tags, where the *Odd bars* mark was. A tag line `Meter` · the
+  Meter tags set in Live (`7/8, 3/4`) · `Set in Live`, or `The stems disagree` with what to do; with
+  no Meter tag, the *Odd bars* mark as before. A `Starter` line follows when the starter's fate is known.
 - **Destructive.** Set apart by position and the stronger rule, not color. Buttons stay `.outline`
   until the confirm step, which is `.danger`. Remove's confirm opens below its button.
 - **Editors.** Rename and swap replace their group's body; the label turns amber and the groups
