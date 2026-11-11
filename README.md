@@ -174,7 +174,7 @@ subscription each track costs about 37k tokens of session start-up, and backgrou
   ([docs/judge.md](docs/judge.md)), to judge what the rules leave. Without it (`Judge:Kind` is
   `None`), those tracks wait for you instead.
 - **Optional: a YouTube API key**, to read a playlist, and an OAuth client, to remove entries from
-  it ([docs/secrets.md](docs/secrets.md)). Without them, add tracks by URL on the Tracks page.
+  it ([docs/secrets.md](docs/secrets.md)). Without them, add tracks by URL on the Tracks page, a playlist URL included.
 
 ## Built for one workflow today
 
@@ -184,7 +184,7 @@ For now:
 - **Setup is manual.** Everything in Requirements is installed and configured by hand; there is no
   first-run setup yet.
 - **Intake is one track at a time**: the YouTube playlist, a video URL, a file, or a link to one
-  track elsewhere. A playlist cannot be pasted as a URL yet, and a file's key is taken only once
+  track elsewhere. A public or unlisted playlist URL is listed by StemForge's yt-dlp and every video added, with no API key (needs a `stemforge-cli` that has the `tools` command). A file's key is taken only once
   StemForge's `download` reports it (older builds of `stemforge-cli` need updating).
 - **It takes over part of Live's browser.** crateside sets Collections 2 to 7 on the files it
   manages, writes the `.asd` sidecars of staged stems, and keeps the clip gain of every saved
