@@ -40,6 +40,11 @@
 }
 
 .key-band {
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: url("/cursors/speaker.svg") 4 12, default;
     position: absolute;
     top: 3.5px;
     height: 44px;
@@ -49,14 +54,9 @@
     background: rgba(236, 231, 220, 0.03);
 }
 
-/* A band with a section's name opens what was found for that section. */
-.key-band.pickable {
-    cursor: pointer;
-}
-
-.key-band.pickable:hover,
+.key-band:hover,
 .key-band.picked {
-    border-color: var(--text);
+    border-color: rgba(236, 231, 220, 0.9);
 }
 
 .key-band.picked {

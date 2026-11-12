@@ -41,7 +41,7 @@ public sealed class PlayableFilesTests : IDisposable
             new CratesidePaths { StagingFolder = Staging, LibraryFolder = Library }
         );
 
-    private string Touch(string folder, string name)
+    private static string Touch(string folder, string name)
     {
         Directory.CreateDirectory(folder);
         var path = Path.Combine(folder, name);

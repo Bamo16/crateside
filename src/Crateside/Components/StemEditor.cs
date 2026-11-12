@@ -257,6 +257,39 @@ public sealed class StemEditor(
             await tracks.RefreshAsync(_circuit.Token);
         });
 
+    /// <summary>Makes the separation source a keeper in the plan and asks for the re-cut that copies it into the library (ADR 0094).</summary>
+    public Task KeepMixAsync(TrackRow row) =>
+        WorkAsync(async () =>
+        {
+            var wanted = PlanOf(row) with { KeepSource = true };
+
+            if (row.CanChangePlan || row.IsCutInFlight)
+            {
+                instructions.SetPlan(row.TrackKey, wanted);
+                _ticked[row.TrackKey] = wanted;
+                actions.Record(row.TrackKey, UserActionKind.PlanChanged, "keep the mix");
+                signals.Wake(JobStage.Download);
+            }
+            else
+            {
+                var outcome = recut.Apply(row.TrackKey, wanted, Presets, row.Inventory);
+
+                Problem = outcome.Problem;
+
+                if (outcome.Succeeded)
+                    actions.Record(
+                        row.TrackKey,
+                        UserActionKind.Recut,
+                        "kept the mix in the library",
+                        JobStage.Separation
+                    );
+
+                signals.Wake(JobStage.Download, JobStage.Separation);
+            }
+
+            await tracks.RefreshAsync(_circuit.Token);
+        });
+
     /// <summary>Makes what the plan already asks for and disk lacks, leaving the plan as it is.</summary>
     public Task CutShortfallAsync(TrackRow row) =>
         WorkAsync(async () =>
