@@ -326,6 +326,36 @@ public sealed class WorkingSetJanitorTests : IDisposable
         Assert.Equal(1, Janitor.Sweep());
     }
 
+    [Fact]
+    public void A_mix_fetched_again_for_playback_is_kept_a_day_even_when_retention_keeps_nothing()
+    {
+        GiveWorkingSet();
+        Judge();
+        WriteLibraryStem();
+        Retention.Remember(new SourceRetention { Days = 0 });
+        Set.RecordLeftStaging(TrackKey, _time.GetUtcNow(), adHoc: true);
+
+        _time.Advance(TimeSpan.FromMinutes(10));
+
+        Assert.Equal(0, Janitor.Sweep());
+
+        _time.Advance(TimeSpan.FromHours(24));
+
+        Assert.Equal(1, Janitor.Sweep());
+    }
+
+    [Fact]
+    public void A_pipeline_download_is_still_discarded_the_moment_retention_of_zero_days_says()
+    {
+        GiveWorkingSet();
+        Judge();
+        WriteLibraryStem();
+        Retention.Remember(new SourceRetention { Days = 0 });
+        Set.RecordLeftStaging(TrackKey, _time.GetUtcNow());
+
+        Assert.Equal(1, Janitor.Sweep());
+    }
+
     private void Judge() =>
         File.WriteAllText(
             Path.Combine(_directory, "runs.jsonl"),

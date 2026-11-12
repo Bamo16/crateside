@@ -67,7 +67,7 @@ public sealed class SourceBackfill(
 
             // First, so the janitor reads the folder as joined to the store and not as a judging run's.
             workingSet.Prepare(trackKey);
-            workingSet.RecordLeftStaging(trackKey, time.GetUtcNow());
+            workingSet.RecordLeftStaging(trackKey, time.GetUtcNow(), adHoc: true);
 
             var download = await downloads.RunAsync(
                 $"https://www.youtube.com/watch?v={trackKey}",

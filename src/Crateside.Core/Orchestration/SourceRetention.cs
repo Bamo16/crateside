@@ -15,8 +15,12 @@ public sealed record SourceRetention
     [JsonIgnore]
     public bool KeepsNothing => this is { Forever: false, Days: <= 0 };
 
-    public bool HasLapsed(DateTimeOffset since, DateTimeOffset now) =>
-        !Forever && now - since >= TimeSpan.FromDays(Days);
+    public bool HasLapsed(DateTimeOffset since, DateTimeOffset now, TimeSpan minimum = default) =>
+        LapsesAt(since, minimum) is { } lapses && now >= lapses;
+
+    /// <summary>When a download kept since <paramref name="since"/> goes, or null when it is kept for good.</summary>
+    public DateTimeOffset? LapsesAt(DateTimeOffset since, TimeSpan minimum = default) =>
+        Forever ? null : since + TimeSpan.FromDays(Math.Max(Days, minimum.TotalDays));
 }
 
 /// <summary>The retention the user chose in Settings, kept in <c>%APPDATA%\crateside\source-retention.json</c>.</summary>
