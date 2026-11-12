@@ -1,0 +1,346 @@
+@using Crateside.Core
+@using Crateside.Core.Playback
+@using Crateside.Core.Tracks
+@implements IAsyncDisposable
+@inject PlayableFiles Playable
+@inject MixStatus Mixes
+@inject MixFetches Fetches
+@inject IJSRuntime Js
+
+@{
+    var files = Playable.Of(Row);
+    var mix = Mixes.Of(Row);
+    var rows = Rows(files, mix);
+    var nothing = files.Count is 0;
+    var current = files.FirstOrDefault(file => file.Id == _fileId);
+    var failedName = _failure is { } failure ? NameOf(files, failure.Id) : null;
+}
+
+<div class="pbox" @ref="_root" data-player>
+    <div class="sentinel" data-sentinel></div>
+    <section class="player" aria-label="Player">
+        <div class="row">
+            <div class="pin-id">
+                <Cover TrackKey="@Row.TrackKey" Side="36" />
+                <span title="@Row.Title">@Row.Title</span>
+            </div>
+
+            <button class="play @(_loading ? "loading" : null)" data-play disabled="@nothing"
+                    aria-label="@(_playing ? "Pause" : "Play")" title="@(_playing ? "Pause (Space)" : "Play (Space)")">
+                @if (_loading)
+                {
+                    <span class="ring" aria-hidden="true"></span>
+                }
+                else if (_playing)
+                {
+                    <svg width="14" height="16" viewBox="0 0 14 16" aria-hidden="true"><rect x="1" y="1" width="4" height="14" rx="1" fill="currentColor"/><rect x="9" y="1" width="4" height="14" rx="1" fill="currentColor"/></svg>
+                }
+                else
+                {
+                    <svg width="14" height="16" viewBox="0 0 14 16" aria-hidden="true"><path d="M2 1.5v13l11-6.5z" fill="currentColor"/></svg>
+                }
+            </button>
+
+            @if (nothing)
+            {
+                <span class="ro mono empty">0:00.00 / –</span>
+            }
+            else
+            {
+                <span class="ro mono" data-pos></span>
+            }
+
+            <div class="picker">
+                <button class="outline pick" disabled="@nothing" aria-haspopup="listbox" aria-expanded="@_open"
+                        @onclick="() => _open = !_open">
+                    <span class="pick-name">@(nothing ? "Nothing to play" : current?.Name ?? "Choose a file")</span>
+                    <span aria-hidden="true">▾</span>
+                </button>
+                @if (_open)
+                {
+                    <div class="backdrop" @onclick="() => _open = false"></div>
+                    <div class="menu list" role="listbox" aria-label="File to play" @onkeydown="OnListKey">
+                        @foreach (var row in rows)
+                        {
+                            <div class="item @(row.Id == _fileId ? "chosen" : null) @(row.Disabled ? "off" : null)" role="option"
+                                 aria-selected="@(row.Id == _fileId)" aria-disabled="@row.Disabled"
+                                 tabindex="@(row.Disabled ? -1 : 0)"
+                                 @onclick="() => Pick(row)" @onkeydown="key => OnRowKey(key, row)">
+                                <span class="item-name">@row.Name</span>
+                                <span class="item-status @(row.Busy ? "busy" : null)">@row.Status</span>
+                                @if (row.Action is { } action)
+                                {
+                                    <button class="outline small" @onclick="action.Run" @onclick:stopPropagation="true">@action.Label</button>
+                                }
+                                @if (row.Note is { } note)
+                                {
+                                    <span class="item-note">@note</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <span class="sp"></span>
+
+            <div class="group">
+                <button class="tog" data-click aria-pressed="false" title="Click on the warp's grid">
+                    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M5 12.5 6.4 2h1.2L9 12.5zM7 9l3-5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+                    Click
+                </button>
+                <span class="faint" data-no-click hidden>no warp yet</span>
+                <span class="click-extras" data-click-extras hidden>
+                    <span class="sound">
+                        <button class="outline small" data-click-sound aria-haspopup="menu">
+                            <span class="snd-name">Classic</span> ▾
+                        </button>
+                        <span class="menu sounds" data-click-menu role="menu" hidden>
+                            @foreach (var sound in Sounds)
+                            {
+                                <button class="item" role="menuitemradio" data-sound="@sound.ToLowerInvariant()">@sound</button>
+                            }
+                        </span>
+                    </span>
+                    <input type="range" min="0" max="1" step="0.01" data-click-level aria-label="Click level" title="Click level" />
+                </span>
+            </div>
+
+            <div class="group sep">
+                <button class="tog" data-loop aria-pressed="false" title="Loop the view">
+                    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 6V5a2 2 0 0 1 2-2h7m0 0L9 1m2 2L9 5M12 8v1a2 2 0 0 1-2 2H3m0 0 2 2m-2-2 2-2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Loop
+                </button>
+                <span class="faint" data-loop-note hidden>needs a zoomed view</span>
+            </div>
+
+            <div class="group sep volume">
+                <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 5h2.5L8 2v10L4.5 9H2z" fill="currentColor"/><path d="M10 4.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                <input type="range" min="0" max="1" step="0.01" data-volume aria-label="Volume" title="Volume" />
+            </div>
+        </div>
+
+        @if (nothing)
+        {
+            <div class="wave empty">nothing downloaded yet</div>
+        }
+        else if (_failure is { } failed)
+        {
+            <div class="wave fail" role="alert">
+                <span>Couldn't load @failedName: @failed.Reason</span>
+                <button class="outline small" data-retry>Try again</button>
+            </div>
+        }
+        else if (_loading)
+        {
+            <div class="wave loading">Loading @(current?.Name ?? "the file")…</div>
+        }
+        else
+        {
+            <div class="wave" data-wave title="Play from here">
+                <svg class="shape" data-shape viewBox="0 0 832 20" preserveAspectRatio="none" aria-hidden="true"><path d="" /></svg>
+                <canvas data-wave-canvas hidden></canvas>
+                <span class="rest" data-rest></span>
+                <span class="mark" data-mark></span>
+            </div>
+        }
+    </section>
+</div>
+
+@code {
+    private static readonly string[] Sounds = ["Classic", "Click", "Wood"];
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    [Parameter, EditorRequired]
+    public required StemEditor Editor { get; set; }
+
+    private ElementReference _root;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<Player>? _self;
+    private bool _mounted;
+    private bool _playing;
+    private bool _loading;
+    private bool _open;
+    private string? _fileId;
+    private PlaybackFailure? _failure;
+
+    public sealed record PlaybackFailure(string Id, string Reason);
+
+    private sealed record ListRow(string Id, string Name, string? Status, bool Disabled, bool Busy, RowAction? Action, string? Note);
+
+    private sealed record RowAction(string Label, Func<Task> Run);
+
+    protected override void OnInitialized()
+    {
+        Fetches.Changed += OnFetches;
+        Editor.Changed += OnFetches;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Fetches.Changed -= OnFetches;
+        Editor.Changed -= OnFetches;
+
+        try
+        {
+            if (_module is not null)
+            {
+                var engine = await _module.InvokeAsync<IJSObjectReference>("engine");
+
+                await engine.InvokeVoidAsync("unmountPlayer");
+            }
+        }
+        // The circuit is already gone when the page is closed.
+        catch (JSDisconnectedException) { }
+
+        _self?.Dispose();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_root.Id is null)
+            return;
+
+        try
+        {
+            _module ??= await Js.InvokeAsync<IJSObjectReference>("import", "./playback.js");
+
+            var engine = await _module.InvokeAsync<IJSObjectReference>("engine");
+            var files = Playable.Of(Row);
+
+            if (!_mounted)
+            {
+                _self = DotNetObjectReference.Create(this);
+                await engine.InvokeVoidAsync("mountPlayer", _root, _self);
+                _mounted = true;
+            }
+
+            await engine.InvokeVoidAsync(
+                "setTrack",
+                Row.TrackKey,
+                files.Select(file => new { file.Id, file.Name }),
+                DefaultOf(files)
+            );
+        }
+        catch (JSDisconnectedException) { }
+    }
+
+    [JSInvokable]
+    public void OnState(bool playing, bool loading, string? fileId, PlaybackFailure? failure, bool hasGrid)
+    {
+        if ((_playing, _loading, _fileId, _failure) == (playing, loading, fileId, failure))
+            return;
+
+        (_playing, _loading, _fileId, _failure) = (playing, loading, fileId, failure);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void OnFetches() => _ = InvokeAsync(StateHasChanged);
+
+    private static string? DefaultOf(IReadOnlyList<PlayableFile> files) =>
+        files.FirstOrDefault(file => file.Id == PlayableFiles.MixId)?.Id
+        ?? files.FirstOrDefault(file => file.Name.Contains("Instrumental", StringComparison.OrdinalIgnoreCase))?.Id
+        ?? files.FirstOrDefault()?.Id;
+
+    private static string NameOf(IReadOnlyList<PlayableFile> files, string id) =>
+        files.FirstOrDefault(file => file.Id == id)?.Name ?? "the file";
+
+    private async Task Pick(ListRow row)
+    {
+        if (row.Disabled)
+            return;
+
+        _open = false;
+
+        var engine = await Engine();
+
+        await engine.InvokeVoidAsync("selectFile", row.Id);
+    }
+
+    private async Task<IJSObjectReference> Engine() => await _module!.InvokeAsync<IJSObjectReference>("engine");
+
+    private void OnListKey(KeyboardEventArgs key)
+    {
+        if (key.Key is "Escape")
+            _open = false;
+    }
+
+    private async Task OnRowKey(KeyboardEventArgs key, ListRow row)
+    {
+        if (key.Key is "Enter" or " ")
+            await Pick(row);
+    }
+
+    private IReadOnlyList<ListRow> Rows(IReadOnlyList<PlayableFile> files, MixState mix)
+    {
+        List<ListRow> rows = [];
+        var cutFrom = PlayableFiles.UploadsOf(Row)[0];
+        var onDisk = files.Any(file => file.Id == PlayableFiles.MixId);
+
+        if (onDisk || (mix is not MixState.Gone { CanFetch: false } && Row.HasUpload))
+            rows.Add(MixRow(mix, onDisk, cutFrom));
+
+        rows.AddRange(
+            files
+                .Where(file => file.Id != PlayableFiles.MixId)
+                .Select(file => new ListRow(file.Id, file.Name, null, false, false, null, null))
+        );
+
+        return rows;
+    }
+
+    private ListRow MixRow(MixState mix, bool onDisk, string cutFrom) =>
+        mix switch
+        {
+            MixState.InLibrary => new(PlayableFiles.MixId, "Mix", "in the library", false, false, null, null),
+            MixState.Held(var until, var forever) =>
+                new(
+                    PlayableFiles.MixId,
+                    "Mix",
+                    until is { } lapse ? $"kept until {When(lapse)}"
+                    : forever ? "kept for good"
+                    : "kept while crateside works on it",
+                    false,
+                    false,
+                    TrackKeys.IsVideoId(cutFrom) ? new("Keep in the library", () => KeepAsync()) : null,
+                    null
+                ),
+            MixState.Imported => new(PlayableFiles.MixId, "Mix", "imported file", false, false, null, null),
+            MixState.Keeping => new(PlayableFiles.MixId, "Mix", "● copying to the library…", !onDisk, true, null, null),
+            MixState.Fetching =>
+                new(PlayableFiles.MixId, "Mix", "● downloading…", true, true, null, "it will appear here when it lands"),
+            MixState.Gone(var canFetch) =>
+                new(
+                    PlayableFiles.MixId,
+                    "Mix",
+                    "not on disk",
+                    true,
+                    false,
+                    canFetch ? new("Get the mix again", () => FetchAsync(cutFrom)) : null,
+                    Fetches.FailureOf(cutFrom) is { } failure
+                        ? $"couldn't download it: {failure}"
+                        : canFetch ? "a download, no GPU · kept at least a day" : null
+                ),
+            _ => new(PlayableFiles.MixId, "Mix", null, true, false, null, null),
+        };
+
+    private Task KeepAsync() => Editor.KeepMixAsync(Row);
+
+    private Task FetchAsync(string trackKey)
+    {
+        Fetches.Start(trackKey);
+
+        return Task.CompletedTask;
+    }
+
+    private static string When(DateTimeOffset when)
+    {
+        var local = when.ToLocalTime();
+
+        return local - DateTimeOffset.Now < TimeSpan.FromDays(6)
+            ? local.ToString("ddd h:mm tt")
+            : local.ToString("d MMM");
+    }
+}

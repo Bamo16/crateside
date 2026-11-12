@@ -40,19 +40,13 @@
             {
                 <button class="outline small" @onclick="() => Open(group)">Judge again</button>
             }
-            @if (group.Lender is not null)
+            @if (group.Stems.Count > 0)
             {
                 <span class="zoom">
-                    @if (_zoom is not Zoom.Whole)
-                    {
-                        <span class="mono where-in">@ViewLabel(group, from, to)</span>
-                        <button class="outline mono nav" title="Earlier" @onclick="() => Move(group, -1)">‹</button>
-                        <button class="outline mono nav" title="Later" @onclick="() => Move(group, 1)">›</button>
-                    }
-                    @foreach (var zoom in Enum.GetValues<Zoom>())
-                    {
-                        <button class="pill @(zoom == _zoom ? "on plain" : "off")" @onclick="() => SetZoom(group, zoom)">@ZoomLabel(zoom)</button>
-                    }
+                    <button class="outline small" data-goto hidden></button>
+                    <span class="mono readout" data-readout></span>
+                    <button class="outline mono nav" data-earlier title="Earlier" aria-label="Earlier">‹</button>
+                    <button class="outline mono nav" data-later title="Later" aria-label="Later">›</button>
                 </span>
             }
         </div>
@@ -177,23 +171,28 @@
         @if (group.Stems.Count > 0)
         {
             <div class="grid">
-                @if (_zoom is not Zoom.Whole && group.Stems.FirstOrDefault(stem => stem.Sidecar is not null) is { } whole)
-                {
-                    <span class="gutter faint">Whole track · click to move</span>
-                    <div class="strip">
-                        <svg viewBox="0 0 @Columns 20" preserveAspectRatio="none">
+                @{ var whole = group.Stems.FirstOrDefault(stem => stem.Sidecar is not null); }
+                <span class="gutter view-gutter">
+                    <span class="view-name">View</span>
+                    <span class="view-hint" data-view-hint></span>
+                </span>
+                <div class="ov" data-overview>
+                    @if (whole is not null)
+                    {
+                        <svg viewBox="0 0 @Columns 20" preserveAspectRatio="none" aria-hidden="true">
                             <path d="@Wave(whole, 0, group.Seconds, 20, mono: true)" />
                         </svg>
-                        <div class="view-box" style="left: @P(from / group.Seconds * 100)%; width: @P((to - from) / group.Seconds * 100)%"></div>
-                        <div class="strip-hits">
-                            @for (var i = 0; i < StripColumns; i++)
-                            {
-                                var at = (i + 0.5) / StripColumns * group.Seconds;
-                                <span @onpointerdown="() => CenterOn(group, at)" @onpointerenter="pointer => Drag(group, at, pointer)"></span>
-                            }
-                        </div>
+                    }
+                    <div class="dim a"></div>
+                    <div class="dim b"></div>
+                    <div class="win" role="button" tabindex="0" aria-label="The view: arrow keys move it a bar, Enter zooms">
+                        <div class="hd l" role="slider" tabindex="0" aria-orientation="horizontal"></div>
+                        <div class="hd r" role="slider" tabindex="0" aria-orientation="horizontal"></div>
                     </div>
-                }
+                    <div class="ghost" hidden></div>
+                    <span class="ov-ph" data-overview-head></span>
+                    <span class="mono tip" hidden></span>
+                </div>
 
                 @{ var bands = Bands(group); var clipWord = ClipWord(group, from, to); }
                 <span class="gutter faint ruler-gutter">
@@ -203,7 +202,7 @@
                         <span class="drag-hint">drag here to add a range</span>
                     }
                 </span>
-                <div class="ruler @(bands.Count > 0 || _form is not null ? "tall" : null) @(_form is not null ? "dragging" : null)"
+                <div class="ruler @(_form is not null ? "dragging" : null)"
                      data-snaps="@(_form is null ? null : string.Join(',', SnapBounds(group, from, to).Select(F)))">
                     @if (group.Lender is null)
                     {
@@ -363,8 +362,9 @@
                     var isSelected = stem == selected;
                     var parts = group.PartsFrom(stem);
 
-                    <div class="lane @(isSelected ? "selected" : null)" @onclick="() => Select(stem)">
+                    <div class="lane @(isSelected ? "selected" : null)" data-file="@Path.GetFileName(stem.Path)" @onclick="() => Select(stem)">
                         <span class="gutter lane-gutter">
+                            <svg class="speaker" data-speaker="@Path.GetFileName(stem.Path)" hidden width="14" height="14" viewBox="0 0 14 14" role="img" aria-label="Playing"><path d="M2 5h2.5L8 2v10L4.5 9H2z" fill="currentColor" /><path d="M10 4.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" /></svg>
                             <span class="name">@NameOf(stem.Path)</span>
                             <span class="wchip @Style(chip.Style)">@chip.Label</span>
                             <span class="sub">@(Working(stem) ? $"writing {wording.Name(group.Lender!.Path)}'s warp" : wording.Sub(stem))</span>
@@ -394,7 +394,7 @@
                                     <span class="@(flags ? "flag" : "flag-tick")" style="left: @P(x)%" title="@MarkerTitle(stem, i)"></span>
                                 }
 
-                                @if (_zoom is not Zoom.Whole)
+                                @if (IsZoomed(group))
                                 {
                                     @foreach (var at in stem.TransientTimes)
                                     {
@@ -432,6 +432,11 @@
                     {
                         <span class="mono" style="left: @P(X(at, from, to))%">@TempoFormat.Clock(at)</span>
                     }
+                </div>
+
+                <div class="field" data-field aria-hidden="true">
+                    <span class="seekline" data-seekline hidden></span>
+                    <span class="playhead" data-playhead></span>
                 </div>
             </div>
 
@@ -543,7 +548,6 @@
 
 @code {
     private const int Columns = 832;
-    private const int StripColumns = 100;
 
     /// <summary>The pixels a plot is at the page's width cap, for deciding whether flags have room.</summary>
     private const double PlotPixels = 832;
@@ -579,6 +583,7 @@
     private int? _openWindow;
     private ElementReference _section;
     private IJSObjectReference? _drag;
+    private IJSObjectReference? _engine;
     private DotNetObjectReference<WarpView>? _self;
     private int _openRequestsSeen;
     private DateTimeOffset? _reopenedAfter;
@@ -888,21 +893,16 @@
 
     private WarpGroup? _group;
     private string? _stamp;
-    private Zoom _zoom = Zoom.Whole;
-    private double _centerBeat;
+    private double? _viewFrom;
+    private double? _viewTo;
+    private string? _viewOf;
+    private string? _mountedSection;
     private Confirming _confirming;
     private string? _working;
     private ActionDone? _done;
     private (TrueUpPlan Plan, WarpSiblings Siblings)? _trueUp;
     private string? _trueUpKey;
     private Timer? _poll;
-
-    private enum Zoom
-    {
-        Whole,
-        Bars32,
-        Bars8,
-    }
 
     private enum Confirming
     {
@@ -924,6 +924,9 @@
 
     protected override void OnParametersSet()
     {
+        if (_viewOf != Row.TrackKey)
+            (_viewFrom, _viewTo, _viewOf) = (null, null, Row.TrackKey);
+
         if (_openWindow >= (Run?.Readings.Count ?? 0))
             _openWindow = null;
 
@@ -951,6 +954,9 @@
         {
             if (_drag is not null)
                 await _drag.InvokeVoidAsync("dispose");
+
+            if (_engine is not null)
+                await _engine.InvokeVoidAsync("unmountView");
         }
         // The circuit is already gone when the page is closed.
         catch (JSDisconnectedException) { }
@@ -958,14 +964,33 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_drag is not null || _section.Id is null)
+        if (_section.Id is null)
             return;
 
-        _self = DotNetObjectReference.Create(this);
+        try
+        {
+            if (_drag is null)
+            {
+                _self = DotNetObjectReference.Create(this);
 
-        var module = await Js.InvokeAsync<IJSObjectReference>("import", "./Components/WarpView.razor.js");
+                var module = await Js.InvokeAsync<IJSObjectReference>("import", "./Components/WarpView.razor.js");
 
-        _drag = await module.InvokeAsync<IJSObjectReference>("rulerDrag", _section, _self);
+                _drag = await module.InvokeAsync<IJSObjectReference>("rulerDrag", _section, _self);
+            }
+
+            if (_engine is null || _mountedSection != _section.Id)
+            {
+                var playback = await Js.InvokeAsync<IJSObjectReference>("import", "./playback.js");
+
+                _engine = await playback.InvokeAsync<IJSObjectReference>("engine");
+                await _engine.InvokeVoidAsync("mountView", _section, _self);
+                _mountedSection = _section.Id;
+            }
+
+            if (_group is { } group)
+                await _engine.InvokeVoidAsync("setGrid", GridOf(group), group.Seconds);
+        }
+        catch (JSDisconnectedException) { }
     }
 
     private void Poll()
@@ -1167,81 +1192,39 @@
         };
     }
 
-    private static string ZoomLabel(Zoom zoom) =>
-        zoom switch
-        {
-            Zoom.Bars32 => "32 bars",
-            Zoom.Bars8 => "8 bars",
-            _ => "Whole track",
-        };
-
-    private static int BarsOf(Zoom zoom) => zoom switch { Zoom.Bars32 => 32, Zoom.Bars8 => 8, _ => 0 };
-
-    private void SetZoom(WarpGroup group, Zoom zoom)
+    /// <summary>The window the browser holds, told as it moves; rows are drawn for it (ADR 0094).</summary>
+    [JSInvokable]
+    public void SetWindow(double from, double to)
     {
-        var fromWhole = _zoom is Zoom.Whole;
-
-        _zoom = zoom;
-
-        if (zoom is not Zoom.Whole)
-            _centerBeat = Clamped(
-                group,
-                fromWhole
-                    ? group.Bars.IndexAt(group.ClipStartBeat) * group.Bars.BeatsPerBar + BarsOf(zoom) * group.Bars.BeatsPerBar / 2.0
-                    : _centerBeat
-            );
-    }
-
-    private void Move(WarpGroup group, int direction) =>
-        _centerBeat = Clamped(group, _centerBeat + direction * BarsOf(_zoom) * group.Bars.BeatsPerBar / 2.0);
-
-    /// <summary>Follows the pointer across the strip while its button is held.</summary>
-    private void Drag(WarpGroup group, double seconds, PointerEventArgs pointer)
-    {
-        if ((pointer.Buttons & 1) is not 0)
-            CenterOn(group, seconds);
-    }
-
-    /// <summary>Centers the view near a point, starting it on a bar line so it reads in whole bars.</summary>
-    private void CenterOn(WarpGroup group, double seconds)
-    {
-        if (group.BeatAt(seconds) is not { } beat)
+        if (_group is not { } group)
             return;
 
-        var half = BarsOf(_zoom) * group.Bars.BeatsPerBar / 2.0;
-        var bar = Math.Round((beat - half) / group.Bars.BeatsPerBar);
-        _centerBeat = Clamped(group, bar * group.Bars.BeatsPerBar + half);
+        var whole = from <= 0.001 && to >= group.Seconds - 0.001;
+
+        (_viewFrom, _viewTo) = (whole ? null : from, whole ? null : to);
+        StateHasChanged();
     }
 
-    /// <summary>Keeps the whole window inside the track, so it never runs off either end.</summary>
-    private double Clamped(WarpGroup group, double centerBeat)
-    {
-        if (group.BeatAt(0) is not { } first || group.BeatAt(group.Seconds) is not { } last)
-            return centerBeat;
-
-        var half = BarsOf(_zoom) * group.Bars.BeatsPerBar / 2.0;
-
-        return first + half >= last - half ? (first + last) / 2 : Math.Clamp(centerBeat, first + half, last - half);
-    }
+    private bool IsZoomed(WarpGroup group) => View(group) is var (from, to) && to - from < group.Seconds - 0.001;
 
     private (double From, double To) View(WarpGroup group)
     {
-        if (_zoom is Zoom.Whole || group.Lender is null)
-            return (0, Math.Max(group.Seconds, 1));
+        var whole = Math.Max(group.Seconds, 1);
 
-        var span = BarsOf(_zoom) * group.Bars.BeatsPerBar;
-
-        return group.SecondsAt(_centerBeat - span / 2.0) is { } start
-            && group.SecondsAt(_centerBeat + span / 2.0) is { } end
-            && end > start
-            ? (start, end)
-            : (0, Math.Max(group.Seconds, 1));
+        return _viewFrom is { } from && _viewTo is { } to && to > from
+            ? (Math.Max(0, from), Math.Min(whole, to))
+            : (0, whole);
     }
 
-    private static string ViewLabel(WarpGroup group, double from, double to) =>
-        BarRanges.Show(group, from, to) is { } bars
-            ? $"bars {bars} · {TempoFormat.Clock(from)}–{TempoFormat.Clock(to)}"
-            : $"{TempoFormat.Clock(from)}–{TempoFormat.Clock(to)}";
+    private object? GridOf(WarpGroup group) =>
+        group.Lender is not null && group.SharedAllMarkers is { Count: > 1 } markers
+            ? new
+            {
+                markers = markers.Select(marker => new[] { marker.Seconds, marker.Beat }),
+                numerator = group.Bars.Numerator,
+                denominator = group.Bars.Denominator,
+            }
+            : null;
 
     private IEnumerable<(double At, int Bar, bool Numbered, bool Beat)> BarTicks(WarpGroup group, double from, double to)
     {
@@ -1249,10 +1232,11 @@
             yield break;
 
         var ruler = group.Bars;
-        var (tickEvery, numberEvery) = _zoom switch
+        var bars = (last - first) / ruler.BeatsPerBar;
+        var (tickEvery, numberEvery) = bars switch
         {
-            Zoom.Whole => (4, 16),
-            Zoom.Bars32 => (1, 4),
+            > 48 => (4, 16),
+            > 14 => (1, 4),
             _ => (1, 1),
         };
 
@@ -1270,7 +1254,7 @@
             if (index % tickEvery is 0)
                 yield return (at, bar, index % numberEvery is 0, false);
 
-            if (_zoom is Zoom.Bars8)
+            if (bars <= 14)
             {
                 // A beat as Live's ruler counts it: a quarter note in x/4, an eighth in x/8.
                 for (var i = 1; i < ruler.Numerator; i++)
@@ -1284,10 +1268,10 @@
 
     private IEnumerable<double> TimeTicks(double from, double to)
     {
-        var every = _zoom switch
+        var every = (to - from) switch
         {
-            Zoom.Whole => 30,
-            Zoom.Bars32 => 10,
+            > 120 => 30,
+            > 40 => 10,
             _ => 2,
         };
 

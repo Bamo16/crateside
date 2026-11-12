@@ -17,13 +17,13 @@
             var (left, right) = (Math.Clamp(X(band.Start), 0, 100), Math.Clamp(X(band.End), 0, 100));
             @if (right > left)
             {
-                <div class="key-band @(band.FromWindow ? "from-window" : null) @(band.StartUnbacked ? "unbacked" : null) @(band.Section is { Length: > 0 } ? "pickable" : null) @(IsPicked(band) ? "picked" : null)" style="left: @P(left)%; width: @P(right - left)%" title="@Title(band)"
+                <button type="button" class="key-band @(band.FromWindow ? "from-window" : null) @(band.StartUnbacked ? "unbacked" : null) @(band.Section is { Length: > 0 } ? "pickable" : null) @(IsPicked(band) ? "picked" : null)" style="left: @P(left)%; width: @P(right - left)%" title="@Title(band)" data-start="@P(band.Start)"
                      @onclick="() => PickAsync(band)">
                     @if ((right - left) / 100 * PlotPixels >= 56)
                     {
                         <span class="mono key-label">@band.Label</span>
                     }
-                </div>
+                </button>
             }
         }
         @Bands
@@ -82,7 +82,7 @@
             : "no key";
 
     private static string Title(KeyBand band) =>
-        $"{(band.Section is { Length: > 0 } named ? named + " · " : null)}{ModeText.Named(band.Center)} · {WarpWording.Time(band.Start)}–{WarpWording.Time(band.End)}{(band.FromWindow ? " · from a window" : null)}{(band.StartUnbacked ? " · start not placed by a window or source" : null)}";
+        $"{(band.Section is { Length: > 0 } named ? named + " · " : null)}{ModeText.Named(band.Center)} · ▶ from {WarpWording.Time(band.Start)}{(band.FromWindow ? " · from a window" : null)}{(band.StartUnbacked ? " · start not placed by a window or source" : null)}";
 
     private double X(double seconds) => (seconds - From) / (To - From) * 100;
 

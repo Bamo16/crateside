@@ -236,3 +236,24 @@ a.outline {
     cursor: default;
     opacity: 0.4;
 }
+
+/* While the view's window or a handle is dragged the whole page wears its cursor, so it cannot flicker off the strip (handoff 22, 3b·3). */
+body.pb-locked,
+body.pb-locked * {
+    user-select: none !important;
+}
+
+body.pb-locked-start,
+body.pb-locked-start * {
+    cursor: url("/cursors/bracket-start.svg") 10 12, ew-resize !important;
+}
+
+body.pb-locked-end,
+body.pb-locked-end * {
+    cursor: url("/cursors/bracket-end.svg") 14 12, ew-resize !important;
+}
+
+body.pb-locked-body,
+body.pb-locked-body * {
+    cursor: grabbing !important;
+}

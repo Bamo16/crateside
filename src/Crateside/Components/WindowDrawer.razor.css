@@ -106,6 +106,20 @@
     color: var(--text);
 }
 
+.side-foot {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.play-window {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    white-space: nowrap;
+}
+
 .stepper {
     display: flex;
     align-items: center;
