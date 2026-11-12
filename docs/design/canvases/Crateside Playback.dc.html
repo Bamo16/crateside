@@ -850,6 +850,7 @@ this.setState({ drag: kind, moved: !!moved });
 unbind() { if (this._mv) { window.removeEventListener('pointermove', this._mv); window.removeEventListener('pointerup', this._up); window.removeEventListener('pointercancel', this._up); this._mv = null; } }
 move(e) {
 const d = this._d; if (!d) return;
+if (e.buttons === 0) { this.up(); return; }
 if (!d.moved && Math.abs(e.clientX - d.x0) < 3) return;
 d.moved = true;
 const idx = this.near((this.frac(e, d.ov) - d.grab) * this.T);
