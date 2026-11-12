@@ -64,6 +64,28 @@ public sealed class SourceRetentionTests : IDisposable
             new SourceRetention { Days = days }.HasLapsed(Left, Left.AddDays(elapsed))
         );
 
+    [Theory]
+    [InlineData(0, 23, false)]
+    [InlineData(0, 24, true)]
+    [InlineData(7, 24, false)]
+    public void A_minimum_holds_a_short_retention_open_but_never_shortens_a_long_one(
+        int days,
+        int elapsedHours,
+        bool lapsed
+    ) =>
+        Assert.Equal(
+            lapsed,
+            new SourceRetention { Days = days }.HasLapsed(
+                Left,
+                Left.AddHours(elapsedHours),
+                TimeSpan.FromDays(1)
+            )
+        );
+
+    [Fact]
+    public void Forever_has_no_lapse_time() =>
+        Assert.Null(new SourceRetention { Forever = true }.LapsesAt(Left, TimeSpan.FromDays(1)));
+
     [Fact]
     public void Forever_never_lapses() =>
         Assert.False(new SourceRetention { Forever = true }.HasLapsed(Left, Left.AddYears(100)));

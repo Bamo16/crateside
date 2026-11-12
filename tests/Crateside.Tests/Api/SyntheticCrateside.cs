@@ -13,6 +13,7 @@ using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Verdict;
+using Crateside.Core.Playback;
 using Crateside.Core.Playlist;
 using Crateside.Core.Tracks;
 using Crateside.Core.Warps;
@@ -50,6 +51,10 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
 
     public string Instrumental =>
         Path.Combine(_root, "Staging", "Synthetic Song (Instrumental - Full).flac");
+
+    public string WorkingFolder => Path.Combine(_root, "working");
+
+    public string Library => Path.Combine(_root, "Library");
 
     public string WarpBackups => Path.Combine(_root, "warp-backups");
 
@@ -315,12 +320,19 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
                 new CratesidePaths { ArtFolder = Path.Combine(_root, "art") }
             )
         );
+        var sources = new SourceIndex(
+            new WorkingSet(new CratesidePaths { WorkingFolder = WorkingFolder }),
+            Path.Combine(_root, "source-index.json")
+        );
+        builder.Services.AddSingleton(sources);
         builder.Services.AddSingleton(
-            new SourceIndex(
-                new WorkingSet(
-                    new CratesidePaths { WorkingFolder = Path.Combine(_root, "working") }
-                ),
-                Path.Combine(_root, "source-index.json")
+            new PlayableFiles(
+                sources,
+                new CratesidePaths
+                {
+                    StagingFolder = Path.Combine(_root, "Staging"),
+                    LibraryFolder = Path.Combine(_root, "Library"),
+                }
             )
         );
 
@@ -328,6 +340,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         _app.UseCratesideApiBindingErrors();
         _app.MapCratesideApi();
         _app.MapCoverArt();
+        _app.MapAudio();
         await _app.StartAsync(TestContext.Current.CancellationToken);
 
         Client = _app.GetTestClient();

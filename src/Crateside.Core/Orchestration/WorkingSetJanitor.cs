@@ -59,7 +59,7 @@ public sealed class WorkingSetJanitor(
 
             // The library already holds this audio (the same decode, MEASURED in #133).
             if (
-                keeping.HasLapsed(left, now)
+                keeping.HasLapsed(left, now, workingSet.MinimumRetention(trackKey))
                 || everywhere.Value.StemsFor(trackKey).Any(stem => stem.IsVerbatimSource)
             )
                 discarded.Add(trackKey);
@@ -84,7 +84,7 @@ public sealed class WorkingSetJanitor(
                 workingSet.RecordLeftStaging(trackKey, left = now);
 
             if (
-                keeping.HasLapsed(left, now)
+                keeping.HasLapsed(left, now, workingSet.MinimumRetention(trackKey))
                 || everywhere.Value.StemsFor(trackKey).Any(stem => stem.IsVerbatimSource)
             )
                 discarded.Add(trackKey);

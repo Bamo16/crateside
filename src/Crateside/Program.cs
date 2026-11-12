@@ -40,6 +40,7 @@ app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.UseCratesideApiBindingErrors();
 app.MapCratesideApi();
 app.MapCoverArt();
+app.MapAudio();
 
 app.Run();
 

@@ -23,6 +23,7 @@ using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Orchestration.Tagging;
 using Crateside.Core.Orchestration.Verdict;
+using Crateside.Core.Playback;
 using Crateside.Core.Playlist;
 using Crateside.Core.Quota;
 using Crateside.Core.Staging;
@@ -316,6 +317,9 @@ public static class ServiceRegistration
         services.AddSingleton<SourceRetentionStore>();
         services.AddSingleton<SourceIndex>();
         services.AddSingleton<SourceBackfill>();
+        services.AddSingleton<PlayableFiles>();
+        services.AddSingleton<MixFetches>();
+        services.AddSingleton<MixStatus>();
         services.AddSingleton<UnavailableSources>();
         services.AddSingleton<SourceAvailability>();
         services.AddHttpClient(SourceAvailability.ClientName);

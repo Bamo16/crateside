@@ -270,13 +270,23 @@ public sealed class WorkingSet(CratesidePaths paths, TimeProvider? time = null)
             )
             ?.At;
 
-    public void RecordLeftStaging(string trackKey, DateTimeOffset at)
+    /// <summary>How long retention keeps this track's source at least: a day for a fetch the person asked for, else nothing (ADR 0094).</summary>
+    public TimeSpan MinimumRetention(string trackKey) =>
+        WorkingSetJsonContext.Default.LeftStaging.ReadFileOrDefault(
+            Path.Combine(DirectoryFor(trackKey), LeftStagingFileName)
+        )
+            is { AdHoc: true }
+            ? TimeSpan.FromDays(1)
+            : TimeSpan.Zero;
+
+    /// <param name="adHoc">A fetch the person asked for, which retention never keeps for less than a day (ADR 0094).</param>
+    public void RecordLeftStaging(string trackKey, DateTimeOffset at, bool adHoc = false)
     {
         try
         {
             WorkingSetJsonContext.Default.LeftStaging.WriteFile(
                 Path.Combine(DirectoryFor(trackKey), LeftStagingFileName),
-                new LeftStaging(at)
+                new LeftStaging(at, adHoc)
             );
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -330,4 +340,4 @@ public sealed class WorkingSet(CratesidePaths paths, TimeProvider? time = null)
 }
 
 /// <summary>The moment a track's last stem left staging.</summary>
-public sealed record LeftStaging(DateTimeOffset At);
+public sealed record LeftStaging(DateTimeOffset At, bool AdHoc = false);
