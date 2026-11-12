@@ -110,9 +110,13 @@ open, no fold, drawn when the track has samples.
 - **One time axis for the group**: the samples cut from the upload most of them share, in the
   sample list's order; the warp guide is left out. Grid of 200px gutter · 12px · the plot.
 - **Head line**: `WARP`, then `{n} stems · one warp · {markers} · {mode}`, or `{stem} warped on its
-  own` at `--text` (the only loud thing; not colored). Zoom pills right: *Whole track · 32 bars ·
-  8 bars*; zoomed, `bars 61–68 · 2:10–2:27` and `‹ ›` move by half a view.
-- **Rows**: overview strip (zoomed only, click to move) · ruler (loop bar, bar ticks, clip-start
+  own` at `--text` (the only loud thing; not colored). No zoom pills (handoff 22). At the right, the
+  readout in mono at `--text` (`bars 17–24 · 1:11–1:40`, one bar `bar 24 · …`, the whole track
+  `whole track · 2:49` at `--text-75`) and `‹ ›`, disabled at the track's ends, which move the window
+  by half its width (whole bars, at least one); *Go to the playhead · bar 31* (`.outline` small)
+  sits left of the readout while the playhead is outside the window.
+- **Rows**: **View** (the overview strip, below) · ruler (40px in every state; loop bar, bar ticks,
+  clip-start
   notch labelled `clip start` in the bar-number row, which takes the place of any number it would
   run into; bars numbered as Live's ruler numbers them, from the shared warp's beat 0 as bar 1, with
   -1, -2… before it and no bar 0, across the whole file, ADR 0072) · tempo line (step line from the shared
@@ -125,6 +129,43 @@ open, no fold, drawn when the track has samples.
   carries **True up**, which acts on the track's canonical warp, so selecting a lane never changes
   it. The status line under it takes the states offered, confirm, writing, done and *Not offered:
   …*. The milliseconds are drawn here only, never on the lanes.
+- **The View row and its window** (handoff 22, ADR 0094). The overview strip is drawn at all times:
+  34px on `--surface`, radius 3, the whole file's shape at `--text` 30%. Its **window** is the
+  view, the loop and what playback follows: a box from its start to its end, fill `--text` 7% (12%
+  hovered, 17% pressed), a 1px `--text` 50% line top and bottom (3px at full strength while loop is
+  on), `--bg` 66% outside it. Each **handle** is a 6px `--text` 70% bar centered on an edge, the
+  strip's full height, with a 1×10px `--ink` notch; its target is 16px (8 either side), narrower on
+  the inside of a window under 32px. Edges snap to bar lines plus the file's first and last sample
+  (whole seconds without a warp) and the window is at least one bar (4 seconds without a warp).
+  Pressing a handle or the body locks the cursor on the page; nothing moves for 3px; a release
+  inside it is a click. The body steps bar by bar with a tag above it (`21–28`), a handle with a tag
+  over its edge (`from bar 13`, `to bar 28`); a handle pulled into the other stops one bar short and
+  keeps its halo; Esc or `pointercancel` puts the window back. **A press outside the window** brings
+  it to the pointer, and the same press carries on as a drag. **Double-click** zooms to the
+  remembered zoom (8 bars around the place on a fresh page) or back to the whole track. Handles are
+  `role="slider"` (←/→ a bar, Shift four, Home/End), the body a button (←/→, Enter as a
+  double-click); a keyboard move is reported on key-up. The gutter says `View` and a hint for the state
+  (`pull a handle to zoom · double-click for 8 bars`, `drag to move · double-click for the whole
+  track`, `looping these 8 bars`).
+- **Following**: while playing, with loop off, the playhead reaching the window's right edge moves
+  the window on by half its width (whole bars, rounded up, at least one), and at the track's end the
+  window stops against it. Following yields while looping, during a drag, and after the person moved
+  the window away from the playhead, until the playhead is next inside it.
+- **The playhead** is 1px `--text` from the ruler's top to the key strip's foot with a 10×7 head on the
+  ruler, above the bands; not drawn in the plot while outside the window. The overview strip and the
+  player's slim waveform always show it.
+- **Seeking**: a click on the ruler plays from the start of the bar under the pointer (a faint 1px
+  `--text` 30% line shows where), exactly where the pointer is without a warp; playing carries on,
+  paused stays paused. A click on a lane seeks there, selects the lane and plays its stem. A key band
+  is a `<button>` titled `chorus · E minor · ▶ from 1:53` and seeks to its start. The drawer's *Play
+  window* seeks to the window's start and plays (with loop on it sets the view to the window). A seek
+  outside the window brings the window, at its width, to the bar that holds the spot. The overview
+  strip, tempo line, *Off the grid*, the time axis and the gutters never seek. A lane's gutter wears a
+  14px speaker glyph at its top right while its stem is what plays.
+- **Cursors** (the maintainer's, 2026-11-11): the handles wear a `[` (start) and `]` (end) with the
+  hotspot on the vertical stroke and `ew-resize` behind it; the ruler, lanes, key bands and the slim
+  waveform wear a speaker, `default` behind it; the body keeps `grab` and `grabbing`. Nothing a
+  drag acts on shows the hand.
 - **A lane**: flags (7×9 pennants) where every visible pair is ≥ 9px apart, else 9px ticks with
   faint lines; Live's overview at 42%, stereo as two channels; transients only when zoomed;
   the whole file at full strength, the stem's clip start a 1px `--text-50` line (nothing dimmed
@@ -143,7 +184,7 @@ open, no fold, drawn when the track has samples.
   amber, the unit note `--text-50`; one row per range (number · range 120px mono · label 160px ·
   note · ×), a dashed *+ another range*, then *What you hear* (key, mode select, the Ear setting's
   hint) and the cost line beside `.primary` button (*Judge from these bars*, or *Judge the whole track again* while no range is filled in) and Cancel. No confirm. While
-  it is open the ruler grows to 44px, takes a crosshair and snaps a drag to whole bars (whole
+  it is open the ruler takes a crosshair and snaps a drag to whole bars (whole
   seconds without a warp, whose ruler counts time). The band itself follows the drag in the
   browser, snapped as it goes, and the range is sent once, on release; each range has a handle on
   either edge. **Bands**, one per window, in every row from the ruler down: yours solid at 50% with a
@@ -201,6 +242,61 @@ one column below 56rem of panel (a container query).
 - **Share** sits in the head: `.outline`, a share icon, `Share ▾`. It is a disabled placeholder
   until #152 builds the menu and the card.
 
+### The header strip (handoff 22, #105)
+
+One `--surface` box, radius 10, replacing the heading and the band. The **cover** is 152px square at
+the left, flush to the top, left and bottom, an `<img>` and not a button. The **title block**
+(padding 15px 22px 12px) is the title 24/600 over the meta line 13.5 `--text-60`, which ends
+`· YouTube ↗` (underlined, a new tab) for the upload the files are cut from; an import has none
+and reads `House · imported file`. Under a `--line` rule, **four cells** on four equal columns with
+`--line` dividers (padding 10px 22px 11px): the caps label (10.5/600), then one line with the value in
+mono 28/600 and its note beside it on the baseline (12.5 `--text-60`, two lines at most). The tempo
+keeps its weights (`~111` at 400) and the pennant its place after the figure, 9×11. *Where it is* is
+the chip, its sentence and *Why B min ↓* on one line.
+
+When a cell has more than a note (the sections list, the judging chip or the invitation with
+*Judge from these bars ↓*, the tempo strip or *Your warp is typed at…*, the running time), the strip
+grows a **foot row** under the cells on the same columns, behind a `--line` rule; the cover stays
+152px and the surface shows under it. At 56rem and below the cover is 96px beside the title (21/600)
+and the cells go two by two under both. `← Tracks` stays above the strip; the player follows it, then
+the findings line, then the stage flow, drawn as its own `--surface` strip.
+
+### The player (handoff 22, #105, ADR 0094)
+
+`Player`, one `<section aria-label="Player">` 10px under the header strip: `--raised`, 1px `--text`
+10%, radius 10, two rows (controls, then the slim waveform) and about 97px tall. Left to right:
+**play/pause** (40px round, filled `--text` with an `--ink` icon, the only filled control on the
+page; `Play (Space)` / `Pause (Space)`; Space toggles anywhere except a text field, a select or an
+open list); **the position** in mono 14 (`bar 19.3.1` at 600 · `1:20.80` at 75% · `/ 2:49` at 40%,
+27ch wide; without a warp `1:20.80 / 2:49`); **the picker** (an `.outline` button 210px wide opening a
+400px listbox of 34px rows, the file playing wearing the chosen-row style); **Click** (a pill toggle
+that is the chosen pill when on), **Sound** (`Classic ▾`, a three-row list of Classic · Click ·
+Wood that plays the pick once, accent then beat) and the click level (60px); **Loop** after a divider
+(disabled on the whole track with `needs a zoomed view` beside it); **volume** (a speaker and a 72px
+range). Ranges are native with `accent-color: var(--text)`; volume, click level and sound are kept in
+the browser, click and loop start off on every load. Playing is `--text`, never teal; teal appears
+only while a file loads or downloads, red only for a load that failed.
+
+- **The slim waveform** (34px, 14px margins) is the whole file that is playing at `--text` 50%, the
+  part after the playhead under a 62% `--raised` scrim, and a 1px `--text` playhead. A click seeks to
+  the spot and a held press scrubs, sounding nothing until release.
+- **Pinned**: the strip is `position: sticky; top: 0`. Stuck, it loses its top border and radius, gains
+  `0 10px 28px rgba(0,0,0,.55)` and leads with a 36px cover and the track's name (13.5/600, 260px at
+  most) closed by a `--line` divider. At 56rem the controls wrap once (play, position, picker; then
+  click, loop, volume right-aligned).
+- **States**: nothing on disk (play and picker disabled, `0:00.00 / –`, a dashed `nothing downloaded
+  yet`); loading (play a spinning 2px teal ring, a teal-bordered `Loading Vocal - Full…`; Space while
+  loading cancels the play); no warp (`Click` disabled with `no warp yet`, no Sound or level); a load
+  failed (a red-bordered `role="alert"` line, `Couldn't load Vocal - Full: the file moved or is gone;
+  try again in a moment.`, and **Try again**).
+- **The picker** lists **Mix**, then each stem by its name, only files on disk, with a status at 12
+  `--text-50` and at most one small `.outline` action at the row's right that does not pick the row.
+  The mix in the working set reads `kept until Thu 2:00 PM` with **Keep in the library**; in the
+  library, `in the library`; gone, greyed with `not on disk`, **Get the mix again** and `a download,
+  no GPU · kept at least a day`; downloading, greyed with a teal `● downloading…` and `it will appear
+  here when it lands`; being kept, a teal `● copying to the library…`. *Keep in the library* makes the
+  separation source a keeper in the stem plan and asks for the re-cut that copies it.
+
 ## State chips
 
 One component, `Components/StateChip.razor`, used wherever a track's state is shown. Styles:
@@ -246,6 +342,9 @@ The Tracks row's right column (340px) and Track details' rail (19rem) are one co
 familiarity) → **Name** → **Uploads** (rail only) → a stronger rule → **Start over** (Source, then
 Remove). A group with nothing to show is not drawn. Findings stay full width above it.
 
+- **The upload card** (handoff 22): the embed is gone. Under `Uploads`, each upload is a `--surface`
+  card, radius 8, padding 10px 12px, 8px apart: the role at `--text-60` with `YouTube ↗` (a new tab)
+  at the right, then the video ID in mono at `--text-75`.
 - **Status + action.** A label line (label left, one or two buttons right), then the value, then
   the status as prose. A button never sits inside a sentence.
 - **Tags.** Settled is one line with **Change**; unsettled, or Change pressed, shows every chip, and a
@@ -459,6 +558,35 @@ time). Track details uses `--table-tracks`. The Tools column caps itself at
 
 Where the build departs from a canvas, by page. Clear an entry once a later design supersedes it.
 
+### Playback (handoff 22, #105)
+
+- **The rows are drawn by the server, for each window the browser reports.** The browser holds the
+  window and tells the page as it moves, one report in flight and the newest waiting, so a drag
+  redraws the rows at the pace the page can follow rather than in the browser itself. The playhead,
+  the window's box and handles, the readout, the tag and the seek line are the browser's own and
+  never wait. A follow step is therefore reported too (the handoff says it is not).
+- **The cursors are the maintainer's, not the canvas's** (2026-11-11): `[` and `]` on the handles,
+  a speaker on the ruler, the lanes, the key bands and the slim waveform, with no hand anywhere
+  a drag acts. The canvas's glyph with a triangle is not built.
+- **The slim waveform borrows the overview strip's shape until the file is decoded**, then draws the
+  decoded samples. Before a play it is the shape of the first stem with an overview, not of the file
+  that will play.
+- **A click on a lane starts playback** from the spot on that stem; the handoff says it seeks and
+  switches. A click on the ruler or a key band keeps play or pause as it is.
+- **A seek brings the window to the bar** only when the spot is outside it, and the window then keeps
+  its width in bars; the new window is reported as any other.
+- **The header strip's foot row is a subgrid**: each cell holds its head and its foot, so the rule
+  and the rows line up across the four whatever wraps, and at 56rem each foot stays under its own
+  cell. A cell whose note has two statements (the mode's reason, then where the tag follows)
+  runs them together in its two lines.
+- **The upload count leaves the meta line** when there is one upload; with several it stays.
+- **The sound of the click is synthesized and untuned**: three voices, each with an accent, drawn
+  from a triangle, a filtered noise burst and a falling sine; the maintainer's ear sets them (ADR 0094).
+- **A mix held with no clock yet reads `kept while crateside works on it`**: retention counts from
+  the moment the last stem leaves staging, which a track mid-pipeline has not reached.
+- **`● in line to be copied` is not built.** ADR 0094 leaves open whether the re-cut that copies a
+  kept source waits for the GPU; the row says `● copying to the library…` until the library holds it.
+
 ### Partners by notes (handoff 19, #125)
 
 - **The shift chips run −2 … +2, not −6 … +6.** Every key is within ±2 of a partner at its
@@ -523,7 +651,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   crateside knows). The re-read (ADR 0066) and the backfill (#139) write readings into a finished run,
   so the judge's prose can quote a reading the table no longer shows.
 - **Share is a disabled button**, with no menu, card or text export until #152.
-- **Not built, as the handoff says**: the chord lane, the transport and the playhead.
+- **Not built, as the handoff says**: the chord lane (#198).
 - **Your note to the judge and your ear** keep their place, heading the right column, which the
   canvas does not draw. The *Centers* lines stay above *Why this key*.
 
@@ -533,9 +661,6 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   markers" counted the hidden one Live writes past the last. A steady warp reads *1 marker*.
 - **Flags or ticks is decided at the 832px plot** the page has at its width cap, not measured in the
   browser.
-- **The overview strip is dragged, not only clicked**: pressing jumps there and holding slides the
-  view, in hundredths of the track (100 targets, not a measured position), each view starting on a
-  bar line.
 - **Re-apply is also offered on a starter** when a sibling holds a warp of the user's, as for Live's
   analysis; lending would replace it within a minute anyway.
 - **"Putting the warp back"** reads *Live wrote a fresh file. crateside puts the warp back within a
@@ -562,8 +687,6 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 
 ### Track details (handoff 05, #21)
 
-- **Upload players show no still.** A still would be fetched from YouTube, so the box stays blank
-  until pressed.
 - **Stage chips are all colored by state** (done green, running teal, your turn amber, stopped red),
   with the current stage the only filled, bold chip. **No timestamps** under them: the Activity log
   carries times. Both were asked for on 2026-09-25.

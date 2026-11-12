@@ -11,77 +11,199 @@
     font-size: 13px;
 }
 
-.back:hover,
-.why:hover {
-    color: var(--text);
-}
-
-.heading {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 1.25rem;
-    margin-bottom: 1.5rem;
-}
-
-.heading-text {
-    min-width: 0;
-}
-
-.heading-text .meta {
-    margin-bottom: 0;
-}
-
-h1 {
-    margin: 0;
-    font-size: 28px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-}
-
-.meta,
-.notice {
-    margin: 0.3rem 0 1.5rem;
-    color: var(--text-60);
-}
-
-.band {
+/* The header strip (handoff 22 §1): the cover, the title and four cells, in one box. */
+.hs {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.4fr);
+    grid-template-columns: 152px minmax(0, 1fr);
+    grid-template-areas:
+        "cover title"
+        "cover cells";
+    grid-template-rows: auto 1fr;
+    margin-bottom: 10px;
+    overflow: hidden;
     background: var(--surface);
     border-radius: 10px;
 }
 
-.band.with-flow {
-    border-radius: 10px 10px 0 0;
+.hs-cover {
+    grid-area: cover;
+    align-self: start;
+    width: 152px;
+    height: 152px;
+    background: #2b2820;
+}
+
+.hs-cover ::deep .cover {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+}
+
+.hs-title {
+    grid-area: title;
+    min-width: 0;
+    padding: 15px 22px 12px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 30px;
+}
+
+.meta,
+.notice {
+    margin: 3px 0 0;
+    font-size: 13.5px;
+    color: var(--text-60);
+}
+
+.notice {
+    margin: 0.3rem 0 1.5rem;
+    font-size: 14px;
+}
+
+.meta a {
+    color: var(--text);
+    text-decoration: underline;
+    text-decoration-color: var(--text-40);
+    text-underline-offset: 3px;
+}
+
+.cells {
+    grid-area: cells;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: auto;
+    border-top: 1px solid var(--line);
+}
+
+.cells.has-foot {
+    grid-template-rows: auto auto;
 }
 
 .cell {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 1;
+    min-width: 0;
+    border-left: 1px solid var(--line);
+}
+
+.cells.has-foot .cell {
+    grid-row: span 2;
+}
+
+.cell:first-child {
+    border-left: none;
+}
+
+.cell-head {
+    min-width: 0;
+    padding: 10px 22px 11px;
+}
+
+.cell-foot {
+    display: none;
+}
+
+.cells.has-foot .cell-foot {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.35rem;
     min-width: 0;
-    padding: 1.1rem 1.4rem 1.2rem;
-    border-left: 1px solid var(--line-strong);
-    justify-content: flex-end;
+    padding: 9px 22px 11px;
+    border-top: 1px solid var(--line);
 }
 
-/* A modal verdict's mode leads the tag; the tag itself stays at its size. */
-.lead {
-    font-size: 18px;
+.cells.has-foot .cell-foot:empty {
+    padding-block: 0;
+}
+
+.label {
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.library-only .cell:first-child .label {
+    color: var(--text-75);
+}
+
+.line {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0 12px;
+    margin-top: 2px;
+}
+
+.value {
+    font-size: 28px;
+    line-height: 34px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.value.conf {
     font-weight: 500;
-    line-height: 1.2;
-    color: var(--text);
+}
+
+.value.conf.call {
+    font-size: 22px;
+}
+
+.value.empty,
+.value.conf.none {
+    color: var(--text-30);
+}
+
+.value.conf.weak {
+    color: var(--red);
+}
+
+.value.bpm.ready {
+    color: var(--amber);
+}
+
+.value.bpm.approx {
+    font-weight: 400;
+}
+
+.value.bpm.estimate {
+    color: var(--text-50);
+}
+
+.value.bpm ::deep .pennant {
+    margin-left: 4px;
+    vertical-align: top;
+}
+
+.note {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    flex: 1 1 8rem;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12.5px;
+    line-height: 1.3;
+    color: var(--text-60);
+}
+
+.lead {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-75);
 }
 
 .lead .arrow {
     color: var(--text-60);
-}
-
-.reason {
-    font-size: 12.5px;
-    color: var(--text-75);
 }
 
 .sections {
@@ -89,10 +211,9 @@ h1 {
     flex-direction: column;
     gap: 0.2rem;
     width: 100%;
-    margin: 0.2rem 0 0;
-    padding: 0.5rem 0 0;
+    margin: 0;
+    padding: 0;
     list-style: none;
-    border-top: 1px solid var(--line);
 }
 
 .sections li {
@@ -122,75 +243,18 @@ h1 {
     font-weight: 500;
 }
 
-.cell:first-child {
-    border-left: none;
-}
-
-.label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-40);
-}
-
-.library-only .cell:first-child .label {
-    color: var(--text-75);
-}
-
-.value {
-    font-size: 52px;
-    line-height: 1.05;
-    font-weight: 600;
-}
-
-.value.conf {
-    font-weight: 500;
-}
-
-/* Words, not a band: "your call" has to fit the cell on one line. */
-.value.conf.call {
-    font-size: 36px;
-    line-height: 1.5;
-}
-
-.value.empty,
-.value.conf.none {
-    color: var(--text-30);
-}
-
-.value.conf.weak {
-    color: var(--red);
-}
-
-.value.bpm.ready {
-    color: var(--amber);
-}
-
-.value.bpm.approx {
-    font-weight: 400;
-}
-
-.value.bpm.estimate {
-    color: var(--text-50);
-}
-
-.sub {
-    font-size: 13px;
-    color: var(--text-60);
-}
-
 .explain {
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--text-75);
 }
 
-.value.bpm ::deep .pennant {
-    margin-left: 4px;
-    vertical-align: top;
+.where-line {
+    gap: 6px 10px;
+    padding-top: 4px;
 }
 
 .next {
-    font-size: 14px;
+    font-size: 12.5px;
     color: var(--text-75);
 }
 
@@ -202,9 +266,9 @@ h1 {
 .progress {
     width: 100%;
     height: 3px;
+    overflow: hidden;
     background: var(--line-strong);
     border-radius: 2px;
-    overflow: hidden;
 }
 
 .progress span {
@@ -214,10 +278,15 @@ h1 {
 }
 
 .why {
-    margin-top: auto;
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--text-60);
     text-decoration: none;
+    white-space: nowrap;
+}
+
+.back:hover,
+.why:hover {
+    color: var(--text);
 }
 
 .columns {
@@ -247,21 +316,48 @@ h1 {
     .columns {
         grid-template-columns: minmax(0, 1fr);
     }
+}
 
-    .band {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+/* At 56rem the cover is 96 px beside the title and the cells go two by two under both (handoff 22 §1). */
+@media (max-width: 56rem) {
+    .hs {
+        grid-template-columns: 96px minmax(0, 1fr);
+        grid-template-areas:
+            "cover title"
+            "cells cells";
+        grid-template-rows: auto auto;
     }
 
-    .cell:nth-child(3) {
+    .hs-cover {
+        width: 96px;
+        height: 96px;
+    }
+
+    .hs-title {
+        padding: 12px 18px 10px;
+    }
+
+    h1 {
+        font-size: 21px;
+        line-height: 27px;
+    }
+
+    .cells {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: none;
+        grid-auto-rows: auto;
+    }
+
+    .cells.has-foot {
+        grid-template-rows: none;
+    }
+
+    .cell:nth-child(odd) {
         border-left: none;
     }
 
     .cell:nth-child(n + 3) {
-        border-top: 1px solid var(--line-strong);
-    }
-
-    .value {
-        font-size: 36px;
+        border-top: 1px solid var(--line);
     }
 }
 

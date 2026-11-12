@@ -33,105 +33,133 @@
     }
     else
     {
-        <header class="heading">
-            <Cover TrackKey="@TrackKey" Side="200" />
-            <div class="heading-text">
+        <header class="hs">
+            <div class="hs-cover"><Cover TrackKey="@TrackKey" Side="152" /></div>
+            <div class="hs-title">
                 <h1>@Name</h1>
-                <p class="meta">@Meta</p>
+                <p class="meta">@Meta@if (YouTubeId is { } watch)
+                {<text>@(Meta.Length > 0 ? " · " : null)<a href="@($"https://www.youtube.com/watch?v={watch}")" target="_blank" rel="noopener noreferrer">YouTube ↗</a></text>}</p>
+            </div>
+
+            <div class="cells @(HasFoot ? "has-foot" : null) @(_row?.IsLibraryOnly is true ? "library-only" : null)">
+                <div class="cell">
+                    <div class="cell-head">
+                        <span class="label">@(_row?.IsLibraryOnly is true ? "Key · tagged in Ableton" : "Key")</span>
+                        <div class="line">
+                            @if (Center is { } center && ModeText.Lead(center, Mixed) is { } lead)
+                            {
+                                <span class="mono lead">@lead <span class="arrow">→</span></span>
+                            }
+                            <span class="mono value key @(Key is null ? "empty" : null)">@(KeyText.Spell(Key) ?? "—")</span>
+                            <span class="note">
+                                @if (Center is { } reasoned && ModeText.Reason(reasoned, Mixed) is { } reason)
+                                {
+                                    <text>@reason&#32;</text>
+                                }
+                                <ProseText Text="@KeyNote" Inline="true" />
+                            </span>
+                        </div>
+                    </div>
+                    <div class="cell-foot">
+                        @if (OtherSections is { Count: > 0 } others)
+                        {
+                            <ul class="sections">
+                                @foreach (var part in others)
+                                {
+                                    <li>
+                                        <a class="section-pick" href="@($"song/{Uri.EscapeDataString(TrackKey)}#evidence")" title="What was found for this section" @onclick="() => _section = part.Label">
+                                            <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
+                                            <span class="mono section-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+
+                <div class="cell">
+                    <div class="cell-head">
+                        <span class="label">Confidence</span>
+                        <div class="line">
+                            <span class="mono value conf @KeyText.ConfidenceTone(Confidence) @(Verdict?.DecidedBy is DecidedBy.Person ? "call" : null)">@KeyText.Headline(Verdict?.DecidedBy, Confidence)</span>
+                            <span class="note">@ConfidenceNote</span>
+                        </div>
+                    </div>
+                    <div class="cell-foot">
+                        @if (Judging.Of(TrackKey) is { IsRunning: true } running)
+                        {
+                            <span class="judging-chip"><span class="dot"></span>judging from bars</span>
+                            <span class="note">
+                                @JudgeText.Spans(running.Direction.Windows) · @JudgeText.Brief(running) · started @running.StartedAt.ToLocalTime().ToString("h:mm tt")
+                            </span>
+                        }
+                        else if (Invitation is { } invitation)
+                        {
+                            <span class="invitation">@invitation</span>
+                            <a class="outline invite" href="@WarpViewLink" @onclick="() => _openRequests++">Judge from these bars ↓</a>
+                        }
+                    </div>
+                </div>
+
+                <div class="cell">
+                    <div class="cell-head">
+                        <span class="label">BPM</span>
+                        <div class="line">
+                            <span class="mono value bpm @(_row?.State is TrackState.ReadyToWarp ? "ready" : null) @(Bpm is null ? "empty" : null) @(Bpm?.IsApproximate is true ? "approx" : null) @(Bpm?.IsEstimate is true ? "estimate" : null)">@(Bpm?.Text ?? "—")@if (Bpm is { Mark: not OffMark.None })
+                            {<OffMarkGlyph Mark="Bpm.Mark" Large="true" />}</span>
+                            <span class="note">@(Bpm?.Note ?? "not measured")</span>
+                        </div>
+                    </div>
+                    <div class="cell-foot">
+                        @if (Bpm?.Explanation is { } explanation)
+                        {
+                            <span class="explain">@explanation@if (Bpm.Mark is not OffMark.None)
+                            {<text> </text><a href="@WarpViewLink">True up in Warp ↓</a>}</span>
+                        }
+                        @if (Tempo is { Drifts: true } drifting)
+                        {
+                            <TempoStrip Tempo="drifting" />
+                        }
+                    </div>
+                </div>
+
+                <div class="cell where">
+                    <div class="cell-head">
+                        <span class="label">Where it is</span>
+                        <div class="line where-line">
+                            @if (_row is not null)
+                            {
+                                <StateChip Row="_row" />
+                                <span class="next">@_row.Next</span>
+                            }
+                            @if (HasEvidenceSection)
+                            {
+                                <a class="why" href="@($"song/{Uri.EscapeDataString(TrackKey)}#evidence")">Why @Verdicted ↓</a>
+                            }
+                        </div>
+                    </div>
+                    <div class="cell-foot">
+                        @if (_row?.RunningSince is { } since)
+                        {
+                            <span class="mono elapsed">
+                                @Clock.Elapsed(since)@(Expected is { } expected ? $" of about {expected.Humanize()}" : null)
+                            </span>
+                            @if (Expected is { } estimate)
+                            {
+                                <span class="progress"><span style="width: @Percent(since, estimate)%"></span></span>
+                            }
+                        }
+                    </div>
+                </div>
             </div>
         </header>
 
         @if (_row is not null)
         {
+            <Player Row="_row" Editor="_stems" />
             <TrackFindings Row="_row" />
         }
-
-        <section class="band @(_row?.IsLibraryOnly is true ? "library-only" : null) @(HasFlow ? "with-flow" : null)">
-            <div class="cell">
-                <span class="label">@(_row?.IsLibraryOnly is true ? "Key · tagged in Ableton" : "Key")</span>
-                @if (Center is { } center && ModeText.Lead(center, Mixed) is { } lead)
-                {
-                    <span class="mono lead">@lead <span class="arrow">→</span></span>
-                }
-                <span class="mono value key @(Key is null ? "empty" : null)">@(KeyText.Spell(Key) ?? "—")</span>
-                @if (Center is { } reasoned && ModeText.Reason(reasoned, Mixed) is { } reason)
-                {
-                    <span class="reason">@reason</span>
-                }
-                @if (OtherSections is { Count: > 0 } others)
-                {
-                    <ul class="sections">
-                        @foreach (var part in others)
-                        {
-                            <li>
-                                <a class="section-pick" href="@($"song/{Uri.EscapeDataString(TrackKey)}#evidence")" title="What was found for this section" @onclick="() => _section = part.Label">
-                                    <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
-                                    <span class="mono section-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
-                                </a>
-                            </li>
-                        }
-                    </ul>
-                }
-                <span class="sub"><ProseText Text="@KeyNote" Inline="true" /></span>
-            </div>
-            <div class="cell">
-                <span class="label">Confidence</span>
-                @if (Judging.Of(TrackKey) is { IsRunning: true } running)
-                {
-                    <span class="judging-chip"><span class="dot"></span>judging from bars</span>
-                    <span class="sub">
-                        @JudgeText.Spans(running.Direction.Windows) · @JudgeText.Brief(running) · started @running.StartedAt.ToLocalTime().ToString("h:mm tt")
-                    </span>
-                }
-                else
-                {
-                    <span class="mono value conf @KeyText.ConfidenceTone(Confidence) @(Verdict?.DecidedBy is DecidedBy.Person ? "call" : null)">@KeyText.Headline(Verdict?.DecidedBy, Confidence)</span>
-                    <span class="sub">@ConfidenceNote</span>
-                    @if (Invitation is { } invitation)
-                    {
-                        <span class="invitation">@invitation</span>
-                        <a class="outline invite" href="@WarpViewLink" @onclick="() => _openRequests++">Judge again ↓</a>
-                    }
-                }
-            </div>
-            <div class="cell">
-                <span class="label">BPM</span>
-                <span class="mono value bpm @(_row?.State is TrackState.ReadyToWarp ? "ready" : null) @(Bpm is null ? "empty" : null) @(Bpm?.IsApproximate is true ? "approx" : null) @(Bpm?.IsEstimate is true ? "estimate" : null)">@(Bpm?.Text ?? "—")@if (Bpm is { Mark: not OffMark.None })
-                {<OffMarkGlyph Mark="Bpm.Mark" Large="true" />}</span>
-                <span class="sub">@(Bpm?.Note ?? "not measured")</span>
-                @if (Bpm?.Explanation is { } explanation)
-                {
-                    <span class="explain">@explanation@if (Bpm.Mark is not OffMark.None)
-                    {<text> </text><a href="@WarpViewLink">True up in Warp ↓</a>}</span>
-                }
-                @if (Tempo is { Drifts: true } drifting)
-                {
-                    <TempoStrip Tempo="drifting" />
-                }
-            </div>
-            <div class="cell where">
-                <span class="label">Where it is</span>
-                @if (_row is not null)
-                {
-                    <StateChip Row="_row" />
-                    <span class="next">@_row.Next</span>
-                    @if (_row.RunningSince is { } since)
-                    {
-                        <span class="mono elapsed">
-                            @Clock.Elapsed(since)@(Expected is { } expected ? $" of about {expected.Humanize()}" : null)
-                        </span>
-                        @if (Expected is { } estimate)
-                        {
-                            <span class="progress"><span style="width: @Percent(since, estimate)%"></span></span>
-                        }
-                    }
-                }
-                @if (HasEvidenceSection)
-                {
-                    <a class="why" href="@($"song/{Uri.EscapeDataString(TrackKey)}#evidence")">Why @Verdicted ↓</a>
-                }
-            </div>
-        </section>
 
         @if (HasFlow)
         {
@@ -292,12 +320,29 @@
             [
                 _row?.Genre is { Genres: [_, ..] genres } ? string.Join(", ", genres) : null,
                 .. _row?.Release?.Describe() ?? [],
-                _row is { Uploads.Count: > 0 } ? "upload".ToQuantity(_row.Uploads.Count) : null,
+                _row is { Uploads.Count: > 1 } ? "upload".ToQuantity(_row.Uploads.Count) : null,
+                _row is { HasUpload: true } && !IsOnYouTube ? "imported file" : null,
             ];
 
             return string.Join(" · ", parts.OfType<string>());
         }
     }
+
+    private string CutFrom => _row?.Uploads is [{ } first, ..] ? first.TrackKey : TrackKey;
+
+    private bool IsOnYouTube => _row is { HasUpload: true } && TrackKeys.IsVideoId(CutFrom);
+
+    /// <summary>The upload the files are cut from, for the header's link; none for an imported file.</summary>
+    private string? YouTubeId => IsOnYouTube ? CutFrom : null;
+
+    /// <summary>Whether a cell has more than a note to say, which grows the strip a second row.</summary>
+    private bool HasFoot =>
+        OtherSections.Count > 0
+        || Judging.Of(TrackKey) is { IsRunning: true }
+        || Invitation is not null
+        || Bpm?.Explanation is not null
+        || Tempo is { Drifts: true }
+        || _row?.RunningSince is not null;
 
     private string KeyNote =>
         _row switch
