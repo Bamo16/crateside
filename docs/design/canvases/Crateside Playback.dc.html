@@ -1,0 +1,929 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Playback on Track details</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0c0b09}
+.cv{width:1980px;padding:40px;box-sizing:border-box;background:#0c0b09;display:flex;flex-direction:column;gap:70px;align-items:flex-start}
+.cv-l{font:600 13px 'IBM Plex Mono',monospace;color:#0f0e0c;background:#ece7dc;border-radius:4px;padding:3px 9px;display:inline-block;margin-bottom:14px}
+:root{--bg:#141310;--surface:#1b1a15;--raised:#23211a;--ink:#0f0e0c;--text:#ece7dc;--t75:rgba(236,231,220,.75);--t60:rgba(236,231,220,.6);--t50:rgba(236,231,220,.5);--t40:rgba(236,231,220,.4);--t30:rgba(236,231,220,.3);--line:rgba(236,231,220,.08);--teal:#6fc7d6;--amber:#e8b45a;--red:#e07a6d;--green:#8fcf9b}
+.pb{background:var(--bg);color:var(--text);font:400 14px/1.4 'IBM Plex Sans',sans-serif;box-sizing:border-box;position:relative}
+.pb *{box-sizing:border-box}
+.pb button{font-family:inherit;cursor:pointer}
+.mono{font-family:'IBM Plex Mono',monospace}
+.caps{font:600 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--t40)}
+.t75{color:var(--t75)}.t60{color:var(--t60)}.t50{color:var(--t50)}.t40{color:var(--t40)}
+.sp{flex:1}
+.pb a{color:var(--text);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--t40)}
+
+/* page chrome */
+.nav{height:48px;display:flex;align-items:center;gap:26px;padding:0 32px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--t60)}
+.nav b{font-weight:600;font-size:15px;color:var(--text);margin-right:10px}
+.nav .on{color:var(--text);font-weight:500}
+.page{padding:18px 32px 40px}
+.back{font-size:13px;color:var(--t60);margin-bottom:10px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;font:500 12.5px 'IBM Plex Sans',sans-serif;color:var(--text);background:transparent;border:1px solid var(--t30);border-radius:6px;padding:4px 10px;min-height:30px;white-space:nowrap}
+.btn.sm{min-height:26px;padding:2px 8px;font-size:12px}
+.btn[disabled]{color:var(--t40);border-color:var(--line);cursor:default}
+.tog{display:inline-flex;align-items:center;gap:6px;font:500 12.5px 'IBM Plex Sans',sans-serif;color:var(--t75);background:transparent;border:1px solid var(--t30);border-radius:999px;padding:4px 11px;min-height:30px;white-space:nowrap}
+.tog.on{color:var(--text);background:rgba(236,231,220,.14);border-color:var(--t50);font-weight:600}
+.tog[disabled]{color:var(--t40);border-color:var(--line);cursor:default}
+.why{font-size:12px;color:var(--t40);white-space:nowrap}
+.pb input[type=range]{accent-color:#ece7dc;width:72px;height:16px;margin:0}
+
+/* header strip */
+.hs{display:flex;background:var(--surface);border-radius:10px;overflow:hidden}
+.cover{width:152px;height:152px;flex:none;background:#2b2820;display:grid;place-items:center;font:400 11px 'IBM Plex Mono',monospace;color:var(--t40)}
+.hs-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.hs-title{padding:15px 22px 12px}
+.hs-title h1{margin:0;font:600 24px/30px 'IBM Plex Sans',sans-serif}
+.hs-title p{margin:3px 0 0;font-size:13.5px;color:var(--t60)}
+.cells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line);flex:1}
+.cell{padding:10px 22px 11px;border-left:1px solid var(--line);min-width:0}
+.cell:first-child{border-left:0}
+.cell .vl{display:flex;align-items:baseline;gap:12px;margin-top:2px}
+.cell .v{font:600 28px/34px 'IBM Plex Mono',monospace;white-space:nowrap}
+.cell .n{font-size:12.5px;line-height:1.3;color:var(--t60)}
+.chip{display:inline-flex;align-items:center;font-size:12px;border-radius:999px;padding:2px 10px;border:1px solid var(--t30);white-space:nowrap}
+.chip.done{color:var(--green);border-color:rgba(143,207,155,.5)}
+.chip.fill{background:rgba(236,231,220,.8);color:var(--ink);border-color:transparent;font-weight:500;font-size:11px;padding:1px 8px}
+.chip.teal{background:var(--teal);color:var(--ink);border-color:transparent;font-weight:600}
+.flow{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 22px;background:var(--surface);border-radius:10px;font-size:12.5px;color:var(--t60)}
+
+/* player strip */
+.ps{background:var(--raised);border:1px solid rgba(236,231,220,.1);border-radius:10px;margin-top:10px;position:relative}
+.ps.pinned{margin-top:0;border-top:0;border-radius:0 0 10px 10px;box-shadow:0 10px 28px rgba(0,0,0,.55)}
+.ps-row{display:flex;align-items:center;gap:8px 16px;padding:9px 14px 8px;flex-wrap:wrap}
+.grp{display:flex;align-items:center;gap:8px}
+.grp.sep{padding-left:16px;border-left:1px solid var(--line)}
+.play{width:40px;height:40px;flex:none;border-radius:50%;background:var(--text);color:var(--ink);border:0;display:grid;place-items:center}
+.play[disabled]{background:transparent;border:1px solid var(--line);color:var(--t30);cursor:default}
+.play.loading{background:transparent;border:2px solid rgba(111,199,214,.3);border-top-color:var(--teal);color:var(--t40)}
+.ro{font:500 14px 'IBM Plex Mono',monospace;white-space:nowrap;min-width:27ch}
+.ro b{font-weight:600}
+.pick{width:210px;justify-content:space-between;min-height:32px;font-size:13px}
+.pick span:first-child{overflow:hidden;text-overflow:ellipsis}
+.pin-id{display:flex;align-items:center;gap:10px;min-width:0;max-width:260px;padding-right:16px;border-right:1px solid var(--line)}
+.pin-id .th{width:36px;height:36px;flex:none;border-radius:4px;background:#2b2820}
+.pin-id span{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ps-wave{position:relative;height:34px;margin:0 14px 11px;background:rgba(0,0,0,.22);border-radius:4px;overflow:hidden;cursor:pointer}
+.ps-wave .wf{position:absolute;inset:3px 0;background:rgba(236,231,220,.5)}
+.ps-wave .rest{position:absolute;top:0;bottom:0;right:0;background:rgba(35,33,26,.62)}
+.ps-wave.empty{cursor:default;display:flex;align-items:center;padding:0 12px;font-size:12.5px;color:var(--t40);background:transparent;border:1px dashed var(--line)}
+.ps-wave.fail{cursor:default;display:flex;align-items:center;gap:12px;padding:0 12px;font-size:12.5px;color:var(--red);background:transparent;border:1px solid rgba(224,122,109,.4)}
+.ph{position:absolute;top:0;bottom:0;width:1px;background:var(--text);pointer-events:none;z-index:3}
+.ph i{position:absolute;top:0;left:-5px;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--text)}
+.menu{position:absolute;z-index:6;background:var(--raised);border:1px solid rgba(236,231,220,.16);border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,.55);padding:4px}
+.mi{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:5px;font-size:13px;min-height:34px}
+.mi.on{background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(236,231,220,.35);font-weight:600}
+.mi.off{color:var(--t40)}
+.mi .st{font-size:12px;font-weight:400;color:var(--t50);margin-left:auto;white-space:nowrap}
+
+/* warp view */
+.wv{position:relative}
+.wv-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;font-size:12.5px;color:var(--t60);min-height:30px}
+.r{display:grid;grid-template-columns:200px minmax(0,1fr);column-gap:12px;margin-bottom:6px}
+.g{font-size:12px;color:var(--t50);align-self:center;line-height:1.35}
+.g b{display:block;font-weight:500;font-size:12.5px;color:var(--t75)}
+.g small{font-size:10.5px;color:var(--t40)}
+.plot{position:relative;min-width:0}
+.over{position:absolute;left:212px;right:0;pointer-events:none}
+.ov{position:relative;height:34px;background:var(--surface);border-radius:3px;touch-action:none;user-select:none}
+.ov .wf{position:absolute;inset:4px 0;background:var(--t30)}
+.dim{position:absolute;top:0;bottom:0;background:rgba(20,19,16,.66)}
+.win{position:absolute;top:0;bottom:0;background:rgba(236,231,220,.07);border-top:1px solid var(--t50);border-bottom:1px solid var(--t50);cursor:grab}
+.win.hov{background:rgba(236,231,220,.12)}
+.win.drag{background:rgba(236,231,220,.17);border-color:var(--text);cursor:grabbing}
+.win.loop{border-top:3px solid var(--text)}
+.hd{position:absolute;top:0;bottom:0;width:6px;background:rgba(236,231,220,.7);border-radius:2px;cursor:ew-resize;border:0;padding:0}
+.hd.l{left:-3px}.hd.r{right:-3px}
+.hd::before{content:'';position:absolute;top:0;bottom:0;left:-5px;right:-5px}
+.hd::after{content:'';position:absolute;left:2.5px;top:50%;height:10px;margin-top:-5px;width:1px;background:var(--ink)}
+.hd.hov{background:var(--text)}
+.hd.drag{background:var(--text);box-shadow:0 0 0 2px rgba(236,231,220,.28)}
+.hd.stop{background:var(--text);box-shadow:0 0 0 2px rgba(236,231,220,.28)}
+.tip{position:absolute;bottom:calc(100% + 5px);transform:translateX(-50%);font:500 11px 'IBM Plex Mono',monospace;background:var(--text);color:var(--ink);border-radius:3px;padding:1px 6px;white-space:nowrap;z-index:4}
+.ghost{position:absolute;top:0;bottom:0;border:1px dashed var(--t50);border-radius:2px;pointer-events:none}
+.ruler{position:relative;height:40px;border-bottom:1px solid var(--t30)}
+.ticks{position:absolute;bottom:0;right:0;height:5px;background:repeating-linear-gradient(90deg,var(--t30) 0 1px,transparent 1px var(--p))}
+.bn{position:absolute;bottom:7px;font:400 10.5px 'IBM Plex Mono',monospace;color:var(--t50);padding-left:3px;white-space:nowrap}
+.tk{position:absolute;bottom:0;width:1px;height:9px;background:var(--t50)}
+.tag{position:absolute;top:0;font:400 10px 'IBM Plex Mono',monospace;color:var(--t60);border:1px dashed var(--t40);border-radius:2px;padding:0 4px;background:var(--bg);white-space:nowrap;cursor:pointer}
+.tag.on{background:var(--text);color:var(--ink);border:1px solid var(--text)}
+.band{position:absolute;top:0;bottom:0;border-left:1px dashed var(--t30);border-right:1px dashed var(--t30)}
+.band.on{border:0;border-left:1px solid rgba(236,231,220,.9);border-right:1px solid rgba(236,231,220,.9);background:rgba(236,231,220,.07)}
+.tempo{position:relative;height:26px}
+.tempo::after{content:'';position:absolute;left:0;right:0;top:12px;border-top:1px solid var(--t75)}
+.lane{position:relative;height:64px;overflow:hidden;border-radius:3px}
+.lane.sel{background:rgba(236,231,220,.05);box-shadow:inset 0 0 0 1px var(--t30)}
+.zin{position:absolute;top:0;bottom:0;left:0;width:100%}
+.lane .wf{position:absolute;left:0;right:0;height:25px;background:rgba(236,231,220,.42)}
+.lane .c1{top:5px}.lane .c2{top:34px}
+.clip{position:absolute;top:0;bottom:0;width:1px;background:var(--t50)}
+.lg{padding:7px 10px;border-radius:6px;align-self:stretch;font-size:13px;font-weight:600;line-height:1.3}
+.lg.sel{background:var(--raised);box-shadow:inset 0 0 0 1px var(--t30)}
+.lg small{display:block;font-size:11px;font-weight:400;color:var(--t50);margin-top:3px}
+.lg .now{float:right;color:var(--text);margin-top:1px}
+.ks{position:relative;height:52px;border-top:1px solid rgba(236,231,220,.1)}
+.kb{position:absolute;top:3.5px;height:44px;border:1px solid rgba(236,231,220,.55);border-radius:3px;background:rgba(236,231,220,.03);font:500 11.5px 'IBM Plex Mono',monospace;padding:3px 6px;white-space:nowrap;overflow:hidden}
+.kb.w{background:rgba(236,231,220,.07)}
+.chords{height:34px;border:1px dashed var(--line);border-radius:3px;display:flex;align-items:center;padding:0 10px;font-size:11.5px;color:var(--t40)}
+.ax{position:relative;height:20px}
+.ax span{position:absolute;top:4px;font:400 10.5px 'IBM Plex Mono',monospace;color:var(--t40)}
+.hl{position:absolute;top:0;bottom:0;width:1px;background:var(--t30)}
+.cur{position:absolute;width:16px;height:16px;color:var(--text);z-index:5;filter:drop-shadow(0 1px 2px #000)}
+.wf{-webkit-mask-image:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 3px);mask-image:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 3px)}
+.env-a{clip-path:polygon(0 47%,3% 45%,6% 43%,8% 44%,9% 15%,12% 9%,15% 13%,18% 7%,21% 11%,24% 8%,27% 15%,30% 6%,33% 10%,36% 12%,39% 5%,42% 9%,45% 20%,47% 8%,50% 6%,53% 11%,56% 7%,59% 14%,62% 5%,65% 8%,68% 12%,71% 6%,74% 10%,77% 7%,80% 17%,83% 6%,86% 9%,89% 5%,92% 11%,95% 8%,97% 30%,99% 43%,100% 48%,100% 52%,99% 57%,97% 70%,95% 92%,92% 89%,89% 95%,86% 91%,83% 94%,80% 83%,77% 93%,74% 90%,71% 94%,68% 88%,65% 92%,62% 95%,59% 86%,56% 93%,53% 89%,50% 94%,47% 92%,45% 80%,42% 91%,39% 95%,36% 88%,33% 90%,30% 94%,27% 85%,24% 92%,21% 89%,18% 93%,15% 87%,12% 91%,9% 85%,8% 56%,6% 57%,3% 55%,0 53%)}
+.env-b{clip-path:polygon(0 49%,8% 49%,9% 35%,11% 25%,13% 40%,15% 22%,18% 20%,20% 37%,22% 18%,25% 21%,28% 35%,30% 17%,34% 20%,37% 39%,39% 47%,44% 47%,45% 25%,48% 16%,52% 20%,55% 36%,57% 19%,61% 15%,64% 30%,66% 17%,70% 21%,73% 40%,75% 20%,79% 15%,83% 19%,86% 35%,88% 18%,92% 22%,95% 39%,97% 47%,100% 49%,100% 51%,97% 53%,95% 61%,92% 78%,88% 82%,86% 65%,83% 81%,79% 85%,75% 80%,73% 60%,70% 79%,66% 83%,64% 70%,61% 85%,57% 81%,55% 64%,52% 80%,48% 84%,45% 75%,44% 53%,39% 53%,37% 61%,34% 80%,30% 83%,28% 65%,25% 79%,22% 82%,20% 63%,18% 80%,15% 78%,13% 60%,11% 75%,9% 65%,8% 51%,0 51%)}
+
+/* state sheets */
+.sheet{padding:36px 40px 48px}
+.st-h{font:600 15px 'IBM Plex Sans',sans-serif;margin:0 0 4px}
+.st-p{font-size:13px;line-height:1.5;color:var(--t60);margin:0 0 12px;max-width:86ch}
+.st{margin-bottom:34px}
+.st-n{display:inline-block;font:600 11px 'IBM Plex Mono',monospace;background:var(--text);color:var(--ink);border-radius:4px;padding:1px 6px;margin-right:8px;vertical-align:1px}
+.frame{border:1px solid var(--line);border-radius:6px;overflow:hidden}
+
+.pt{position:absolute;width:13px;height:13px;margin:-6px 0 0 -6px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #000;z-index:6}
+.pt.down{background:#fff}
+.pt::after{content:attr(data-c);position:absolute;left:17px;top:-4px;font:500 10.5px 'IBM Plex Mono',monospace;color:var(--text);background:var(--bg);padding:0 5px;border-radius:3px;white-space:nowrap;border:1px solid var(--t30)}
+.sov{margin-top:24px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.two .caps{margin-bottom:2px}
+.hd.focus{background:var(--text);outline:2px solid var(--text);outline-offset:2px}
+.drawer{position:relative;margin-top:16px;background:var(--surface);border:1px solid rgba(236,231,220,.16);border-radius:8px;padding:14px 16px;display:grid;grid-template-columns:250px 1fr auto;gap:24px;font-size:13px}
+.tt{position:absolute;z-index:6;font-size:12px;background:#2e2b22;border:1px solid var(--t30);border-radius:4px;padding:3px 8px;white-space:nowrap}
+
+/* rail */
+.rail .group{padding:14px 0;border-top:1px solid var(--line)}
+.rail .ll{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.up{background:var(--surface);border-radius:8px;padding:10px 12px;margin-top:8px;font-size:12.5px}
+.up div{display:flex;justify-content:space-between;align-items:baseline}
+</style>
+</helmet>
+<div class="cv">
+<div class="cv-b"><div class="cv-l">1a · Track details with the player, full width</div>
+<div class="pb" style="width: 1440px; min-height: 1240px">
+<div class="nav"><b>crateside</b><span>Dashboard</span><span class="on">Tracks</span><span>Tools</span><span>Settings</span></div>
+<div class="page">
+<div class="back">← Tracks</div>
+
+<header class="hs">
+<div class="cover" role="img" aria-label="Cover art">cover · 152</div>
+<div class="hs-main">
+<div class="hs-title">
+<h1>Death Grips - Takyon (Death Yon)</h1>
+<p>Hip Hop · 1 upload · <a href="https://www.youtube.com/watch?v=89F5fpvwPr0">YouTube ↗</a></p>
+</div>
+<div class="cells">
+<div class="cell"><div class="caps">Key</div><div class="vl"><span class="v">B min</span><span class="n">tagged in Ableton on 2 of 2 samples</span></div></div>
+<div class="cell"><div class="caps">Confidence</div><div class="vl"><span class="v" style="font-weight: 500">MEDIUM</span><span class="n">judged 2026-10-21</span></div></div>
+<div class="cell"><div class="caps">BPM</div><div class="vl"><span class="v">66.97</span><span class="n">from your warp</span></div></div>
+<div class="cell"><div class="caps">Where it is</div><div class="vl" style="align-items: center; min-height: 34px"><span class="chip done">done</span><span class="n">in the library · <a href="#why">Why B min ↓</a></span></div></div>
+</div>
+</div>
+</header>
+
+<section class="ps" aria-label="Player">
+<div class="ps-row">
+<button class="play" aria-label="Pause" title="Pause (Space)"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 2h3v10H3zM8 2h3v10H8z" fill="currentColor"/></svg></button>
+<div class="ro"><b>bar 19.3.1</b><span class="t75"> · 1:20.80</span><span class="t40"> / 2:49</span></div>
+<button class="btn pick" aria-haspopup="listbox" aria-label="What plays"><span>Instrumental - Full</span><span class="t60">▾</span></button>
+<span class="sp"></span>
+<div class="grp">
+<button class="tog on" aria-pressed="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 14 6.5 2h3L11 14zM8 10l3.5-6"/></svg>Click</button>
+<button class="btn sm" aria-haspopup="listbox" aria-label="Click sound">Classic <span class="t60">▾</span></button>
+<input type="range" min="0" max="100" value="60" aria-label="Click level" style="width: 60px">
+</div>
+<div class="grp sep">
+<button class="tog" disabled aria-pressed="false"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7V6a2 2 0 0 1 2-2h7M10 2l2 2-2 2M13 9v1a2 2 0 0 1-2 2H4M6 14l-2-2 2-2"/></svg>Loop</button>
+<span class="why">needs a zoomed view</span>
+</div>
+<div class="grp sep">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="currentColor" stroke="none"/><path d="M10.5 5.5a3.5 3.5 0 0 1 0 5M12.5 3.5a6.5 6.5 0 0 1 0 9"/></svg>
+<input type="range" min="0" max="100" value="80" aria-label="Volume">
+</div>
+</div>
+<div class="ps-wave" title="Play from here"><div class="wf env-a"></div><div class="rest" style="left: 47.79%"></div><div class="ph" style="left: 47.79%"></div></div>
+</section>
+
+<div class="flow"><span>Pass 1 · First run</span><span class="sp" style="flex: 0 0 60px"></span><span class="chip done">✓ Download</span><span class="chip done">✓ Detect</span><span class="chip done">✓ Judge</span><span class="chip done">✓ Separate</span><span class="chip done">✓ Stage &amp; tag</span><span class="chip done">✓ Warp</span></div>
+
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 304px; column-gap: 40px; margin-top: 28px">
+<main>
+<div style="border: 1px solid var(--line); border-radius: 6px; padding: 9px 14px; font-size: 13px; display: grid; grid-template-columns: 300px 120px 1fr; margin-bottom: 6px"><b style="font-weight: 600">Instrumental - Full</b><span class="mono" style="color: var(--green)">B min ✓</span><span class="mono" style="color: var(--green)">Library</span></div>
+<div style="border: 1px solid var(--line); border-radius: 6px; padding: 9px 14px; font-size: 13px; display: grid; grid-template-columns: 300px 120px 1fr; margin-bottom: 6px"><b style="font-weight: 600">Vocal - Full</b><span class="mono" style="color: var(--green)">B min ✓</span><span class="mono" style="color: var(--green)">Library</span></div>
+<div style="border: 1px dashed var(--line); border-radius: 6px; padding: 9px 14px; font-size: 12.5px; color: var(--t60); margin-bottom: 30px">+ Change what is cut</div>
+
+<section class="wv" aria-label="Warp">
+<div class="wv-head"><span class="caps">Warp</span><span>2 stems · one warp · 1 marker · Complex</span><button class="btn sm">Judge again</button><span class="sp"></span><span class="mono t75">whole track · 2:49</span><button class="btn sm" disabled aria-label="Move the view back">‹</button><button class="btn sm" disabled aria-label="Move the view on">›</button></div>
+
+<div class="r"><div class="g"><b>View</b><small>drag the window · pull a handle to zoom</small></div>
+<div class="plot"><div class="ov"><div class="wf env-a"></div><div class="win" style="left: 0; right: 0" title="Double-click to zoom"><button class="hd l" aria-label="Start of the view"></button><button class="hd r" aria-label="End of the view"></button></div><div class="ph" style="left: 47.79%"></div></div></div></div>
+
+<div class="r"><div class="g">Bar</div>
+<div class="plot"><div class="ruler" style="cursor: pointer"><div class="ticks" style="left: .105%; --p: 2.1216%"></div>
+<span class="bn" style="left: 8.58%">clip start</span><span class="tk" style="left: 8.58%"></span>
+<span class="bn" style="left: 42.49%">17</span><span class="tk" style="left: 42.49%"></span>
+<span class="bn" style="left: 76.4%">33</span><span class="tk" style="left: 76.4%"></span>
+<button class="tag" style="left: 8.58%">judge · 1–2</button><button class="tag" style="left: 25.54%">judge · bars 9–20</button><button class="tag" style="left: 65.81%">judge · bars 28–36</button>
+</div></div></div>
+
+<div class="r"><div class="g">Tempo from the markers<br><span class="mono" style="color: var(--text); font-weight: 600">66.97</span> from your warp</div><div class="plot"><div class="tempo"></div></div></div>
+
+<div class="r"><div class="g"><b>Off the grid</b>holds</div><div class="plot"><div style="position: relative; height: 48px"><div style="position: absolute; left: 0; right: 0; top: 24px; border-top: 1px dashed var(--t30)"></div><svg viewBox="0 0 100 48" preserveAspectRatio="none" style="display: block; width: 100%; height: 48px" aria-hidden="true"><polyline fill="none" stroke="rgba(236,231,220,.6)" stroke-width="1" vector-effect="non-scaling-stroke" points="3,20 9,21 15,21 21,19 27,24 33,23 39,18 45,26 51,23 57,23 63,26 69,17 75,24 81,26 87,18 93,20 99,15"/></svg></div></div></div>
+
+<div class="r"><div class="lg sel"><svg class="now" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" role="img" aria-label="Playing"><path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="currentColor" stroke="none"/><path d="M10.5 5.5a3.5 3.5 0 0 1 0 5"/></svg>Instrumental - Full<small><span class="chip fill">Your warp</span> saved 21 Oct</small></div>
+<div class="plot"><div class="lane sel" style="cursor: pointer"><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div><div class="clip" style="left: 8.58%"></div></div></div></div>
+
+<div class="r"><div class="lg">Vocal - Full<small><span class="chip fill">Your warp</span> saved 21 Oct</small></div>
+<div class="plot"><div class="lane" style="cursor: pointer"><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div><div class="clip" style="left: 8.58%"></div></div></div></div>
+
+<div class="r"><div class="g"><b>Key</b><small>B minor, one center</small></div><div class="plot"><div class="ks"><div class="kb" style="left: 0; right: 0" title="B minor · ▶ from 0:00">B min</div></div></div></div>
+
+<div class="r"><div class="g"><b>Chords</b><small>#198</small></div><div class="plot"><div class="chords">chord times are not stored yet</div></div></div>
+
+<div class="r"><div></div><div class="plot"><div class="ax"><span style="left: 0">0:00</span><span style="left: 17.75%">0:30</span><span style="left: 35.49%">1:00</span><span style="left: 53.24%">1:30</span><span style="left: 70.98%">2:00</span><span style="left: 88.73%">2:30</span></div></div></div>
+
+<div class="over" style="top: 80px; bottom: 66px"><div class="band" style="left: 8.58%; width: 4.24%"></div><div class="band" style="left: 25.54%; width: 25.43%"></div><div class="band" style="left: 65.81%; width: 19.07%"></div><div class="ph" style="left: 47.79%"><i></i></div></div>
+</section>
+</main>
+
+<aside class="rail">
+<div class="group" style="border-top: 0; padding-top: 0"><button class="btn">Open folder</button></div>
+<div class="group"><div class="ll"><span class="caps">Genre</span><button class="btn sm">Change</button></div><div style="font-size: 13.5px; font-weight: 500">Hip Hop</div></div>
+<div class="group"><div class="ll"><span class="caps">Name</span><button class="btn sm">Rename</button></div><div style="font-size: 13.5px; font-weight: 500">Death Grips - Takyon (Death Yon)</div><div class="t50" style="font-size: 12px; margin-top: 3px">named from the file names</div></div>
+<div class="group"><span class="caps">Upload</span>
+<div class="up"><div><span class="t60">cut from</span><a href="https://www.youtube.com/watch?v=89F5fpvwPr0">YouTube ↗</a></div><div class="mono t75" style="margin-top: 3px">89F5fpvwPr0</div></div>
+</div>
+<div class="group" style="border-top-color: rgba(236,231,220,.2)"><span class="caps">Start over</span><div class="ll" style="margin-top: 8px"><span class="caps">Source</span><button class="btn sm">Swap source</button></div><div class="t50" style="font-size: 12px">cut from the playlist entry's own video</div></div>
+</aside>
+</div>
+</div>
+</div>
+</div>
+<div class="cv-b"><div class="cv-l">1b · Scrolled: the player pinned, the view zoomed</div>
+<div class="pb" style="width: 1440px; height: 820px; overflow: hidden">
+<div class="page" style="padding-top: 0">
+
+<section class="ps pinned" aria-label="Player">
+<div class="ps-row">
+<div class="pin-id"><div class="th" role="img" aria-label="Cover art"></div><span>Death Grips - Takyon (Death Yon)</span></div>
+<button class="play" aria-label="Pause" title="Pause (Space)"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 2h3v10H3zM8 2h3v10H8z" fill="currentColor"/></svg></button>
+<div class="ro"><b>bar 19.3.1</b><span class="t75"> · 1:20.80</span><span class="t40"> / 2:49</span></div>
+<button class="btn pick" aria-haspopup="listbox" aria-label="What plays"><span>Instrumental - Full</span><span class="t60">▾</span></button>
+<span class="sp"></span>
+<div class="grp">
+<button class="tog on" aria-pressed="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 14 6.5 2h3L11 14zM8 10l3.5-6"/></svg>Click</button>
+<button class="btn sm" aria-haspopup="listbox" aria-label="Click sound">Wood <span class="t60">▾</span></button>
+<input type="range" min="0" max="100" value="60" aria-label="Click level" style="width: 60px">
+</div>
+<div class="grp sep">
+<button class="tog on" aria-pressed="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7V6a2 2 0 0 1 2-2h7M10 2l2 2-2 2M13 9v1a2 2 0 0 1-2 2H4M6 14l-2-2 2-2"/></svg>Loop</button>
+</div>
+<div class="grp sep">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="currentColor" stroke="none"/><path d="M10.5 5.5a3.5 3.5 0 0 1 0 5M12.5 3.5a6.5 6.5 0 0 1 0 9"/></svg>
+<input type="range" min="0" max="100" value="80" aria-label="Volume">
+</div>
+</div>
+<div class="ps-wave" title="Play from here"><div class="wf env-a"></div><div class="rest" style="left: 47.79%"></div><div class="ph" style="left: 47.79%"></div></div>
+</section>
+
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) 304px; column-gap: 40px; margin-top: 30px">
+<main>
+<section class="wv" aria-label="Warp">
+<div class="wv-head"><span class="caps">Warp</span><span>2 stems · one warp · 1 marker · Complex</span><button class="btn sm">Judge again</button><span class="sp"></span><span class="mono" style="color: var(--text)">bars 17–24 · 1:11–1:40</span><button class="btn sm" aria-label="Move the view back by half">‹</button><button class="btn sm" aria-label="Move the view on by half">›</button></div>
+
+<div class="r"><div class="g"><b>View</b><small>looping these 8 bars · double-click for the whole track</small></div>
+<div class="plot"><div class="ov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.49%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win loop" style="left: 42.49%; width: 16.96%" title="Double-click for the whole track"><button class="hd l" aria-label="Start of the view, bar 17"></button><button class="hd r" aria-label="End of the view, bar 24"></button></div><div class="ph" style="left: 47.79%"></div></div></div></div>
+
+<div class="r"><div class="g">Bar</div>
+<div class="plot"><div class="ruler" style="cursor: pointer"><div class="ticks" style="left: 0; --p: 12.5%"></div><div class="ticks" style="left: 0; --p: 3.125%; height: 3px; opacity: .6"></div>
+<span class="bn" style="left: 0; bottom: 7px">17</span><span class="bn" style="left: 12.5%">18</span><span class="bn" style="left: 25%">19</span><span class="bn" style="left: 37.5%">20</span><span class="bn" style="left: 50%">21</span><span class="bn" style="left: 62.5%">22</span><span class="bn" style="left: 75%">23</span><span class="bn" style="left: 87.5%">24</span>
+<button class="tag" style="left: 26px">judge · bars 9–20</button>
+</div></div></div>
+
+<div class="r"><div class="g">Tempo from the markers<br><span class="mono" style="color: var(--text); font-weight: 600">66.97</span> from your warp</div><div class="plot"><div class="tempo"></div></div></div>
+
+<div class="r"><div class="lg sel"><svg class="now" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" role="img" aria-label="Playing"><path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="currentColor" stroke="none"/><path d="M10.5 5.5a3.5 3.5 0 0 1 0 5"/></svg>Instrumental - Full<small><span class="chip fill">Your warp</span> saved 21 Oct</small></div>
+<div class="plot"><div class="lane sel" style="cursor: pointer"><div class="zin" style="width: 589.8%; left: -250.6%"><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div></div></div></div></div>
+
+<div class="r"><div class="lg">Vocal - Full<small><span class="chip fill">Your warp</span> saved 21 Oct</small></div>
+<div class="plot"><div class="lane" style="cursor: pointer"><div class="zin" style="width: 589.8%; left: -250.6%"><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div></div></div></div></div>
+
+<div class="r"><div class="g"><b>Key</b><small>B minor, one center</small></div><div class="plot"><div class="ks" style="overflow: hidden"><div class="kb" style="left: -6px; right: -6px; padding-left: 12px" title="B minor · ▶ from 0:00">B min</div></div></div></div>
+
+<div class="r"><div class="g"><b>Chords</b><small>#198</small></div><div class="plot"><div class="chords">chord times are not stored yet</div></div></div>
+
+<div class="r"><div></div><div class="plot"><div class="ax"><span style="left: 11%">1:15</span><span style="left: 28.5%">1:20</span><span style="left: 45.9%">1:25</span><span style="left: 63.4%">1:30</span><span style="left: 80.8%">1:35</span></div></div></div>
+
+<div class="over" style="top: 80px; bottom: 66px; overflow: hidden"><div class="band" style="left: -2px; width: calc(50% + 2px)"></div><div class="ph" style="left: 31.25%"><i></i></div></div>
+</section>
+
+<div style="margin-top: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px"><b style="font-weight: 600">Death Grips - Takyon (Death Yon) (Instrumental - Full).flac</b> <span class="chip fill" style="margin-left: 8px">Your warp</span>
+<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-top: 14px"><span class="caps">Tempo</span><span class="caps">Mode</span><span class="caps">Markers</span><span class="caps">Transients</span><span class="caps">Clip</span><span class="caps">Loop</span><span class="caps">Default clip</span><span class="mono">66.97</span><span class="mono">Complex</span><span class="mono">1</span><span class="mono">862</span><span class="mono">0:14.51–2:49.06</span><span class="mono">0:00.17–2:49.06</span><span class="mono">saved</span></div></div>
+</main>
+
+<aside class="rail">
+<div class="group" style="border-top: 0; padding-top: 0"><div class="ll"><span class="caps">Name</span><button class="btn sm">Rename</button></div><div style="font-size: 13.5px; font-weight: 500">Death Grips - Takyon (Death Yon)</div><div class="t50" style="font-size: 12px; margin-top: 3px">named from the file names</div></div>
+<div class="group"><span class="caps">Upload</span>
+<div class="up"><div><span class="t60">cut from</span><a href="https://www.youtube.com/watch?v=89F5fpvwPr0">YouTube ↗</a></div><div class="mono t75" style="margin-top: 3px">89F5fpvwPr0</div></div>
+</div>
+<div class="group" style="border-top-color: rgba(236,231,220,.2)"><span class="caps">Start over</span><div class="ll" style="margin-top: 8px"><span class="caps">Source</span><button class="btn sm">Swap source</button></div><div class="t50" style="font-size: 12px">cut from the playlist entry's own video</div></div>
+</aside>
+</div>
+</div>
+</div>
+</div>
+<div class="cv-b"><div class="cv-l">1c · At 56rem, unpinned and pinned</div>
+<div class="pb" style="width: 1900px; height: 760px; background: #0c0b09; display: flex; gap: 36px; padding: 28px 36px">
+
+<div style="width: 896px">
+<h2 class="st-h">56rem, at the top of the page</h2>
+<p class="st-p">The cover drops to 96 px beside the title and the four cells go two by two under both. The player's controls wrap once: transport and picker, then click, loop and volume.</p>
+<div class="pb frame" style="width: 896px; height: 600px">
+<div class="nav" style="padding: 0 24px"><b>crateside</b><span>Dashboard</span><span class="on">Tracks</span><span>Tools</span><span>Settings</span></div>
+<div class="page" style="padding: 14px 24px">
+<div class="back">← Tracks</div>
+<header class="hs" style="flex-direction: column">
+<div style="display: flex">
+<div class="cover" style="width: 96px; height: 96px" role="img" aria-label="Cover art">cover · 96</div>
+<div class="hs-title" style="align-self: center"><h1 style="font-size: 21px; line-height: 27px">Death Grips - Takyon (Death Yon)</h1><p>Hip Hop · 1 upload · <a href="https://www.youtube.com/watch?v=89F5fpvwPr0">YouTube ↗</a></p></div>
+</div>
+<div class="cells" style="grid-template-columns: repeat(2, minmax(0, 1fr))">
+<div class="cell"><div class="caps">Key</div><div class="vl"><span class="v">B min</span><span class="n">tagged in Ableton on 2 of 2 samples</span></div></div>
+<div class="cell"><div class="caps">Confidence</div><div class="vl"><span class="v" style="font-weight: 500">MEDIUM</span><span class="n">judged 2026-10-21</span></div></div>
+<div class="cell" style="border-left: 0; border-top: 1px solid var(--line)"><div class="caps">BPM</div><div class="vl"><span class="v">66.97</span><span class="n">from your warp</span></div></div>
+<div class="cell" style="border-top: 1px solid var(--line)"><div class="caps">Where it is</div><div class="vl" style="align-items: center; min-height: 34px"><span class="chip done">done</span><span class="n">in the library · <a href="#why">Why B min ↓</a></span></div></div>
+</div>
+</header>
+
+<section class="ps" aria-label="Player">
+<div class="ps-row">
+<button class="play" aria-label="Play" title="Play (Space)"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg></button>
+<div class="ro"><b>bar 19.3.1</b><span class="t75"> · 1:20.80</span><span class="t40"> / 2:49</span></div>
+<button class="btn pick" aria-haspopup="listbox" aria-label="What plays"><span>Mix</span><span class="t60">▾</span></button>
+<span class="sp" style="flex-basis: 100%; height: 0"></span>
+<div class="grp">
+<button class="tog" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 14 6.5 2h3L11 14zM8 10l3.5-6"/></svg>Click</button>
+<button class="btn sm" aria-haspopup="listbox" aria-label="Click sound">Classic <span class="t60">▾</span></button>
+<input type="range" min="0" max="100" value="60" aria-label="Click level" style="width: 60px">
+</div>
+<div class="grp sep">
+<button class="tog" disabled aria-pressed="false"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7V6a2 2 0 0 1 2-2h7M10 2l2 2-2 2M13 9v1a2 2 0 0 1-2 2H4M6 14l-2-2 2-2"/></svg>Loop</button>
+<span class="why">needs a zoomed view</span>
+</div>
+<span class="sp"></span>
+<div class="grp">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="currentColor" stroke="none"/><path d="M10.5 5.5a3.5 3.5 0 0 1 0 5M12.5 3.5a6.5 6.5 0 0 1 0 9"/></svg>
+<input type="range" min="0" max="100" value="80" aria-label="Volume">
+</div>
+</div>
+<div class="ps-wave" title="Play from here"><div class="wf env-a"></div><div class="rest" style="left: 47.79%"></div><div class="ph" style="left: 47.79%"></div></div>
+</section>
+<div class="flow" style="flex-wrap: wrap"><span>Pass 1 · First run</span><span class="chip done">✓ Download</span><span class="chip done">✓ Detect</span><span class="chip done">✓ Judge</span><span class="chip done">✓ Separate</span><span class="chip done">✓ Stage &amp; tag</span><span class="chip done">✓ Warp</span></div>
+</div>
+</div>
+</div>
+
+<div style="width: 896px">
+<h2 class="st-h">56rem, scrolled: pinned</h2>
+<p class="st-p">Pinned, the first row leads with the 36 px cover and the track's name, cut with an ellipsis before it pushes the picker to a third row. The page is one column here, so the side stack follows the main column.</p>
+<div class="pb frame" style="width: 896px; height: 600px">
+<div class="page" style="padding: 0 24px">
+<section class="ps pinned" aria-label="Player">
+<div class="ps-row">
+<div class="pin-id" style="max-width: 230px"><div class="th" role="img" aria-label="Cover art"></div><span>Death Grips - Takyon (Death Yon)</span></div>
+<button class="play" aria-label="Pause" title="Pause (Space)"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 2h3v10H3zM8 2h3v10H8z" fill="currentColor"/></svg></button>
+<div class="ro"><b>bar 19.3.1</b><span class="t75"> · 1:20.80</span><span class="t40"> / 2:49</span></div>
+<button class="btn pick" style="width: 180px" aria-haspopup="listbox" aria-label="What plays"><span>Vocal - Full</span><span class="t60">▾</span></button>
+<span class="sp" style="flex-basis: 100%; height: 0"></span>
+<div class="grp">
+<button class="tog on" aria-pressed="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 14 6.5 2h3L11 14zM8 10l3.5-6"/></svg>Click</button>
+<button class="btn sm" aria-haspopup="listbox" aria-label="Click sound">Classic <span class="t60">▾</span></button>
+<input type="range" min="0" max="100" value="60" aria-label="Click level" style="width: 60px">
+</div>
+<div class="grp sep">
+<button class="tog" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7V6a2 2 0 0 1 2-2h7M10 2l2 2-2 2M13 9v1a2 2 0 0 1-2 2H4M6 14l-2-2 2-2"/></svg>Loop</button>
+</div>
+<span class="sp"></span>
+<div class="grp">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="currentColor" stroke="none"/><path d="M10.5 5.5a3.5 3.5 0 0 1 0 5M12.5 3.5a6.5 6.5 0 0 1 0 9"/></svg>
+<input type="range" min="0" max="100" value="80" aria-label="Volume">
+</div>
+</div>
+<div class="ps-wave" title="Play from here"><div class="wf env-b"></div><div class="rest" style="left: 47.79%"></div><div class="ph" style="left: 47.79%"></div></div>
+</section>
+
+<section class="wv" aria-label="Warp" style="margin-top: 26px">
+<div class="wv-head"><span class="caps">Warp</span><span>2 stems · one warp · 1 marker</span><span class="sp"></span><span class="mono" style="color: var(--text)">bars 17–24 · 1:11–1:40</span><button class="btn sm" aria-label="Move the view back by half">‹</button><button class="btn sm" aria-label="Move the view on by half">›</button></div>
+<div class="r" style="grid-template-columns: 150px minmax(0, 1fr)"><div class="g"><b>View</b><small>drag · pull a handle</small></div>
+<div class="plot"><div class="ov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.49%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win" style="left: 42.49%; width: 16.96%"><button class="hd l" aria-label="Start of the view, bar 17"></button><button class="hd r" aria-label="End of the view, bar 24"></button></div><div class="ph" style="left: 47.79%"></div></div></div></div>
+<div class="r" style="grid-template-columns: 150px minmax(0, 1fr)"><div class="g">Bar</div>
+<div class="plot"><div class="ruler"><div class="ticks" style="left: 0; --p: 12.5%"></div>
+<span class="bn" style="left: 0">17</span><span class="bn" style="left: 12.5%">18</span><span class="bn" style="left: 25%">19</span><span class="bn" style="left: 37.5%">20</span><span class="bn" style="left: 50%">21</span><span class="bn" style="left: 62.5%">22</span><span class="bn" style="left: 75%">23</span><span class="bn" style="left: 87.5%">24</span>
+</div></div></div>
+<div class="r" style="grid-template-columns: 150px minmax(0, 1fr)"><div class="lg">Instrumental - Full<small><span class="chip fill">Your warp</span></small></div>
+<div class="plot"><div class="lane"><div class="zin" style="width: 589.8%; left: -250.6%"><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div></div></div></div></div>
+<div class="r" style="grid-template-columns: 150px minmax(0, 1fr)"><div class="lg sel"><svg class="now" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" role="img" aria-label="Playing"><path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="currentColor" stroke="none"/><path d="M10.5 5.5a3.5 3.5 0 0 1 0 5"/></svg>Vocal - Full<small><span class="chip fill">Your warp</span></small></div>
+<div class="plot"><div class="lane sel"><div class="zin" style="width: 589.8%; left: -250.6%"><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div></div></div></div></div>
+<div class="over" style="left: 162px; top: 80px; bottom: 6px"><div class="ph" style="left: 31.25%"><i></i></div></div>
+</section>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+<div class="cv-b"><div class="cv-l">2a · The player's states, the header's variants, the upload card</div>
+<div class="pb sheet" style="width: 1240px; min-height: 3060px">
+
+<div class="st">
+<h2 class="st-h"><span class="st-n">1</span>Nothing on disk</h2>
+<p class="st-p">A track not downloaded yet. The strip keeps its full height so the page does not jump when audio arrives. Every control keeps its place and is disabled; the reason sits where the waveform will be.</p>
+<section class="ps" aria-label="Player"><div class="ps-row">
+<button class="play" disabled aria-label="Play"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg></button>
+<div class="ro t40">0:00.00 / –</div>
+<button class="btn pick" disabled aria-label="What plays"><span>Nothing to play</span><span>▾</span></button>
+<span class="sp"></span>
+<div class="grp"><button class="tog" disabled>Click</button><button class="btn sm" disabled>Classic ▾</button><input type="range" disabled value="60" aria-label="Click level" style="width: 60px"></div>
+<div class="grp sep"><button class="tog" disabled>Loop</button></div>
+<div class="grp sep"><span class="t40">Vol</span><input type="range" value="80" aria-label="Volume"></div>
+</div><div class="ps-wave empty">nothing downloaded yet</div></section>
+</div>
+
+<div class="st">
+<h2 class="st-h"><span class="st-n">2</span>Loading a file</h2>
+<p class="st-p">The first play, and every switch in the picker: the file is fetched and decoded before it sounds. The play button becomes a teal ring (it spins; still under reduced motion) and the waveform row names the file. The position is kept, and Space still toggles: pressed while loading, it cancels the pending play.</p>
+<section class="ps" aria-label="Player"><div class="ps-row">
+<button class="play loading" aria-label="Loading, press to cancel"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 2h3v10H3zM8 2h3v10H8z" fill="currentColor"/></svg></button>
+<div class="ro"><b>bar 19.3.1</b><span class="t75"> · 1:20.80</span><span class="t40"> / 2:49</span></div>
+<button class="btn pick" aria-label="What plays"><span>Vocal - Full</span><span class="t60">▾</span></button>
+<span class="sp"></span>
+<div class="grp"><button class="tog on" aria-pressed="true">Click</button><button class="btn sm">Classic <span class="t60">▾</span></button><input type="range" value="60" aria-label="Click level" style="width: 60px"></div>
+<div class="grp sep"><button class="tog">Loop</button></div>
+<div class="grp sep"><span class="t60">Vol</span><input type="range" value="80" aria-label="Volume"></div>
+</div><div class="ps-wave empty" style="color: var(--teal); border-style: solid; border-color: rgba(111,199,214,.3)">Loading Vocal - Full…</div></section>
+</div>
+
+<div class="st" style="margin-bottom: 190px">
+<h2 class="st-h"><span class="st-n">3</span>Playing the mix: the picker open</h2>
+<p class="st-p">The picker is a listbox of the files on disk: Mix first, then each stem by name. The row that plays wears the house <i>chosen row</i> style. The mix's row says how long it stays and carries <b>Keep in the library</b>. Picking a row switches at the same position and closes the list.</p>
+<section class="ps" aria-label="Player"><div class="ps-row">
+<button class="play" aria-label="Pause"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 2h3v10H3zM8 2h3v10H8z" fill="currentColor"/></svg></button>
+<div class="ro"><b>bar 19.3.1</b><span class="t75"> · 1:20.80</span><span class="t40"> / 2:49</span></div>
+<button class="btn pick" aria-expanded="true" aria-label="What plays" style="background: #2e2b22"><span>Mix</span><span class="t60">▴</span></button>
+<span class="sp"></span>
+<div class="grp"><button class="tog">Click</button><button class="btn sm">Classic <span class="t60">▾</span></button><input type="range" value="60" aria-label="Click level" style="width: 60px"></div>
+<div class="grp sep"><button class="tog">Loop</button></div>
+<div class="grp sep"><span class="t60">Vol</span><input type="range" value="80" aria-label="Volume"></div>
+</div><div class="ps-wave"><div class="wf env-a"></div><div class="rest" style="left: 47.79%"></div><div class="ph" style="left: 47.79%"></div></div>
+<div class="menu" role="listbox" style="left: 322px; top: 52px; width: 400px">
+<div class="mi on" role="option" aria-selected="true">Mix<span class="st">kept until Thu 2:00 PM</span><button class="btn sm">Keep in the library</button></div>
+<div class="mi" role="option">Instrumental - Full</div>
+<div class="mi" role="option">Vocal - Full</div>
+</div>
+</section>
+</div>
+
+<div class="st">
+<h2 class="st-h"><span class="st-n">4</span>The mix is gone, fetched again, kept</h2>
+<p class="st-p">With the mix gone the picker opens on the instrumental (or the first stem). <i>Mix</i> stays in the list, greyed, and its button fetches it. While it downloads the row is teal and cannot be picked; the list can be closed and playback carries on. When it lands it can be picked and kept. Keeping it queues the re-cut that copies it; once the library holds it, the row reads <i>in the library</i> and the mix gains a lane.</p>
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px 24px">
+<div><div class="caps" style="margin-bottom: 6px">4a · gone</div><div class="menu" role="listbox" style="position: static">
+<div class="mi off" role="option" aria-disabled="true">Mix<span class="st" style="color: var(--t40)">not on disk</span><button class="btn sm">Get the mix again</button></div>
+<div class="why" style="padding: 0 10px 6px">a download, no GPU · kept at least a day</div>
+<div class="mi on" role="option" aria-selected="true">Instrumental - Full</div><div class="mi" role="option">Vocal - Full</div></div></div>
+<div><div class="caps" style="margin-bottom: 6px">4b · downloading</div><div class="menu" role="listbox" style="position: static">
+<div class="mi off" role="option" aria-disabled="true">Mix<span class="st" style="color: var(--teal)">● downloading…</span></div>
+<div class="why" style="padding: 0 10px 6px">it will appear here when it lands</div>
+<div class="mi on" role="option" aria-selected="true">Instrumental - Full</div><div class="mi" role="option">Vocal - Full</div></div></div>
+<div><div class="caps" style="margin-bottom: 6px">4c · landed</div><div class="menu" role="listbox" style="position: static">
+<div class="mi" role="option">Mix<span class="st">kept until Thu 4:20 PM</span><button class="btn sm">Keep in the library</button></div>
+<div class="mi on" role="option" aria-selected="true">Instrumental - Full</div><div class="mi" role="option">Vocal - Full</div></div></div>
+<div><div class="caps" style="margin-bottom: 6px">4d · keeping, then kept</div><div class="menu" role="listbox" style="position: static">
+<div class="mi" role="option">Mix<span class="st" style="color: var(--teal)">● copying to the library…</span></div>
+<div class="mi" role="option" style="border-top: 1px dashed var(--line)">Mix<span class="st">in the library</span></div>
+<div class="mi on" role="option" aria-selected="true">Instrumental - Full</div></div></div>
+</div>
+</div>
+
+<div class="st" style="margin-bottom: 170px">
+<h2 class="st-h"><span class="st-n">5</span>Playing a stem, the click on: the Sound list open</h2>
+<p class="st-p">The click toggle is off each time the page opens. On, it takes the house <i>chosen</i> style. Sound is a three-row list; picking a row plays that sound once (accent, then beat) so it can be chosen by ear without starting the track. The level is the click's own, beside the player's volume.</p>
+<section class="ps" aria-label="Player"><div class="ps-row">
+<button class="play" aria-label="Pause"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 2h3v10H3zM8 2h3v10H8z" fill="currentColor"/></svg></button>
+<div class="ro"><b>bar 19.3.1</b><span class="t75"> · 1:20.80</span><span class="t40"> / 2:49</span></div>
+<button class="btn pick" aria-label="What plays"><span>Instrumental - Full</span><span class="t60">▾</span></button>
+<span class="sp"></span>
+<div class="grp"><button class="tog on" aria-pressed="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 14 6.5 2h3L11 14zM8 10l3.5-6"/></svg>Click</button><button class="btn sm" aria-expanded="true" style="background: #2e2b22">Wood <span class="t60">▴</span></button><input type="range" value="60" aria-label="Click level" style="width: 60px"></div>
+<div class="grp sep"><button class="tog">Loop</button></div>
+<div class="grp sep"><span class="t60">Vol</span><input type="range" value="80" aria-label="Volume"></div>
+</div><div class="ps-wave"><div class="wf env-a"></div><div class="rest" style="left: 47.79%"></div><div class="ph" style="left: 47.79%"></div></div>
+<div class="menu" role="listbox" aria-label="Click sound" style="right: 262px; top: 48px; width: 150px">
+<div class="mi" role="option">Classic</div><div class="mi" role="option">Click</div><div class="mi on" role="option" aria-selected="true">Wood</div>
+</div>
+</section>
+</div>
+
+<div class="st">
+<h2 class="st-h"><span class="st-n">6</span>No warp</h2>
+<p class="st-p">The position is time only. The click keeps its label and says why it does not apply, as warp-view controls that do not apply already do. Loop still works: the window snaps to whole seconds.</p>
+<section class="ps" aria-label="Player"><div class="ps-row">
+<button class="play" aria-label="Play"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg></button>
+<div class="ro"><b>1:20.80</b><span class="t40"> / 2:49</span></div>
+<button class="btn pick" aria-label="What plays"><span>Mix</span><span class="t60">▾</span></button>
+<span class="sp"></span>
+<div class="grp"><button class="tog" disabled>Click</button><span class="why">no warp yet</span></div>
+<div class="grp sep"><button class="tog">Loop</button></div>
+<div class="grp sep"><span class="t60">Vol</span><input type="range" value="80" aria-label="Volume"></div>
+</div><div class="ps-wave"><div class="wf env-a"></div><div class="rest" style="left: 47.79%"></div><div class="ph" style="left: 47.79%"></div></div></section>
+</div>
+
+<div class="st">
+<h2 class="st-h"><span class="st-n">7</span>A load that failed</h2>
+<p class="st-p">Playback stops, the picker re-reads what is on disk, and the waveform row says what happened in red, since it needs the person. Nothing retries on its own. <i>Try again</i> asks for the same file; picking any file clears the line.</p>
+<section class="ps" aria-label="Player"><div class="ps-row">
+<button class="play" aria-label="Play"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg></button>
+<div class="ro"><b>bar 19.3.1</b><span class="t75"> · 1:20.80</span><span class="t40"> / 2:49</span></div>
+<button class="btn pick" aria-label="What plays"><span>Vocal - Full</span><span class="t60">▾</span></button>
+<span class="sp"></span>
+<div class="grp"><button class="tog">Click</button><button class="btn sm">Classic <span class="t60">▾</span></button><input type="range" value="60" aria-label="Click level" style="width: 60px"></div>
+<div class="grp sep"><button class="tog">Loop</button></div>
+<div class="grp sep"><span class="t60">Vol</span><input type="range" value="80" aria-label="Volume"></div>
+</div><div class="ps-wave fail" role="alert"><span>Couldn't load Vocal - Full: the file moved or is gone; try again in a moment.</span><button class="btn sm">Try again</button></div></section>
+</div>
+
+<div class="st">
+<h2 class="st-h"><span class="st-n">8</span>The header strip's variants</h2>
+<p class="st-p">An import has no <i>YouTube ↗</i>. When a cell has more to say than one note (a drifting tempo's strip, the invitation to judge from bars), the strip grows a foot row under the cells, on the same four columns; the cover stays 152 px at the top left. This track is invented.</p>
+<header class="hs" style="margin-bottom: 14px">
+<div class="cover" role="img" aria-label="Cover art">cover</div>
+<div class="hs-main"><div class="hs-title"><h1>Artist - An imported track</h1><p>House · imported file</p></div>
+<div class="cells">
+<div class="cell"><div class="caps">Key</div><div class="vl"><span class="v">A min</span><span class="n">not tagged yet</span></div></div>
+<div class="cell"><div class="caps">Confidence</div><div class="vl"><span class="v" style="font-weight: 500">HIGH</span><span class="n">judged 2026-11-02</span></div></div>
+<div class="cell"><div class="caps">BPM</div><div class="vl"><span class="v">124</span><span class="n">crateside's reading · steady to the hundredth</span></div></div>
+<div class="cell"><div class="caps">Where it is</div><div class="vl" style="align-items: center; min-height: 34px"><span class="chip">staged</span><span class="n">in Sample Staging</span></div></div>
+</div></div></header>
+<header class="hs">
+<div class="cover" role="img" aria-label="Cover art">cover</div>
+<div class="hs-main"><div class="hs-title"><h1>Artist - A track that drifts</h1><p>Funk · 1 upload · <a href="#yt">YouTube ↗</a></p></div>
+<div class="cells">
+<div class="cell"><div class="caps">Key</div><div class="vl"><span class="v t40">—</span><span class="n">no key yet</span></div></div>
+<div class="cell"><div class="caps">Confidence</div><div class="vl"><span class="v" style="font-weight: 500">WITHHELD</span><span class="n">judged 2026-11-09</span></div></div>
+<div class="cell"><div class="caps">BPM</div><div class="vl"><span class="v" style="font-weight: 400">~111</span><span class="n">drifts 110–112 · 2% · from your warp</span></div></div>
+<div class="cell"><div class="caps">Where it is</div><div class="vl" style="align-items: center; min-height: 34px"><span class="chip">staged</span><span class="n">in Sample Staging</span></div></div>
+</div>
+<div class="cells" style="flex: none">
+<div class="cell"></div>
+<div class="cell"><div class="n" style="margin-bottom: 8px">The detectors split three ways.</div><button class="btn sm">Judge from these bars ↓</button></div>
+<div class="cell"><div style="position: relative; height: 44px; background: repeating-linear-gradient(90deg, var(--t75) 0 1px, transparent 1px 7.1%) 0 9px / 100% 22px no-repeat"><div style="position: absolute; left: 0; right: 0; top: 21px; border-top: 1px dashed var(--t40)"></div><span class="mono t40" style="position: absolute; left: 0; bottom: -3px; font-size: 10.5px">0:00</span><span class="mono t40" style="position: absolute; right: 0; bottom: -3px; font-size: 10.5px">4:12</span></div></div>
+<div class="cell"></div>
+</div>
+</div></header>
+</div>
+
+<div class="st" style="margin-bottom: 0">
+<h2 class="st-h"><span class="st-n">9</span>The upload card without its embed</h2>
+<p class="st-p">The player box goes. A card is two lines: the upload's role and <i>YouTube ↗</i>, then the video ID. A track with several uploads lists them all, in the order built. Roles are worded as built.</p>
+<div style="display: flex; gap: 40px">
+<div class="rail" style="width: 304px"><span class="caps">Upload</span>
+<div class="up"><div><span class="t60">cut from</span><a href="#yt">YouTube ↗</a></div><div class="mono t75" style="margin-top: 3px">89F5fpvwPr0</div></div></div>
+<div class="rail" style="width: 304px"><span class="caps">Uploads</span>
+<div class="up"><div><span class="t60">cut from</span><a href="#yt">YouTube ↗</a></div><div class="mono t75" style="margin-top: 3px">89F5fpvwPr0</div></div>
+<div class="up"><div><span class="t60">also this song</span><a href="#yt">YouTube ↗</a></div><div class="mono t75" style="margin-top: 3px">[SECOND VIDEO ID]</div></div></div>
+</div>
+</div>
+
+</div>
+</div>
+<div class="cv-b"><div class="cv-l">3a · The warp view, live: drag the window, play, loop</div>
+<div class="pb sheet" style="width: 1240px; min-height: 760px">
+<p class="st-p" style="max-width: none">Live. Drag the window's body to move the view and a handle to zoom; double-click it for the whole track and back; press on the strip outside it to bring it there. Click the ruler to seek to a bar and a lane to seek to the spot. Play to watch the view follow; with Loop on, the window is what plays.</p>
+
+<section class="ps" aria-label="Player" style="margin-bottom: 26px">
+<div class="ps-row">
+<button class="play" aria-label="{{ playLabel }}" onClick="{{ togglePlay }}">
+<sc-if value="{{ playing }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 2h3v10H3zM8 2h3v10H8z" fill="currentColor"/></svg></sc-if>
+<sc-if value="{{ paused }}" hint-placeholder-val="{{ true }}"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg></sc-if>
+</button>
+<div class="ro"><b>bar {{ readBar }}</b><span class="t75"> · {{ readTime }}</span><span class="t40"> / 2:49</span></div>
+<button class="btn pick" aria-label="What plays"><span>{{ stemName }}</span><span class="t60">▾</span></button>
+<span class="sp"></span>
+<div class="grp"><button class="{{ loopCls }}" aria-pressed="{{ loopOn }}" disabled="{{ loopOff }}" onClick="{{ toggleLoop }}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7V6a2 2 0 0 1 2-2h7M10 2l2 2-2 2M13 9v1a2 2 0 0 1-2 2H4M6 14l-2-2 2-2"/></svg>Loop</button><span class="why">{{ loopWhy }}</span></div>
+</div>
+<div class="ps-wave" title="Play from here" onClick="{{ seekSlim }}"><div class="wf {{ envCls }}"></div><div class="rest" style="left: {{ phTrack }}%"></div><div class="ph" style="left: {{ phTrack }}%"></div></div>
+</section>
+
+<section class="wv" aria-label="Warp">
+<div class="wv-head"><span class="caps">Warp</span><span>2 stems · one warp · 1 marker · Complex</span><span class="sp"></span>
+<sc-if value="{{ gotoShow }}" hint-placeholder-val="{{ false }}"><button class="btn sm" onClick="{{ gotoPlayhead }}">Go to the playhead · bar {{ phBar }}</button></sc-if>
+<span class="mono" style="color: var(--text)">{{ headRead }}</span><button class="btn sm" aria-label="Move the view back by half" disabled="{{ noBack }}" onClick="{{ back }}">‹</button><button class="btn sm" aria-label="Move the view on by half" disabled="{{ noFwd }}" onClick="{{ fwd }}">›</button></div>
+
+<div class="r"><div class="g"><b>View</b><small>{{ viewHint }}</small></div>
+<div class="plot"><div class="ov" onPointerDown="{{ downStrip }}"><div class="wf env-a"></div><div class="dim" style="left: 0; width: {{ winLeft }}%"></div><div class="dim" style="left: {{ winRight }}%; right: 0"></div>
+<sc-if value="{{ ghostShow }}" hint-placeholder-val="{{ false }}"><div class="ghost" style="left: {{ ghostLeft }}%; width: {{ ghostW }}%"></div></sc-if>
+<div class="{{ winCls }}" style="left: {{ winLeft }}%; width: {{ winW }}%" title="Double-click: the whole track, or back to the last zoom" onPointerDown="{{ downBody }}" onDoubleClick="{{ dbl }}">
+<button class="{{ hdLCls }}" aria-label="Start of the view" onPointerDown="{{ downL }}"></button><button class="{{ hdRCls }}" aria-label="End of the view" onPointerDown="{{ downR }}"></button>
+<sc-if value="{{ tipShow }}" hint-placeholder-val="{{ false }}"><span class="tip" style="left: {{ tipLeft }}">{{ tipText }}</span></sc-if>
+</div><div class="ph" style="left: {{ phTrack }}%"></div></div></div></div>
+
+<div class="r"><div class="g">Bar</div>
+<div class="plot"><div class="ruler" style="cursor: pointer" onClick="{{ seekRuler }}" onMouseMove="{{ hoverRuler }}" onMouseLeave="{{ leaveRuler }}">
+<sc-for list="{{ ticks }}" as="t" hint-placeholder-count="8"><span class="tk" style="left: {{ t.left }}%; height: {{ t.h }}px"></span><span class="bn" style="left: {{ t.left }}%">{{ t.label }}</span></sc-for>
+</div></div></div>
+
+<div class="r"><div class="g">Tempo from the markers<br><span class="mono" style="color: var(--text); font-weight: 600">66.97</span> from your warp</div><div class="plot"><div class="tempo"></div></div></div>
+
+<div class="r"><div class="{{ lg1 }}">Instrumental - Full<small><span class="chip fill">Your warp</span> saved 21 Oct</small></div>
+<div class="plot"><div class="{{ lane1 }}" style="cursor: pointer" onClick="{{ seekLane1 }}"><div class="zin" style="width: {{ zinW }}%; left: {{ zinL }}%"><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div><div class="clip" style="left: 8.58%"></div></div></div></div></div>
+
+<div class="r"><div class="{{ lg2 }}">Vocal - Full<small><span class="chip fill">Your warp</span> saved 21 Oct</small></div>
+<div class="plot"><div class="{{ lane2 }}" style="cursor: pointer" onClick="{{ seekLane2 }}"><div class="zin" style="width: {{ zinW }}%; left: {{ zinL }}%"><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div><div class="clip" style="left: 8.58%"></div></div></div></div></div>
+
+<div class="r"><div class="g"><b>Key</b><small>B minor, one center</small></div><div class="plot"><div class="ks" style="overflow: hidden"><div class="kb" style="left: -6px; right: -6px; padding-left: 12px" title="B minor · ▶ from 0:00">B min</div></div></div></div>
+
+<div class="r"><div></div><div class="plot"><div class="ax"><sc-for list="{{ axis }}" as="a" hint-placeholder-count="6"><span style="left: {{ a.left }}%">{{ a.label }}</span></sc-for></div></div></div>
+
+<div class="over" style="top: 80px; bottom: 26px; overflow: hidden">
+<sc-if value="{{ hoverShow }}" hint-placeholder-val="{{ false }}"><div class="hl" style="left: {{ hoverLeft }}%"></div></sc-if>
+<sc-if value="{{ phShow }}" hint-placeholder-val="{{ true }}"><div class="ph" style="left: {{ phView }}%"><i></i></div></sc-if>
+</div>
+</section>
+</div>
+</div>
+<div class="cv-b"><div class="cv-l">3b · Every state of the window</div>
+<div class="pb sheet" style="width: 1240px; min-height: 3120px">
+<p class="st-p" style="margin-bottom: 26px">The overview strip, drawn alone at the plot's width. A ring is the pointer: hollow while it hovers, filled while the button is held; the tag beside it is the cursor. The vertical line is the playhead, which the strip always shows, in or out of the window.</p>
+
+<div class="st"><h2 class="st-h"><span class="st-n">1</span>At rest</h2>
+<p class="st-p">The window is always there. Zoomed out it spans the track and nothing is dimmed; zoomed, the rest of the track sits under a scrim. Its handles are 6 px bars centered on its edges, the body a 7% fill between two hairlines.</p>
+<div class="two"><div><div class="caps">whole track</div><div class="ov sov" style="margin-top: 8px"><div class="wf env-a"></div><div class="win" style="left: 0; right: 0"><i class="hd l"></i><i class="hd r"></i></div><div class="ph" style="left: 47.79%"></div></div></div>
+<div><div class="caps">bars 17–24</div><div class="ov sov" style="margin-top: 8px"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.49%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win" style="left: 42.49%; width: 16.96%"><i class="hd l"></i><i class="hd r"></i></div><div class="ph" style="left: 47.79%"></div></div></div></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">2</span>Hover</h2>
+<p class="st-p">Over the body the fill lifts to 12% and the cursor is <span class="mono">grab</span>. Over a handle the bar goes to full <span class="mono">--text</span> and the cursor is <span class="mono">ew-resize</span>. A handle's target is 16 px: 8 either side of the edge, and it wins over the body where they overlap. The outer 8 px exist at the track's ends too, past the plot.</p>
+<div class="two"><div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.49%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win hov" style="left: 42.49%; width: 16.96%"><i class="hd l"></i><i class="hd r"></i></div><span class="pt" data-c="grab" style="left: 51%; top: 17px"></span></div>
+<div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.49%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win" style="left: 42.49%; width: 16.96%"><i class="hd l hov"></i><i class="hd r"></i></div><span class="pt" data-c="ew-resize" style="left: 42.2%; top: 17px"></span></div></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">3</span>Press</h2>
+<p class="st-p">On <span class="mono">pointerdown</span> the strip captures the pointer and remembers where on the body or handle it was grabbed, so nothing jumps under it. The pressed look comes at once (17% fill, full-strength lines; a handle gains a 2 px halo) and the cursor locks to <span class="mono">grabbing</span> or <span class="mono">ew-resize</span> for the whole page. Nothing moves until the pointer has travelled 3 px: a press and release inside that is a click, changes nothing and reports nothing, which is what lets a double-click through.</p>
+<div class="two"><div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.49%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win drag" style="left: 42.49%; width: 16.96%"><i class="hd l"></i><i class="hd r"></i></div><span class="pt down" data-c="grabbing" style="left: 51%; top: 17px"></span></div>
+<div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.49%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win" style="left: 42.49%; width: 16.96%"><i class="hd l drag"></i><i class="hd r"></i></div><span class="pt down" data-c="ew-resize" style="left: 42.2%; top: 17px"></span></div></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">4</span>Dragging the body</h2>
+<p class="st-p">The window keeps its width and steps bar by bar with the pointer; a tag above it names the bars it holds. Every row below redraws at each step, in the browser, and the head line's readout follows. The pointer may leave the strip in any direction: only its x counts.</p>
+<div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 50.97%"></div><div class="dim" style="left: 67.92%; right: 0"></div><div class="win drag" style="left: 50.97%; width: 16.96%"><i class="hd l"></i><i class="hd r"></i><span class="tip" style="left: 50%">21–28</span></div><span class="pt down" data-c="grabbing" style="left: 59.6%; top: 52px"></span></div></div>
+
+<div class="st" style="margin-top: 50px"><h2 class="st-h"><span class="st-n">5</span>The body against the track's end</h2>
+<p class="st-p">The window stops at the end and keeps its width; the pointer carries on alone. It picks the window up again only when it comes back to where it grabbed it.</p>
+<div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 84.88%"></div><div class="win drag" style="left: 84.88%; right: 0"><i class="hd l"></i><i class="hd r"></i><span class="tip" style="left: 50%">37–44</span></div><span class="pt down" data-c="grabbing" style="left: 99%; top: 17px"></span></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">6</span>Dragging a handle</h2>
+<p class="st-p">Only that edge moves, bar line by bar line; the other stays. The tag sits over the moving edge: <i>from bar 13</i> for the left, <i>to bar 28</i> for the right. The lanes zoom at each step.</p>
+<div class="two"><div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 34.02%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win" style="left: 34.02%; width: 25.43%"><i class="hd l drag"></i><i class="hd r"></i><span class="tip" style="left: 0">from bar 13</span></div><span class="pt down" data-c="ew-resize" style="left: 33.8%; top: 17px"></span></div>
+<div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.49%"></div><div class="dim" style="left: 67.92%; right: 0"></div><div class="win" style="left: 42.49%; width: 25.43%"><i class="hd l"></i><i class="hd r drag"></i><span class="tip" style="left: 100%">to bar 28</span></div><span class="pt down" data-c="ew-resize" style="left: 68.1%; top: 17px"></span></div></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">7</span>The minimum width</h2>
+<p class="st-p">One bar (4 seconds without a warp). A handle pulled into the other stops one bar short; it does not push the other edge and the two never swap. At rest, a window this narrow still shows both handles, and each handle's target inside the window shrinks to a quarter of its width so the middle half still grabs the body.</p>
+<div class="two"><div><div class="caps">the left handle pulled past the right</div><div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 57.33%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win" style="left: 57.33%; width: 2.12%"><i class="hd l stop"></i><i class="hd r"></i><span class="tip" style="left: 0">from bar 24</span></div><span class="pt down" data-c="ew-resize" style="left: 66%; top: 17px"></span></div></div>
+<div><div class="caps">one bar, at rest</div><div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 57.33%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win" style="left: 57.33%; width: 2.12%"><i class="hd l"></i><i class="hd r"></i></div></div></div></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">8</span>A handle against the track's edge</h2>
+<p class="st-p">It stops at the first sample (or the last) and the pointer goes on without it. The first and last snaps are the file's own ends, which rarely fall on a bar line.</p>
+<div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win" style="left: 0; width: 59.45%"><i class="hd l stop"></i><i class="hd r"></i><span class="tip" style="left: 0; transform: none">from bar -5</span></div><span class="pt down" data-c="ew-resize" style="left: -1.6%; top: 17px"></span></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">9</span>Release, and a drag that is called off</h2>
+<p class="st-p">On <span class="mono">pointerup</span> the tag goes, the window rests where it is (hovered, since the pointer is still on it) and the page reports the new bars to the server, once. A capture lost without a release counts as a release. <b>Esc</b> during a drag, or <span class="mono">pointercancel</span>, puts the window back where the press found it and reports nothing.</p>
+<div class="ov sov" style="margin-top: 8px"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 50.97%"></div><div class="dim" style="left: 67.92%; right: 0"></div><div class="win hov" style="left: 50.97%; width: 16.96%"><i class="hd l"></i><i class="hd r"></i></div><span class="pt" data-c="grab" style="left: 59.6%; top: 17px"></span></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">10</span>Double-click</h2>
+<p class="st-p">Zoomed, it goes to the whole track and remembers the zoom; on the whole track, it goes back to that zoom. With no zoom to go back to (the page just opened) it takes 8 bars around the place clicked. Enter on the focused window does the same.</p>
+<div class="two"><div><div class="caps">bars 17–24, double-clicked…</div><div class="ov sov" style="margin-top: 8px"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.49%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win hov" style="left: 42.49%; width: 16.96%"><i class="hd l"></i><i class="hd r"></i></div><span class="pt" data-c="grab" style="left: 51%; top: 17px"></span></div></div>
+<div><div class="caps">…the whole track; again, back to 17–24</div><div class="ov sov" style="margin-top: 8px"><div class="wf env-a"></div><div class="win hov" style="left: 0; right: 0"><i class="hd l"></i><i class="hd r"></i></div><span class="pt" data-c="grab" style="left: 51%; top: 17px"></span></div></div></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">11</span>Pressing the strip outside the window</h2>
+<p class="st-p">As built today: the window comes to the pointer, centered on it and snapped, and the same press carries on as a drag of the body. Zoomed out there is no outside.</p>
+<div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 72.17%"></div><div class="dim" style="left: 89.12%; right: 0"></div><div class="win drag" style="left: 72.17%; width: 16.96%"><i class="hd l"></i><i class="hd r"></i><span class="tip" style="left: 50%">31–38</span></div><span class="pt down" data-c="grabbing" style="left: 80.6%; top: 17px"></span></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">12</span>Playing: the playhead crosses the window's edge</h2>
+<p class="st-p">Follow is not a control. While playing, when the playhead reaches the window's right edge the window moves on by half its width (a whole number of bars, at least one), in one step with no slide, so the playhead is then at its middle. At the track's end the window stops against it. Zoomed out there is nothing to follow.</p>
+<div class="two"><div><div class="caps">at the edge of bars 17–24</div><div class="ov sov" style="margin-top: 8px"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.49%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win" style="left: 42.49%; width: 16.96%"><i class="hd l"></i><i class="hd r"></i></div><div class="ph" style="left: 59.35%"></div></div>
+<div class="lane" style="margin-top: 6px"><div class="zin" style="width: 589.8%; left: -250.6%"><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div></div><div class="ph" style="left: 99.4%"></div></div></div>
+<div><div class="caps">the next frame: bars 21–28</div><div class="ov sov" style="margin-top: 8px"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 50.97%"></div><div class="dim" style="left: 67.92%; right: 0"></div><div class="win" style="left: 50.97%; width: 16.96%"><i class="hd l"></i><i class="hd r"></i></div><div class="ph" style="left: 59.45%"></div></div>
+<div class="lane" style="margin-top: 6px"><div class="zin" style="width: 589.8%; left: -300.6%"><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div></div><div class="ph" style="left: 50%"></div></div></div></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">13</span>Playing: a drag, and a view left behind</h2>
+<p class="st-p">The audio never notices a drag. From press to release the window does not follow. If the release leaves the playhead outside the window, the view stays where it was put: the playhead runs on in the strip, the plot shows none, and the head line offers <i>Go to the playhead · bar 31</i>. Following starts again when the playhead is next inside the window, by that button, by a seek, or by playing into it. <span class="mono">‹ ›</span> behave the same way.</p>
+<div style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; font-size: 12.5px"><button class="btn sm">Go to the playhead · bar 31</button><span class="mono">bars 17–24 · 1:11–1:40</span><button class="btn sm">‹</button><button class="btn sm">›</button></div>
+<div class="ov sov" style="margin-top: 8px"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.49%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win" style="left: 42.49%; width: 16.96%"><i class="hd l"></i><i class="hd r"></i></div><div class="ph" style="left: 73.4%"></div></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">14</span>Loop on</h2>
+<p class="st-p">The window's top line thickens to 3 px at full strength: the window is the loop. The playhead returns to its left edge on reaching its right one, and the view does not follow. Switched on with the playhead outside the window, playback moves to the window's start at once. Live's own loop brace on the ruler is unchanged and is not this.</p>
+<div class="ov sov" style="margin-top: 8px"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.49%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win loop" style="left: 42.49%; width: 16.96%"><i class="hd l"></i><i class="hd r"></i></div><div class="ph" style="left: 47.79%"></div></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">15</span>Dragging while it loops</h2>
+<p class="st-p">Until the release the audio keeps looping the bars it had, drawn as a dashed ghost, while the window shows where the loop will be. On release the loop is the window; if the playhead is then outside it, playback moves to its start. Widening the window to the whole track switches loop off.</p>
+<div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 50.97%"></div><div class="dim" style="left: 67.92%; right: 0"></div><div class="ghost" style="left: 42.49%; width: 16.96%"></div><div class="win drag loop" style="left: 50.97%; width: 16.96%"><i class="hd l"></i><i class="hd r"></i><span class="tip" style="left: 50%">21–28</span></div><div class="ph" style="left: 47.79%"></div><span class="pt down" data-c="grabbing" style="left: 59.6%; top: 17px"></span></div></div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">16</span>Without a warp, and from the keyboard</h2>
+<p class="st-p">With no warp the edges snap to whole seconds and the tag gives times. Each handle is a focusable slider (←/→ one bar, Shift four, Home/End the track's ends) and the body a focusable button (←/→ move it a bar, Enter as a double-click); a move from the keyboard reports when the key is released.</p>
+<div class="two"><div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.59%"></div><div class="dim" style="left: 59.15%; right: 0"></div><div class="win drag" style="left: 42.59%; width: 16.56%"><i class="hd l"></i><i class="hd r"></i><span class="tip" style="left: 50%">1:12–1:40</span></div><span class="pt down" data-c="grabbing" style="left: 51%; top: 17px"></span></div>
+<div class="ov sov"><div class="wf env-a"></div><div class="dim" style="left: 0; width: 42.49%"></div><div class="dim" style="left: 59.45%; right: 0"></div><div class="win" style="left: 42.49%; width: 16.96%"><i class="hd l focus"></i><i class="hd r"></i></div></div></div></div>
+
+</div>
+</div>
+<div class="cv-b"><div class="cv-l">3c · Seeking: ruler, lane, key strip, drawer</div>
+<div class="pb sheet" style="width: 1240px; min-height: 1500px">
+
+<div class="st"><h2 class="st-h"><span class="st-n">1</span>The ruler seeks to the start of the bar</h2>
+<p class="st-p">Over the ruler the cursor is the seek cursor, a stem with a play triangle (16 px, hotspot on the stem), and a faint line (1 px <span class="mono">--text-30</span>) runs from the ruler to the key strip at the start of the bar under the pointer: where playback will land. A click puts the playhead there; playing carries on from it, paused stays paused. Here the pointer is inside bar 20, so the line is on bar 20's first beat while the playhead plays on in bar 19.</p>
+<section class="wv">
+<div class="r"><div class="g">Bar</div><div class="plot"><div class="ruler"><div class="ticks" style="left: 0; --p: 12.5%"></div><div class="ticks" style="left: 0; --p: 3.125%; height: 3px; opacity: .6"></div>
+<span class="bn" style="left: 0">17</span><span class="bn" style="left: 12.5%">18</span><span class="bn" style="left: 25%">19</span><span class="bn" style="left: 37.5%">20</span><span class="bn" style="left: 50%">21</span><span class="bn" style="left: 62.5%">22</span><span class="bn" style="left: 75%">23</span><span class="bn" style="left: 87.5%">24</span>
+<svg class="cur" viewBox="0 0 16 16" style="left: 44.5%; top: 8px" aria-hidden="true"><path d="M2 1v14" stroke="currentColor" stroke-width="1.5"/><path d="M5 3.5 13 8l-8 4.5z" fill="currentColor"/></svg>
+</div></div></div>
+<div class="r"><div class="lg sel">Instrumental - Full<small><span class="chip fill">Your warp</span></small></div><div class="plot"><div class="lane sel"><div class="zin" style="width: 589.8%; left: -250.6%"><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div></div></div></div></div>
+<div class="r"><div class="lg">Vocal - Full<small><span class="chip fill">Your warp</span></small></div><div class="plot"><div class="lane"><div class="zin" style="width: 589.8%; left: -250.6%"><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div></div></div></div></div>
+<div class="r"><div class="g"><b>Key</b><small>B minor, one center</small></div><div class="plot"><div class="ks" style="overflow: hidden"><div class="kb" style="left: -6px; right: -6px; padding-left: 12px">B min</div></div></div></div>
+<div class="over" style="top: 0; bottom: 6px"><div class="hl" style="left: 37.5%"></div><div class="ph" style="left: 31.25%"><i></i></div></div>
+</section>
+<p class="st-p" style="margin-top: 10px">Not while <i>Judge from these bars</i> is open: the ruler then draws ranges with its crosshair and seeks nothing. Not on a window's tag, which opens its drawer. Without a warp the ruler counts time, the line follows the pointer and the click seeks to the exact spot.</p>
+</div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">2</span>A lane seeks to the exact spot and picks its stem</h2>
+<p class="st-p">Over a lane the same cursor, and the faint line follows the pointer in that lane only. A click does three things at once: the playhead goes to that spot, the lane is selected (its detail opens, as today) and its stem becomes what plays, at the same position; the speaker mark in the gutter moves with it. While the file loads the playhead waits at the new spot.</p>
+<div class="two">
+<div><div class="caps">hovering the vocal while the instrumental plays</div>
+<div class="r" style="grid-template-columns: 150px minmax(0, 1fr); margin-top: 8px"><div class="lg sel"><svg class="now" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" role="img" aria-label="Playing"><path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="currentColor" stroke="none"/><path d="M10.5 5.5a3.5 3.5 0 0 1 0 5"/></svg>Instrumental<small>Your warp</small></div><div class="plot"><div class="lane sel"><div class="zin" style="width: 589.8%; left: -250.6%"><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div></div><div class="ph" style="left: 31.25%"></div></div></div></div>
+<div class="r" style="grid-template-columns: 150px minmax(0, 1fr)"><div class="lg">Vocal<small>Your warp</small></div><div class="plot"><div class="lane"><div class="zin" style="width: 589.8%; left: -250.6%"><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div></div><div class="ph" style="left: 31.25%"></div><div class="hl" style="left: 68%"></div><svg class="cur" viewBox="0 0 16 16" style="left: calc(68% - 2px); top: 24px" aria-hidden="true"><path d="M2 1v14" stroke="currentColor" stroke-width="1.5"/><path d="M5 3.5 13 8l-8 4.5z" fill="currentColor"/></svg></div></div></div></div>
+<div><div class="caps">clicked: the vocal plays from there</div>
+<div class="r" style="grid-template-columns: 150px minmax(0, 1fr); margin-top: 8px"><div class="lg">Instrumental<small>Your warp</small></div><div class="plot"><div class="lane"><div class="zin" style="width: 589.8%; left: -250.6%"><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div></div><div class="ph" style="left: 68%"></div></div></div></div>
+<div class="r" style="grid-template-columns: 150px minmax(0, 1fr)"><div class="lg sel"><svg class="now" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" role="img" aria-label="Playing"><path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="currentColor" stroke="none"/><path d="M10.5 5.5a3.5 3.5 0 0 1 0 5"/></svg>Vocal<small>Your warp</small></div><div class="plot"><div class="lane sel"><div class="zin" style="width: 589.8%; left: -250.6%"><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div></div><div class="ph" style="left: 68%"></div></div></div></div></div>
+</div>
+<p class="st-p" style="margin-top: 10px">When the mix plays and has no lane, no gutter wears the speaker; the selected lane keeps its detail. Picking a stem in the player's picker selects its lane too.</p>
+</div>
+
+<div class="st"><h2 class="st-h"><span class="st-n">3</span>A key-strip band seeks to its start</h2>
+<p class="st-p">A band is a button. Hovered, its outline goes to 90% and its title adds where it will play from; a click seeks there. A section named in the gutter with no time is text and does nothing. This verdict's sections are invented.</p>
+<div class="r"><div class="g"><b>Key</b><small>A Dorian, with chorus sections from your windows</small><span class="mono" style="display: block; font-size: 10.5px; color: var(--t60)">bridge · C Lyd: no time given</span></div><div class="plot"><div class="ks"><div class="kb" style="left: 0; width: 46%">verse · A Dor</div><div class="kb w" style="left: 46%; width: 14%; border-color: rgba(236,231,220,.9)">chorus · E min</div><div class="kb" style="left: 60%; width: 22%">verse · A Dor</div><div class="kb w" style="left: 82%; width: 12%">chorus · E min</div><div class="kb" style="left: 94%; right: 0"></div>
+<span class="tt" style="left: 49%; top: 52px">chorus · E minor · ▶ from 1:53</span><svg class="cur" viewBox="0 0 16 16" style="left: 51%; top: 22px" aria-hidden="true"><path d="M2 1v14" stroke="currentColor" stroke-width="1.5"/><path d="M5 3.5 13 8l-8 4.5z" fill="currentColor"/></svg></div></div></div>
+</div>
+
+<div class="st" style="margin-top: 60px"><h2 class="st-h"><span class="st-n">4</span>A window's drawer plays its window</h2>
+<p class="st-p"><i>Play window</i> sits at the drawer's foot, left of the stepper: it seeks to the window's start and plays. With Loop on it also sets the view to the window, so the window is what loops; with Loop off the view moves only if the window's start is outside it. The page does not scroll. While that window plays the button reads <i>Pause</i>.</p>
+<div class="drawer">
+<div><span class="chip" style="border-style: dashed; font-size: 11px">judge</span><div style="font-weight: 500; font-size: 14px; margin-top: 8px">Verse loop</div><div class="mono t60" style="font-size: 12px; margin-top: 2px">bars 9–20 · 0:43–1:26</div><div style="margin-top: 8px; line-height: 1.5">[THE WINDOW'S WHY, ONE SENTENCE]</div><div class="t50" style="font-size: 12px; margin-top: 6px">→ no section: agrees with the whole file</div></div>
+<div><div class="caps" style="display: grid; grid-template-columns: 84px 88px 50px 1fr; gap: 10px; letter-spacing: 0; text-transform: none; font-weight: 400; font-size: 11px"><span>Detector</span><span>Key</span><span>Score</span><span>Runner-up</span></div>
+<div style="display: grid; grid-template-columns: 84px 88px 50px 1fr; gap: 10px; align-items: center; height: 32px"><span style="font-weight: 500">keydetect</span><span class="mono" style="font-weight: 600">[KEY]</span><span class="mono t75">[r]</span><span class="mono t60" style="font-size: 12.5px">[RUNNER-UP]</span></div>
+<div style="display: grid; grid-template-columns: 84px 88px 50px 1fr; gap: 10px; align-items: center; height: 32px"><span style="font-weight: 500">madmom</span><span class="mono" style="font-weight: 600">[KEY]</span><span class="mono t75">[p]</span><span></span></div></div>
+<div style="display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end"><button class="btn sm" aria-label="Close">×</button><div style="display: flex; align-items: center; gap: 10px"><button class="btn sm"><svg width="10" height="10" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 1.5v11l9-5.5z" fill="currentColor"/></svg>Play window</button><button class="btn sm" aria-label="Previous window">‹</button><span class="mono t50" style="font-size: 11.5px">2 of 3</span><button class="btn sm" aria-label="Next window">›</button></div></div>
+</div>
+</div>
+
+<div class="st" style="margin-bottom: 0"><h2 class="st-h"><span class="st-n">5</span>What does not seek</h2>
+<p class="st-p">The overview strip moves the view and never the playhead. The tempo line, <i>Off the grid</i>, the chord placeholder, the time axis and the gutters do nothing. Outside the warp view only the player's own slim waveform seeks; it seeks to the exact spot, and a spot outside the window brings the window to the bar it is in.</p>
+</div>
+
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1980,"height":12110}}'>
+class Component extends DCLogic {
+get T() { return 169.06; }
+get L() { return 3.583; }
+get T0() { return 14.51; }
+get P() {
+if (!this._p) { const p = [0]; for (let k = -4; k <= 43; k++) p.push(this.T0 + k * this.L); p.push(this.T); this._p = p; }
+return this._p;
+}
+get s() { return Object.assign({ i: 0, j: 49, last: null, pos: 80.8, playing: false, loop: false, drag: null, moved: false, hover: null, stem: 1, fol: true }, this.state || {}); }
+label(idx) { if (idx <= 0) return '-5'; const k = idx - 5; return String(k >= 0 ? k + 1 : k); }
+near(t) { const P = this.P; let b = 0; for (let n = 1; n < P.length; n++) if (Math.abs(P[n] - t) < Math.abs(P[b] - t)) b = n; return b; }
+floorIdx(t) { const P = this.P; let b = 0; for (let n = 0; n < P.length - 1; n++) if (P[n] <= t + 1e-6) b = n; return b; }
+clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+mmss(t) { const m = Math.floor(t / 60); const sec = Math.floor(t - m * 60); return m + ':' + String(sec).padStart(2, '0'); }
+inView(s) { return s.pos >= this.P[s.i] && s.pos < this.P[s.j]; }
+componentDidMount() { this._last = performance.now(); this._timer = setInterval(() => this.tick(), 40); }
+componentWillUnmount() { clearInterval(this._timer); this.unbind(); }
+tick() {
+const now = performance.now(); const dt = (now - this._last) / 1000; this._last = now;
+const s = this.s; if (!s.playing) return;
+const P = this.P; let pos = s.pos + dt; let i = s.i, j = s.j, fol = s.fol, playing = true;
+const zoomed = !(i === 0 && j === 49);
+const la = s.drag && this._d ? this._d.i0 : i; const lb = s.drag && this._d ? this._d.j0 : j;
+if (s.loop && zoomed) { if (pos >= P[lb] || pos < P[la]) pos = P[la]; }
+else {
+if (pos >= this.T) { pos = this.T; playing = false; }
+if (!s.drag && zoomed) {
+if (pos >= P[i] && pos < P[j]) fol = true;
+else if (fol && pos >= P[j] && j < 49) { const h = Math.max(1, Math.ceil((j - i) / 2)); const n = j - i; j = Math.min(49, j + h); i = j - n; }
+}
+}
+this.setState({ pos, i, j, fol, playing });
+}
+seek(t, extra) {
+const s = this.s; const P = this.P; let i = s.i, j = s.j; const n = j - i;
+if (t < P[i] || t >= P[j]) { i = this.clamp(this.floorIdx(t), 0, 49 - n); j = i + n; }
+this.setState(Object.assign({ pos: t, i, j, fol: true }, extra || {}));
+}
+frac(e, el) { const r = el.getBoundingClientRect(); return (e.clientX - r.left) / r.width; }
+bind(kind, e, grab, moved) {
+const s = this.s; const ov = e.currentTarget.closest('.ov');
+this._d = { kind, ov, grab, i0: s.i, j0: s.j, x0: e.clientX, moved: !!moved, was: [s.i, s.j] };
+this._mv = (ev) => this.move(ev); this._up = () => this.up();
+window.addEventListener('pointermove', this._mv); window.addEventListener('pointerup', this._up); window.addEventListener('pointercancel', this._up);
+this.setState({ drag: kind, moved: !!moved });
+}
+unbind() { if (this._mv) { window.removeEventListener('pointermove', this._mv); window.removeEventListener('pointerup', this._up); window.removeEventListener('pointercancel', this._up); this._mv = null; } }
+move(e) {
+const d = this._d; if (!d) return;
+if (!d.moved && Math.abs(e.clientX - d.x0) < 3) return;
+d.moved = true;
+const idx = this.near((this.frac(e, d.ov) - d.grab) * this.T);
+let i = d.i0, j = d.j0;
+if (d.kind === 'l') i = this.clamp(idx, 0, d.j0 - 1);
+else if (d.kind === 'r') j = this.clamp(idx, d.i0 + 1, 49);
+else { const n = d.j0 - d.i0; i = this.clamp(idx, 0, 49 - n); j = i + n; }
+this.setState({ i, j, moved: true });
+}
+up() {
+this.unbind(); const d = this._d; this._d = null; const s = this.s; const P = this.P;
+const next = { drag: null, moved: false };
+if (d && d.moved) {
+if (!(s.i === 0 && s.j === 49)) next.last = [s.i, s.j];
+const inside = this.inView(s);
+if (s.loop && !inside) next.pos = P[s.i];
+next.fol = inside;
+if (s.i === 0 && s.j === 49) next.loop = false;
+}
+this.setState(next);
+}
+renderVals() {
+const s = this.s; const P = this.P; const T = this.T;
+const ta = P[s.i], tb = P[s.j], span = tb - ta, n = s.j - s.i;
+const zoomed = !(s.i === 0 && s.j === 49);
+const plotW = 948; const pxBar = plotW / n; let step = 16; for (const c of [1, 2, 4, 8, 16]) if (pxBar * c >= 40) { step = c; break; }
+const ticks = [];
+for (let idx = s.i; idx < s.j; idx++) { const k = idx - 5; const major = idx > 0 && ((k % step) + step) % step === 0; ticks.push({ left: ((P[idx] - ta) / span * 100).toFixed(3), label: major ? this.label(idx) : '', h: major ? 9 : 5 }); }
+let sec = 30; for (const c of [5, 10, 15, 30]) if (plotW / span * c >= 70) { sec = c; break; }
+const axis = []; for (let t = Math.ceil(ta / sec) * sec; t < tb - sec * 0.3; t += sec) axis.push({ left: ((t - ta) / span * 100).toFixed(3), label: this.mmss(t) });
+const off = s.pos - this.T0; const b = Math.floor(off / this.L); const beats = (off - b * this.L) / (this.L / 4);
+const readBar = (b >= 0 ? b + 1 : b) + '.' + (Math.min(3, Math.floor(beats)) + 1) + '.' + (Math.min(3, Math.floor((beats % 1) * 4)) + 1);
+const m = Math.floor(s.pos / 60); const readTime = m + ':' + (s.pos - m * 60).toFixed(2).padStart(5, '0');
+const inside = this.inView(s);
+const d = s.drag, mv = s.moved;
+const atMin = n === 1;
+const tip = d && mv ? (d === 'l' ? 'from bar ' + this.label(s.i) : d === 'r' ? 'to bar ' + this.label(s.j - 1) : this.label(s.i) + '–' + this.label(s.j - 1)) : '';
+const g = this._d && mv && s.loop ? this._d.was : null;
+return {
+playing: s.playing, paused: !s.playing, playLabel: s.playing ? 'Pause' : 'Play',
+readBar, readTime, stemName: s.stem === 1 ? 'Instrumental - Full' : 'Vocal - Full', envCls: s.stem === 1 ? 'env-a' : 'env-b',
+phTrack: (s.pos / T * 100).toFixed(3), phView: ((s.pos - ta) / span * 100).toFixed(3), phShow: inside,
+gotoShow: zoomed && !inside, phBar: readBar.split('.')[0],
+headRead: zoomed ? (n === 1 ? 'bar ' + this.label(s.i) : 'bars ' + this.label(s.i) + '–' + this.label(s.j - 1)) + ' · ' + this.mmss(ta) + '–' + this.mmss(tb) : 'whole track · 2:49',
+viewHint: s.loop ? 'looping ' + (n === 1 ? 'this bar' : 'these ' + n + ' bars') : zoomed ? 'drag to move · double-click for the whole track' : 'pull a handle to zoom · double-click for 8 bars',
+winLeft: (ta / T * 100).toFixed(3), winW: (span / T * 100).toFixed(3), winRight: (tb / T * 100).toFixed(3),
+winCls: 'win' + (d === 'b' ? ' drag' : '') + (s.loop && zoomed ? ' loop' : ''),
+hdLCls: 'hd l' + (d === 'l' ? (atMin || s.i === 0 ? ' stop' : ' drag') : ''), hdRCls: 'hd r' + (d === 'r' ? (atMin || s.j === 49 ? ' stop' : ' drag') : ''),
+tipShow: !!tip, tipText: tip, tipLeft: d === 'l' ? '0%' : d === 'r' ? '100%' : '50%',
+ghostShow: !!g, ghostLeft: g ? (P[g[0]] / T * 100).toFixed(3) : 0, ghostW: g ? ((P[g[1]] - P[g[0]]) / T * 100).toFixed(3) : 0,
+ticks, axis, zinW: (T / span * 100).toFixed(2), zinL: (-ta / span * 100).toFixed(2),
+loopCls: 'tog' + (s.loop && zoomed ? ' on' : ''), loopOn: s.loop && zoomed, loopOff: !zoomed, loopWhy: zoomed ? '' : 'needs a zoomed view',
+lg1: 'lg' + (s.stem === 1 ? ' sel' : ''), lg2: 'lg' + (s.stem === 2 ? ' sel' : ''), lane1: 'lane' + (s.stem === 1 ? ' sel' : ''), lane2: 'lane' + (s.stem === 2 ? ' sel' : ''),
+hoverShow: s.hover !== null, hoverLeft: s.hover === null ? 0 : ((P[s.hover] - ta) / span * 100).toFixed(3),
+noBack: s.i === 0, noFwd: s.j === 49,
+togglePlay: () => { const c = this.s; this.setState({ playing: !c.playing, pos: c.pos >= T ? 0 : c.pos }); },
+toggleLoop: () => { const c = this.s; const on = !c.loop; this.setState({ loop: on, pos: on && !this.inView(c) ? P[c.i] : c.pos }); },
+seekSlim: (e) => this.seek(this.clamp(this.frac(e, e.currentTarget), 0, 0.999) * T),
+seekRuler: (e) => { const c = this.s; this.seek(P[this.floorIdx(P[c.i] + this.frac(e, e.currentTarget) * (P[c.j] - P[c.i]))]); },
+hoverRuler: (e) => { const c = this.s; const h = this.floorIdx(P[c.i] + this.frac(e, e.currentTarget) * (P[c.j] - P[c.i])); if (h !== c.hover) this.setState({ hover: h }); },
+leaveRuler: () => this.setState({ hover: null }),
+seekLane1: (e) => { const c = this.s; this.seek(P[c.i] + this.frac(e, e.currentTarget) * (P[c.j] - P[c.i]), { stem: 1 }); },
+seekLane2: (e) => { const c = this.s; this.seek(P[c.i] + this.frac(e, e.currentTarget) * (P[c.j] - P[c.i]), { stem: 2 }); },
+gotoPlayhead: () => this.seek(this.s.pos),
+back: () => { const c = this.s; const w = c.j - c.i; const h = Math.max(1, Math.ceil(w / 2)); const i = Math.max(0, c.i - h); this.setState({ i, j: i + w, fol: false }); },
+fwd: () => { const c = this.s; const w = c.j - c.i; const h = Math.max(1, Math.ceil(w / 2)); const j = Math.min(49, c.j + h); this.setState({ i: j - w, j, fol: false }); },
+downBody: (e) => { e.stopPropagation(); e.preventDefault(); const c = this.s; this.bind('b', e, this.frac(e, e.currentTarget.closest('.ov')) - P[c.i] / T); },
+downL: (e) => { e.stopPropagation(); e.preventDefault(); const c = this.s; this.bind('l', e, this.frac(e, e.currentTarget.closest('.ov')) - P[c.i] / T); },
+downR: (e) => { e.stopPropagation(); e.preventDefault(); const c = this.s; this.bind('r', e, this.frac(e, e.currentTarget.closest('.ov')) - P[c.j] / T); },
+downStrip: (e) => { e.preventDefault(); const c = this.s; const w = c.j - c.i; if (w === 49) return; const f = this.frac(e, e.currentTarget); const half = (P[c.j] - P[c.i]) / T / 2; const i = this.clamp(this.near((f - half) * T), 0, 49 - w); this.setState({ i, j: i + w }, () => {}); this._jump = true; const ov = e.currentTarget; this._d = { kind: 'b', ov, grab: f - P[i] / T, i0: i, j0: i + w, x0: e.clientX, moved: true, was: [c.i, c.j] }; this._mv = (ev) => this.move(ev); this._up = () => this.up(); window.addEventListener('pointermove', this._mv); window.addEventListener('pointerup', this._up); window.addEventListener('pointercancel', this._up); this.setState({ drag: 'b', moved: true }); },
+dbl: (e) => { const c = this.s; if (!(c.i === 0 && c.j === 49)) { this.setState({ last: [c.i, c.j], i: 0, j: 49, loop: false }); return; } if (c.last) { this.setState({ i: c.last[0], j: c.last[1] }); return; } const i = this.clamp(this.near(this.frac(e, e.currentTarget.closest('.ov')) * T - 4 * this.L), 0, 41); this.setState({ i, j: i + 8, last: [i, i + 8] }); }
+};
+}
+}
+</script>
+</body>
+</html>
