@@ -3,6 +3,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
+using Crateside.Core.Imports;
 using Crateside.Core.Ledger;
 using Crateside.Core.Loudness;
 using Crateside.Core.Marks;
@@ -228,6 +229,14 @@ public sealed record TracksView
                     )
                     .FirstOrDefault(name => name is { Length: > 0 })
             );
+
+            if (
+                source is TrackNameSource.Files
+                && !TrackKeys.IsVideoId(primary.TrackKey)
+                && known.ResolvedNames.GetValueOrDefault(primary.TrackKey) is { } taken
+                && taken.DisplayTitle != TrackTags.WithoutTrackNumber(taken.BaseName)
+            )
+                source = TrackNameSource.Tags;
 
             var stated = instruction?.Name is { Length: > 0 } name ? name : null;
 

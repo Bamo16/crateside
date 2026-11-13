@@ -1,4 +1,5 @@
 using Crateside.Core.Ledger;
+using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Jobs;
@@ -142,6 +143,7 @@ public sealed class TracksViewCompositionTests : IDisposable
         IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>>? onDisk = null,
         JobStore? jobs = null,
         IReadOnlyDictionary<string, Acquisition>? acquisitions = null,
+        IReadOnlyDictionary<string, ResolvedName>? resolvedNames = null,
         params TrackInstruction[] instructions
     ) =>
         TracksView
@@ -156,6 +158,7 @@ public sealed class TracksViewCompositionTests : IDisposable
                 new TrackAnnotations
                 {
                     Acquisitions = acquisitions ?? TrackAnnotations.None.Acquisitions,
+                    ResolvedNames = resolvedNames ?? TrackAnnotations.None.ResolvedNames,
                 }
             )
             .Rows;
@@ -881,6 +884,29 @@ public sealed class TracksViewCompositionTests : IDisposable
 
         Assert.Equal(TrackNameSource.Files, row.NameSource);
         Assert.Equal("track", row.Title);
+    }
+
+    [Theory]
+    [InlineData("Dave Wise - Stickerbush Symphony", TrackNameSource.Tags)]
+    [InlineData("Stickerbush Symphony", TrackNameSource.Files)]
+    public void An_imported_tracks_name_is_said_to_come_from_its_tags_only_when_they_made_it(
+        string displayTitle,
+        TrackNameSource expected
+    )
+    {
+        const string Key = "file~8a11cbc196f54140";
+        var finished = new Dictionary<string, IReadOnlyList<StemOnDisk>>(StringComparer.Ordinal)
+        {
+            [Key] = [Found("Vocal - Full", FinishedRoot)],
+        };
+        var names = new Dictionary<string, ResolvedName>
+        {
+            [Key] = new() { DisplayTitle = displayTitle, BaseName = "1-19. Stickerbush Symphony" },
+        };
+
+        var row = Assert.Single(Compose(View([Item(Key)]), onDisk: finished, resolvedNames: names));
+
+        Assert.Equal(expected, row.NameSource);
     }
 
     [Fact]
