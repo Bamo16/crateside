@@ -223,6 +223,7 @@ public static class ServiceRegistration
         services.AddSingleton<IBuildDownloader, HttpBuildDownloader>();
         services.AddSingleton<BuildFetcher>();
         services.AddSingleton<KnownBuilds>();
+        services.AddHostedService<BuildSeeder>();
         services.AddSingleton<BeatReader>();
         // Unattended: beatdetect runs on the CPU and contends for nothing (#75, #76).
         services.AddHostedService<BeatWorker>();

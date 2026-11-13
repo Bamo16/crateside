@@ -31,7 +31,7 @@ if (args is ["retag-sources", ..])
     );
 
 if (!DocumentBuild.IsRunning)
-    await StartAsync(app);
+    Start(app);
 
 if (!app.Environment.IsDevelopment())
 {
@@ -52,8 +52,8 @@ app.Run();
 
 return 0;
 
-// What each start does before serving: respell, back up and migrate the stores, import the person's decisions, seed the builds.
-static async Task StartAsync(WebApplication app)
+// What each start does before serving: respell, back up and migrate the stores, import the person's decisions, start the stores.
+static void Start(WebApplication app)
 {
     var respelled = app
         .Services.GetRequiredService<Crateside.Core.Orchestration.Jobs.JobStatusSpelling>()
@@ -82,15 +82,4 @@ static async Task StartAsync(WebApplication app)
             followed
         );
     app.Services.GetRequiredService<Crateside.Core.Tracks.CacheKeeper>();
-
-    var builds = app.Services.GetRequiredService<KnownBuilds>();
-    await builds.SeedAsync(CancellationToken.None);
-
-    foreach (var filter in Enum.GetValues<FfmpegFilter>())
-        app.Logger.LogInformation(
-            "{Filter} runs on ffmpeg {Build} at {Path}",
-            FfmpegBuild.NameOf(filter),
-            builds.Pinned(filter)?.Build.Label ?? "(no pinned build)",
-            builds.FileNameFor(filter)
-        );
 }

@@ -195,7 +195,7 @@ public sealed partial class BeatReader
     public async Task<FfmpegBuild?> RefreshBuildAsync(CancellationToken ct)
     {
         if (_builds is not null)
-            await _builds.SeedAsync(ct);
+            await _builds.WhenSeededAsync(ct);
 
         return _build = await FfmpegBuild.IdentifyAsync(
             _processes,

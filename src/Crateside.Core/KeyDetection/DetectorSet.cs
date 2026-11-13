@@ -17,8 +17,12 @@ namespace Crateside.Core.KeyDetection;
 /// The detectors the bake-off chose (ADR 0055): keydetect for the key, chords and flicker; madmom and
 /// Essentia's <c>edma</c> as its backers.
 /// </summary>
-public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, MadmomKeyCnn madmom)
-    : IDetectorSet
+public sealed class DetectorSet(
+    PcmDecoder decoder,
+    KeydetectFilter keydetect,
+    MadmomKeyCnn madmom,
+    KnownBuilds? builds = null
+) : IDetectorSet
 {
     /// <summary>Without the escaping meant for HTML, so a title's own script and a pair's <c>+</c> stay readable.</summary>
     private static readonly JsonTypeInfo<MachineDto> Written =
@@ -29,12 +33,13 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             }.GetTypeInfo(typeof(MachineDto));
 
-    /// <summary>keydetect through its pinned build as it stood at start-up, decoding through the configured ffmpeg (ADR 0066).</summary>
+    /// <summary>keydetect through its pinned build, once the builds are seeded, decoding through the configured ffmpeg (ADR 0066).</summary>
     public DetectorSet(IProcessRunner runner, CratesidePaths paths, KnownBuilds builds)
         : this(
             new PcmDecoder(runner, paths.KeydetectFfmpeg),
-            new KeydetectFilter(runner, builds.FileNameFor(FfmpegFilter.Keydetect)),
-            new MadmomKeyCnn()
+            new KeydetectFilter(runner, () => builds.FileNameFor(FfmpegFilter.Keydetect)),
+            new MadmomKeyCnn(),
+            builds
         ) { }
 
     /// <summary>All three through one ffmpeg, which must be a build with <c>keydetect</c>.</summary>
@@ -75,8 +80,12 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
     ) => ReadAsync(audioPath, null, ct);
 
     /// <summary>The hash of the executable keydetect runs on, as the evidence records it.</summary>
-    public async Task<string?> KeydetectSha256Async(CancellationToken ct = default) =>
-        (await keydetect.IdentifyAsync(ct)).Sha256;
+    public async Task<string?> KeydetectSha256Async(CancellationToken ct = default)
+    {
+        await SeededAsync(ct);
+
+        return (await keydetect.IdentifyAsync(ct)).Sha256;
+    }
 
     /// <summary>madmom and edma over the audio, or one window of it, on the CPU alone.</summary>
     public async Task<(KeyReading Madmom, KeyReading Edma)> ReadBackersAsync(
@@ -98,11 +107,19 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
         };
 
     /// <summary>keydetect over the audio, or one window of it.</summary>
-    public Task<KeydetectReading> ReadKeydetectAsync(
+    public async Task<KeydetectReading> ReadKeydetectAsync(
         string audioPath,
         RunWindow? window,
         CancellationToken ct = default
-    ) => keydetect.ReadAsync(audioPath, window, ct);
+    )
+    {
+        await SeededAsync(ct);
+
+        return await keydetect.ReadAsync(audioPath, window, ct);
+    }
+
+    private Task SeededAsync(CancellationToken ct) =>
+        builds?.WhenSeededAsync(ct) ?? Task.CompletedTask;
 
     /// <summary>The evidence's own shape holding only the readings given, for adding to a run that lacks them.</summary>
     internal static JsonObject Part(
@@ -134,6 +151,8 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
     {
         if (!File.Exists(audioPath))
             return new EvidenceReading.Failed($"no audio at {audioPath}");
+
+        await SeededAsync(ct);
 
         var filter = keydetect.ReadAsync(audioPath, window, ct);
         var (cnn, edma) = await ReadBackersAsync(audioPath, window, ct);

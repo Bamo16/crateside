@@ -1,6 +1,8 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 using Crateside.Core.Orchestration.Loop;
+using Humanizer;
 
 namespace Crateside.Core;
 
@@ -29,7 +31,19 @@ public sealed class KnownBuilds(
 )
 {
     private readonly Lock _gate = new();
+    private readonly Lock _seeding = new();
+    private readonly ConcurrentDictionary<FfmpegFilter, SeedingNote> _notes = [];
     private Dictionary<string, FilterBuilds> _state = Load(paths.KnownBuildsFile);
+    private Task? _seeded;
+
+    /// <summary>How long a failed fetch waits before it is tried again.</summary>
+    public TimeSpan RetryAfter { get; init; } = TimeSpan.FromMinutes(10);
+
+    /// <summary>Why detection is held on a build, or null when none is.</summary>
+    public string? Waiting =>
+        _notes.IsEmpty
+            ? null
+            : string.Join(" ", _notes.OrderBy(note => note.Key).Select(note => note.Value.Text));
 
     public IReadOnlyList<KnownBuild> All(FfmpegFilter filter)
     {
@@ -130,19 +144,49 @@ public sealed class KnownBuilds(
         }
     }
 
+    /// <summary>Starts seeding in the background, once, and retries a failed fetch until every filter has its build.</summary>
+    public Task StartSeeding(CancellationToken ct)
+    {
+        lock (_seeding)
+            return _seeded ??= Task.Run(() => SeedUntilDoneAsync(ct), CancellationToken.None);
+    }
+
+    /// <summary>Completes once every filter has its build, starting the seeding if nothing has.</summary>
+    public Task WhenSeededAsync(CancellationToken ct) =>
+        StartSeeding(CancellationToken.None).WaitAsync(ct);
+
     /// <summary>
     /// For each filter that knows no build yet, adds the configured one and pins it; where nothing is
     /// configured, the built-in build is fetched and pinned instead (#163). A build pinned any other way
-    /// is never replaced, and a built-in pin left by an older crateside moves to the current one.
+    /// is never replaced, and a built-in pin left by an older crateside moves to the current one. The
+    /// filters are seeded side by side.
     /// </summary>
-    public async Task SeedAsync(CancellationToken ct)
+    public Task SeedAsync(CancellationToken ct) =>
+        Task.WhenAll(Enum.GetValues<FfmpegFilter>().Select(filter => SeedAsync(filter, ct)));
+
+    private async Task SeedUntilDoneAsync(CancellationToken ct)
     {
-        foreach (var filter in Enum.GetValues<FfmpegFilter>())
+        while (true)
         {
-            if (await SeedBuiltInAsync(filter, ct) is { } known)
-                Pin(filter, known.Build.Sha256);
-            else if (All(filter) is [])
-                await AddAsync(filter, Seed(filter), ct);
+            await SeedAsync(ct);
+
+            if (!_notes.Values.Any(note => note.Failed))
+                return;
+
+            await Task.Delay(RetryAfter, ct);
+        }
+    }
+
+    private async Task SeedAsync(FfmpegFilter filter, CancellationToken ct)
+    {
+        if (await SeedBuiltInAsync(filter, ct) is { } known)
+            Pin(filter, known.Build.Sha256);
+        else if (All(filter) is [])
+        {
+            await AddAsync(filter, Seed(filter), ct);
+
+            if (All(filter) is not [])
+                _notes.TryRemove(filter, out _);
         }
     }
 
@@ -152,17 +196,54 @@ public sealed class KnownBuilds(
             fetcher?.PinFor(filter) is not { } builtIn
             || !IsUnconfigured(Seed(filter))
             || !Wants(builtIn)
-            || await fetcher.EnsureAsync(builtIn, ct) is not BuildFetchOutcome.Ready(var fileName)
         )
-            return null;
+        {
+            _notes.TryRemove(filter, out _);
 
-        return await AddAsync(filter, fileName, ct) switch
+            return null;
+        }
+
+        var name = FfmpegBuild.NameOf(filter);
+
+        _notes[filter] = new(
+            $"Fetching the {name} build ({builtIn.Tag}); detection that needs it starts when it is ready.",
+            Failed: false
+        );
+
+        var error = "the fetched executable is not an ffmpeg with the filter";
+
+        switch (await fetcher.EnsureAsync(builtIn, ct))
+        {
+            case BuildFetchOutcome.Ready(var fileName):
+                if (KnownOf(await AddAsync(filter, fileName, ct)) is { } added)
+                {
+                    _notes.TryRemove(filter, out _);
+
+                    return added;
+                }
+
+                break;
+            case BuildFetchOutcome.Failed(var message):
+                error = message;
+
+                break;
+        }
+
+        _notes[filter] = new(
+            $"Could not fetch the {name} build: {error}. Detection that needs it is held; trying again in {RetryAfter.Humanize()}.",
+            Failed: true
+        );
+
+        return null;
+    }
+
+    private static KnownBuild? KnownOf(BuildAddOutcome outcome) =>
+        outcome switch
         {
             BuildAddOutcome.Added(var known) => known,
             BuildAddOutcome.AlreadyKnown(var known) => known,
             _ => null,
         };
-    }
 
     // Nothing pinned, or a pin that was fetched and has since been superseded.
     private bool Wants(BuiltInBuild builtIn) =>
@@ -213,6 +294,8 @@ public sealed class KnownBuilds(
             _ => new(StringComparer.Ordinal),
         };
 }
+
+internal sealed record SeedingNote(string Text, bool Failed);
 
 internal sealed record FilterBuilds(IReadOnlyList<KnownBuild> Builds, string? Pinned);
 

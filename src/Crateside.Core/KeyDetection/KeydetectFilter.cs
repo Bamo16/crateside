@@ -8,11 +8,14 @@ using Crateside.Core.Pairing;
 namespace Crateside.Core.KeyDetection;
 
 /// <summary>FiLL's <c>keydetect</c> filter in the NoMercy ffmpeg build: a key, its correlation, and the chords under it.</summary>
-public sealed partial class KeydetectFilter(IProcessRunner runner, string ffmpeg)
+public sealed partial class KeydetectFilter(IProcessRunner runner, Func<string> ffmpegFileName)
 {
     public const string Name = "ffmpeg_keydetect";
 
     private (string Version, string? Sha256)? _build;
+
+    public KeydetectFilter(IProcessRunner runner, string ffmpeg)
+        : this(runner, () => ffmpeg) { }
 
     /// <summary>ffmpeg's version line and the executable's hash: <c>r</c>'s trust bands differ between builds.</summary>
     public async Task<(string? Version, string? Sha256)> IdentifyAsync(
@@ -26,7 +29,7 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, string ffmpeg
         try
         {
             outcome = await runner.RunAsync(
-                new ProcessRequest(ffmpeg, ["-hide_banner", "-version"]),
+                new ProcessRequest(ffmpegFileName(), ["-hide_banner", "-version"]),
                 ct
             );
         }
@@ -41,7 +44,7 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, string ffmpeg
         )
             return (null, null);
 
-        var sha256 = FfmpegBuild.Located(ffmpeg) is { Exists: true } executable
+        var sha256 = FfmpegBuild.Located(ffmpegFileName()) is { Exists: true } executable
             ? await FfmpegBuild.HashAsync(executable, ct)
             : null;
         _build = (version, sha256);
@@ -61,7 +64,7 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, string ffmpeg
         {
             outcome = await runner.RunAsync(
                 new ProcessRequest(
-                    ffmpeg,
+                    ffmpegFileName(),
                     [
                         "-nostdin",
                         "-hide_banner",
