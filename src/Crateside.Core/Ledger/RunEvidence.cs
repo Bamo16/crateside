@@ -136,7 +136,7 @@ public sealed record RunEvidence
             Center = run.Center,
             Mixed = run.Mixed,
             DecidedBy = run.DecidedBy,
-            Sections = run.Sections,
+            Sections = SectionSupports.Classify(run),
             Windows = run.Windows,
             Direction = run.Direction,
             Readings = WindowReading.Of(run, machine?.Windows ?? []),

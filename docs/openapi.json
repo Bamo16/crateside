@@ -2710,9 +2710,35 @@
               "string"
             ],
             "format": "double"
+          },
+          "support": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "What places a section outside the primary center; null on the primary's own sections (ADR 0095).",
+                "$ref": "#/components/schemas/SectionSupport"
+              }
+            ]
+          },
+          "isHypothesis": {
+            "type": "boolean"
+          },
+          "isConfirmed": {
+            "type": "boolean"
           }
         },
         "description": "A part of a song with its own tonal center; `Start` is seconds into the track, null on verdicts from before ADR 0064."
+      },
+      "SectionSupport": {
+        "enum": [
+          "Hypothesis",
+          "HumanSource",
+          "Asked",
+          "Detectors",
+          null
+        ]
       },
       "SeparationRecipe": {
         "required": [

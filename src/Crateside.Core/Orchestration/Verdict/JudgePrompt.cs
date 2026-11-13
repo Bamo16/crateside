@@ -1,6 +1,7 @@
 using System.Globalization;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Evidence;
+using Crateside.Core.Pairing;
 using Crateside.Core.Playlist;
 using Humanizer;
 using Microsoft.Extensions.Options;
@@ -65,8 +66,18 @@ public sealed class JudgePrompt(WorkingSet workingSet, IOptions<JudgeOptions> op
         if (direction is not null)
             lines.AddRange(DirectionLines(direction, given));
 
+        lines.AddRange(KeyRelations.Lines(PromptKeys(evidence, given)));
+
         return string.Join('\n', lines);
     }
+
+    private static IEnumerable<MusicKey> PromptKeys(
+        string? evidence,
+        IReadOnlyList<DetectedWindow> given
+    ) =>
+        RecordTimeCheck
+            .DetectedKeys(evidence)
+            .Concat(given.SelectMany(window => RecordTimeCheck.DetectedKeys(window.Evidence)));
 
     /// <summary>The user's windows, note and ear, with each window's evidence; the windows become the sections.</summary>
     private static IEnumerable<string> DirectionLines(

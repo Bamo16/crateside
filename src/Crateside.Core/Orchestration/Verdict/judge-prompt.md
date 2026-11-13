@@ -57,7 +57,13 @@ Anything else, read the page itself: a search snippet can give one section's key
 
 A tonal center is a tonic (C, C#, D … B) and one of the seven diatonic modes: ionian (plain major), dorian, phrygian, lydian, mixolydian, aeolian (plain minor), locrian. For a song that moves, give `sections`, each with its own center, and put the primary one in `center`. Set `mixed` for two modes on one tonic, such as a major melody over aeolian harmony; `center` is then the harmony's.
 
-Give each section a `start`, in seconds into the track, read from the times of keydetect's `key_events` where the key changes. Leave it out only when the events do not show where the section begins.
+A section in a center other than the primary counts only when something independent of you places it: a human source that states it for that section (list the section in the source's `sections`), a window the maintainer gave, or windows crateside detected where at least two of keydetect, madmom and Essentia read that center inside the section and the primary center elsewhere. Otherwise crateside keeps it as your hypothesis, shown as a possible key change: it does not mark the track, it never raises the confidence, and it cannot lift a verdict whose primary center the evidence would not carry alone. So propose it plainly rather than assert it, and give the primary the evidence carries.
+
+Keydetect's `key_events` are running totals over the stream so far: an event is the moment the whole-song estimate flips, not where a modulation happens, and it lags the change or comes with none. Do not present them as change points. Give a section a `start`, in seconds into the track, only where a window or a source places it; otherwise leave it out.
+
+When windows were judged, the primary center is one the windows read or a human source states. A primary that only an unbacked whole-file read holds is refused.
+
+The work order lists how the keys in play relate (relative, parallel, notes shared), computed by crateside. Use those; do not work out whether keys share notes yourself.
 
 Write UTF-8 JSON to the path the work order names, in this shape, leaving out what you do not have:
 

@@ -509,6 +509,9 @@ public sealed class LedgerStore : IDisposable
                 }
             );
 
+        foreach (var (id, classified) in Classified(context, runs))
+            runs[id] = runs[id] with { Sections = classified };
+
         var restated = context
             .Restatements.AsNoTracking()
             .AsEnumerable()
@@ -522,6 +525,29 @@ public sealed class LedgerStore : IDisposable
             );
 
         return new KeyLedger([.. runs.Values.Concat(restated).OrderBy(run => run.Timestamp)]);
+    }
+
+    /// <summary>The sections of each run that has one outside its primary center, marked with what supports it (ADR 0095).</summary>
+    private static List<(long Id, IReadOnlyList<Section> Sections)> Classified(
+        LedgerContext context,
+        Dictionary<long, LedgerRun> runs
+    )
+    {
+        var ids = runs.Where(pair =>
+                pair.Value is { Center: { } center, Sections: { Count: > 0 } sections }
+                && sections.Any(section => section.Center.Collapsed != center.Collapsed)
+            )
+            .Select(pair => pair.Key)
+            .ToList();
+
+        return
+        [
+            .. context
+                .Runs.AsNoTracking()
+                .Where(run => ids.Contains(run.Id))
+                .AsEnumerable()
+                .Select(run => (run.Id, SectionSupports.Classify(run.ToRecord()))),
+        ];
     }
 
     private static string ConnectionString(string path) =>
