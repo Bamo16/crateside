@@ -19,7 +19,7 @@
 }
 
 .rows.no-track .row-grid {
-    grid-template-columns: 16px 72px 120px minmax(0, 1fr) 120px;
+    grid-template-columns: 16px 72px 104px minmax(0, 1fr) 76px;
 }
 
 .head {
@@ -191,6 +191,36 @@
     color: var(--text-30);
 }
 
+/* A track's page: one line a row, and a result that fits has nothing to expand. */
+.rows.no-track .row {
+    min-height: 32px;
+}
+
+.rows.no-track .result:not([data-clipped]) {
+    pointer-events: none;
+    cursor: default;
+}
+
+.rows.no-track .result:not([data-clipped]) .caret {
+    display: none;
+}
+
+.rows.no-track .row.open {
+    align-items: start;
+    padding-top: 7px;
+    padding-bottom: 7px;
+}
+
+.rows.no-track .row.open .result {
+    align-items: flex-start;
+}
+
+.rows.no-track .row.open .result .text {
+    overflow-wrap: anywhere;
+    white-space: normal;
+    line-height: 1.45;
+}
+
 .running .result,
 .running .took {
     color: var(--text-60);
@@ -233,10 +263,6 @@
     padding-top: 10px;
 }
 
-.rows.no-track .detail .body {
-    grid-column: 4 / 6;
-}
-
 .detail p {
     margin: 0;
 }
@@ -268,35 +294,34 @@
 
 /* Under 1100px of the list's own width each row stacks: status, times and duration, then the track, then the result. */
 @container (max-width: 1100px) {
-    .head {
+    .rows:not(.no-track) .head {
         display: none;
     }
 
-    .row-grid,
-    .rows.no-track .row-grid {
+    .rows:not(.no-track) .row-grid {
         grid-template-columns: 16px auto 1fr auto;
         column-gap: 10px;
         padding: 10px 14px;
     }
 
-    .row .track {
+    .rows:not(.no-track) .row .track {
         grid-column: 1 / -1;
         grid-row: 2;
         margin-top: 4px;
     }
 
-    .row .track.same {
+    .rows:not(.no-track) .row .track.same {
         display: none;
     }
 
-    .row .result {
+    .rows:not(.no-track) .row .result {
         grid-column: 1 / -1;
         grid-row: 3;
         margin-top: 2px;
         align-items: flex-start;
     }
 
-    .row .result .text {
+    .rows:not(.no-track) .row .result .text {
         display: -webkit-box;
         overflow: hidden;
         white-space: normal;
@@ -306,13 +331,12 @@
         line-clamp: 2;
     }
 
-    .row .took {
+    .rows:not(.no-track) .row .took {
         grid-column: 4;
         grid-row: 1;
     }
 
-    .detail .body,
-    .rows.no-track .detail .body {
+    .detail .body {
         grid-column: 1 / -1;
     }
 }

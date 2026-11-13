@@ -565,11 +565,16 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   at full scale, so a loud master cannot bury it. The second slider is labelled `Main` and scales
   click and music together; the first, `Click`, only the click. The canvas has an unlabelled click
   level and a `Volume`.
-- **The rows are drawn by the server, for each window the browser reports.** The browser holds the
-  window and tells the page as it moves, one report in flight and the newest waiting, so a drag
-  redraws the rows at the pace the page can follow rather than in the browser itself. The playhead,
-  the window's box and handles, the readout, the tag and the seek line are the browser's own and
-  never wait. A follow step is therefore reported too (the handoff says it is not).
+- **The rows are drawn by the server, once a window move ends.** The browser holds the window and
+  tells the page when a drag lets go (and on a click, key or double-click), so a drag at the whole
+  track, where a redraw is heaviest, never waits on a round trip. During the drag the handles, the
+  window's box, the readout, the tag and the playhead move in the browser every frame, and the ruler,
+  lanes and key bands keep the window they had until release. A follow step is reported too (the
+  handoff says it is not).
+- **Track details' Activity is one line a row** (2026-11-12): glyph, time, stage or actor, the result and
+  Took, truncating with an ellipsis only when the panel is narrower than that. A row expands only
+  when its line cuts the text, and then wraps in place; the time cell's hover title holds the start,
+  finish, duration and job id. The dashboard's table, with its Track column, is as it was.
 - **The cursors are the maintainer's, not the canvas's** (2026-11-11): `[` and `]` on the handles,
   a speaker on the ruler, the lanes, the key bands and the slim waveform, with no hand anywhere
   a drag acts. The canvas's glyph with a triangle is not built.
