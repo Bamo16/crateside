@@ -1740,16 +1740,26 @@ class Playback {
             this.els.menu.hidden = true;
             this.syncPlayer();
 
-            if (!this.playing)
+            if (this.playing)
+                this.swapClickVoice();
+            else
                 this.preview();
-
-            this.restart();
 
             return;
         }
 
         if (target.closest("[data-retry]"))
             this.retry();
+    }
+
+    // The music keeps playing: only the clicks already scheduled are dropped, and the next ones use the new voice.
+    swapClickVoice() {
+        if (!this.session)
+            return;
+
+        this.stopClicks();
+        this.session.scheduledTo = this.ctx.currentTime;
+        this.scheduleClicks();
     }
 
     setClick(on) {
