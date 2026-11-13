@@ -45,12 +45,37 @@
                 <div class="cell">
                     <div class="cell-head">
                         <span class="label">@(_row?.IsLibraryOnly is true ? "Key · tagged in Ableton" : "Key")</span>
-                        <div class="line">
-                            @if (Center is { } center && ModeText.Lead(center, Mixed) is { } lead)
+                        <div class="key-lines">
+                            <div class="line">
+                                @if (Center is { } center && ModeText.Lead(center, Mixed) is { } lead)
+                                {
+                                    <span class="mono lead">@lead <span class="arrow">→</span></span>
+                                }
+                                <span class="mono value key @(Key is null ? "empty" : null)">@(KeyText.Spell(Key) ?? "—")</span>
+                            </div>
+                            @if (OtherSections is { Count: > 0 } others)
                             {
-                                <span class="mono lead">@lead <span class="arrow">→</span></span>
+                                <ul class="sections">
+                                    @foreach (var part in others)
+                                    {
+                                        <li>
+                                            <a class="section-pick" href="@($"song/{Uri.EscapeDataString(TrackKey)}#evidence")" title="What was found for this section" @onclick="() => _section = part.Label">
+                                                <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
+                                                <span class="sep">·</span>
+                                                <span class="mono section-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
+                                            </a>
+                                            @if (part.IsHypothesis)
+                                            {
+                                                <span class="note hypothesis">possible key change (the judge's reading, unconfirmed)@(part.Start is { } from ? $" · from {TempoFormat.Clock(from)}" : null)</span>
+                                                @if (StretchOf(part) is { } proposed && Judging.Of(TrackKey) is not { IsRunning: true })
+                                                {
+                                                    <a class="outline invite" href="@WarpViewLink" @onclick="() => Suggest(proposed)">Judge these bars ↓</a>
+                                                }
+                                            }
+                                        </li>
+                                    }
+                                </ul>
                             }
-                            <span class="mono value key @(Key is null ? "empty" : null)">@(KeyText.Spell(Key) ?? "—")</span>
                         </div>
                         <span class="note">
                             @if (Center is { } reasoned && ModeText.Reason(reasoned, Mixed) is { } reason)
@@ -59,30 +84,6 @@
                             }
                             <ProseText Text="@KeyNote" Inline="true" />
                         </span>
-                    </div>
-                    <div class="cell-foot">
-                        @if (OtherSections is { Count: > 0 } others)
-                        {
-                            <ul class="sections">
-                                @foreach (var part in others)
-                                {
-                                    <li>
-                                        <a class="section-pick" href="@($"song/{Uri.EscapeDataString(TrackKey)}#evidence")" title="What was found for this section" @onclick="() => _section = part.Label">
-                                            <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
-                                            <span class="mono section-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
-                                        </a>
-                                        @if (part.IsHypothesis)
-                                        {
-                                            <span class="note hypothesis">possible key change (the judge's reading, unconfirmed)@(part.Start is { } from ? $" · from {TempoFormat.Clock(from)}" : null)</span>
-                                            @if (StretchOf(part) is { } proposed && Judging.Of(TrackKey) is not { IsRunning: true })
-                                            {
-                                                <a class="outline invite" href="@WarpViewLink" @onclick="() => Suggest(proposed)">Judge these bars ↓</a>
-                                            }
-                                        }
-                                    </li>
-                                }
-                            </ul>
-                        }
                     </div>
                 </div>
 
@@ -374,8 +375,7 @@
 
     /// <summary>Whether a cell has more than a note to say, which grows the strip a second row.</summary>
     private bool HasFoot =>
-        OtherSections.Count > 0
-        || Judging.Of(TrackKey) is { IsRunning: true }
+        Judging.Of(TrackKey) is { IsRunning: true }
         || Invitation is not null
         || Bpm?.Explanation is not null
         || Tempo is { Drifts: true }
