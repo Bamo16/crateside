@@ -271,9 +271,9 @@ open list); **the position** in mono 14 (`bar 19.3.1` at 600 · `1:20.80` at 75%
 27ch wide; without a warp `1:20.80 / 2:49`); **the picker** (an `.outline` button 210px wide opening a
 400px listbox of 34px rows, the file playing wearing the chosen-row style); **Click** (a pill toggle
 that is the chosen pill when on), **Sound** (`Classic ▾`, a three-row list of Classic · Click ·
-Wood that plays the pick once, accent then beat) and the click level (60px); **Loop** after a divider
-(disabled on the whole track with `needs a zoomed view` beside it); **volume** (a speaker and a 72px
-range). Ranges are native with `accent-color: var(--text)`; volume, click level and sound are kept in
+Wood that plays the pick once, accent then beat) and the click level (60px, labelled `Click`); **Loop**
+after a divider (disabled on the whole track with `needs a zoomed view` beside it); **volume** (a
+speaker, `Main` and a 72px range). Ranges are native with `accent-color: var(--text)`; volume, click level and sound are kept in
 the browser, click and loop start off on every load. Playing is `--text`, never teal; teal appears
 only while a file loads or downloads, red only for a load that failed.
 
@@ -560,6 +560,11 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 
 ### Playback (handoff 22, #105)
 
+- **The music is leveled under the click** (2026-11-12, #105): it plays at -18 LUFS (never raised) by
+  the file's measured integrated loudness, or 6 dB down when it has none, and the click goes on top
+  at full scale, so a loud master cannot bury it. The second slider is labelled `Main` and scales
+  click and music together; the first, `Click`, only the click. The canvas has an unlabelled click
+  level and a `Volume`.
 - **The rows are drawn by the server, for each window the browser reports.** The browser holds the
   window and tells the page as it moves, one report in flight and the newest waiting, so a drag
   redraws the rows at the pace the page can follow rather than in the browser itself. The playhead,

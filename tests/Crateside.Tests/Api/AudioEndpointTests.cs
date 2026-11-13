@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 
 namespace Crateside.Tests.Api;
 
@@ -104,4 +105,30 @@ public sealed class AudioEndpointTests : IAsyncLifetime
         string trackKey,
         string file
     ) => Assert.Equal(HttpStatusCode.NotFound, (await GetAsync(trackKey, file)).StatusCode);
+
+    [Fact]
+    public async Task A_stems_loudness_is_measured_for_the_player_and_kept_for_the_next_ask()
+    {
+        var url = $"/audio/{SyntheticCrateside.Judged}/{Uri.EscapeDataString(StemName)}/loudness";
+
+        var first = await _crateside.Client.GetFromJsonAsync<LoudnessReply>(url, Ct);
+        var second = await _crateside.Client.GetFromJsonAsync<LoudnessReply>(url, Ct);
+
+        Assert.Equal(-7.5, first?.Lufs);
+        Assert.Equal(-7.5, second?.Lufs);
+        Assert.Equal(1, _crateside.Ebur128.Runs);
+    }
+
+    [Fact]
+    public async Task The_loudness_of_a_file_that_is_not_one_of_the_tracks_is_a_404()
+    {
+        var response = await _crateside.Client.GetAsync(
+            $"/audio/{SyntheticCrateside.Judged}/mix/loudness",
+            Ct
+        );
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private sealed record LoudnessReply(double? Lufs);
 }

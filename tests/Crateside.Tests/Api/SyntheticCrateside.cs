@@ -7,6 +7,7 @@ using Crateside.Core.Art;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
+using Crateside.Core.Loudness;
 using Crateside.Core.Marks;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
@@ -18,6 +19,7 @@ using Crateside.Core.Playlist;
 using Crateside.Core.Tracks;
 using Crateside.Core.Warps;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Loudness;
 using Crateside.Tests.Tracks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
@@ -57,6 +59,8 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
     public string Library => Path.Combine(_root, "Library");
 
     public string WarpBackups => Path.Combine(_root, "warp-backups");
+
+    public FakeEbur128 Ebur128 { get; } = new(_ => -7.5);
 
     public FakeTimeProvider Time { get; } = new(At);
 
@@ -325,6 +329,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
             Path.Combine(_root, "source-index.json")
         );
         builder.Services.AddSingleton(sources);
+        builder.Services.AddSingleton(new LoudnessReader(Ebur128));
         builder.Services.AddSingleton(
             new PlayableFiles(
                 sources,

@@ -1,3 +1,4 @@
+using Crateside.Core.Loudness;
 using Crateside.Core.Playback;
 using Crateside.Core.Tracks;
 
@@ -11,6 +12,9 @@ public static class AudioEndpoint
     public static IEndpointRouteBuilder MapAudio(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGet("/audio/{trackKey}/{file}", ServeAsync).ExcludeFromDescription();
+        endpoints
+            .MapGet("/audio/{trackKey}/{file}/loudness", LoudnessAsync)
+            .ExcludeFromDescription();
 
         return endpoints;
     }
@@ -47,6 +51,29 @@ public static class AudioEndpoint
         );
     }
 
+    /// <summary>The file's integrated loudness for the player to level the music by, measured now when it has no kept reading; null when ffmpeg finds none.</summary>
+    private static async Task<IResult> LoudnessAsync(
+        string trackKey,
+        string file,
+        TracksService tracks,
+        PlayableFiles playable,
+        LoudnessReader reader,
+        CancellationToken ct
+    )
+    {
+        await tracks.EnsureFreshAsync(Freshness, ct);
+
+        if (
+            tracks.Current?.Rows.FirstOrDefault(row => row.TrackKey == trackKey) is not { } row
+            || playable.Find(row, file) is not { } found
+        )
+            return Results.NotFound();
+
+        var reading = reader.Read(found.Path) ?? await reader.MeasureAsync(found.Path, ct);
+
+        return Results.Json(new PlaybackLoudness(reading?.IntegratedLufs));
+    }
+
     private static string ContentTypeOf(string path) =>
         Path.GetExtension(path).ToLowerInvariant() switch
         {
@@ -58,3 +85,5 @@ public static class AudioEndpoint
             _ => "application/octet-stream",
         };
 }
+
+internal sealed record PlaybackLoudness(double? Lufs);
