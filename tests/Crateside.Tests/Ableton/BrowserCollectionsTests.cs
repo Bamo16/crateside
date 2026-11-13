@@ -1,6 +1,7 @@
 using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Marks;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Ableton;
 
@@ -9,7 +10,7 @@ public sealed class BrowserCollectionsTests
     [Fact]
     public void A_new_warp_state_replaces_the_old_and_the_users_own_Collections_stay()
     {
-        var merged = BrowserCollections.Merged(
+        var merged = CollectionSettings.Maintainers.Merged(
             [1, 2],
             [BrowserCollection.Warped],
             BrowserCollections.Cratesides
@@ -21,17 +22,84 @@ public sealed class BrowserCollectionsTests
     [Fact]
     public void Replacing_only_the_track_marks_leaves_the_warp_state_where_it_was()
     {
-        var merged = BrowserCollections.Merged([3, 6], [], BrowserCollections.TrackMarks);
+        var merged = CollectionSettings.Maintainers.Merged(
+            [4, 6],
+            [],
+            BrowserCollections.TrackMarks
+        );
 
-        Assert.Equal([3], merged);
+        Assert.Equal([4], merged);
     }
 
     [Fact]
-    public void Odd_bars_is_crateside_s_to_set_and_take_away_and_Mine_stays_the_users()
+    public void Every_meaning_crateside_sets_is_one_it_takes_away()
     {
-        Assert.Contains(BrowserCollection.OddBars, BrowserCollections.Cratesides);
-        Assert.DoesNotContain(BrowserCollection.Mine, BrowserCollections.Cratesides);
+        Assert.Equal(
+            Enum.GetValues<BrowserCollection>().Order(),
+            BrowserCollections.Cratesides.Order()
+        );
     }
+
+    [Fact]
+    public void With_every_meaning_off_a_file_s_Collections_are_returned_untouched()
+    {
+        var existing = new[] { 5, 2, 7 };
+
+        var merged = new CollectionSettings().Merged(
+            existing,
+            [BrowserCollection.Warped, BrowserCollection.OddBars],
+            BrowserCollections.Cratesides
+        );
+
+        Assert.Same(existing, merged);
+    }
+
+    [Fact]
+    public void Only_the_numbers_a_meaning_is_mapped_to_are_added_or_removed()
+    {
+        var onlyOddBars = new CollectionSettings { OddBars = 3 };
+
+        var added = onlyOddBars.Merged(
+            [1, 2, 7],
+            [BrowserCollection.Warped, BrowserCollection.OddBars],
+            BrowserCollections.Cratesides
+        );
+        var removed = onlyOddBars.Merged([1, 2, 3, 7], [], BrowserCollections.Cratesides);
+
+        Assert.Equal([1, 2, 3, 7], added);
+        Assert.Equal([1, 2, 7], removed);
+    }
+
+    [Fact]
+    public void Two_meanings_on_one_number_are_refused()
+    {
+        var settings = new CollectionSettings { CheckBeat = 4, Warped = 4 };
+
+        Assert.Contains("Collection 4", settings.Problem());
+        Assert.Throws<ArgumentException>(() =>
+            new CollectionSettingsStore(
+                Path.Combine(Path.GetTempPath(), "crateside-tests-absent", "x.json"),
+                TestLedger.Store()
+            ).Save(settings)
+        );
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(8)]
+    public void A_number_outside_Lives_seven_is_refused(int number) =>
+        Assert.NotNull(new CollectionSettings { OddBars = number }.Problem());
+
+    [Fact]
+    public void Distinct_numbers_and_none_stand() =>
+        Assert.Null(
+            new CollectionSettings
+            {
+                CheckBeat = 1,
+                Warped = 7,
+                KeyCaveat = null,
+            }.Problem()
+        );
 
     [Fact]
     public void A_track_marked_odd_bars_is_put_in_that_Collection_and_a_hand_set_one_goes_when_it_is_not()
@@ -46,7 +114,7 @@ public sealed class BrowserCollectionsTests
         );
         Assert.Equal(
             [1],
-            BrowserCollections.Merged(
+            CollectionSettings.Maintainers.Merged(
                 [1, 7],
                 BrowserCollections.TrackMarksFor(null),
                 BrowserCollections.Cratesides

@@ -14,6 +14,8 @@ works this way is in the ADRs listed at the end.
 
 ## What the maintainer is left with
 
+The Collections below are written only for a meaning mapped to a number in Settings.
+
 | crateside wrote | the stem's Collection | left to do by hand |
 |---|---|---|
 | a starter | Check beat (orange) | check the bars fall on the downbeats, move the clip start to the first verse's bar, save |

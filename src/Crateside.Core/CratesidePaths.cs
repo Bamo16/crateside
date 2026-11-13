@@ -388,6 +388,13 @@ public sealed class CratesidePaths
         set;
     }
 
+    /// <summary>Which Live Collection each meaning is written to, chosen in Settings.</summary>
+    public string CollectionSettingsFile
+    {
+        get => field ?? Roaming("collection-settings.json");
+        set;
+    }
+
     /// <summary>The starter-warp setting chosen in Settings.</summary>
     public string WarpSettingsFile
     {

@@ -4,6 +4,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Marks;
 using Crateside.Core.Orchestration.Handoff;
 using Crateside.Core.Staging;
+using Crateside.Tests.Ableton;
 using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Time.Testing;
 
@@ -35,7 +36,8 @@ public sealed class KeptStemMarksTests : IDisposable
             _reader,
             new FileIndexReader(Path.Combine(_root, "no-index")),
             new FolderInfoWriter(),
-            new TagStoreBackups(Path.Combine(_root, "backups"), new FakeTimeProvider())
+            new TagStoreBackups(Path.Combine(_root, "backups"), new FakeTimeProvider()),
+            TestCollections.Store(_root)
         );
     }
 
@@ -48,7 +50,7 @@ public sealed class KeptStemMarksTests : IDisposable
         _trackMarks.Set("abcdefghijk", TrackMark.OddBars, true);
 
         Assert.Equal(new TagWriteOutcome.Written(1), _marks.Collect());
-        Assert.Equal([(int)BrowserCollection.OddBars], CollectionsOf(stem));
+        Assert.Equal([TestCollections.Number(BrowserCollection.OddBars)], CollectionsOf(stem));
 
         _trackMarks.Set("abcdefghijk", TrackMark.OddBars, false);
         _marks.Collect();
@@ -68,7 +70,7 @@ public sealed class KeptStemMarksTests : IDisposable
 
         Assert.Equal(new TagWriteOutcome.Written(1), _marks.Collect());
         Assert.Equal(new TagWriteOutcome.Written(0), _marks.Collect());
-        Assert.Equal([1, (int)BrowserCollection.KeyCaveat], CollectionsOf(stem));
+        Assert.Equal([1, TestCollections.Number(BrowserCollection.KeyCaveat)], CollectionsOf(stem));
     }
 
     [Fact]

@@ -21,6 +21,7 @@ namespace Crateside.Core.Orchestration.Handoff;
 public sealed class BackingRunner(
     FolderInfoReader folderInfo,
     FolderInfoWriter writer,
+    CollectionSettingsStore collections,
     ILogger<BackingRunner> log
 )
 {
@@ -264,6 +265,7 @@ public sealed class BackingRunner(
             return [];
 
         var backed = folderInfo.Read(root);
+        var settings = index is null ? new CollectionSettings() : collections.Read();
 
         return
         [
@@ -346,6 +348,7 @@ public sealed class BackingRunner(
                         Keywords = changes ? merged : null,
                         Collections = index is not null && keyed
                             ? CollectionsFor(
+                                settings,
                                 file.Path,
                                 file.Existing,
                                 index,
@@ -374,6 +377,7 @@ public sealed class BackingRunner(
     /// already. A file not in the store yet has its Collections in the index alone.
     /// </summary>
     private static IReadOnlyList<int>? CollectionsFor(
+        CollectionSettings settings,
         string path,
         FileTags? existing,
         FolderInfo index,
@@ -394,7 +398,7 @@ public sealed class BackingRunner(
         var has =
             existing?.Collections
             ?? (index.TryGet(path, out var indexed) ? indexed.Collections : []);
-        var wanted = BrowserCollections.Merged(
+        var wanted = settings.Merged(
             has,
             BrowserCollections.TrackMarksFor(verdict, mine),
             BrowserCollections.Cratesides

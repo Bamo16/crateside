@@ -21,6 +21,10 @@ public sealed class BackingRunnerRealLibraryTests
         new BackingRunner(
             new FolderInfoReader(),
             new FolderInfoWriter(),
+            new CollectionSettingsStore(
+                Path.Combine(Path.GetTempPath(), "crateside-tests-absent", "collections.json"),
+                TestLedger.Store()
+            ),
             NullLogger<BackingRunner>.Instance
         ).Unbacked(library, TestLedger.FromReal(), correctKeys: false);
 

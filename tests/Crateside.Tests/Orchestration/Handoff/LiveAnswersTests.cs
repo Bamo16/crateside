@@ -7,6 +7,7 @@ using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Handoff;
 using Crateside.Core.Vocals;
+using Crateside.Tests.Ableton;
 using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -33,11 +34,7 @@ public sealed class LiveAnswersTests : IDisposable
     private readonly FamiliarityStore _familiarity;
     private readonly VocalAnswerStore _vocals;
     private readonly LiveAnswers _answers;
-    private readonly BackingRunner _runner = new(
-        new FolderInfoReader(),
-        new FolderInfoWriter(),
-        NullLogger<BackingRunner>.Instance
-    );
+    private readonly BackingRunner _runner;
 
     public LiveAnswersTests()
     {
@@ -46,6 +43,12 @@ public sealed class LiveAnswersTests : IDisposable
         _vocals = new(_store);
         _answers = new(_genres, _familiarity, _vocals);
         Directory.CreateDirectory(_root);
+        _runner = new(
+            new FolderInfoReader(),
+            new FolderInfoWriter(),
+            TestCollections.Store(_root),
+            NullLogger<BackingRunner>.Instance
+        );
         Stem(Vocal, "Vocal - Full");
         Stem(Instrumental, "Instrumental - Full");
     }
