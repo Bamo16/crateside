@@ -89,14 +89,14 @@ public sealed class CoverArt(IProcessRunner runner, CratesidePaths paths)
         {
             foreach (var file in files)
             {
-                var small = await RunAsync(file, SmallArguments(file, Temp(name, "small.jpg")), ct);
+                var small = await RunAsync(SmallArguments(file, Temp(name, "small.jpg")), ct);
 
                 if (small is null)
                     return false;
 
                 if (
                     small is true
-                    && await RunAsync(file, FullArguments(file, Temp(name, "full")), ct) is true
+                    && await RunAsync(FullArguments(file, Temp(name, "full")), ct) is true
                 )
                 {
                     File.Move(Temp(name, "small.jpg"), Kept(name, "small.jpg"), overwrite: true);
@@ -122,11 +122,7 @@ public sealed class CoverArt(IProcessRunner runner, CratesidePaths paths)
     }
 
     /// <summary>Whether ffmpeg wrote a picture; null when ffmpeg cannot be run.</summary>
-    private async Task<bool?> RunAsync(
-        FileInfo file,
-        IReadOnlyList<string> arguments,
-        CancellationToken ct
-    )
+    private async Task<bool?> RunAsync(IReadOnlyList<string> arguments, CancellationToken ct)
     {
         using var limit = CancellationTokenSource.CreateLinkedTokenSource(ct);
         limit.CancelAfter(RunLimit);

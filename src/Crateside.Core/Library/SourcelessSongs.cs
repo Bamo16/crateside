@@ -28,13 +28,11 @@ public static class SourcelessSongs
         string libraryFolder
     ) =>
         !Directory.Exists(libraryFolder)
-            ? new Dictionary<string, IReadOnlyList<StemOnDisk>>()
+            ? []
             : new DirectoryInfo(libraryFolder)
                 .EnumerateFiles("*", SearchOption.AllDirectories)
                 .Where(file => SampleFiles.IsAudio(file.Name))
-                .Select(file =>
-                    (Path: file.FullName, Provenance: StemTagReader.Read(file)?.Provenance)
-                )
+                .Select(file => (Path: file.FullName, StemTagReader.Read(file)?.Provenance))
                 .Where(file =>
                     file.Provenance is { SourceTrackKey: null, IsAdopted: false, Label: null }
                 )
