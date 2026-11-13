@@ -273,7 +273,8 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                             {
                                 var chosen = number;
                                 <button class="pill @(_collections.NumberOf(meaning) == chosen ? "on plain" : "off")"
-                                        @onclick="() => SetCollection(meaning, chosen)">@chosen</button>
+                                        title="Collection @chosen, @(CollectionColours[chosen - 1])"
+                                        @onclick="() => SetCollection(meaning, chosen)"><span class="swatch c@(chosen)"></span>@chosen</button>
                             }
                         </div>
                     </div>
@@ -929,6 +930,8 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
     private CollectionSettings _collections = new();
     private string? _collectionsRefused;
+
+    private static readonly string[] CollectionColours = ["red", "orange", "yellow", "green", "blue", "purple", "grey"];
 
     private void SetCollection(BrowserCollection meaning, int? number)
     {
