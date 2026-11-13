@@ -24,6 +24,12 @@ if (builder.Configuration.GetValue<bool>("Workers:Disabled"))
 
 var app = builder.Build();
 
+if (args is ["retag-sources", ..])
+    return RetagSourcesCommand.Run(
+        app.Services.GetRequiredService<Crateside.Core.CratesidePaths>(),
+        args
+    );
+
 if (!DocumentBuild.IsRunning)
     await StartAsync(app);
 
@@ -43,6 +49,8 @@ app.MapCoverArt();
 app.MapAudio();
 
 app.Run();
+
+return 0;
 
 // What each start does before serving: respell, back up and migrate the stores, import the person's decisions, seed the builds.
 static async Task StartAsync(WebApplication app)
