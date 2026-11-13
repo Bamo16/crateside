@@ -10,6 +10,8 @@
 @inject PageChoices Choices
 @inject TracksService Tracks
 @inject ActionLog Actions
+@inject IJSRuntime Js
+@implements IAsyncDisposable
 
 <div class="panel">
     <header class="head">
@@ -23,13 +25,32 @@
                 }
             </p>
         </div>
-        <button class="outline share" disabled title="Sharing arrives with #152 (the share card and menu).">
-            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
-                <path d="M8 10V2M5 5l3-3 3 3M3 9v4h10V9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            Share <span class="caret">▾</span>
-        </button>
+        @if (Subject is not null)
+        {
+            <div class="share-menu">
+                <button class="outline share" aria-haspopup="menu" aria-expanded="@(_menuOpen ? "true" : "false")" disabled="@(_sharing is not null)" @onclick="() => _menuOpen = !_menuOpen">
+                    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                        <path d="M8 10V2M5 5l3-3 3 3M3 9v4h10V9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    Share <span class="caret">▾</span>
+                </button>
+                @if (_menuOpen)
+                {
+                    <div class="menu" role="menu">
+                        <button role="menuitem" @onclick="() => ShareAsync(ShareAction.CopyImage)">Copy image</button>
+                        <button role="menuitem" @onclick="() => ShareAsync(ShareAction.SaveImage)">Save image</button>
+                        <button role="menuitem" @onclick="() => ShareAsync(ShareAction.CopyText)">Copy as text</button>
+                    </div>
+                }
+                <span class="share-status" role="status">@_shared</span>
+            </div>
+        }
     </header>
+
+    @if (_sharing is not null && Subject is not null)
+    {
+        <div class="share-stage" aria-hidden="true"><ShareCard Subject="Subject" Run="Run" /></div>
+    }
 
     <div class="evidence">
         <section class="argument">
@@ -407,8 +428,79 @@
     [Parameter]
     public EventCallback<string?> SelectedSectionChanged { get; set; }
 
+    /// <summary>What the share card and the copied text are headed with; null where there is no verdict to share.</summary>
+    [Parameter]
+    public ShareSubject? Subject { get; set; }
+
+    private enum ShareAction
+    {
+        CopyImage,
+        SaveImage,
+        CopyText,
+    }
+
+    private ShareAction? _sharing;
+    private bool _menuOpen;
+    private string? _shared;
+    private IJSObjectReference? _module;
     private bool _chordsOpen;
     private bool _working;
+
+    private async Task ShareAsync(ShareAction action)
+    {
+        _menuOpen = false;
+        _shared = null;
+
+        if (Subject is null)
+            return;
+
+        if (action is ShareAction.CopyText)
+            await RunAsync(action, module => module.InvokeVoidAsync("copyText", ShareText.Markdown(Subject, Run)));
+        else
+            _sharing = action;
+    }
+
+    // The card is drawn from the page: it renders first and is captured after.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_sharing is not { } action || Subject is null)
+            return;
+
+        await RunAsync(
+            action,
+            module =>
+                action is ShareAction.CopyImage
+                    ? module.InvokeVoidAsync("copyImage", ".share-stage > *")
+                    : module.InvokeVoidAsync("saveImage", ".share-stage > *", ShareText.FileName(Subject.Name))
+        );
+        _sharing = null;
+        StateHasChanged();
+    }
+
+    private async Task RunAsync(ShareAction action, Func<IJSObjectReference, ValueTask> work)
+    {
+        try
+        {
+            _module ??= await Js.InvokeAsync<IJSObjectReference>("import", "./Components/Evidence.razor.js");
+            await work(_module);
+            _shared = action switch
+            {
+                ShareAction.CopyImage => "Image copied",
+                ShareAction.SaveImage => "Image saved",
+                _ => "Text copied",
+            };
+        }
+        catch (JSException ex)
+        {
+            _shared = $"Could not share: {ex.Message}";
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+            await _module.DisposeAsync();
+    }
 
     private SectionEvidence? Picked =>
         SelectedSection is { } label ? SectionEvidence.Of(Run, label) : null;
