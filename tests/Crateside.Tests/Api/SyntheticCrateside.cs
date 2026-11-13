@@ -66,6 +66,8 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
 
     public RejudgeQueue Rejudges { get; private set; } = null!;
 
+    public LedgerStore Ledger { get; private set; } = null!;
+
     public ActionLog Actions { get; private set; } = null!;
 
     public RecordingBarRuns BarRuns { get; } = new();
@@ -136,7 +138,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         Directory.CreateDirectory(WarpBackups);
 
         var time = Time;
-        var ledger = new LedgerStore(LedgerStore.InMemory, time);
+        var ledger = Ledger = new LedgerStore(LedgerStore.InMemory, time);
         ledger.Record(
             new RunRecord
             {
