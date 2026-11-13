@@ -1934,7 +1934,7 @@ class Playback {
             const file = lane.closest(".lane").dataset.file;
             const at = this.plotTime(event, lane);
 
-            if (file && file !== this.fileId)
+            if (file && file !== this.fileId && this.files.some((playable) => playable.id === file))
                 this.selectFile(file, { at, play: true }).then(() => this.paintLanes());
             else
                 this.seek(at, { play: true });

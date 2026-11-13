@@ -93,6 +93,14 @@ public sealed class AudioEndpointTests : IAsyncLifetime
         );
     }
 
+    [Fact]
+    public async Task A_name_the_track_does_not_have_is_not_said_to_have_moved()
+    {
+        var response = await GetAsync(SyntheticCrateside.Judged, "not-a-file.flac");
+
+        Assert.DoesNotContain("moved or is gone", await response.Content.ReadAsStringAsync(Ct));
+    }
+
     [Theory]
     [InlineData(
         SyntheticCrateside.Judged,

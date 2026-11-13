@@ -26,6 +26,13 @@ public sealed class PlayableFiles(SourceIndex sources, CratesidePaths paths)
             : [.. stems];
     }
 
+    public static bool Knows(TrackRow row, string id) =>
+        string.Equals(id, MixId, StringComparison.Ordinal)
+        || row.Samples.Any(sample =>
+            sample.Kind is not StemKind.Source
+            && string.Equals(Path.GetFileName(sample.Path), id, StringComparison.OrdinalIgnoreCase)
+        );
+
     public PlayableFile? Find(TrackRow row, string id) =>
         string.Equals(id, MixId, StringComparison.Ordinal)
             ? MixPathOf(row) is { } mix
