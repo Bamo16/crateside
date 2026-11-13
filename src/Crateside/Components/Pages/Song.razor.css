@@ -238,9 +238,23 @@ h1 {
 }
 
 .section-label {
-    flex: 0 0 52px;
     font-size: 12.5px;
     color: var(--text-60);
+}
+
+.sep {
+    color: var(--text-40);
+}
+
+.key-lines {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.key-lines .sections {
+    padding: 2px 22px 0;
+    box-sizing: border-box;
 }
 
 .section-key {
