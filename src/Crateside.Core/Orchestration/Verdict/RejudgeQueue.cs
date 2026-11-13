@@ -56,12 +56,13 @@ public sealed class RejudgeQueue
         }
     }
 
-    /// <summary>The latest run of each queued song that has no run from its cutoff on, in queue order.</summary>
+    /// <summary>The latest run of each queued song that has no run from its cutoff on, in queue order; a ruled or the person's verdict is never owed one (ADR 0076).</summary>
     public IReadOnlyList<LedgerRun> Pending(KeyLedger ledger) =>
         [
             .. Read()
                 .Select(entry =>
                     ledger.TryGetLatestBySong(entry.Song, out var latest)
+                    && latest.DecidedBy is DecidedBy.Judge
                     && !ledger.Runs.Any(run =>
                         Same(run.Song, entry.Song)
                         && run.Restates is null
