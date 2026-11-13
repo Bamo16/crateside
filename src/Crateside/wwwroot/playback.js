@@ -834,7 +834,8 @@ class Playback {
         this.paintWindow();
         this.paintPlayhead();
 
-        if (moved && !silent)
+        // A handle or body drag moves only the browser's own parts; the rows are told when it ends.
+        if (moved && !silent && !this.drag?.moved)
             this.pushWindow();
     }
 
