@@ -44,7 +44,10 @@ public sealed class VerdictFileRealDataTests : IDisposable
 
             Assert.Equal(song, run.Song, ignoreCase: true);
             Assert.Equal(evidence.Center, run.Center);
-            Assert.Equal(evidence.Sections, run.Sections);
+            Assert.Equal(
+                evidence.Sections.Select(section => section with { Support = null }),
+                run.Sections
+            );
             Assert.Null(
                 RunValidation.Refusal(
                     RunValidation.Normalize(

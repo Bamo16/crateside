@@ -43,6 +43,21 @@ public sealed class BarForm(bool inBars)
         return form;
     }
 
+    /// <summary>The first line filled with a stretch the judge proposed, so judging it is one click.</summary>
+    public void Suggest(RunWindow stretch, WarpGroup group)
+    {
+        if (group.Seconds is 0)
+            return;
+
+        var window = stretch with { End = Math.Min(stretch.End, group.Seconds) };
+
+        Lines[0].Range =
+            InBars && BarRanges.Show(group, window.Start, window.End) is { } bars
+                ? bars
+                : TimeText(window.Start, window.End);
+        Lines[0].Label = window.Label ?? string.Empty;
+    }
+
     /// <summary>A line's range as a window, or null while it does not read as one.</summary>
     public RunWindow? Window(BarLine line, WarpGroup group) => Read(line, group);
 

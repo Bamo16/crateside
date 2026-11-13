@@ -7,6 +7,8 @@ namespace Crateside.Core.Orchestration.Verdict;
 /// <summary>What a verdict must be able to show for itself before it is recorded (ADR 0069).</summary>
 internal static class RecordTimeCheck
 {
+    private const int BackersNeeded = 2;
+
     private static readonly string[] KeyProperties = ["key", "key_alt", "recommended"];
     private static readonly string[] Detectors = ["ffmpeg_keydetect", "madmom", "essentia_edma"];
 
@@ -28,6 +30,48 @@ internal static class RecordTimeCheck
             : $"center: {center.Name} appears nowhere in the evidence, the pages, the sources or "
                 + "your candidates. Judge a key the evidence holds, or withhold.";
     }
+
+    /// <summary>Why a primary center that only an unbacked whole-file read holds is refused once windows were judged, or null (ADR 0095).</summary>
+    public static string? PrimaryOutsideWindows(RunRecord run, EarWeight ear)
+    {
+        if (
+            run
+            is not {
+                Confidence: not KeyConfidence.Withheld,
+                Center: { } center,
+                Windows.Count: > 0
+            }
+        )
+            return null;
+
+        var key = MusicKey.Of(center);
+
+        return
+            SectionSupports
+                .Readings(run)
+                .Any(reading => reading.Algorithms.Any(result => KeyOf(result.Key) == key))
+            || run.Sources.Any(source => AgreesAsHuman(source, key, ear))
+            || EvidenceDetectors(run.Evidence, key) >= BackersNeeded
+            ? null
+            : $"center: {center.Name} is no center a window read, no human source states it, and "
+                + "only an unbacked whole-file read holds it. Judge a center the windows or a "
+                + "source hold, or withhold.";
+    }
+
+    /// <summary>Whether a MEDIUM or HIGH verdict leans on sections nothing independent places, its own center resting on nothing else (ADR 0095).</summary>
+    public static bool LeansOnHypothesis(RunRecord run, EarWeight ear) =>
+        run is { Confidence: KeyConfidence.High or KeyConfidence.Medium, Center: { } center }
+        && SectionSupports.Classify(run) is var sections
+        && sections.Any(section => section.IsHypothesis)
+        && !sections.Any(section => section.IsConfirmed)
+        && !IndependentSupport(run, MusicKey.Of(center), ear)
+        && EvidenceDetectors(run.Evidence, MusicKey.Of(center)) < BackersNeeded;
+
+    private static bool IndependentSupport(RunRecord run, MusicKey key, EarWeight ear) =>
+        SectionSupports
+            .Readings(run)
+            .Any(reading => SectionSupports.Backed(reading.Algorithms, key))
+        || run.Sources.Any(source => AgreesAsHuman(source, key, ear));
 
     /// <summary>What a HIGH verdict lacks of what judge-prompt.md asks for it, or null; a Hooktheory page the work order marked thin does not dissent.</summary>
     public static string? MissingForHigh(
@@ -91,6 +135,10 @@ internal static class RecordTimeCheck
         Parse(evidence) is { } root && root["algorithms"] is JsonObject algorithms
             ? Detectors.Count(name => KeyOf(algorithms[name]?["key"]?.GetValue<string>()) == key)
             : 0;
+
+    /// <summary>The keys the detectors read in an evidence report, whole-track and window.</summary>
+    internal static IEnumerable<MusicKey> DetectedKeys(string? evidence) =>
+        Parse(evidence) is { } root ? Walk(root).OfType<MusicKey>() : [];
 
     private static IEnumerable<MusicKey?> EvidenceKeys(string? evidence) =>
         Parse(evidence) is { } root ? Walk(root) : [];

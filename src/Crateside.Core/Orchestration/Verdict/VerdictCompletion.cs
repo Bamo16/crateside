@@ -47,6 +47,19 @@ public sealed class VerdictCompletion(
         if (RecordTimeCheck.UnfoundKey(complete, lookups) is { } unfound)
             return new VerdictCheck.Unusable(unfound);
 
+        if (RecordTimeCheck.PrimaryOutsideWindows(complete, _options.Ear) is { } outside)
+            return new VerdictCheck.Unusable(outside);
+
+        if (RecordTimeCheck.LeansOnHypothesis(complete, _options.Ear))
+            return new VerdictCheck.Recordable(
+                run with
+                {
+                    Confidence = KeyConfidence.Low,
+                },
+                "crateside capped this verdict at LOW: nothing but sections no source, window or "
+                    + "detector placed supports it."
+            );
+
         if (RecordTimeCheck.MissingForHigh(complete, _options.Ear, lookups) is not { } missing)
             return check;
 

@@ -71,6 +71,14 @@
                                             <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
                                             <span class="mono section-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
                                         </a>
+                                        @if (part.IsHypothesis)
+                                        {
+                                            <span class="note hypothesis">possible key change (the judge's reading, unconfirmed)@(part.Start is { } from ? $" · from {TempoFormat.Clock(from)}" : null)</span>
+                                            @if (StretchOf(part) is { } proposed && Judging.Of(TrackKey) is not { IsRunning: true })
+                                            {
+                                                <a class="outline invite" href="@WarpViewLink" @onclick="() => Suggest(proposed)">Judge these bars ↓</a>
+                                            }
+                                        }
                                     </li>
                                 }
                             </ul>
@@ -174,7 +182,7 @@
                         <StemList Editor="_stems" Row="_row" OnSelect="path => _selectedWarp = path" />
                     </section>
 
-                    <WarpView Row="_row" @bind-SelectedPath="_selectedWarp" Run="_run" OpenRequests="_openRequests" @bind-SelectedSection="_section" />
+                    <WarpView Row="_row" @bind-SelectedPath="_selectedWarp" Run="_run" OpenRequests="_openRequests" Suggested="_suggested" @bind-SelectedSection="_section" />
                 }
 
                 @if (_row is not null)
@@ -237,6 +245,7 @@
     private Timer? _clock;
     private string? _selectedWarp;
     private int _openRequests;
+    private RunWindow? _suggested;
     private string? _section;
 
     private LedgerRun? Verdict => _row?.Verdict;
@@ -262,6 +271,24 @@
     private bool Mixed => _row is null ? _run?.Mixed is true : Verdict?.Mixed is true;
 
     private IReadOnlyList<Section> Sections => _row is null ? _run?.Sections ?? [] : Verdict?.Sections ?? [];
+
+    /// <summary>The stretch the judge proposed for a section: from its start to the next section's, or to the end.</summary>
+    private RunWindow? StretchOf(Section part) =>
+        part.Start is { } start
+            ? new RunWindow(
+                start,
+                Sections.Where(other => other.Start > start).Select(other => other.Start).Min()
+                    ?? double.MaxValue,
+                part.Label,
+                WindowAsker.User
+            )
+            : null;
+
+    private void Suggest(RunWindow stretch)
+    {
+        _suggested = stretch;
+        _openRequests++;
+    }
 
     private IReadOnlyList<Section> OtherSections =>
         [.. Sections.Where(section => section.Center != Center)];

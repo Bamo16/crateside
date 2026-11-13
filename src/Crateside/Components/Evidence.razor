@@ -43,7 +43,7 @@
                             <button class="section-pick" aria-pressed="@(IsPicked(part.Label) ? "true" : "false")" title="@(IsPicked(part.Label) ? "Back to the whole track" : "What was found for this section")" @onclick="() => PickAsync(part.Label)">
                                 <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
                                 <span class="mono center-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
-                                <span class="muted">@(part.Center == primary ? "primary · the tag follows it" : null)</span>
+                                <span class="muted">@(part.Center == primary ? "primary · the tag follows it" : part.IsHypothesis ? "possible key change (the judge's reading, unconfirmed)" : part.Support is { } support ? $"confirmed by {SupportText(support)}" : null)</span>
                             </button>
                         </li>
                     }
@@ -395,6 +395,14 @@
     /// <summary>The label of the section whose own findings are shown first; null for the whole track.</summary>
     [Parameter]
     public string? SelectedSection { get; set; }
+
+    private static string SupportText(SectionSupport support) =>
+        support switch
+        {
+            SectionSupport.HumanSource => "a human source",
+            SectionSupport.Asked => "the maintainer's window",
+            _ => "the detectors in its windows",
+        };
 
     [Parameter]
     public EventCallback<string?> SelectedSectionChanged { get; set; }

@@ -579,6 +579,10 @@
     [Parameter]
     public int OpenRequests { get; set; }
 
+    /// <summary>A stretch the judge proposed, which the form opens filled with.</summary>
+    [Parameter]
+    public RunWindow? Suggested { get; set; }
+
     private BarForm? _form;
     private int? _openWindow;
     private ElementReference _section;
@@ -634,6 +638,9 @@
     {
         _openWindow = null;
         _form = new BarForm(group.Lender is not null);
+
+        if (Suggested is { } stretch)
+            _form.Suggest(stretch, group);
     }
 
     private static void AddOnEnter(KeyboardEventArgs key, BarForm form, int index)

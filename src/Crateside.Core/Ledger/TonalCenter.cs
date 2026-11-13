@@ -75,4 +75,28 @@ public enum DiatonicMode
 }
 
 /// <summary>A part of a song with its own tonal center; <c>Start</c> is seconds into the track, null on verdicts from before ADR 0064.</summary>
-public sealed record Section(string Label, TonalCenter Center, double? Start = null);
+public sealed record Section(string Label, TonalCenter Center, double? Start = null)
+{
+    /// <summary>What places a section outside the primary center; null on the primary's own sections (ADR 0095).</summary>
+    public SectionSupport? Support { get; init; }
+
+    public bool IsHypothesis => Support is SectionSupport.Hypothesis;
+
+    public bool IsConfirmed => Support is { } support && support is not SectionSupport.Hypothesis;
+}
+
+/// <summary>What stands behind a section in a center other than the verdict's primary (ADR 0095).</summary>
+public enum SectionSupport
+{
+    /// <summary>The judge's reading alone: shown as a possible key change, never counted.</summary>
+    Hypothesis,
+
+    /// <summary>A Hooktheory tab or another human source states the key for that section.</summary>
+    HumanSource,
+
+    /// <summary>The maintainer gave a window over it.</summary>
+    Asked,
+
+    /// <summary>Two of keydetect, madmom and Essentia read it in a window there, and the primary in a window elsewhere.</summary>
+    Detectors,
+}

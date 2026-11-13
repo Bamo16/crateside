@@ -103,9 +103,9 @@ public sealed class BrowserCollectionsTests
     }
 
     [Fact]
-    public void A_verdict_with_sections_in_different_centers_carries_the_caveat()
+    public void A_verdict_carries_the_caveat_for_a_section_in_another_center_only_once_something_places_it()
     {
-        LedgerRun Verdict(params Section[] sections) =>
+        static LedgerRun Verdict(params Section[] sections) =>
             new()
             {
                 Timestamp = DateTimeOffset.UnixEpoch,
@@ -128,6 +128,20 @@ public sealed class BrowserCollectionsTests
                 Verdict(
                     new Section("Verse", home),
                     new Section("Outro", new TonalCenter("F#", DiatonicMode.Ionian))
+                    {
+                        Support = SectionSupport.HumanSource,
+                    }
+                )
+            )
+        );
+        Assert.Empty(
+            BrowserCollections.TrackMarksFor(
+                Verdict(
+                    new Section("Verse", home),
+                    new Section("Outro", new TonalCenter("F#", DiatonicMode.Ionian))
+                    {
+                        Support = SectionSupport.Hypothesis,
+                    }
                 )
             )
         );
