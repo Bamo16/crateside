@@ -208,7 +208,7 @@
                         }
                         else
                         {
-                            <Evidence Run="_run" Row="_row" Tempo="Tempo" Heading="@($"Why {HeadingKey}")" Summary="@RunSummary.Of(_run)"
+                            <Evidence Run="_run" Row="_row" Tempo="Tempo" Heading="@($"Why {HeadingKey}")" Summary="@RunSummary.Of(_run)" Subject="ShareOf(_run)"
                                       Withheld="Confidence is KeyConfidence.Withheld"
                                       WarpViewLink="@(_row is null ? null : WarpViewLink)" @bind-SelectedSection="_section" />
                         }
@@ -249,6 +249,11 @@
     private string? _section;
 
     private LedgerRun? Verdict => _row?.Verdict;
+
+    private ShareSubject? ShareOf(RunEvidence run) =>
+        Name is { } name
+            ? new(name, YouTubeId, HeadingKey, KeyText.Headline(Verdict?.DecidedBy, Confidence), Bpm?.Text)
+            : null;
 
     private string? Name => _row?.Title ?? _run?.DisplayName;
 

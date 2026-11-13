@@ -7,7 +7,7 @@
 else
 {
     <div class="prose">
-        @foreach (var paragraph in JudgeProse.Paragraphs(Text))
+        @foreach (var paragraph in Paragraphs)
         {
             <p>@Spans(paragraph)</p>
         }
@@ -26,6 +26,13 @@ else
     /// <summary>Keys and chords in Plex Mono, for a table cell or the progression; prose sets them in the body face.</summary>
     [Parameter]
     public bool Mono { get; set; }
+
+    /// <summary>Cuts the text at a paragraph once it passes this many characters, ending it with an ellipsis.</summary>
+    [Parameter]
+    public int? Budget { get; set; }
+
+    private IReadOnlyList<ProseParagraph> Paragraphs =>
+        Budget is { } budget ? ShareText.Excerpt(Text, budget) : JudgeProse.Paragraphs(Text);
 
     private RenderFragment Spans(ProseParagraph paragraph) =>
         @<text>@foreach (var span in paragraph.Spans)

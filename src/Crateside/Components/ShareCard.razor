@@ -1,0 +1,90 @@
+@using Crateside.Core.Ledger
+
+<article class="card">
+    <header class="top">
+        <h1>@Subject.Name</h1>
+        <div class="figures">
+            <div class="figure">
+                <span class="label">Key</span>
+                <span class="mono value">@Subject.Key</span>
+            </div>
+            <div class="figure">
+                <span class="label">Confidence</span>
+                <span class="mono value">@Subject.Confidence</span>
+            </div>
+            <div class="figure">
+                <span class="label">BPM</span>
+                <span class="mono value">@(Subject.Bpm ?? "—")</span>
+            </div>
+        </div>
+        <p class="summary">@RunSummary.Of(Run)</p>
+        @if (Run.Sections.Count > 1)
+        {
+            <ul class="centers">
+                @foreach (var part in Run.Sections)
+                {
+                    <li><ProseText Text="@part.Label" Inline="true" /> <span class="mono">@ModeText.Named(part.Center)</span></li>
+                }
+            </ul>
+        }
+    </header>
+
+    <div class="cols">
+        <section>
+            <h3>Why this key</h3>
+            @if (Run.Reasoning is { Length: > 0 } reasoning)
+            {
+                <ProseText Text="@reasoning" Budget="ReasoningBudget" />
+            }
+            else
+            {
+                <p class="muted">No reasoning was recorded for this run.</p>
+            }
+
+            @if (Run.Candidates.Count > 0)
+            {
+                <h4>Considered</h4>
+                <ul class="considered">
+                    @foreach (var candidate in Run.Candidates)
+                    {
+                        <li>
+                            <span class="candidate-key"><ProseText Text="@candidate.Key" Inline="true" /></span>
+                            <span class="candidate-why"><ProseText Text="@candidate.Why" Inline="true" /></span>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+        <section>
+            <h3>What the detectors reported</h3>
+            @if (Run.Algorithms.Count > 0)
+            {
+                <DetectorRows Algorithms="Run.Algorithms" Heads="true" />
+            }
+            else
+            {
+                <p class="muted">This run has no detector readings.</p>
+            }
+
+            @if (Run.TonicCheck is { Length: > 0 } tonicCheck)
+            {
+                <h4>Tonic check</h4>
+                <ProseText Text="@tonicCheck" Budget="TonicBudget" />
+            }
+        </section>
+    </div>
+
+    <footer>crateside · key verdict@(Subject.VideoId is { } id ? $" · {id}" : null)</footer>
+</article>
+
+@code {
+    private const int ReasoningBudget = 2400;
+    private const int TonicBudget = 1200;
+
+    [Parameter, EditorRequired]
+    public required ShareSubject Subject { get; set; }
+
+    [Parameter, EditorRequired]
+    public required RunEvidence Run { get; set; }
+}
