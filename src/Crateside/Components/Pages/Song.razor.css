@@ -14,7 +14,7 @@
 /* The header strip (handoff 22 §1): the cover, the title and four cells, in one box. */
 .hs {
     display: grid;
-    grid-template-columns: 152px minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
     grid-template-areas:
         "cover title"
         "cover cells";
@@ -25,18 +25,22 @@
     border-radius: 10px;
 }
 
+/* As tall as the strip, and so as wide: the column takes its width from the cover's ratio. */
 .hs-cover {
     grid-area: cover;
-    align-self: start;
-    width: 152px;
-    height: 152px;
+    position: relative;
+    aspect-ratio: 1;
+    min-height: 152px;
     background: #2b2820;
 }
 
 .hs-cover ::deep .cover {
+    position: absolute;
+    inset: 0;
     display: block;
     width: 100%;
     height: 100%;
+    object-fit: cover;
     border-radius: 0;
 }
 
@@ -72,28 +76,29 @@ h1 {
     text-underline-offset: 3px;
 }
 
+/* Every cell is label, value, caption and, where one has it, a foot, on rows the four share. */
 .cells {
     grid-area: cells;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-template-rows: auto;
+    grid-template-rows: auto auto 1fr;
     border-top: 1px solid var(--line);
 }
 
 .cells.has-foot {
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto auto;
 }
 
 .cell {
     display: grid;
     grid-template-rows: subgrid;
-    grid-row: span 1;
+    grid-row: span 3;
     min-width: 0;
     border-left: 1px solid var(--line);
 }
 
 .cells.has-foot .cell {
-    grid-row: span 2;
+    grid-row: span 4;
 }
 
 .cell:first-child {
@@ -101,8 +106,7 @@ h1 {
 }
 
 .cell-head {
-    min-width: 0;
-    padding: 10px 22px 11px;
+    display: contents;
 }
 
 .cell-foot {
@@ -124,6 +128,7 @@ h1 {
 }
 
 .label {
+    padding: 10px 22px 0;
     font-size: 10.5px;
     font-weight: 600;
     text-transform: uppercase;
@@ -140,7 +145,7 @@ h1 {
     align-items: baseline;
     flex-wrap: wrap;
     gap: 0 12px;
-    margin-top: 2px;
+    padding: 2px 22px 0;
 }
 
 .value {
@@ -188,8 +193,8 @@ h1 {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-    flex: 1 1 8rem;
     min-width: 0;
+    padding: 1px 22px 11px;
     overflow: hidden;
     font-size: 12.5px;
     line-height: 1.3;
@@ -249,8 +254,16 @@ h1 {
 }
 
 .where-line {
-    gap: 6px 10px;
-    padding-top: 4px;
+    align-items: center;
+    min-height: 34px;
+}
+
+.where-note {
+    display: block;
+}
+
+.where-note .next {
+    margin-right: 8px;
 }
 
 .next {
@@ -331,6 +344,8 @@ h1 {
     .hs-cover {
         width: 96px;
         height: 96px;
+        min-height: 0;
+        aspect-ratio: auto;
     }
 
     .hs-title {

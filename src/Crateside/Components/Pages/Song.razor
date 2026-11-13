@@ -34,7 +34,7 @@
     else
     {
         <header class="hs">
-            <div class="hs-cover"><Cover TrackKey="@TrackKey" Side="152" /></div>
+            <div class="hs-cover"><Cover TrackKey="@TrackKey" Side="320" /></div>
             <div class="hs-title">
                 <h1>@Name</h1>
                 <p class="meta">@Meta@if (YouTubeId is { } watch)
@@ -51,14 +51,14 @@
                                 <span class="mono lead">@lead <span class="arrow">→</span></span>
                             }
                             <span class="mono value key @(Key is null ? "empty" : null)">@(KeyText.Spell(Key) ?? "—")</span>
-                            <span class="note">
-                                @if (Center is { } reasoned && ModeText.Reason(reasoned, Mixed) is { } reason)
-                                {
-                                    <text>@reason&#32;</text>
-                                }
-                                <ProseText Text="@KeyNote" Inline="true" />
-                            </span>
                         </div>
+                        <span class="note">
+                            @if (Center is { } reasoned && ModeText.Reason(reasoned, Mixed) is { } reason)
+                            {
+                                <text>@reason&#32;</text>
+                            }
+                            <ProseText Text="@KeyNote" Inline="true" />
+                        </span>
                     </div>
                     <div class="cell-foot">
                         @if (OtherSections is { Count: > 0 } others)
@@ -91,8 +91,8 @@
                         <span class="label">Confidence</span>
                         <div class="line">
                             <span class="mono value conf @KeyText.ConfidenceTone(Confidence) @(Verdict?.DecidedBy is DecidedBy.Person ? "call" : null)">@KeyText.Headline(Verdict?.DecidedBy, Confidence)</span>
-                            <span class="note">@ConfidenceNote</span>
                         </div>
+                        <span class="note">@ConfidenceNote</span>
                     </div>
                     <div class="cell-foot">
                         @if (Judging.Of(TrackKey) is { IsRunning: true } running)
@@ -116,8 +116,8 @@
                         <div class="line">
                             <span class="mono value bpm @(_row?.State is TrackState.ReadyToWarp ? "ready" : null) @(Bpm is null ? "empty" : null) @(Bpm?.IsApproximate is true ? "approx" : null) @(Bpm?.IsEstimate is true ? "estimate" : null)">@(Bpm?.Text ?? "—")@if (Bpm is { Mark: not OffMark.None })
                             {<OffMarkGlyph Mark="Bpm.Mark" Large="true" />}</span>
-                            <span class="note">@(Bpm?.Note ?? "not measured")</span>
                         </div>
+                        <span class="note">@(Bpm?.Note ?? "not measured")</span>
                     </div>
                     <div class="cell-foot">
                         @if (Bpm?.Explanation is { } explanation)
@@ -139,13 +139,18 @@
                             @if (_row is not null)
                             {
                                 <StateChip Row="_row" />
+                            }
+                        </div>
+                        <span class="note where-note">
+                            @if (_row is not null)
+                            {
                                 <span class="next">@_row.Next</span>
                             }
                             @if (HasEvidenceSection)
                             {
                                 <a class="why" href="@($"song/{Uri.EscapeDataString(TrackKey)}#evidence")">Why @Verdicted ↓</a>
                             }
-                        </div>
+                        </span>
                     </div>
                     <div class="cell-foot">
                         @if (_row?.RunningSince is { } since)

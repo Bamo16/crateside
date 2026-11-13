@@ -244,20 +244,21 @@ one column below 56rem of panel (a container query).
 
 ### The header strip (handoff 22, #105)
 
-One `--surface` box, radius 10, replacing the heading and the band. The **cover** is 152px square at
-the left, flush to the top, left and bottom, an `<img>` and not a button. The **title block**
+One `--surface` box, radius 10, replacing the heading and the band. The **cover** is as tall as the
+strip and square, at the left, flush to the top, left and bottom, an `<img>` and not a button. The **title block**
 (padding 15px 22px 12px) is the title 24/600 over the meta line 13.5 `--text-60`, which ends
 `· YouTube ↗` (underlined, a new tab) for the upload the files are cut from; an import has none
 and reads `House · imported file`. Under a `--line` rule, **four cells** on four equal columns with
-`--line` dividers (padding 10px 22px 11px): the caps label (10.5/600), then one line with the value in
-mono 28/600 and its note beside it on the baseline (12.5 `--text-60`, two lines at most). The tempo
+`--line` dividers: the caps label (10.5/600), the value in mono 28/600, and under it the caption
+(12.5 `--text-60`, two lines at most), every cell left- and top-aligned on rows the four share, so
+the captions sit on one line. The tempo
 keeps its weights (`~111` at 400) and the pennant its place after the figure, 9×11. *Where it is* is
-the chip, its sentence and *Why B min ↓* on one line.
+the chip as its value, with its sentence and *Why B min ↓* as the caption.
 
 When a cell has more than a note (the sections list, the judging chip or the invitation with
 *Judge from these bars ↓*, the tempo strip or *Your warp is typed at…*, the running time), the strip
-grows a **foot row** under the cells on the same columns, behind a `--line` rule; the cover stays
-152px and the surface shows under it. At 56rem and below the cover is 96px beside the title (21/600)
+grows a **foot row** under the cells on the same columns, behind a `--line` rule; the cover keeps the
+strip's height. At 56rem and below the cover is 96px beside the title (21/600)
 and the cells go two by two under both. `← Tracks` stays above the strip; the player follows it, then
 the findings line, then the stage flow, drawn as its own `--surface` strip.
 
