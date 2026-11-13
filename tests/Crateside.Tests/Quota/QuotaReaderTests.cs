@@ -86,6 +86,22 @@ public sealed class QuotaReaderTests : IDisposable
     }
 
     [Fact]
+    public void A_null_five_hour_window_reads_as_unknown_while_the_week_still_reads()
+    {
+        var quota = QuotaReader.Parse(
+            """
+            {
+              "five_hour": null,
+              "seven_day": { "utilization": 82.0, "resets_at": "2026-11-13T23:00:00-06:00" }
+            }
+            """
+        );
+
+        Assert.False(quota.IsKnown);
+        Assert.Equal(82.0, quota.WeeklyUtilization);
+    }
+
+    [Fact]
     public void Falls_back_to_the_weekly_row_of_limits_when_seven_day_is_missing()
     {
         var quota = QuotaReader.Parse(

@@ -107,7 +107,8 @@ public sealed class QuotaReader(IHttpClientFactory clients, CratesidePaths paths
         foreach (var limit in limits.EnumerateArray())
         {
             if (
-                limit.TryGetProperty("kind", out var kind)
+                limit.ValueKind is JsonValueKind.Object
+                && limit.TryGetProperty("kind", out var kind)
                 && kind.ValueKind is JsonValueKind.String
                 && kind.GetString() == wanted
                 && Percentage(limit, "percent") is { } percent
@@ -118,15 +119,18 @@ public sealed class QuotaReader(IHttpClientFactory clients, CratesidePaths paths
         return QuotaSnapshot.Unknown;
     }
 
-    /// <summary>A number on 0–100, or null where there is not one.</summary>
+    /// <summary>A number on 0–100, or null where there is not one (a window can itself be null).</summary>
     private static double? Percentage(JsonElement element, string name) =>
-        element.TryGetProperty(name, out var value) && value.ValueKind is JsonValueKind.Number
+        element.ValueKind is JsonValueKind.Object
+        && element.TryGetProperty(name, out var value)
+        && value.ValueKind is JsonValueKind.Number
             ? value.GetDouble()
             : null;
 
     /// <summary>When the window rolls over: ISO-8601 with an offset, or Unix seconds.</summary>
     private static DateTimeOffset? ResetTimeOf(JsonElement window) =>
-        window.TryGetProperty("resets_at", out var resets)
+        window.ValueKind is JsonValueKind.Object
+        && window.TryGetProperty("resets_at", out var resets)
             ? resets.ValueKind switch
             {
                 JsonValueKind.String when DateTimeOffset.TryParse(resets.GetString(), out var at) =>
