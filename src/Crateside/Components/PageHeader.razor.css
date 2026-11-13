@@ -18,6 +18,28 @@
     margin: 0;
 }
 
+/* One row, as tall as --pin-nav, which what pins beneath it (the player) takes as its own top. */
+.top.pin {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 11;
+    box-sizing: border-box;
+    height: var(--pin-nav);
+    margin: 0 0 1.25rem;
+}
+
+.top.pin ::deep .brand {
+    align-self: center;
+}
+
+.top.pin ::deep .brand-cell {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 26px;
+    padding: 0 22px;
+}
+
 .top.shade {
     position: sticky;
     top: 0;

@@ -10,7 +10,7 @@
 
 .player {
     position: sticky;
-    top: 0;
+    top: calc(var(--pin-nav) + env(safe-area-inset-top, 0px));
     z-index: 9;
     background: var(--raised);
     border: 1px solid rgba(236, 231, 220, 0.1);
@@ -64,6 +64,13 @@
 
 .player.stuck .pin-id {
     display: flex;
+    max-width: 190px;
+}
+
+/* Pinned under the nav the strip has to stay one row on a wide window, so the hint beside Loop and the slider names go. */
+.player.stuck [data-loop-note],
+.player.stuck .slider-name {
+    display: none;
 }
 
 .pin-id span {
