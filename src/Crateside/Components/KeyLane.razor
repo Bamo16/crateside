@@ -81,7 +81,7 @@
             }
             : "no key";
 
-    private static string Title(KeyBand band) =>
+    internal static string Title(KeyBand band) =>
         $"{(band.Section is { Length: > 0 } named ? named + " · " : null)}{ModeText.Named(band.Center)} · ▶ from {WarpWording.Time(band.Start)}{(band.FromWindow ? " · from a window" : null)}{(band.StartUnbacked ? " · start not placed by a window or source" : null)}";
 
     private double X(double seconds) => (seconds - From) / (To - From) * 100;

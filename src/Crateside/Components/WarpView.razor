@@ -870,6 +870,8 @@
     {
         private const double ScaleMs = 30;
 
+        public static double Percent(double offsetMs) => 50 + Math.Clamp(offsetMs, -ScaleMs, ScaleMs) / ScaleMs * 50;
+
         /// <summary>Each 10 s window's median offset as a point in the plot, in percent; early is up.</summary>
         public IReadOnlyList<(double X, double Y)> Points(double from, double to) =>
             [
@@ -877,7 +879,7 @@
                     .Windows.Select(window =>
                         (
                             X: ((window.Start + window.End) / 2 - from) / (to - from) * 100,
-                            Y: 50 + Math.Clamp(window.OffsetMs, -ScaleMs, ScaleMs) / ScaleMs * 50
+                            Y: Percent(window.OffsetMs)
                         )
                     )
                     .Where(point => point.X is >= 0 and <= 100),
@@ -995,7 +997,12 @@
             }
 
             if (_group is { } group)
+            {
                 await _engine.InvokeVoidAsync("setGrid", GridOf(group), group.Seconds);
+
+                if (LiveOf(group, Bands(group)) is { } live)
+                    await _engine.InvokeVoidAsync("setLive", live);
+            }
         }
         catch (JSDisconnectedException) { }
     }
