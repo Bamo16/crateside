@@ -9,6 +9,10 @@ const START_DELAY = 0.06;
 const MIN_WINDOW_SECONDS = 4;
 const DRAG_THRESHOLD = 3;
 const SETTINGS_KEY = "crateside.playback";
+// The music is leveled to this loudness (LUFS) and never raised, so the click, at full scale on top,
+// stays clear of a loud master; a file with no reading is lowered by the fallback instead.
+const MUSIC_TARGET_LUFS = -18;
+const MUSIC_FALLBACK_DB = -6;
 
 const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
 
@@ -102,11 +106,41 @@ function writeSettings(settings) {
 
 // ---- the click's sounds ---------------------------------------------------------------------
 
+// Each is a short, bright transient: a bright noise tick on the attack and, except Click, a brief
+// tone behind it. At full level the two sum to full scale.
 const SOUNDS = {
-    classic: (ctx, out, when, accent, level) => tone(ctx, out, when, accent ? 1568 : 1046, 0.045, "triangle", accent ? 1 : 0.7, level),
-    click: (ctx, out, when, accent, level) => noise(ctx, out, when, accent ? 3200 : 2200, 0.012, accent ? 1 : 0.7, level),
-    wood: (ctx, out, when, accent, level) => tone(ctx, out, when, accent ? 1200 : 800, 0.07, "sine", accent ? 1 : 0.8, level, 0.7),
+    classic: (ctx, out, when, accent, level) => {
+        tick(ctx, out, when, accent ? 0.38 : 0.3, level);
+
+        return tone(ctx, out, when, accent ? 2400 : 1800, 0.03, "square", accent ? 0.62 : 0.5, level);
+    },
+    click: (ctx, out, when, accent, level) => noise(ctx, out, when, accent ? 4200 : 3000, 0.008, accent ? 1 : 0.75, level),
+    wood: (ctx, out, when, accent, level) => {
+        tick(ctx, out, when, accent ? 0.38 : 0.3, level);
+
+        return tone(ctx, out, when, accent ? 1500 : 1000, 0.05, "sine", accent ? 0.62 : 0.5, level, 0.7);
+    },
 };
+
+function tick(ctx, out, when, loudness, level) {
+    const frames = Math.ceil(ctx.sampleRate * 0.005);
+    const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < frames; i++)
+        data[i] = (Math.random() * 2 - 1) * (1 - i / frames) ** 2;
+
+    const source = ctx.createBufferSource();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+
+    source.buffer = buffer;
+    filter.type = "highpass";
+    filter.frequency.value = 4000;
+    gain.gain.value = Math.max(0.0002, loudness * level);
+    source.connect(filter).connect(gain).connect(out);
+    source.start(when);
+}
 
 function tone(ctx, out, when, hertz, length, type, loudness, level, drop = 1) {
     const oscillator = ctx.createOscillator();
@@ -116,7 +150,7 @@ function tone(ctx, out, when, hertz, length, type, loudness, level, drop = 1) {
     oscillator.frequency.setValueAtTime(hertz, when);
     oscillator.frequency.exponentialRampToValueAtTime(hertz * drop, when + length);
     gain.gain.setValueAtTime(0.0001, when);
-    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, loudness * level), when + 0.002);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, loudness * level), when + 0.0005);
     gain.gain.exponentialRampToValueAtTime(0.0001, when + length);
     oscillator.connect(gain).connect(out);
     oscillator.start(when);
@@ -161,6 +195,8 @@ class Playback {
 
     ctx = null;
     master = null;
+    music = null;
+    musicDb = MUSIC_FALLBACK_DB;
     buffer = null;
     bufferId = null;
     loading = null;
@@ -231,7 +267,7 @@ class Playback {
         this.wantPlay = false;
         this.buffer = this.bufferId = this.loading = null;
         this.ctx?.close().catch(() => {});
-        this.ctx = this.master = null;
+        this.ctx = this.master = this.music = null;
         this.trackKey = null;
         this.files = [];
         this.fileId = null;
@@ -371,6 +407,8 @@ class Playback {
         this.master = this.ctx.createGain();
         this.master.gain.value = this.settings.volume;
         this.master.connect(this.ctx.destination);
+        this.music = this.ctx.createGain();
+        this.music.connect(this.master);
     }
 
     async load(id) {
@@ -386,7 +424,12 @@ class Playback {
         this.emit();
 
         try {
-            const response = await fetch(`audio/${encodeURIComponent(this.trackKey)}/${encodeURIComponent(id)}`);
+            const url = `audio/${encodeURIComponent(this.trackKey)}/${encodeURIComponent(id)}`;
+            const measured = fetch(`${url}/loudness`)
+                .then((reply) => (reply.ok ? reply.json() : null))
+                .then((reading) => (typeof reading?.lufs === "number" ? Math.min(0, MUSIC_TARGET_LUFS - reading.lufs) : MUSIC_FALLBACK_DB))
+                .catch(() => MUSIC_FALLBACK_DB);
+            const response = await fetch(url);
 
             if (!response.ok) {
                 const problem = await response.json().catch(() => null);
@@ -401,8 +444,14 @@ class Playback {
             if (this.loading !== token)
                 return false;
 
+            const musicDb = await Promise.race([measured, new Promise((resolve) => setTimeout(resolve, 20000, MUSIC_FALLBACK_DB))]);
+
+            if (this.loading !== token)
+                return false;
+
             this.buffer = decoded;
             this.bufferId = id;
+            this.musicDb = musicDb;
             this.duration = this.duration || decoded.duration;
 
             if (this.window.end <= 0)
@@ -473,7 +522,8 @@ class Playback {
         const source = this.ctx.createBufferSource();
 
         source.buffer = this.buffer;
-        source.connect(this.master);
+        this.music.gain.value = 10 ** (this.musicDb / 20);
+        source.connect(this.music);
 
         if (this.loopOn && this.window.end > this.window.start) {
             source.loop = true;
