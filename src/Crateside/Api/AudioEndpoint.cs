@@ -30,10 +30,21 @@ public static class AudioEndpoint
     {
         await tracks.EnsureFreshAsync(Freshness, ct);
 
-        if (
-            tracks.Current?.Rows.FirstOrDefault(row => row.TrackKey == trackKey) is not { } row
-            || playable.Find(row, file) is not { } found
-        )
+        if (tracks.Current?.Rows.FirstOrDefault(row => row.TrackKey == trackKey) is not { } row)
+            return Results.Problem(
+                title: "That track is not known",
+                detail: "Crateside has no such track yet; try again in a moment.",
+                statusCode: StatusCodes.Status404NotFound
+            );
+
+        if (!PlayableFiles.Knows(row, file))
+            return Results.Problem(
+                title: "That file is not part of the track",
+                detail: "The track has no such file to play.",
+                statusCode: StatusCodes.Status404NotFound
+            );
+
+        if (playable.Find(row, file) is not { } found)
             return Results.Problem(
                 title: "That file is not on disk",
                 detail: "The file moved or is gone; try again in a moment.",
