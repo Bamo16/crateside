@@ -265,3 +265,18 @@ a {
     display: flex;
     gap: 8px;
 }
+
+.swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: none;
+}
+
+.swatch.c1 { background: #e5534b; }
+.swatch.c2 { background: #f0963c; }
+.swatch.c3 { background: #e8c93f; }
+.swatch.c4 { background: #4fb86a; }
+.swatch.c5 { background: #4a8fe0; }
+.swatch.c6 { background: #9b6ad6; }
+.swatch.c7 { background: #9a9a96; }
