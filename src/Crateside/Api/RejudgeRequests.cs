@@ -61,6 +61,15 @@ public sealed class RejudgeRequests(
                 "this track has no earlier judgment to redo; it waits for its first one"
             );
 
+        if (
+            ledger.TryGetLatestBySong(song, out var latest)
+            && latest.DecidedBy is not DecidedBy.Judge
+        )
+            return new RejudgeOutcome.Refused(
+                StatusCodes.Status409Conflict,
+                "this verdict was ruled by crateside or is the person's call; the judge does not redo it"
+            );
+
         var cutoff = time.GetUtcNow();
 
         queue.Add(song, cutoff, reason, by);

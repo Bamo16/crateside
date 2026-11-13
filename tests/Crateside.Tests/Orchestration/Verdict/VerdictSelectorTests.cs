@@ -119,6 +119,30 @@ public sealed class VerdictSelectorTests : IDisposable
     }
 
     [Fact]
+    public void Setting_up_a_judge_queues_only_the_tracks_waiting_for_the_person()
+    {
+        // Waiting for the person, no verdict yet.
+        GiveEvidence("aaaaaaaaaaa");
+        Jobs.Record("aaaaaaaaaaa", JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        // The person (or the rules) already decided: a verdict is in the ledger, whatever the job says.
+        GiveEvidence("bbbbbbbbbbb");
+        Jobs.Record("bbbbbbbbbbb", JobStage.Verdict, JobStatus.AwaitingPerson);
+        GiveEvidence("ccccccccccc");
+        Jobs.Record("ccccccccccc", JobStage.Verdict, JobStatus.Succeeded);
+
+        var view = View(Item("aaaaaaaaaaa"), Item("bbbbbbbbbbb"), Item("ccccccccccc"));
+        var ledger = Judged("bbbbbbbbbbb", "ccccccccccc");
+
+        var selector = new VerdictSelector(Jobs, Set, judge: Judge(JudgeKind.ClaudeCode));
+
+        Assert.True(selector.TryPickNext(view, ledger, out var next));
+        Assert.Equal("aaaaaaaaaaa", next.TrackKey);
+        Assert.False(selector.TryPick(view, ledger, "bbbbbbbbbbb", out _));
+        Assert.False(selector.TryPick(view, ledger, "ccccccccccc", out _));
+    }
+
+    [Fact]
     public void A_track_with_no_evidence_has_nothing_to_judge()
     {
         Assert.False(

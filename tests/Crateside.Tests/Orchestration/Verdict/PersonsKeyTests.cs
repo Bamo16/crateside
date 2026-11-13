@@ -401,6 +401,40 @@ public sealed class PersonsKeyTests : IDisposable
     [Fact]
     public void A_parked_stem_is_released_once_the_person_has_chosen()
     {
+        var (paths, parked) = ParkedStem();
+
+        HoldEvidenceAndPages();
+
+        Assert.Equal(0, StemLanding.ReleaseParked(paths, _store.Read(), _jobs));
+
+        _person.Choose(Order, MusicKey.FromString("A minor")!);
+
+        Assert.Equal(1, StemLanding.ReleaseParked(paths, _store.Read(), _jobs));
+        Assert.True(File.Exists(Path.Combine(paths.StemsKeyIdentified, "Artist - Song.flac")));
+        Assert.False(File.Exists(parked));
+    }
+
+    [Fact]
+    public void A_choice_on_a_track_waiting_for_the_person_ends_the_wait_and_frees_its_parked_stem()
+    {
+        var (paths, parked) = ParkedStem();
+
+        HoldEvidenceAndPages();
+        _jobs.Record(TrackKey, JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        Assert.Equal(0, StemLanding.ReleaseParked(paths, _store.Read(), _jobs));
+
+        _person.Choose(Order, MusicKey.FromString("A minor")!);
+
+        Assert.True(_jobs.TryGet(TrackKey, JobStage.Verdict, out var job));
+        Assert.Equal(JobStatus.Succeeded, job.Status);
+        Assert.Equal(1, StemLanding.ReleaseParked(paths, _store.Read(), _jobs));
+        Assert.True(File.Exists(Path.Combine(paths.StemsKeyIdentified, "Artist - Song.flac")));
+        Assert.False(File.Exists(parked));
+    }
+
+    private (CratesidePaths Paths, string Parked) ParkedStem()
+    {
         var paths = new CratesidePaths
         {
             StemsKeyIdentified = Path.Combine(_root, "identified"),
@@ -412,22 +446,13 @@ public sealed class PersonsKeyTests : IDisposable
         Directory.CreateDirectory(paths.StemsUnresolvedKey);
         File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), parked);
 
-        using (var file = TagLib.File.Create(parked))
-        {
-            file.Tag.Comment =
-                $"stemforge/0.3.1.0 | date: 2026-11-03 | source: https://www.youtube.com/watch?v={TrackKey}";
-            file.Save();
-        }
+        using var file = TagLib.File.Create(parked);
 
-        HoldEvidenceAndPages();
+        file.Tag.Comment =
+            $"stemforge/0.3.1.0 | date: 2026-11-03 | source: https://www.youtube.com/watch?v={TrackKey}";
+        file.Save();
 
-        Assert.Equal(0, StemLanding.ReleaseParked(paths, _store.Read(), _jobs));
-
-        _person.Choose(Order, MusicKey.FromString("A minor")!);
-
-        Assert.Equal(1, StemLanding.ReleaseParked(paths, _store.Read(), _jobs));
-        Assert.True(File.Exists(Path.Combine(paths.StemsKeyIdentified, "Artist - Song.flac")));
-        Assert.False(File.Exists(parked));
+        return (paths, parked);
     }
 
     private sealed class NoPages : ISourcePages

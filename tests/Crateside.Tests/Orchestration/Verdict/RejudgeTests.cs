@@ -241,4 +241,52 @@ public sealed class RejudgeTests : IDisposable
             )
         );
     }
+
+    [Theory]
+    [InlineData(DecidedBy.Rules)]
+    [InlineData(DecidedBy.Person)]
+    public void A_ruled_or_persons_verdict_is_never_owed_a_re_judge_even_when_queued(DecidedBy by)
+    {
+        using var store = TestLedger.Store();
+
+        Assert.IsType<RecordOutcome.Recorded>(
+            store.Record(
+                new RunRecord
+                {
+                    RecordedAt = DateTimeOffset.Parse(JudgedBefore),
+                    Song = $"artist - {Owing}",
+                    Artist = "Artist",
+                    Title = Owing,
+                    SourceUrl = $"https://music.youtube.com/watch?v={Owing}",
+                    Confidence = KeyConfidence.High,
+                    DecidedBy = by,
+                    Center = new TonalCenter("C", DiatonicMode.Ionian),
+                    Sources =
+                    [
+                        new RunSource
+                        {
+                            Via = "test",
+                            Kind = SourceKind.Ear,
+                            States = "C major",
+                            StatesKey = "C major",
+                        },
+                    ],
+                }
+            )
+        );
+
+        var owed = Queue(Owing).Pending(store.Read());
+
+        Assert.Empty(owed);
+        Assert.False(
+            new VerdictSelector(Jobs, Set).TryPickIdle(
+                View(),
+                store.Read(),
+                owed,
+                includeIntake: true,
+                out _,
+                out _
+            )
+        );
+    }
 }
