@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
 
 namespace Crateside.Tests.Api;
@@ -174,6 +175,72 @@ public sealed class RejudgeApiTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Conflict, waiting.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
         Assert.Empty(_crateside.Rejudges.Read());
+    }
+
+    [Fact]
+    public async Task An_explicit_re_judge_of_a_ruled_verdict_goes_through_and_is_owed()
+    {
+        Supersede(DecidedBy.Rules);
+
+        using var response = await PostAsync(
+            SyntheticCrateside.Judged,
+            new { requestedBy = "agent: coordination" }
+        );
+
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+        Assert.Equal(SyntheticCrateside.Song, Assert.Single(_crateside.Rejudges.Read()).Song);
+        Assert.Equal(
+            SyntheticCrateside.Song,
+            Assert.Single(_crateside.Rejudges.Pending(_crateside.Ledger.Read())).Song
+        );
+    }
+
+    [Fact]
+    public async Task A_re_judge_of_a_persons_verdict_is_a_409_and_queues_nothing()
+    {
+        Supersede(DecidedBy.Person);
+
+        using var response = await PostAsync(
+            SyntheticCrateside.Judged,
+            new { requestedBy = "agent: coordination" }
+        );
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Empty(_crateside.Rejudges.Read());
+        Assert.Empty(_crateside.Actions.All());
+    }
+
+    private void Supersede(DecidedBy by)
+    {
+        _crateside.Time.Advance(TimeSpan.FromHours(1));
+
+        Assert.IsType<RecordOutcome.Recorded>(
+            _crateside.Ledger.Record(
+                new RunRecord
+                {
+                    RecordedAt = _crateside.Time.GetUtcNow(),
+                    Song = SyntheticCrateside.Song,
+                    Artist = "The Examples",
+                    Title = "Synthetic Song",
+                    SourceUrl = $"https://music.youtube.com/watch?v={SyntheticCrateside.Judged}",
+                    Confidence = KeyConfidence.High,
+                    DecidedBy = by,
+                    Center = new TonalCenter("F#", DiatonicMode.Aeolian),
+                    Sources =
+                    [
+                        new RunSource
+                        {
+                            Via = "test",
+                            Kind = SourceKind.Ear,
+                            States = "F# minor",
+                            StatesKey = "F# minor",
+                        },
+                    ],
+                }
+            )
+        );
+
+        _crateside.Time.Advance(TimeSpan.FromHours(1));
     }
 
     private Task<HttpResponseMessage> PostAsync(string trackKey, object body) =>
