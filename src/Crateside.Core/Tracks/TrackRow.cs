@@ -609,6 +609,9 @@ public enum TrackNameSource
     /// <summary>The files themselves — what Ableton shows, so the row matches it.</summary>
     Files,
 
+    /// <summary>The tags of the file the track was imported from, which named its files at import.</summary>
+    Tags,
+
     /// <summary>The ledger's verdict, for a track with nothing on disk yet.</summary>
     Ledger,
 

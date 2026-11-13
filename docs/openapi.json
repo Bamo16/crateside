@@ -3914,6 +3914,7 @@
       "TrackNameSource": {
         "enum": [
           "Files",
+          "Tags",
           "Ledger",
           "Resolved",
           "Playlist",

@@ -74,7 +74,11 @@ public sealed partial record TrackTags
             ? tags.Artists is [_, ..] artists
                 ? $"{string.Join(", ", artists)} - {title}"
                 : title
-            : TrackNumberPrefix.Replace(Path.GetFileNameWithoutExtension(fileName), string.Empty);
+            : WithoutTrackNumber(Path.GetFileNameWithoutExtension(fileName));
+
+    /// <summary>A file name without its extension, minus a leading track number.</summary>
+    public static string WithoutTrackNumber(string baseName) =>
+        TrackNumberPrefix.Replace(baseName, string.Empty);
 
     /// <summary>The first four-digit year in a free-text date, or null.</summary>
     public static int? FirstYear(string? date) =>
