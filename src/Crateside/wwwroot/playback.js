@@ -263,10 +263,15 @@ class Playback {
         const sentinel = root.querySelector("[data-sentinel]");
 
         if (sentinel && "IntersectionObserver" in window) {
-            this.player.observer = new IntersectionObserver(([entry]) => {
-                const stuck = !entry.isIntersecting && entry.boundingClientRect.top < 0;
-                root.querySelector(".player")?.classList.toggle("stuck", stuck);
-            });
+            const offset = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--pin-nav")) || 0;
+
+            this.player.observer = new IntersectionObserver(
+                ([entry]) => {
+                    const stuck = !entry.isIntersecting && entry.boundingClientRect.top < offset;
+                    root.querySelector(".player")?.classList.toggle("stuck", stuck);
+                },
+                { rootMargin: `-${offset}px 0px 0px 0px` },
+            );
             this.player.observer.observe(sentinel);
         }
 

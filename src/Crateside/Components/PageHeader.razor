@@ -22,7 +22,7 @@
     public RenderFragment? ChildContent { get; set; }
 
     /// <summary>
-    /// The three headers the app has — a closed set, so a new page chooses one rather than
+    /// The four headers the app has — a closed set, so a new page chooses one rather than
     /// inventing a fourth.
     /// </summary>
     public enum Shapes
@@ -37,6 +37,9 @@
         /// Sticky, carrying what is running beside the brand, like a notification shade.
         /// </summary>
         Shade,
+
+        /// <summary>One slim row of brand and tabs that stays at the top while the page scrolls under it, with room for a pinned strip beneath.</summary>
+        Pin,
     }
 
     private static string Class(Shapes shape) => shape.ToString().ToLowerInvariant();

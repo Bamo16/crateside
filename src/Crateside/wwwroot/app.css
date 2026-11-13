@@ -5,6 +5,8 @@
    The palette is defined once here and the older semantic names alias onto it, so a page written
    against --accent or --warn keeps working and picks up the new colors for free. */
 :root {
+    /* The pinned site nav's height, which the player pins beneath. */
+    --pin-nav: 38px;
     /* Surfaces, darkest first. --ink is for text *on* a filled chip, never for a background. */
     --bg: #141310;
     --surface: #1b1a15;

@@ -281,8 +281,10 @@ only while a file loads or downloads, red only for a load that failed.
 - **The slim waveform** (34px, 14px margins) is the whole file that is playing at `--text` 50%, the
   part after the playhead under a 62% `--raised` scrim, and a 1px `--text` playhead. A click seeks to
   the spot and a held press scrubs, sounding nothing until release.
-- **Pinned**: the strip is `position: sticky; top: 0`. Stuck, it loses its top border and radius, gains
-  `0 10px 28px rgba(0,0,0,.55)` and leads with a 36px cover and the track's name (13.5/600, 260px at
+- **Pinned**: the site nav is one slim row (`--pin-nav`, 38px) that stays at the top of Track details, and the strip is
+  `position: sticky` directly beneath it (both clear the safe-area inset). Stuck, the hints beside Loop and the
+  slider names go so the controls stay on one row. It loses its top border and radius, gains
+  `0 10px 28px rgba(0,0,0,.55)` and leads with a 36px cover and the track's name (13.5/600, 190px at
   most) closed by a `--line` divider. At 56rem the controls wrap once (play, position, picker; then
   metronome, loop, volume right-aligned).
 - **States**: nothing on disk (play and picker disabled, `0:00.00 / –`, a dashed `nothing downloaded
