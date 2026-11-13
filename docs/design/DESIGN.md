@@ -269,12 +269,12 @@ the findings line, then the stage flow, drawn as its own `--surface` strip.
 page; `Play (Space)` / `Pause (Space)`; Space toggles anywhere except a text field, a select or an
 open list); **the position** in mono 14 (`bar 19.3.1` at 600 · `1:20.80` at 75% · `/ 2:49` at 40%,
 27ch wide; without a warp `1:20.80 / 2:49`); **the picker** (an `.outline` button 210px wide opening a
-400px listbox of 34px rows, the file playing wearing the chosen-row style); **Click** (a pill toggle
+400px listbox of 34px rows, the file playing wearing the chosen-row style); **Metronome** (a pill toggle
 that is the chosen pill when on), **Sound** (`Classic ▾`, a three-row list of Classic · Click ·
-Wood that plays the pick once, accent then beat) and the click level (60px, labelled `Click`); **Loop**
+Wood that plays the pick once, accent then beat) and the metronome level (60px, labelled `Metronome`); **Loop**
 after a divider (disabled on the whole track with `needs a zoomed view` beside it); **volume** (a
-speaker, `Main` and a 72px range). Ranges are native with `accent-color: var(--text)`; volume, click level and sound are kept in
-the browser, click and loop start off on every load. Playing is `--text`, never teal; teal appears
+speaker, `Main` and a 72px range). Ranges are native with `accent-color: var(--text)`; volume, metronome level and sound are kept in
+the browser, the metronome and loop start off on every load. Playing is `--text`, never teal; teal appears
 only while a file loads or downloads, red only for a load that failed.
 
 - **The slim waveform** (34px, 14px margins) is the whole file that is playing at `--text` 50%, the
@@ -283,10 +283,10 @@ only while a file loads or downloads, red only for a load that failed.
 - **Pinned**: the strip is `position: sticky; top: 0`. Stuck, it loses its top border and radius, gains
   `0 10px 28px rgba(0,0,0,.55)` and leads with a 36px cover and the track's name (13.5/600, 260px at
   most) closed by a `--line` divider. At 56rem the controls wrap once (play, position, picker; then
-  click, loop, volume right-aligned).
+  metronome, loop, volume right-aligned).
 - **States**: nothing on disk (play and picker disabled, `0:00.00 / –`, a dashed `nothing downloaded
   yet`); loading (play a spinning 2px teal ring, a teal-bordered `Loading Vocal - Full…`; Space while
-  loading cancels the play); no warp (`Click` disabled with `no warp yet`, no Sound or level); a load
+  loading cancels the play); no warp (`Metronome` disabled with `no warp yet`, no Sound or level); a load
   failed (a red-bordered `role="alert"` line, `Couldn't load Vocal - Full: the file moved or is gone;
   try again in a moment.`, and **Try again**).
 - **The picker** lists **Mix**, then each stem by its name, only files on disk, with a status at 12
