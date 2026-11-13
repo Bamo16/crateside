@@ -371,6 +371,7 @@ class Playback {
             this.fileId = defaultId ?? files[0]?.id ?? null;
 
         this.syncPlayer();
+        this.prefetch();
 
         // The page redraws on every state it is told, and tells this on every redraw.
         if (before !== `${this.trackKey}|${this.fileId}`)
@@ -451,15 +452,11 @@ class Playback {
         this.emit();
 
         try {
-            const url = `audio/${encodeURIComponent(this.trackKey)}/${encodeURIComponent(id)}`;
-            const measured = fetch(`${url}/loudness`)
-                .then((reply) => (reply.ok ? reply.json() : null))
-                .then((reading) => (typeof reading?.lufs === "number" ? Math.min(0, MUSIC_TARGET_LUFS - reading.lufs) : MUSIC_FALLBACK_DB))
-                .catch(() => MUSIC_FALLBACK_DB);
-            const response = await this.fetchAudio(url);
-            const decoded = await this.ctx
-                .decodeAudioData(await response.arrayBuffer())
-                .catch(() => Promise.reject(new Error("the file could not be read as audio.")));
+            const job = this.jobFor(id);
+
+            this.job = null;
+
+            const { decoded, measured } = await job;
 
             if (this.loading !== token)
                 return false;
@@ -494,6 +491,43 @@ class Playback {
         this.emit();
 
         return true;
+    }
+
+    // The fetch and decode of a file, started once: the page starts the first file's as it opens, so a play
+    // that follows finds it done or under way.
+    jobFor(id) {
+        const key = `${this.trackKey}/${id}`;
+
+        if (this.job?.key === key)
+            return this.job.promise;
+
+        const url = `audio/${encodeURIComponent(this.trackKey)}/${encodeURIComponent(id)}`;
+        const measured = fetch(`${url}/loudness`)
+            .then((reply) => (reply.ok ? reply.json() : null))
+            .then((reading) => (typeof reading?.lufs === "number" ? Math.min(0, MUSIC_TARGET_LUFS - reading.lufs) : MUSIC_FALLBACK_DB))
+            .catch(() => MUSIC_FALLBACK_DB);
+        const promise = this.fetchAudio(url).then(async (response) => ({
+            decoded: await this.ctx
+                .decodeAudioData(await response.arrayBuffer())
+                .catch(() => Promise.reject(new Error("the file could not be read as audio."))),
+            measured,
+        }));
+
+        this.job = { key, promise };
+        promise.catch(() => {
+            if (this.job?.promise === promise)
+                this.job = null;
+        });
+
+        return promise;
+    }
+
+    prefetch() {
+        if (!this.fileId || this.buffer || this.job || this.loading || this.failure || !this.files.length)
+            return;
+
+        this.ensureContext();
+        this.jobFor(this.fileId);
     }
 
     // Asked up to three times: a server that has just come back, or is reading its rows again, answers
