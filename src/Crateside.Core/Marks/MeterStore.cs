@@ -89,8 +89,7 @@ public sealed class MeterStore(CratesidePaths paths)
 
     private Dictionary<string, MeterRecord> Load() =>
         new(
-            MeterJsonContext.Default.MeterFile.ReadFileOrDefault(_path)?.Songs
-                ?? new Dictionary<string, MeterRecord>(),
+            MeterJsonContext.Default.MeterFile.ReadFileOrDefault(_path)?.Songs ?? [],
             StringComparer.OrdinalIgnoreCase
         );
 

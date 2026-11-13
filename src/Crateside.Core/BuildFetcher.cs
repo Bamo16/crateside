@@ -137,7 +137,7 @@ public sealed class BuildFetcher(
         }
     }
 
-    private BuildFetchOutcome Failed(BuiltInBuild build, string error)
+    private BuildFetchOutcome.Failed Failed(BuiltInBuild build, string error)
     {
         log.LogError(
             "Could not fetch {Filter} {Tag}: {Error}; nothing was installed",

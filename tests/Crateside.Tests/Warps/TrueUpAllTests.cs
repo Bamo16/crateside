@@ -35,9 +35,13 @@ public sealed class TrueUpAllTests : IDisposable
     [Fact]
     public async Task Every_drifting_warp_in_the_library_is_trued_up_with_its_vocal_and_one_that_holds_is_left()
     {
-        var drifting = Song("Drifting", "aaaaaaaaaaa", warpBpm: 119.99);
-        var holding = Song("Holding", "bbbbbbbbbbb", warpBpm: 120);
-        var before = File.ReadAllBytes($"{holding.Instrumental}.asd");
+        var (driftingInstrumental, driftingVocal) = Song(
+            "Drifting",
+            "aaaaaaaaaaa",
+            warpBpm: 119.99
+        );
+        var (holdingInstrumental, _) = Song("Holding", "bbbbbbbbbbb", warpBpm: 120);
+        var before = File.ReadAllBytes($"{holdingInstrumental}.asd");
         var all = new TrueUpAll(_paths, Truer());
 
         var batch = all.Plan(TestContext.Current.CancellationToken);
@@ -46,10 +50,10 @@ public sealed class TrueUpAllTests : IDisposable
         Assert.Equal((1, 0), (batch.Plans.Count, batch.Refused));
         Assert.Equal("Drifting", Assert.Single(done).Song);
         Assert.All(
-            [drifting.Instrumental, drifting.Vocal],
+            [driftingInstrumental, driftingVocal],
             audio => Assert.Equal(120, AnalysisFile.Read($"{audio}.asd").Warp.TempoAt(10) ?? 0, 6)
         );
-        Assert.Equal(before, File.ReadAllBytes($"{holding.Instrumental}.asd"));
+        Assert.Equal(before, File.ReadAllBytes($"{holdingInstrumental}.asd"));
     }
 
     private (string Instrumental, string Vocal) Song(string name, string trackKey, double warpBpm)

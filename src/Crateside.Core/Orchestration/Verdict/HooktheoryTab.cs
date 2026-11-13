@@ -338,9 +338,9 @@ internal static partial class HooktheoryPageReader
 
 internal sealed record HooktheorySearchQuery(string Q)
 {
-    public int Limit => 50;
+    public int Limit { get; } = 50;
 
-    public string[] AttributesToRetrieve => ["artist", "song", "artistSlug", "songSlug"];
+    public string[] AttributesToRetrieve { get; } = ["artist", "song", "artistSlug", "songSlug"];
 }
 
 internal sealed record HooktheorySearchResponse(IReadOnlyList<HooktheorySearchHit>? Hits);

@@ -52,7 +52,7 @@ public sealed class ProgressionTests
     [InlineData("DISTRUST (r<0.70: unreliable band)", "r < 0.70")]
     [InlineData("gray zone (0.70-0.75)", "r 0.70–0.75")]
     [InlineData("trust band (>0.75; watch for relative-key swap)", "r > 0.75")]
-    public void keydetects_flag_is_a_short_chip_with_the_band_in_its_tooltip(
+    public void Keydetects_flag_is_a_short_chip_with_the_band_in_its_tooltip(
         string flag,
         string text
     )

@@ -11,8 +11,7 @@ public sealed class CratesidePathsTests
         var paths = new CratesidePaths { DataRoot = root };
 
         Assert.All(
-            new[]
-            {
+            [
                 paths.LedgerDatabase,
                 paths.JobsFile,
                 paths.IntakeFile,
@@ -23,7 +22,7 @@ public sealed class CratesidePathsTests
                 paths.StagingFolder,
                 paths.LibraryFolder,
                 paths.StemsKeyIdentified,
-            },
+            ],
             path => Assert.StartsWith(root, path, StringComparison.OrdinalIgnoreCase)
         );
     }

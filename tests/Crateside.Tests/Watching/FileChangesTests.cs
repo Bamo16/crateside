@@ -124,7 +124,7 @@ public sealed class FileWatchersTests : IDisposable
     [InlineData("Library", "Artist/Song (Drums).flac")]
     public async Task Saving_a_file_wakes_the_listener_within_seconds(string root, string file)
     {
-        var (changes, listener) = Listening(out var watchers);
+        var (_, listener) = Listening(out var watchers);
         using var _ = watchers;
 
         File.WriteAllText(Path.Combine(root is "Staging" ? _staging : _library, file), "x");

@@ -87,7 +87,11 @@ public sealed class BackingWorker(
         }
     }
 
-    private async Task WaitAsync(TimeSpan delay, Task marked, CancellationToken stoppingToken)
+    private static async Task WaitAsync(
+        TimeSpan delay,
+        Task marked,
+        CancellationToken stoppingToken
+    )
     {
         using var cut = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
         var waiting = Task.Delay(delay, cut.Token);
