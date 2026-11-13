@@ -1,0 +1,9 @@
+# Reviewed matches of early StemForge stems to their source video (#148).
+# One per line: <videoId> <song, as the library files name it without the preset>.
+# Used by: dotnet run --project src/Crateside -- retag-sources --matches docs/early-stem-sources.txt
+18SwG-kep7s TLC - No Scrubs
+9VqxxQwcFCk JAŸ-Z - Dirt Off Your Shoulder
+i7ouv9AyB_o PSYQUI - Don't you want me (feat. Such)
+RLElKdtA0AU Pharoahe Monch - Simon Says
+gO3cFz53vs8 Quad City DJ's - Space Jam
+g-ZZrvtNIwY r-906 - the Hole
