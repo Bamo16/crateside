@@ -1734,7 +1734,10 @@ class Playback {
             writeSettings(this.settings);
             this.els.menu.hidden = true;
             this.syncPlayer();
-            this.preview();
+
+            if (!this.playing)
+                this.preview();
+
             this.restart();
 
             return;
