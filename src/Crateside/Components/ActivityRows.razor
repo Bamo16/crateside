@@ -1,9 +1,11 @@
 @using Crateside.Core.Orchestration.Jobs
 @using Humanizer
+@implements IAsyncDisposable
+@inject IJSRuntime Js
 
-@* The dashboard's Activity rows, shared with a track's page (#59): one row per action, expandable, with its duration. *@
+@* The dashboard's Activity rows, shared with a track's page (#59): one row per action, with its duration. Without the Track column (a track's own page) each is one line, and it expands only when the line cuts its text. *@
 
-<div class="rows @(ShowTrack ? null : "no-track")">
+<div class="rows @(ShowTrack ? null : "no-track")" @ref="_root">
     <div class="head row-grid" aria-hidden="true">
         <span></span>
         <span>Started</span>
@@ -12,7 +14,7 @@
         {
             <span>Track</span>
         }
-        <span>Result · click for all of it</span>
+        <span>@(ShowTrack ? "Result · click for all of it" : "Result")</span>
         <span class="took">Took</span>
     </div>
 
@@ -42,7 +44,7 @@
             </div>
         }
 
-        <div class="row row-grid @action.State.ToString().ToLowerInvariant()">
+        <div class="row row-grid @action.State.ToString().ToLowerInvariant() @(open ? "open" : null)">
             <span class="glyph" aria-label="@action.State.ToString().ToLowerInvariant()">
                 @switch (action.State)
                 {
@@ -60,7 +62,7 @@
                         break;
                 }
             </span>
-            <span class="mono at" title="@Ago(action)">@action.StartedAt.ToLocalTime().ToString("t")</span>
+            <span class="mono at" title="@(ShowTrack ? Ago(action) : $"{Meta(action, took)} · {Ago(action)}")">@action.StartedAt.ToLocalTime().ToString("t")</span>
             <span class="stage @(TrackActivity.IsYou(action) ? "you" : null)" title="@action.Label">@action.Label</span>
             @if (ShowTrack)
             {
@@ -81,7 +83,7 @@
             <span class="mono took">@Took(took, action.IsRunning)</span>
         </div>
 
-        if (open)
+        if (open && ShowTrack)
         {
             <div class="detail row-grid">
                 <div class="body">
@@ -104,6 +106,8 @@
 
 @code {
     private readonly HashSet<int> _open = [];
+    private ElementReference _root;
+    private IJSObjectReference? _module;
 
     [Parameter, EditorRequired]
     public required IReadOnlyList<ActivityAction> Actions { get; set; }
@@ -117,6 +121,33 @@
 
     [Parameter]
     public Func<string, string> NameOf { get; set; } = key => key;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ShowTrack)
+            return;
+
+        try
+        {
+            _module ??= await Js.InvokeAsync<IJSObjectReference>("import", "./Components/ActivityRows.razor.js");
+            await _module.InvokeVoidAsync("fit", _root);
+        }
+        catch (JSDisconnectedException) { }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module is not null)
+            {
+                await _module.InvokeVoidAsync("release", _root);
+                await _module.DisposeAsync();
+            }
+        }
+        // The circuit is already gone when the tab is closed.
+        catch (JSDisconnectedException) { }
+    }
 
     private static string Took(TimeSpan? took, bool running) =>
         took is not { } span ? "—" : running ? $"{ActivityFeed.Duration(span)} so far" : ActivityFeed.Duration(span);
