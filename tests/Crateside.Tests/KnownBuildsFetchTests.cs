@@ -25,7 +25,8 @@ public sealed class KnownBuildsFetchTests : IDisposable
         BuildFetcherTests.FakeDownloader downloader,
         BuiltInBuild? pin,
         string? keydetectSeed = null,
-        IBuildDownloader? gated = null
+        IBuildDownloader? gated = null,
+        TimeSpan? retryAfter = null
     )
     {
         var paths = Paths(keydetectSeed);
@@ -41,7 +42,7 @@ public sealed class KnownBuildsFetchTests : IDisposable
 
         return new KnownBuilds(_ffmpeg, paths, fetcher)
         {
-            RetryAfter = TimeSpan.FromMilliseconds(20),
+            RetryAfter = retryAfter ?? TimeSpan.FromMilliseconds(20),
         };
     }
 
@@ -164,10 +165,16 @@ public sealed class KnownBuildsFetchTests : IDisposable
     {
         var ct = TestContext.Current.CancellationToken;
         var (pin, _) = BuildFetcherTests.Pin("v1 build");
-        var builds = Builds(new BuildFetcherTests.FakeDownloader(null), pin);
+        var builds = Builds(
+            new BuildFetcherTests.FakeDownloader(null),
+            pin,
+            retryAfter: TimeSpan.FromHours(1)
+        );
 
         var seeding = builds.StartSeeding(ct);
-        await Task.Delay(200, ct);
+
+        while (builds.Waiting?.Contains("held") != true)
+            await Task.Delay(10, ct).WaitAsync(TimeSpan.FromSeconds(10), ct);
 
         Assert.False(seeding.IsCompleted);
         Assert.Contains("Could not fetch the keydetect build: offline", builds.Waiting);
