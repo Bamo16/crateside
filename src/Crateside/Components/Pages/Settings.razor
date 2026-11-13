@@ -266,15 +266,37 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                         <span class="gist">@CollectionNote(meaning)</span>
                     </div>
                     <div class="control">
-                        <div class="pills">
-                            <button class="pill @(_collections.NumberOf(meaning) is null ? "on plain" : "off")"
-                                    @onclick="() => SetCollection(meaning, null)">None</button>
-                            @for (var number = CollectionSettings.Lowest; number <= CollectionSettings.Highest; number++)
+                        <div class="pick">
+                            <button class="pill off" aria-haspopup="listbox" aria-expanded="@(_openCollection == meaning)"
+                                    @onclick="() => _openCollection = _openCollection == meaning ? null : meaning">
+                                @if (_collections.NumberOf(meaning) is { } current)
+                                {
+                                    <span class="swatch c@(current)"></span>
+                                    @CollectionColours[current - 1]
+                                }
+                                else
+                                {
+                                    @:None
+                                }
+                                &#9662;
+                            </button>
+                            @if (_openCollection == meaning)
                             {
-                                var chosen = number;
-                                <button class="pill @(_collections.NumberOf(meaning) == chosen ? "on plain" : "off")"
-                                        title="Collection @chosen, @(CollectionColours[chosen - 1])"
-                                        @onclick="() => SetCollection(meaning, chosen)"><span class="swatch c@(chosen)"></span>@chosen</button>
+                                <div class="pick-list" role="listbox">
+                                    <button class="pill @(_collections.NumberOf(meaning) is null ? "on plain" : "off")"
+                                            @onclick="() => SetCollection(meaning, null)">None</button>
+                                    @for (var number = CollectionSettings.Lowest; number <= CollectionSettings.Highest; number++)
+                                    {
+                                        var chosen = number;
+                                        var usedBy = Enum.GetValues<BrowserCollection>()
+                                            .Where(other => other != meaning && _collections.NumberOf(other) == chosen)
+                                            .Select(other => (BrowserCollection?)other)
+                                            .FirstOrDefault();
+                                        <button class="pill @(_collections.NumberOf(meaning) == chosen ? "on plain" : "off")"
+                                                disabled="@(usedBy is not null)"
+                                                @onclick="() => SetCollection(meaning, chosen)"><span class="swatch c@(chosen)"></span>@CollectionColours[chosen - 1]@if (usedBy is { } owner) { <span class="gist"> used by @CollectionSettings.Name(owner)</span> }</button>
+                                    }
+                                </div>
                             }
                         </div>
                     </div>
@@ -291,10 +313,6 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                     </span>
                 </div>
                 <div class="control">
-                    @if (_collectionsRefused is { } refused)
-                    {
-                        <span class="status">@refused</span>
-                    }
                 </div>
             </div>
         </section>
@@ -929,22 +947,15 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     }
 
     private CollectionSettings _collections = new();
-    private string? _collectionsRefused;
+    private BrowserCollection? _openCollection;
 
-    private static readonly string[] CollectionColours = ["red", "orange", "yellow", "green", "blue", "purple", "grey"];
+    private static readonly string[] CollectionColours = ["Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Grey"];
 
     private void SetCollection(BrowserCollection meaning, int? number)
     {
         var changed = _collections.With(meaning, number);
 
-        if (changed.Problem() is { } problem)
-        {
-            _collectionsRefused = problem;
-
-            return;
-        }
-
-        _collectionsRefused = null;
+        _openCollection = null;
         _collections = changed;
         CollectionStore.Save(changed);
     }
