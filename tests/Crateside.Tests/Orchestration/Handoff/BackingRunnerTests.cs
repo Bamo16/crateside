@@ -276,11 +276,12 @@ public sealed class BackingRunnerTests : IDisposable
         );
         var log = new ListLogger();
 
-        var outcome = new BackingRunner(new FolderInfoReader(), new FolderInfoWriter(), log).Run(
-            _root,
-            Ledger("HIGH"),
-            backKeys: false
-        );
+        var outcome = new BackingRunner(
+            new FolderInfoReader(),
+            new FolderInfoWriter(),
+            TestCollections.Store(_root),
+            log
+        ).Run(_root, Ledger("HIGH"), backKeys: false);
 
         Assert.IsType<TagWriteOutcome.Written>(outcome);
         Assert.True(new FolderInfoReader().Read(_root).TryGet(stem, out var tags));
@@ -397,7 +398,7 @@ public sealed class BackingRunnerTests : IDisposable
                 {
                     RelativePath = Path.GetFileName(stem),
                     Keywords = ["Key|A", "Key|Minor"],
-                    Collections = [1, (int)BrowserCollection.Warped],
+                    Collections = [1, TestCollections.Number(BrowserCollection.Warped)],
                 },
             ]
         );
@@ -421,7 +422,7 @@ public sealed class BackingRunnerTests : IDisposable
             Runner().Unbacked(_root, Ledger("LOW"), index: FolderInfo.Empty(_root))
         );
 
-        Assert.Equal([(int)BrowserCollection.KeyCaveat], assignment.Collections);
+        Assert.Equal([TestCollections.Number(BrowserCollection.KeyCaveat)], assignment.Collections);
         Assert.Null(assignment.Keywords);
     }
 
@@ -453,7 +454,7 @@ public sealed class BackingRunnerTests : IDisposable
                 {
                     RelativePath = Path.GetFileName(stem),
                     Keywords = ["Key|A", "Key|Minor"],
-                    Collections = [(int)BrowserCollection.CheckBeat],
+                    Collections = [TestCollections.Number(BrowserCollection.CheckBeat)],
                 },
             ]
         );
@@ -519,8 +520,13 @@ public sealed class BackingRunnerTests : IDisposable
         Assert.Equal(["Key|A", "Key|Minor", "Key|Phrygian"], assignment.Keywords);
     }
 
-    private static BackingRunner Runner() =>
-        new(new FolderInfoReader(), new FolderInfoWriter(), NullLogger<BackingRunner>.Instance);
+    private BackingRunner Runner() =>
+        new(
+            new FolderInfoReader(),
+            new FolderInfoWriter(),
+            TestCollections.Store(_root),
+            NullLogger<BackingRunner>.Instance
+        );
 
     private sealed class ListLogger : ILogger<BackingRunner>
     {

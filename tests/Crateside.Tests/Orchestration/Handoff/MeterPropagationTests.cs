@@ -4,6 +4,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Marks;
 using Crateside.Core.Orchestration.Handoff;
+using Crateside.Tests.Ableton;
 using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -20,11 +21,15 @@ public sealed class MeterPropagationTests : IDisposable
         Guid.NewGuid().ToString("n")
     );
 
-    private readonly BackingRunner _runner = new(
-        new FolderInfoReader(),
-        new FolderInfoWriter(),
-        NullLogger<BackingRunner>.Instance
-    );
+    private readonly BackingRunner _runner;
+
+    public MeterPropagationTests() =>
+        _runner = new(
+            new FolderInfoReader(),
+            new FolderInfoWriter(),
+            TestCollections.Store(_root),
+            NullLogger<BackingRunner>.Instance
+        );
 
     public void Dispose()
     {
@@ -123,7 +128,10 @@ public sealed class MeterPropagationTests : IDisposable
         );
 
         if (shown)
-            Assert.Equal([(int)BrowserCollection.OddBars], Assert.Single(assignments).Collections);
+            Assert.Equal(
+                [TestCollections.Number(BrowserCollection.OddBars)],
+                Assert.Single(assignments).Collections
+            );
         else
             Assert.Empty(assignments);
     }

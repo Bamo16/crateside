@@ -6,6 +6,7 @@
 
 @using System.Diagnostics
 @using Crateside.Core
+@using Crateside.Core.Ableton
 @using Crateside.Core.Imports
 @using Crateside.Core.Ledger
 @using Crateside.Core.Orchestration
@@ -32,6 +33,7 @@
 @inject PathOverrideStore Overrides
 @inject IOptions<WarpOptions> Warps
 @inject WarpSettingsStore WarpStore
+@inject CollectionSettingsStore CollectionStore
 @inject IOptions<JudgeOptions> Judge
 @inject JudgeSettingsStore JudgeStore
 @inject TrueUpAll TrueUps
@@ -249,6 +251,49 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                         }
                     </div>
                     <span class="status">@EarNote(Ear)</span>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>Live's Collections</h3>
+
+            @foreach (var meaning in Enum.GetValues<BrowserCollection>())
+            {
+                <div class="row">
+                    <div class="name">
+                        <span>@CollectionSettings.Name(meaning)</span>
+                        <span class="gist">@CollectionNote(meaning)</span>
+                    </div>
+                    <div class="control">
+                        <div class="pills">
+                            <button class="pill @(_collections.NumberOf(meaning) is null ? "on plain" : "off")"
+                                    @onclick="() => SetCollection(meaning, null)">None</button>
+                            @for (var number = CollectionSettings.Lowest; number <= CollectionSettings.Highest; number++)
+                            {
+                                var chosen = number;
+                                <button class="pill @(_collections.NumberOf(meaning) == chosen ? "on plain" : "off")"
+                                        @onclick="() => SetCollection(meaning, chosen)">@chosen</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="row">
+                <div class="name">
+                    <span class="gist">
+                        A meaning set to None writes nothing. crateside adds and removes only the
+                        numbers chosen here, so a Collection you set yourself on any other number
+                        stays. Turning a meaning off, or moving it to another number, does not clear
+                        the old number on files already marked; clear it in Live.
+                    </span>
+                </div>
+                <div class="control">
+                    @if (_collectionsRefused is { } refused)
+                    {
+                        <span class="status">@refused</span>
+                    }
                 </div>
             </div>
         </section>
@@ -882,6 +927,38 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         WarpStore.Remember(mode);
     }
 
+    private CollectionSettings _collections = new();
+    private string? _collectionsRefused;
+
+    private void SetCollection(BrowserCollection meaning, int? number)
+    {
+        var changed = _collections.With(meaning, number);
+
+        if (changed.Problem() is { } problem)
+        {
+            _collectionsRefused = problem;
+
+            return;
+        }
+
+        _collectionsRefused = null;
+        _collections = changed;
+        CollectionStore.Save(changed);
+    }
+
+    private static string CollectionNote(BrowserCollection meaning) =>
+        meaning switch
+        {
+            BrowserCollection.CheckBeat =>
+                "A staged stem whose beat is crateside's starter guess, until you have checked it.",
+            BrowserCollection.Warped => "A staged stem whose warp you have saved.",
+            BrowserCollection.WarpByHand =>
+                "A staged stem with nothing warped on it, waiting for you to warp it.",
+            BrowserCollection.KeyCaveat =>
+                "Every stem of a track whose key tag may mislead a pairing, or that you marked as changing key.",
+            _ => "Every stem of a track you marked as having odd bars.",
+        };
+
     private void SetClipFlag(bool flag)
     {
         Warps.Value.FlagClipOffBarLine = flag;
@@ -1006,6 +1083,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
     protected override void OnInitialized()
     {
+        _collections = CollectionStore.Read();
         Tracks.Changed += OnChanged;
         Spend.Changed += OnChanged;
 

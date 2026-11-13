@@ -5,6 +5,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Marks;
 using Crateside.Core.Staging;
 using Crateside.Core.Warps;
+using Crateside.Tests.Ableton;
 using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Staging;
@@ -32,8 +33,14 @@ public sealed class StagingMarksTests : IDisposable
         Directory.CreateDirectory(_paths.StagingFolder);
 
         _trackMarks = new TrackMarkStore(TestLedger.Store());
+        _marks = MarksWith(TestCollections.Store(_root));
+    }
+
+    private StagingMarks MarksWith(CollectionSettingsStore collections)
+    {
         var origins = new TransientOrigins();
-        _marks = new StagingMarks(
+
+        return new StagingMarks(
             _paths,
             new StemWarpReader(_written, origins, _waiting),
             new SidecarWriter(new NoDecoder(), new OnsetDetector(), _written, origins),
@@ -41,7 +48,8 @@ public sealed class StagingMarksTests : IDisposable
             TestLedger.Store(),
             _trackMarks,
             _reader,
-            new FolderInfoWriter()
+            new FolderInfoWriter(),
+            collections
         );
     }
 
@@ -66,10 +74,22 @@ public sealed class StagingMarksTests : IDisposable
         Assert.Equal(new TagWriteOutcome.Written(4), _marks.Collect());
 
         var info = _reader.Read(_paths.StagingFolder);
-        Assert.Equal([(int)BrowserCollection.Warped], CollectionsOf(info, saved));
-        Assert.Equal([(int)BrowserCollection.CheckBeat], CollectionsOf(info, onTheGrid));
-        Assert.Equal([(int)BrowserCollection.WarpByHand], CollectionsOf(info, unwarped));
-        Assert.Equal([(int)BrowserCollection.WarpByHand], CollectionsOf(info, warpOff));
+        Assert.Equal(
+            [TestCollections.Number(BrowserCollection.Warped)],
+            CollectionsOf(info, saved)
+        );
+        Assert.Equal(
+            [TestCollections.Number(BrowserCollection.CheckBeat)],
+            CollectionsOf(info, onTheGrid)
+        );
+        Assert.Equal(
+            [TestCollections.Number(BrowserCollection.WarpByHand)],
+            CollectionsOf(info, unwarped)
+        );
+        Assert.Equal(
+            [TestCollections.Number(BrowserCollection.WarpByHand)],
+            CollectionsOf(info, warpOff)
+        );
     }
 
     [Fact]
@@ -92,31 +112,58 @@ public sealed class StagingMarksTests : IDisposable
         Assert.Equal(new TagWriteOutcome.Written(0), _marks.Collect());
 
         Assert.True(_reader.Read(_paths.StagingFolder).TryGet(stem, out var tags));
-        Assert.Equal([1, (int)BrowserCollection.WarpByHand], tags.Collections);
+        Assert.Equal([1, TestCollections.Number(BrowserCollection.WarpByHand)], tags.Collections);
         Assert.Equal(["Key|A", "Key|Minor"], tags.Keywords);
     }
 
     [Fact]
-    public void A_stem_left_in_Place_beat_is_taken_out_of_it()
+    public void A_Collection_the_user_set_on_a_number_no_meaning_uses_stays()
     {
         var stem = Stem("Song (Drums).flac", "Drums");
         new FolderInfoWriter().Apply(
             _paths.StagingFolder,
-            [
-                new()
-                {
-                    RelativePath = Path.GetFileName(stem),
-                    Collections = [(int)BrowserCollection.PlaceBeat],
-                },
-            ]
+            [new() { RelativePath = Path.GetFileName(stem), Collections = [3] }]
         );
 
         _marks.Collect();
 
         Assert.Equal(
-            [(int)BrowserCollection.WarpByHand],
+            [3, TestCollections.Number(BrowserCollection.WarpByHand)],
             CollectionsOf(_reader.Read(_paths.StagingFolder), stem)
         );
+    }
+
+    [Fact]
+    public void With_every_meaning_off_the_tag_store_is_left_as_it_was()
+    {
+        var stem = Stem("Song (Drums).flac", "Drums");
+        _trackMarks.Set("abcdefghijk", TrackMark.OddBars, true);
+        new FolderInfoWriter().Apply(
+            _paths.StagingFolder,
+            [new() { RelativePath = Path.GetFileName(stem), Collections = [2, 3] }]
+        );
+        var off = MarksWith(TestCollections.Store(Path.Combine(_root, "off"), new()));
+
+        Assert.Equal(new TagWriteOutcome.Written(0), off.Collect());
+
+        Assert.Equal([2, 3], CollectionsOf(_reader.Read(_paths.StagingFolder), stem));
+    }
+
+    [Fact]
+    public void A_meaning_mapped_to_another_number_is_written_there_and_only_there()
+    {
+        var stem = Stem("Song (Drums).flac", "Drums");
+        new FolderInfoWriter().Apply(
+            _paths.StagingFolder,
+            [new() { RelativePath = Path.GetFileName(stem), Collections = [1, 2, 7] }]
+        );
+        var moved = MarksWith(
+            TestCollections.Store(Path.Combine(_root, "moved"), new() { WarpByHand = 3 })
+        );
+
+        moved.Collect();
+
+        Assert.Equal([1, 2, 3, 7], CollectionsOf(_reader.Read(_paths.StagingFolder), stem));
     }
 
     [Fact]
@@ -128,7 +175,10 @@ public sealed class StagingMarksTests : IDisposable
         _marks.Collect();
 
         Assert.Equal(
-            [(int)BrowserCollection.WarpByHand, (int)BrowserCollection.KeyCaveat],
+            [
+                TestCollections.Number(BrowserCollection.WarpByHand),
+                TestCollections.Number(BrowserCollection.KeyCaveat),
+            ],
             CollectionsOf(_reader.Read(_paths.StagingFolder), stem)
         );
 
@@ -136,7 +186,7 @@ public sealed class StagingMarksTests : IDisposable
         _marks.Collect();
 
         Assert.Equal(
-            [(int)BrowserCollection.WarpByHand],
+            [TestCollections.Number(BrowserCollection.WarpByHand)],
             CollectionsOf(_reader.Read(_paths.StagingFolder), stem)
         );
     }
@@ -150,7 +200,10 @@ public sealed class StagingMarksTests : IDisposable
         _marks.Collect();
 
         Assert.Equal(
-            [(int)BrowserCollection.WarpByHand, (int)BrowserCollection.OddBars],
+            [
+                TestCollections.Number(BrowserCollection.WarpByHand),
+                TestCollections.Number(BrowserCollection.OddBars),
+            ],
             CollectionsOf(_reader.Read(_paths.StagingFolder), stem)
         );
     }

@@ -67,7 +67,7 @@ nothing is outstanding. Separation (GPU) and judging (paid tokens) can be paused
 7. **Warp.** A steady-tempo track gets a *starter warp*: crateside reads the tempo and downbeat
    with NoMercy's `beatdetect` ffmpeg filter, fits the tempo to the stem's transients, and writes Live's
    `.asd` sidecar so the stems open on the grid, bars on the downbeats. Each stem's clip gain is
-   set to one loudness target, and its Collection in Live's browser says what is left to check.
+   set to one loudness target, and its Collection in Live's browser, once you map one, says what is left to check.
    [docs/starter-warps.md](docs/starter-warps.md) has the whole procedure.
 
 A track whose tempo drifts, or does not hold one grid to within 10 ms, arrives with Warp off
@@ -190,8 +190,9 @@ For now:
 - **Intake is one track at a time**: the YouTube playlist, a video URL, a file, or a link to one
   track elsewhere. A public or unlisted playlist URL is listed by StemForge's yt-dlp and every video added, with no API key (needs a `stemforge-cli` that has the `tools` command). A file's key is taken only once
   StemForge's `download` reports it (older builds of `stemforge-cli` need updating).
-- **It takes over part of Live's browser.** crateside sets Collections 2 to 7 on the files it
-  manages, writes the `.asd` sidecars of staged stems, and keeps the clip gain of every saved
+- **It writes to Live's browser, only where you say.** Each meaning (Check beat, Warped, Warp by
+  hand, Key caveat, Odd bars) is off until you give it a Collection number under Settings, and
+  crateside touches only the numbers you map. It writes the `.asd` sidecars of staged stems, and keeps the clip gain of every saved
   sample at its loudness target. It backs up a sidecar or tag store before changing it.
 - **Working folders are fixed defaults.** Separated stems land under `%USERPROFILE%\Music\Stems`
   before they are staged, and filed warp guides go to `Music\Stems\Drums`. They can be changed

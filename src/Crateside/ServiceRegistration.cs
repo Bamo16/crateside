@@ -129,6 +129,7 @@ public static class ServiceRegistration
             builder.Configuration.GetSection(LoudnessOptions.SectionName)
         );
         builder.Services.AddSingleton<WarpSettingsStore>();
+        builder.Services.AddSingleton<CollectionSettingsStore>();
         builder
             .Services.AddOptions<WarpOptions>()
             .Bind(builder.Configuration.GetSection(WarpOptions.SectionName))

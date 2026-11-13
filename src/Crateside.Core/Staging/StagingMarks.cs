@@ -20,6 +20,7 @@ public sealed class StagingMarks(
     TrackMarkStore trackMarks,
     FolderInfoReader reader,
     FolderInfoWriter writer,
+    CollectionSettingsStore collections,
     MeterStore? meters = null
 )
 {
@@ -44,6 +45,7 @@ public sealed class StagingMarks(
 
         var ledger = store.Read();
         var marked = trackMarks.Read();
+        var settings = collections.Read();
 
         List<TagAssignment> assignments =
         [
@@ -51,7 +53,7 @@ public sealed class StagingMarks(
                 .Select(path =>
                 {
                     var has = existing.TryGet(path, out var tags) ? tags.Collections : [];
-                    var wanted = Wanted(warps.Read(path), ledger, marked, has, meters);
+                    var wanted = Wanted(settings, warps.Read(path), ledger, marked, has, meters);
 
                     return has.SequenceEqual(wanted)
                         ? null
@@ -70,6 +72,7 @@ public sealed class StagingMarks(
     }
 
     private static IReadOnlyList<int> Wanted(
+        CollectionSettings collections,
         StemWarp stem,
         KeyLedger ledger,
         IReadOnlyDictionary<string, TrackMarkRecord> marked,
@@ -93,8 +96,8 @@ public sealed class StagingMarks(
 
         // A stem whose warp is with Live keeps the warp state it had until Live is done.
         return WarpStateOf(stem) is { } state
-            ? BrowserCollections.Merged(has, [state, .. marks], BrowserCollections.Cratesides)
-            : BrowserCollections.Merged(has, marks, BrowserCollections.TrackMarks);
+            ? collections.Merged(has, [state, .. marks], BrowserCollections.Cratesides)
+            : collections.Merged(has, marks, BrowserCollections.TrackMarks);
     }
 
     private static BrowserCollection? WarpStateOf(StemWarp stem) =>

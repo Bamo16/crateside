@@ -308,11 +308,13 @@ by hand; everything below describes candidates against it.
 ## Tags
 
 - **Collection** — one of the seven colored labels in Live's browser, numbered 1 to 7 and named
-  by the user. crateside puts each staged stem in the one for its warp state (*Check beat*,
+  by the user. Each meaning below is mapped to a number in Settings, or to none, which is the
+  default and writes nothing; crateside adds and removes only the numbers mapped
+  ([#166](https://github.com/Bamo16/crateside/issues/166)). It puts each staged stem in the one for its warp state (*Check beat*,
   *Warped*, *Warp by hand*), taken away on import, and every stem of a track whose Key tag
   may mislead (a second centre counts only once a source, a window or the detectors place it,
   [ADR 0095](docs/adr/0095-a-second-key-centre-counts-only-when-something-independent-of-the-judge-places-it.md)),
-  or that the user marked as changing key, in *Key caveat*. *Mine* is the user's.
+  or that the user marked as changing key, in *Key caveat*. Any number mapped to no meaning is the user's.
   *Odd bars* is every stem of a track the user marked as not consistent 4/4
   ([ADR 0058](docs/adr/0058-a-staged-stem-shows-its-state-in-live.md)).
 - **Meter** — the `Meter|` tag group the user sets in Live: a base (`4/4`, `3/4`, any `n/d`, or

@@ -19,6 +19,7 @@ public sealed class KeptStemMarks(
     FileIndexReader index,
     FolderInfoWriter writer,
     TagStoreBackups backups,
+    CollectionSettingsStore collections,
     MeterStore? meters = null
 )
 {
@@ -43,6 +44,7 @@ public sealed class KeptStemMarks(
 
         var ledger = store.Read();
         var marked = trackMarks.Read();
+        var settings = collections.Read();
 
         var files = Directory
             .EnumerateFiles(paths.KeptWarpGuides, "*", SearchOption.TopDirectoryOnly)
@@ -59,7 +61,7 @@ public sealed class KeptStemMarks(
                     Stored = stored,
                     Live = live,
                     Has = has,
-                    Wanted = BrowserCollections.Merged(
+                    Wanted = settings.Merged(
                         has,
                         MarksOf(path, ledger, marked, meters),
                         BrowserCollections.TrackMarks
