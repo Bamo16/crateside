@@ -54,6 +54,46 @@
                     }
                 </ul>
             }
+
+            @if (Run.Sources.Count > 0)
+            {
+                <h4>Sources</h4>
+                <ul class="sources">
+                    @foreach (var source in Run.Sources.OrderByDescending(source => source.Kind))
+                    {
+                        <li>
+                            <span class="source-head">
+                                <strong>@(source.Host ?? source.Via ?? "no page")</strong>
+                                <span class="muted">@source.Kind.ToString().ToLowerInvariant()</span>
+                                @if (source.StatesKey is { Length: > 0 } stated)
+                                {
+                                    <span class="mono">@ModeText.Stated(stated, source.StatesMode)</span>
+                                }
+                            </span>
+                            @if (source.Covers is { Length: > 0 } covers)
+                            {
+                                <span class="muted"><ProseText Text="@covers" Inline="true" /></span>
+                            }
+                            @if (source.Via is { Length: > 0 } via && source.Host is not null)
+                            {
+                                <span class="muted">@via</span>
+                            }
+                            @if (source.Relation is { } relation)
+                            {
+                                <span class="muted"><ProseText Text="@relation" Inline="true" /></span>
+                            }
+                            @if (source.Note is { Length: > 0 } note)
+                            {
+                                <span class="muted"><ProseText Text="@note" Inline="true" /></span>
+                            }
+                            @if (source.IsRemoved)
+                            {
+                                <span class="muted">removed by the maintainer, not counted</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
         </section>
 
         <section>
@@ -61,6 +101,16 @@
             @if (Run.Algorithms.Count > 0)
             {
                 <DetectorRows Algorithms="Run.Algorithms" Heads="true" />
+
+                @foreach (var changed in Run.Algorithms.Where(algorithm => algorithm.Reranked is true))
+                {
+                    <p class="muted note">@changed.Label: the chord rerank changed the answer@(changed.RunnerUpKey is { } runnerUp ? $"; the runner-up was {JudgeProse.Inline(runnerUp)}" : null).</p>
+                }
+
+                @if (ShareText.Backing(Run.Backers) is { } backing)
+                {
+                    <p class="muted note">@backing</p>
+                }
             }
             else
             {
@@ -74,6 +124,11 @@
             }
         </section>
     </div>
+
+    @if (ShareText.Flicker(Run.KeyEvents) is { } flicker)
+    {
+        <p class="flicker">@flicker</p>
+    }
 
     <footer>crateside · key verdict@(Subject.VideoId is { } id ? $" · {id}" : null)</footer>
 </article>
