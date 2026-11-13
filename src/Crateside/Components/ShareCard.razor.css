@@ -103,6 +103,37 @@ h4 {
     color: var(--text-75);
 }
 
+.sources {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sources li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.source-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+}
+
+.note {
+    margin: 10px 0 0;
+    font-size: 14px;
+}
+
+.flicker {
+    margin: 24px 0 0;
+    color: var(--text-60);
+}
+
 footer {
     margin-top: 32px;
     font-size: 12px;

@@ -183,7 +183,7 @@ public static partial class ShareText
             ? $" {shown.ToString("F3", CultureInfo.InvariantCulture)}"
             : string.Empty;
 
-    private static string? Backing(IReadOnlyList<string>? backers) =>
+    public static string? Backing(IReadOnlyList<string>? backers) =>
         backers is null
             ? null
             : $"keydetect is backed by {backers switch
@@ -209,7 +209,7 @@ public static partial class ShareText
     private static string Folded(ChordSegment segment) =>
         $"{string.Join(" → ", segment.Chords.Select(JudgeProse.Chord))}{(segment.IsLoop ? $" ×{segment.Repeats}" : null)}";
 
-    private static string? Flicker(IReadOnlyList<KeyEvent> events)
+    public static string? Flicker(IReadOnlyList<KeyEvent> events)
     {
         if (events.Count == 0)
             return null;
