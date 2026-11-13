@@ -237,7 +237,12 @@ class Playback {
     // ---- mounting ----
 
     mountPlayer(root, dotnet) {
-        this.unmountPlayer();
+        // A page drawn again on a new circuit (the old one was lost) keeps what is decoded and where it was.
+        if (this.player) {
+            this.player.abort.abort();
+            this.player.observer?.disconnect();
+        }
+
         this.player = { root, dotnet, abort: new AbortController() };
 
         const { signal } = this.player.abort;
@@ -267,6 +272,7 @@ class Playback {
 
         this.syncPlayer();
         this.startFrames();
+        this.emit();
     }
 
     unmountPlayer() {
@@ -416,7 +422,7 @@ class Playback {
     // ---- loading and playing ----
 
     ensureContext() {
-        if (this.ctx)
+        if (this.ctx && this.ctx.state !== "closed")
             return;
 
         this.ctx = new AudioContext({ latencyHint: "interactive" });
@@ -445,14 +451,7 @@ class Playback {
                 .then((reply) => (reply.ok ? reply.json() : null))
                 .then((reading) => (typeof reading?.lufs === "number" ? Math.min(0, MUSIC_TARGET_LUFS - reading.lufs) : MUSIC_FALLBACK_DB))
                 .catch(() => MUSIC_FALLBACK_DB);
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                const problem = await response.json().catch(() => null);
-
-                throw new Error(problem?.detail ?? "the file moved or is gone; try again in a moment.");
-            }
-
+            const response = await this.fetchAudio(url);
             const decoded = await this.ctx
                 .decodeAudioData(await response.arrayBuffer())
                 .catch(() => Promise.reject(new Error("the file could not be read as audio.")));
@@ -490,6 +489,39 @@ class Playback {
         this.emit();
 
         return true;
+    }
+
+    // Asked up to three times: a server that has just come back, or is reading its rows again, answers
+    // the first. Only a 404 that stands says the file is gone; any other failure says crateside did not answer.
+    async fetchAudio(url) {
+        let last = null;
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+            if (attempt > 0)
+                await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+
+            try {
+                const response = await fetch(url);
+
+                if (response.ok)
+                    return response;
+
+                last = response;
+
+                if (response.status < 500 && response.status !== 404)
+                    break;
+            } catch {
+                last = null;
+            }
+        }
+
+        if (last?.status === 404) {
+            const problem = await last.json().catch(() => null);
+
+            throw new Error(problem?.detail ?? "the file moved or is gone; try again in a moment.");
+        }
+
+        throw new Error(last ? `crateside answered ${last.status}; try again in a moment.` : "crateside did not answer; try again in a moment.");
     }
 
     async play() {
