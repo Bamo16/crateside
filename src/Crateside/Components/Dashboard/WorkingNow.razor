@@ -16,6 +16,8 @@
 @inject RejudgeQueue Rejudges
 @inject LedgerStore Ledger
 @inject BeatReader Beats
+@inject KnownBuilds Builds
+@using Crateside.Core
 @inject PlaylistSettingsStore Settings
 @inject IOptions<JudgeOptions> Judge
 
@@ -179,6 +181,10 @@
 
     <div class="card">
         <span class="caps padded">Background work · unattended</span>
+        @if (Builds.Waiting is { } buildsHeld)
+        {
+            <span class="status">@buildsHeld</span>
+        }
         <div class="meter-line">
             <span>Download</span>
             @Current(TrackState.Downloading)
