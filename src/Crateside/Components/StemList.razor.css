@@ -1,0 +1,357 @@
+.panel-head {
+    margin-bottom: 8px;
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.stem-heads,
+.stem {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) 120px 140px minmax(0, 1fr);
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 4px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+}
+
+/* Dashed, unfilled and dimmed, so it cannot be read as one of the samples. A warp guide is used
+   up rather than kept, and a line drawn like the others would put a file in the library that is
+   never going to be there. */
+.stem.guide {
+    background: transparent;
+    border-style: dashed;
+    opacity: 0.55;
+}
+
+/* A re-cut is destructive, so the panel shows the trade before it happens rather than a sentence
+   about it: what goes, in red and struck through, and what arrives, in the teal that means the
+   machine is about to work. */
+.pending {
+    color: var(--red);
+}
+
+.stem-heads {
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 6px;
+    padding: 0 12px;
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.stem-label {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.kind {
+    margin-left: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-50);
+}
+
+.premium-badge {
+    margin-left: 6px;
+    padding: 1px 7px;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--amber);
+    border: 1px solid var(--amber);
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.stem-tag,
+.stem-where {
+    font-size: 12px;
+    color: var(--text-60);
+}
+
+.stem-tag.good,
+.stem-where.good {
+    color: var(--green);
+}
+
+.stem-tag.bad {
+    color: var(--red);
+}
+
+.stem-tag.dim {
+    color: var(--text-30);
+}
+
+.stem-note:empty {
+    display: none;
+}
+
+.stem-note {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--text-50);
+}
+
+/* Shown only where a song has been cut from more than one upload. The filenames are frequently
+   identical across a swap, so the video ID is the only thing that tells two samples apart. */
+.upload {
+    font-style: normal;
+    white-space: nowrap;
+}
+
+.upload .mono {
+    margin-left: 6px;
+    font-size: 11px;
+    color: var(--text-40);
+}
+
+.upload.current {
+    color: var(--text-75);
+}
+
+.upload.superseded {
+    color: var(--warn);
+}
+
+/* One list whether picking or not (handoff 13b): a line that is not on disk, a band label and the
+   openers grow in and out with the row's own ease, and fade in after the height has started. */
+.grow {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 220ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.grow.shown {
+    grid-template-rows: 1fr;
+}
+
+.grow-inner {
+    min-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 110ms ease-out;
+}
+
+.grow.shown > .grow-inner {
+    opacity: 1;
+    transition: opacity 154ms ease-out 66ms;
+}
+
+/* Present in both states, so the sample column never moves sideways; empty until picking. */
+.stems:not(.ticking) .tick {
+    opacity: 0;
+    transition: opacity 110ms ease-out;
+}
+
+.stems.ticking .tick {
+    transition: opacity 154ms ease-out 66ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .grow,
+    .grow-inner,
+    .grow.shown > .grow-inner,
+    .stems .tick {
+        transition: none;
+    }
+}
+
+.stem.tickable {
+    cursor: pointer;
+}
+
+.stem.tickable:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.stem.unrecognized {
+    cursor: default;
+}
+
+.stem.unmade {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.08);
+    opacity: 0.6;
+}
+
+.stem.unmade:hover {
+    opacity: 0.85;
+}
+
+.stem.coming {
+    background: rgba(111, 199, 214, 0.06);
+    border-color: rgba(111, 199, 214, 0.3);
+}
+
+.stem.going {
+    background: transparent;
+    border-color: rgba(224, 122, 109, 0.35);
+    opacity: 0.6;
+}
+
+.stem.going .stem-label {
+    text-decoration: line-through;
+}
+
+/* A second upload's file under the same preset: its own key and place, but not a line to tick. */
+.stem.extra {
+    background: transparent;
+    border-style: dashed;
+}
+
+.stem-where.new {
+    color: var(--teal);
+}
+
+.stem-where.gone {
+    color: var(--red);
+}
+
+.stem-where.dim {
+    color: var(--text-30);
+}
+
+.source-openers {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 4px;
+}
+
+.source-openers .opener {
+    width: auto;
+}
+
+.head-note {
+    margin-left: 10px;
+    font-size: 12px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-50);
+}
+
+.changing {
+    color: var(--amber);
+}
+
+.stem-band {
+    padding: 8px 12px 4px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-35);
+}
+
+.tick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    color: transparent;
+}
+
+.tick.on {
+    color: var(--ink);
+    background: var(--text);
+    border-color: var(--text);
+}
+
+.tick.coming {
+    color: var(--ink);
+    background: var(--teal);
+    border-color: var(--teal);
+}
+
+.tick.going {
+    border-color: rgba(224, 122, 109, 0.6);
+}
+
+/* Not a box, because it is not a choice: the guide is always made and always kept afterwards. */
+.tick.pinned {
+    color: var(--text-50);
+    border: 0;
+}
+
+/* Dashed and quiet: an invitation rather than an action, sitting where the list ends. */
+.opener {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 12px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    color: var(--text-75);
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.opener:hover:not(:disabled) {
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.opener.compact {
+    margin-top: 0;
+    padding: 7px 10px;
+}
+
+.opener.compact.open {
+    color: var(--amber);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(232, 180, 90, 0.45);
+}
+
+.opener.compact.dimmed {
+    opacity: 0.45;
+}
+
+.opener.closer {
+    background: rgba(255, 255, 255, 0.05);
+    border-style: solid;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.opener-hint {
+    margin-left: auto;
+    overflow: hidden;
+    font-weight: 400;
+    color: var(--text-50);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Holds the column a track with nothing cut would leave empty, so the side stack is not alone. */
+.no-samples {
+    margin: 0;
+    padding: 28px;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: center;
+    color: var(--text-50);
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+}

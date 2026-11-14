@@ -1,0 +1,36 @@
+.zoom {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.nav {
+    padding: 2px 8px;
+}
+
+.gridpick {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 10px;
+    font-size: 11.5px;
+}
+
+.gridpick button[aria-pressed="true"] {
+    background: rgba(236, 231, 220, 0.16);
+    color: var(--text);
+}
+
+.readout {
+    font-size: 11.5px;
+    color: var(--text);
+}
+
+.readout.whole {
+    color: var(--text-75);
+}
+
+[data-goto][hidden] {
+    display: none;
+}

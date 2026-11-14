@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dashboard activity panel</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif}
+a{color:#ece7dc;text-decoration:none}a:hover{color:#fff;text-decoration:underline;text-underline-offset:3px}
+button{font-family:inherit;cursor:pointer}
+.mono{font-family:'IBM Plex Mono',monospace}
+.caps{font:600 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)}
+.tag{font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px}
+.pill{display:inline-flex;align-items:center;gap:6px;font:500 12px 'IBM Plex Sans',sans-serif;border-radius:999px;padding:5px 11px;min-height:28px;box-sizing:border-box}
+.pill.off{color:rgba(236,231,220,.75);background:transparent;border:1px solid rgba(255,255,255,.1)}
+.pill.on{color:#0f0e0c;background:#ece7dc;border:1px solid transparent}
+.pill.redon{color:#0f0e0c;background:#e07a6d;border:1px solid transparent}
+.pill .n{font:500 11px 'IBM Plex Mono',monospace;opacity:.7}
+.row{display:grid;grid-template-columns:16px 72px 92px 300px minmax(0,1fr) 92px;column-gap:14px;align-items:center;padding:0 14px;min-height:38px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px}
+.row.running{background:rgba(111,199,214,.05)}
+.row:hover{background:rgba(255,255,255,.025)}
+.row.running:hover{background:rgba(111,199,214,.08)}
+.at{font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)}
+.stage{color:rgba(236,231,220,.6);white-space:nowrap}
+.track{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:500;align-self:stretch;display:flex;align-items:center}
+.track a{overflow:hidden;text-overflow:ellipsis}
+.cont{align-self:stretch;margin-left:5px;border-left:1px solid rgba(236,231,220,.18)}
+.result{all:unset;box-sizing:border-box;min-width:0;display:flex;align-items:center;gap:8px;cursor:pointer;min-height:38px;color:rgba(236,231,220,.75)}
+.result:focus-visible{outline:2px solid #6fc7d6;outline-offset:2px;border-radius:3px}
+.result .txt{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0;flex:1}
+.result .chev{font:400 11px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.3)}
+.dur{font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5);text-align:right;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:#6fc7d6;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.dot{animation:none}}
+.divider{display:flex;align-items:baseline;gap:10px;padding:14px 14px 6px;border-bottom:1px solid rgba(255,255,255,.08)}
+.detail{display:grid;grid-template-columns:16px 72px 92px 300px minmax(0,1fr) 92px;column-gap:14px;padding:4px 14px 14px;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02)}
+.detail .body{grid-column:5 / 7;display:flex;flex-direction:column;gap:8px}
+.ann{font:400 12.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)}
+.ann b{color:#ece7dc;font-weight:500}
+.nrow{display:flex;flex-direction:column;gap:3px;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px}
+</style>
+</helmet>
+
+<div style="width: 2112px; box-sizing: border-box; padding: 56px; display: flex; flex-direction: column; gap: 56px; background: #0c0b09">
+
+  <header style="display: flex; flex-direction: column; gap: 10px; max-width: 1080px">
+    <div class="mono" style="font-size: 12px; color: rgba(236,231,220,.4)">Brief 21 · issue #189 · drawn against 43e9ef0</div>
+    <h1 style="margin: 0; font: 600 28px 'IBM Plex Sans',sans-serif">Activity gets its own section, one line per action</h1>
+    <p style="margin: 0; font: 400 14px/1.65 'IBM Plex Sans',sans-serif; color: rgba(236,231,220,.7)">The panel leaves the <em>Over time</em> row and becomes the dashboard's third section, <strong style="color: #ece7dc; font-weight: 500">Activity</strong>, right under <em>Working now</em>, because it answers the same question a minute later: what is going on, and what just happened. It takes the full content width as a table with fixed columns: when, stage, track, result, how long. Each action is one row: it appears when the stage starts, with a pulsing teal dot, and the same row takes the track page's result line when it finishes. The track name holds one column, so its left edge never moves, and a run of rows for one track shows the name once. Rows are bucketed into <em>Last 10 minutes</em> and earlier, and a finished action keeps a green check while it is in that bucket. Filter by stage, page through everything. Everything in 1a works: the filters, the page size, the pager, and clicking a result to open it.</p>
+  </header>
+
+  <!-- 1a -->
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; align-items: center; gap: 10px"><span class="tag">1a</span><span style="font: 500 14px 'IBM Plex Sans',sans-serif">The dashboard at 2000px, live at 2:14 PM · <em>Your turn</em>, <em>Working now</em> and <em>The library</em> are drawn folded to keep the sheet short; they are unchanged</span></div>
+    <div style="width: 2000px; background: #141310; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; overflow: hidden">
+      <nav style="display: flex; flex-direction: column; gap: 14px; padding: 18px 22px; background: #1b1a15; border-bottom: 1px solid rgba(255,255,255,.08)">
+        <div style="display: flex; align-items: center; gap: 8px; font: 600 15px 'IBM Plex Sans',sans-serif"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect><rect x="3" y="10.8" width="14" height="2.4" rx="1.2" fill="#e8b45a"></rect><rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect></svg>crateside</div>
+        <div style="display: flex; gap: 16px; font: 500 12px 'IBM Plex Sans',sans-serif; color: rgba(236,231,220,.6)"><a href="#" style="color: #ece7dc; border-bottom: 2px solid #e8b45a; padding-bottom: 4px">Dashboard</a><a href="#">Tracks</a><a href="#">Tools</a><a href="#">Settings</a></div>
+      </nav>
+
+      <div style="display: flex; gap: 40px; padding: 32px 48px 48px 40px">
+        <aside style="width: 168px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; font-size: 13px">
+          <span class="caps" style="padding: 0 10px 10px">On this page</span>
+          <a href="#" style="display: flex; justify-content: space-between; padding: 7px 10px; border-radius: 6px">Your turn<span class="mono" style="color: #e8b45a; font-size: 12px">532</span></a>
+          <a href="#" style="display: flex; justify-content: space-between; padding: 7px 10px; border-radius: 6px">Working now</a>
+          <a href="#" style="display: flex; justify-content: space-between; padding: 7px 10px; border-radius: 6px; background: rgba(255,255,255,.05); font-weight: 600">Activity<span class="mono" style="color: #6fc7d6; font-size: 12px">2 ●</span></a>
+          <a href="#" style="display: flex; justify-content: space-between; padding: 7px 10px; border-radius: 6px">Over time</a>
+          <a href="#" style="display: flex; justify-content: space-between; padding: 7px 10px; border-radius: 6px">The library<span class="mono" style="color: rgba(236,231,220,.4); font-size: 12px">587</span></a>
+        </aside>
+
+        <main style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 36px">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start">
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <h2 style="margin: 0; font: 600 26px 'IBM Plex Sans',sans-serif">Dashboard</h2>
+              <span style="font-size: 14px; color: rgba(236,231,220,.75)"><span class="mono">587</span> songs filed, <span class="mono">3</span> finished this week. Updates as stages move.</span>
+            </div>
+            <span style="font-size: 12px; color: rgba(236,231,220,.5)">Playlist checked 1 minute ago ↻</span>
+          </div>
+
+          <div style="display: flex; align-items: baseline; gap: 12px"><span class="mono" style="font-size: 11px; color: rgba(236,231,220,.5)">▸</span><span style="font: 600 15px 'IBM Plex Sans',sans-serif">Your turn</span><span style="font-size: 13px; color: rgba(236,231,220,.6)"><span class="mono" style="color: #e8b45a">80</span> in staging · <span class="mono" style="color: #e8b45a">26</span> need attention · <span class="mono" style="color: #e8b45a">417</span> tags to answer · <span class="mono" style="color: #e8b45a">7</span> tempo drifts · <span class="mono" style="color: #e8b45a">2</span> gave up</span></div>
+          <div style="display: flex; align-items: baseline; gap: 12px"><span class="mono" style="font-size: 11px; color: rgba(236,231,220,.5)">▸</span><span style="font: 600 15px 'IBM Plex Sans',sans-serif">Working now</span><span style="font-size: 13px; color: rgba(236,231,220,.6)">separating The Prototypes, Lowes – Reason · judging Yoko Shimomura – Barrel Volcano · Claude 10 % of the 5-hour window</span></div>
+
+          <!-- Activity section -->
+          <section style="display: flex; flex-direction: column; gap: 14px; max-width: 1560px">
+            <div style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap">
+              <span class="mono" style="font-size: 11px; color: rgba(236,231,220,.5)">▾</span>
+              <h3 style="margin: 0; font: 600 15px 'IBM Plex Sans',sans-serif">Activity</h3>
+              <span style="font-size: 13px; color: rgba(236,231,220,.6)">live · <span class="mono" style="color: #6fc7d6">2</span> running · <span class="mono">{{recentDone}}</span> finished in the last 10 minutes · last at <span class="mono">2:11 PM</span></span>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+              <span class="caps" style="margin-right: 4px">Stage</span>
+              <sc-for list="{{stagePills}}" as="p" hint-placeholder-count="7">
+                <button class="{{p.cls}}" aria-pressed="{{p.pressed}}" onClick="{{p.pick}}">{{p.label}}<span class="n">{{p.count}}</span></button>
+              </sc-for>
+              <span style="width: 1px; height: 20px; background: rgba(255,255,255,.1); margin: 0 6px"></span>
+              <button class="{{failCls}}" aria-pressed="{{failPressed}}" onClick="{{toggleFail}}">Failed or canceled<span class="n">{{failCount}}</span></button>
+              <span style="font-size: 12px; color: rgba(236,231,220,.4); margin-left: 8px">Pick several stages; <em>All</em> clears them. Remembered with the folds.</span>
+            </div>
+
+            <div style="border: 1px solid rgba(255,255,255,.08); border-radius: 8px; background: #1b1a15; overflow: hidden">
+              <div class="row" style="min-height: 30px; background: rgba(255,255,255,.02)">
+                <span></span><span class="caps">Started</span><span class="caps">Stage</span><span class="caps">Track</span><span class="caps">Result · click for all of it</span><span class="caps" style="text-align: right">Took</span>
+              </div>
+              <sc-if value="{{hasNewAbove}}" hint-placeholder-val="{{ false }}">
+                <div style="display: flex; justify-content: center; padding: 8px; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 12.5px; color: rgba(236,231,220,.75)"><button onClick="{{firstPage}}" style="all: unset; cursor: pointer; color: #6fc7d6">↑ 2 new since you paged away · back to page 1</button></div>
+              </sc-if>
+              <sc-for list="{{rows}}" as="r" hint-placeholder-count="12">
+                <sc-if value="{{r.isDivider}}" hint-placeholder-val="{{ false }}">
+                  <div class="divider"><span class="caps">{{r.label}}</span><span class="mono" style="font-size: 11.5px; color: rgba(236,231,220,.35)">{{r.sub}}</span></div>
+                </sc-if>
+                <sc-if value="{{r.isEntry}}" hint-placeholder-val="{{ true }}">
+                  <div class="{{r.rowCls}}">
+                    <span style="display: flex; justify-content: center">
+                      <sc-if value="{{r.running}}" hint-placeholder-val="{{ false }}"><span class="dot" role="img" aria-label="running"></span></sc-if>
+                      <sc-if value="{{r.glyph}}" hint-placeholder-val="{{ true }}"><span class="mono" style="{{r.glyphStyle}}" aria-label="{{r.glyphLabel}}">{{r.glyph}}</span></sc-if>
+                    </span>
+                    <span class="at" title="{{r.ago}}">{{r.clock}}</span>
+                    <span class="stage">{{r.stage}}</span>
+                    <sc-if value="{{r.showName}}" hint-placeholder-val="{{ true }}"><span class="track"><a href="#" title="{{r.track}}">{{r.track}}</a></span></sc-if>
+                    <sc-if value="{{r.repeat}}" hint-placeholder-val="{{ false }}"><span class="cont" aria-label="{{r.track}}"></span></sc-if>
+                    <button class="result" aria-expanded="{{r.open}}" onClick="{{r.toggle}}" title="{{r.full}}"><span class="txt" style="{{r.txtStyle}}">{{r.text}}</span><span class="chev">{{r.chev}}</span></button>
+                    <span class="dur" style="{{r.durStyle}}">{{r.dur}}</span>
+                  </div>
+                  <sc-if value="{{r.open}}" hint-placeholder-val="{{ false }}">
+                    <div class="detail">
+                      <div class="body">
+                        <span style="{{r.fullStyle}}">{{r.full}}</span>
+                        <span class="mono" style="font-size: 11.5px; color: rgba(236,231,220,.45)">{{r.meta}}</span>
+                        <span style="display: flex; gap: 18px; font-size: 12.5px"><a href="#">Track details →</a><a href="#" style="color: rgba(236,231,220,.6)">Its activity log →</a></span>
+                      </div>
+                    </div>
+                  </sc-if>
+                </sc-if>
+              </sc-for>
+              <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+                <div style="padding: 28px 14px; text-align: center; font-size: 13px; color: rgba(236,231,220,.5)">Nothing with these filters yet. <button onClick="{{clearAll}}" style="all: unset; cursor: pointer; color: #ece7dc; text-decoration: underline">Clear them</button></div>
+              </sc-if>
+              <div style="display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding: 10px 14px; border-top: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); font-size: 12.5px; color: rgba(236,231,220,.6)">
+                <span><span class="mono">{{rangeText}}</span></span>
+                <span style="display: flex; align-items: center; gap: 6px">Per page
+                  <sc-for list="{{sizes}}" as="s" hint-placeholder-count="4"><button class="{{s.cls}}" aria-pressed="{{s.pressed}}" onClick="{{s.pick}}" style="padding: 3px 10px; min-height: 26px"><span class="mono">{{s.n}}</span></button></sc-for>
+                </span>
+                <span style="flex: 1"></span>
+                <span style="display: flex; align-items: center; gap: 4px">
+                  <button class="pill off" onClick="{{prev}}" disabled="{{atFirst}}" aria-label="Newer" style="padding: 3px 10px; min-height: 26px">‹ Newer</button>
+                  <sc-for list="{{pages}}" as="pg" hint-placeholder-count="5"><button class="{{pg.cls}}" aria-current="{{pg.current}}" onClick="{{pg.pick}}" style="padding: 3px 9px; min-height: 26px"><span class="mono">{{pg.n}}</span></button></sc-for>
+                  <button class="pill off" onClick="{{next}}" disabled="{{atLast}}" aria-label="Older" style="padding: 3px 10px; min-height: 26px">Older ›</button>
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Over time, now two columns -->
+          <section style="display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; align-items: baseline; gap: 12px"><span class="mono" style="font-size: 11px; color: rgba(236,231,220,.5)">▾</span><h3 style="margin: 0; font: 600 15px 'IBM Plex Sans',sans-serif">Over time</h3><span style="font-size: 13px; color: rgba(236,231,220,.6)">since 16 August · jobs.jsonl</span></div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; max-width: 1560px">
+              <div style="display: flex; flex-direction: column; gap: 12px">
+                <span class="caps">Tracks finished, by ISO week</span>
+                <div style="display: flex; align-items: flex-end; gap: 10px; height: 170px; border-bottom: 1px solid rgba(255,255,255,.08)">
+                  <sc-for list="{{weeks}}" as="w" hint-placeholder-count="12">
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; justify-content: flex-end; height: 100%"><span class="mono" style="font-size: 11px; color: rgba(236,231,220,.6)">{{w.n}}</span><span style="{{w.bar}}"></span></div>
+                  </sc-for>
+                </div>
+                <div style="display: flex; gap: 10px"><sc-for list="{{weeks}}" as="w" hint-placeholder-count="12"><span class="mono" style="flex: 1; text-align: center; font-size: 10.5px; color: rgba(236,231,220,.4)">{{w.label}}</span></sc-for></div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 12px">
+                <span class="caps">Stages run</span>
+                <div style="display: grid; grid-template-columns: minmax(0,1fr) 90px 90px 90px; font-size: 13px">
+                  <span class="caps" style="padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.08)">Stage</span><span class="caps" style="padding: 6px 0; text-align: right; border-bottom: 1px solid rgba(255,255,255,.08)">Done</span><span class="caps" style="padding: 6px 0; text-align: right; border-bottom: 1px solid rgba(255,255,255,.08)">Failed</span><span class="caps" style="padding: 6px 0; text-align: right; border-bottom: 1px solid rgba(255,255,255,.08)">Canceled</span>
+                  <sc-for list="{{stageTable}}" as="s" hint-placeholder-count="6">
+                    <span style="padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,.06)">{{s.name}}</span><span class="mono" style="padding: 7px 0; text-align: right; border-bottom: 1px solid rgba(255,255,255,.06)">{{s.done}}</span><span class="mono" style="padding: 7px 0; text-align: right; border-bottom: 1px solid rgba(255,255,255,.06); color: rgba(236,231,220,.6)">{{s.failed}}</span><span class="mono" style="padding: 7px 0; text-align: right; border-bottom: 1px solid rgba(255,255,255,.06); color: rgba(236,231,220,.6)">{{s.canceled}}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div style="display: flex; align-items: baseline; gap: 12px"><span class="mono" style="font-size: 11px; color: rgba(236,231,220,.5)">▸</span><span style="font: 600 15px 'IBM Plex Sans',sans-serif">The library</span><span style="font-size: 13px; color: rgba(236,231,220,.6)"><span class="mono">587</span> songs · <span class="mono">629</span> verdicts</span></div>
+        </main>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; max-width: 2000px">
+      <p class="ann" style="margin: 0"><b>Where it sits.</b> Third of five sections, under <em>Working now</em>: the two read as one glance (what is running, then what it just did). <em>Over time</em> keeps its two charts and gets the row to itself. The index gains <em>Activity</em>, with the running count in teal while anything runs. Width is the content column up to a new cap, <span class="mono">--table-activity: 97.5rem</span> (1560px); the result column takes whatever the fixed columns leave.</p>
+      <p class="ann" style="margin: 0"><b>One row per action.</b> Joined on the job id. Ordered by when it <em>started</em>, so a running row is replaced in place and never jumps. <em>Started</em> is a clock time to the minute (the machine's locale); hovering it shows <em>4 min ago</em>. The relative sense comes from the buckets: <em>Last 10 minutes</em>, <em>Earlier today</em>, <em>Yesterday</em>, then dates. A row for the same track as the row above shows a thin rule in the track column instead of the name, also across a mix of tracks; a bucket line starts the name again.</p>
+      <p class="ann" style="margin: 0"><b>More, and by type.</b> 12 per page by default; 25, 50, 100. Paging is newest first. Page 1 is live; on a later page rows hold still and a line offers the way back when new ones arrive (1c). Stage filters combine; <em>Failed or canceled</em> narrows any of them. Filter and page size are remembered in the dashboard's cookie; the page is not. Counts on the pills are for everything on record.</p>
+    </div>
+  </div>
+
+  <!-- 1b -->
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; align-items: center; gap: 10px"><span class="tag">1b</span><span style="font: 500 14px 'IBM Plex Sans',sans-serif">Every state a row can be in · and a long result, closed and opened</span></div>
+    <div style="display: flex; gap: 48px; align-items: flex-start">
+      <div style="width: 1560px; border: 1px solid rgba(255,255,255,.08); border-radius: 8px; background: #1b1a15; overflow: hidden">
+        <sc-for list="{{states}}" as="r" hint-placeholder-count="9">
+          <div class="divider" style="padding-top: 10px"><span class="caps">{{r.label}}</span><span style="font-size: 12px; color: rgba(236,231,220,.45)">{{r.note}}</span></div>
+          <div class="{{r.rowCls}}">
+            <span style="display: flex; justify-content: center">
+              <sc-if value="{{r.running}}" hint-placeholder-val="{{ false }}"><span class="dot" role="img" aria-label="running"></span></sc-if>
+              <sc-if value="{{r.glyph}}" hint-placeholder-val="{{ true }}"><span class="mono" style="{{r.glyphStyle}}" aria-label="{{r.glyphLabel}}">{{r.glyph}}</span></sc-if>
+            </span>
+            <span class="at">{{r.clock}}</span>
+            <span class="stage">{{r.stage}}</span>
+            <span class="track"><a href="#" title="{{r.track}}">{{r.track}}</a></span>
+            <button class="result" aria-expanded="{{r.open}}" title="{{r.full}}"><span class="txt" style="{{r.txtStyle}}">{{r.text}}</span><span class="chev">{{r.chev}}</span></button>
+            <span class="dur" style="{{r.durStyle}}">{{r.dur}}</span>
+          </div>
+          <sc-if value="{{r.open}}" hint-placeholder-val="{{ false }}">
+            <div class="detail">
+              <div class="body">
+                <span style="{{r.fullStyle}}">{{r.full}}</span>
+                <span class="mono" style="font-size: 11.5px; color: rgba(236,231,220,.45)">{{r.meta}}</span>
+                <span style="display: flex; gap: 18px; font-size: 12.5px"><a href="#">Track details →</a><a href="#" style="color: rgba(236,231,220,.6)">Its activity log →</a></span>
+              </div>
+            </div>
+          </sc-if>
+        </sc-for>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 16px">
+        <p class="ann" style="margin: 0"><b>Running</b> is a teal dot that pulses (the one other animation on the page, after the stage flow's; none under reduced motion), a teal 5% wash on the row, and the time so far in teal in <em>Took</em>, ticking. The result column says what the stage is doing where the app knows: files written of those expected for a separation, the turn for a judging session; otherwise <em>running</em>.</p>
+        <p class="ann" style="margin: 0"><b>Finished</b> replaces all of that with the result line and the time it took. The check is green while the row is in <em>Last 10 minutes</em>, then drops to a quiet grey: green is done, and only the recent ones are worth a glance. No other highlight.</p>
+        <p class="ann" style="margin: 0"><b>Failed</b> is a red ✕ and the error in red, prefixed <em>failed:</em>, for good. <b>Canceled</b> is a grey dash and the reason in grey. The <em>Failed or canceled</em> filter finds both.</p>
+        <p class="ann" style="margin: 0"><b>Long lines</b> end in an ellipsis inside the result column; <em>Took</em> is its own column, so the duration never truncates. The full line is the tooltip, and a click opens it under the row with start and finish times, the job id, and links to Track details and its activity log. The track name truncates the same way at 300px; the link's title holds it whole.</p>
+        <p class="ann" style="margin: 0"><b>Wording</b> is the job's <span class="mono">summary</span> exactly as Track details prints it, without its <em>· 15 s</em> tail (that is <em>Took</em>). Stage names read as activities: Download, Detection, Judging, Separation, Handoff, Tagging.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1c -->
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <div style="display: flex; align-items: center; gap: 10px"><span class="tag">1c</span><span style="font: 500 14px 'IBM Plex Sans',sans-serif">Narrow, paged away, filtered to nothing, folded</span></div>
+    <div style="display: flex; gap: 48px; align-items: flex-start">
+      <div style="width: 600px; display: flex; flex-direction: column; gap: 10px">
+        <span class="caps">Under 1100px content width · each row stacks</span>
+        <div style="border: 1px solid rgba(255,255,255,.08); border-radius: 8px; background: #1b1a15; overflow: hidden">
+          <sc-for list="{{narrow}}" as="r" hint-placeholder-count="6">
+            <div class="nrow" style="{{r.wash}}">
+              <div style="display: flex; align-items: center; gap: 8px">
+                <sc-if value="{{r.running}}" hint-placeholder-val="{{ false }}"><span class="dot" role="img" aria-label="running"></span></sc-if>
+                <sc-if value="{{r.glyph}}" hint-placeholder-val="{{ true }}"><span class="mono" style="{{r.glyphStyle}}">{{r.glyph}}</span></sc-if>
+                <span class="at">{{r.clock}}</span><span class="stage" style="font-size: 12.5px">{{r.stage}}</span>
+                <span style="flex: 1"></span><span class="dur" style="{{r.durStyle}}">{{r.dur}}</span>
+              </div>
+              <sc-if value="{{r.showName}}" hint-placeholder-val="{{ true }}"><a href="#" style="font-weight: 500; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">{{r.track}}</a></sc-if>
+              <span style="{{r.narrowTxt}}">{{r.text}}</span>
+            </div>
+          </sc-for>
+        </div>
+        <p class="ann" style="margin: 0">The time, stage and duration share a top line; the track sits under them, once per run; the result wraps to two lines, then ends in an ellipsis. Filters wrap above it; the pager keeps <em>Newer</em> and <em>Older</em> and drops the page numbers.</p>
+      </div>
+      <div style="width: 640px; display: flex; flex-direction: column; gap: 28px">
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <span class="caps">On page 3 when two new actions arrive</span>
+          <div style="border: 1px solid rgba(255,255,255,.08); border-radius: 8px; background: #1b1a15; overflow: hidden">
+            <div style="display: flex; justify-content: center; padding: 8px; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 12.5px"><span style="color: #6fc7d6">↑ 2 new since you paged away · back to page 1</span></div>
+            <div style="padding: 12px 14px; font-size: 12.5px; color: rgba(236,231,220,.4)">rows 25–36 hold still underneath</div>
+          </div>
+          <p class="ann" style="margin: 0">Page 1 takes new rows at the top as they start. Any later page keeps its rows, so what you are reading does not slide away; the line counts what arrived and goes back to page 1.</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <span class="caps">Filtered to nothing</span>
+          <div style="border: 1px solid rgba(255,255,255,.08); border-radius: 8px; background: #1b1a15; padding: 24px 14px; text-align: center; font-size: 13px; color: rgba(236,231,220,.5)">Nothing with these filters yet. <span style="color: #ece7dc; text-decoration: underline">Clear them</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <span class="caps">Folded: its one summary line</span>
+          <div style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap"><span class="mono" style="font-size: 11px; color: rgba(236,231,220,.5)">▸</span><span style="font: 600 15px 'IBM Plex Sans',sans-serif">Activity</span><span style="font-size: 13px; color: rgba(236,231,220,.6)"><span style="color: #6fc7d6">2 running</span> · last finished <span class="mono">2:11 PM</span>, Detection, The Prototypes, Lowes – Reason · <span style="color: #e07a6d">1 failed</span> today</span></div>
+          <p class="ann" style="margin: 0">Folded, it still answers all three questions in a line: what runs, the last thing that finished, and failures today if any (red, a link to the list filtered to them). With nothing running: <em>idle · last finished …</em></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2112,"height":4300}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { stages: [], failOnly: false, per: 12, page: 0, open: { a8: true }, newAbove: false };
+  }
+
+  data() {
+    if (this._data) return this._data;
+    const NOW = 51260;
+    const hand = [
+      { id: 'a1', t: 51220, stage: 'Judging', track: 'Yoko Shimomura – Barrel Volcano', key: 'file~12a07a83ad847305', status: 'running', text: 'turn 4 on deepseek-web' },
+      { id: 'a2', t: 51062, stage: 'Separation', track: 'The Prototypes, Lowes – Reason', key: '4-FRF5obguQ', status: 'running', text: '1 of 3 files written' },
+      { id: 'a3', t: 51058, stage: 'Detection', track: 'The Prototypes, Lowes – Reason', key: '4-FRF5obguQ', status: 'ok', text: 'keydetect F minor (r 0.91), madmom F minor, edma F minor', dur: 3 },
+      { id: 'a4', t: 51044, stage: 'Download', track: 'The Prototypes, Lowes – Reason', key: '4-FRF5obguQ', status: 'ok', text: 'downloaded flac 258 kbps (format 141)', dur: 14 },
+      { id: 'a5', t: 50960, stage: 'Tagging', track: 'Yoko Shimomura – Victory Over Crystaller', key: 'file~e3145d3e0331fa3f', status: 'ok', text: 'tagged 1 file F major', dur: 0 },
+      { id: 'a6', t: 50956, stage: 'Handoff', track: 'Yoko Shimomura – Victory Over Crystaller', key: 'file~e3145d3e0331fa3f', status: 'ok', text: 'staged 1 stem', dur: 3 },
+      { id: 'a7', t: 50911, stage: 'Separation', track: 'Yoko Shimomura – Victory Over Crystaller', key: 'file~e3145d3e0331fa3f', status: 'ok', text: 'cut a drum guide (1 file)', dur: 45 },
+      { id: 'a8', t: 50853, stage: 'Separation', track: 'Memphis Cult, Groove Dealers, SPLYXER – 9mm', key: 'n3CvFYuyTLQ', status: 'ok', text: 'cut vocal_full, instrumental_full and a drum guide (3 files)', dur: 201 },
+      { id: 'a9', t: 50828, stage: 'Judging', track: 'Memphis Cult, Groove Dealers, SPLYXER – 9mm', key: 'n3CvFYuyTLQ', status: 'ok', text: 'B minor, LOW, 0 sections; 3 turns on sonnet, 22 s, 41k in (38k cached) · 2.1k out', dur: 25 },
+      { id: 'a10', t: 50824, stage: 'Detection', track: 'Memphis Cult, Groove Dealers, SPLYXER – 9mm', key: 'n3CvFYuyTLQ', status: 'ok', text: 'keydetect B major (r 0.83), madmom B minor, edma B minor', dur: 3 },
+      { id: 'a11', t: 50808, stage: 'Download', track: 'Memphis Cult, Groove Dealers, SPLYXER – 9mm', key: 'n3CvFYuyTLQ', status: 'ok', text: 'downloaded flac 258 kbps (format 141)', dur: 15 },
+      { id: 'a12', t: 50292, stage: 'Judging', track: 'Dave Wise – Funky the Main Monkey', key: 'file~6ead4a5dc7f1cd19', status: 'failed', text: 'no verdict file was written at …\\working\\file~6ead4a5dc7f1cd19\\verdict.json', dur: 64 },
+      { id: 'a13', t: 49980, stage: 'Download', track: '宮舞モカ – 進捗ダメダメです (Miyamai Moka – Shinchoku Damedame Desu)', key: 'YzuWMyd7Pjk', status: 'canceled', text: 'put back in line by hand', dur: 8 }
+    ];
+    const tracks = [
+      ['Snail’s House – Pixel Galaxy', 'RK8e4JQgPfo', 'G# major'], ['TLC – No Scrubs', '18SwG-kep7s', 'G# minor'],
+      ['Knower – Butts Tits Money', '0yqa3R8jpBU', 'E Phrygian'], ['Adele – Rolling in the Deep', 'x9Qv47HpEqw', 'C minor'],
+      ['Snap! – The Power (7" Version)', '-BxiAL5ON90', 'D minor'], ['John Newman – Love Me Again', 'EfqsJm6BKng', 'D# minor'],
+      ['Goreshit – Toromi Hearts 2', 'pk5F3q5UiWQ', 'C# major'], ['DMX – X Gon’ Give It to Ya', '_FHGghEs1Ts', 'G minor'],
+      ['Snail’s House – Restart!', 'xsFgZ21UQnQ', 'D Dorian'], ['Bodyrox, Luciana – Yeah Yeah (D Ramirez Vocal Radio Edit)', 'gEnZyXXwfzw', 'E minor'],
+      ['Journey – Separate Ways (Worlds Apart) [2024 Remaster]', 'UsdGgRL1xHc', 'E minor'], ['tonytonychopper999 – Energize', 'zDyUgX46DWY', 'F# minor']
+    ];
+    const out = hand.slice();
+    let t = 49700;
+    tracks.forEach((tr, i) => {
+      const [name, key, k] = tr;
+      if (i === 5) {
+        out.push({ id: 'g' + i + 'd', t: t, stage: 'Download', track: name, key, status: 'failed', text: 'ERROR: [youtube] ' + key + ': Video unavailable. This video is not available', dur: 6 });
+        t -= 420; return;
+      }
+      const turns = 6 + (i * 5) % 13, secs = 110 + (i * 37) % 90;
+      const steps = [
+        ['Tagging', 'tagged 3 files ' + k, 0], ['Handoff', 'staged 3 stems', 3],
+        ['Separation', 'cut vocal_full, instrumental_full and a drum guide (3 files)', 290 + (i * 13) % 60],
+        ['Judging', k + ', MEDIUM, ' + (i % 3) + (i % 3 === 1 ? ' section' : ' sections') + '; ' + turns + ' turns on deepseek-web, ' + secs + ' s', secs + 4],
+        ['Detection', 'keydetect ' + k + ' (r 0.' + (78 + i) + '), madmom ' + k + ', edma ' + k, 3],
+        ['Download', 'downloaded flac 258 kbps (format 141)', 12 + i % 6]
+      ];
+      steps.forEach((s, j) => {
+        out.push({ id: 'g' + i + '_' + j, t: t, stage: s[0], track: name, key, status: 'ok', text: s[1], dur: s[2] });
+        t -= (j === 2 ? 320 : j === 3 ? 140 : 6);
+      });
+      t -= 600;
+    });
+    this._data = { NOW, all: out };
+    return this._data;
+  }
+
+  clock(s) {
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+    return ((h % 12) || 12) + ':' + String(m).padStart(2, '0') + ' ' + (h < 12 ? 'AM' : 'PM');
+  }
+  clockS(s) {
+    const sec = String(Math.floor(s % 60)).padStart(2, '0');
+    const c = this.clock(s);
+    return c.replace(' ', ':' + sec + ' ');
+  }
+  took(s) {
+    if (s < 1) return '<1 s';
+    if (s < 60) return s + ' s';
+    const m = Math.floor(s / 60), r = s % 60;
+    return r ? m + ' min ' + r + ' s' : m + ' min';
+  }
+
+  decorate(e, NOW, opts) {
+    const recent = NOW - e.t <= 600;
+    const r = Object.assign({}, e);
+    r.isEntry = true; r.isDivider = false;
+    r.clock = this.clock(e.t);
+    r.ago = Math.max(1, Math.round((NOW - e.t) / 60)) + ' min ago';
+    r.running = e.status === 'running';
+    r.rowCls = r.running ? 'row running' : 'row';
+    r.glyph = r.running ? '' : e.status === 'ok' ? '✓' : e.status === 'failed' ? '✕' : '–';
+    r.glyphLabel = e.status === 'ok' ? 'done' : e.status;
+    r.glyphStyle = e.status === 'ok' ? (recent ? 'color:#7fcf9a;font-size:12px' : 'color:rgba(236,231,220,.3);font-size:12px') : e.status === 'failed' ? 'color:#e07a6d;font-size:12px;font-weight:600' : 'color:rgba(236,231,220,.4);font-size:12px';
+    const pre = e.status === 'failed' ? 'failed: ' : e.status === 'canceled' ? 'canceled: ' : '';
+    r.text = r.running ? e.text + ' …' : pre + e.text;
+    r.full = r.text;
+    r.txtStyle = e.status === 'failed' ? 'color:#e07a6d' : e.status === 'canceled' ? 'color:rgba(236,231,220,.5)' : r.running ? 'color:rgba(236,231,220,.6)' : '';
+    r.fullStyle = 'font-size:13px;line-height:1.55;white-space:normal;' + (e.status === 'failed' ? 'color:#e07a6d' : 'color:#ece7dc');
+    r.narrowTxt = 'font-size:13px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;' + (r.txtStyle || 'color:rgba(236,231,220,.75)');
+    r.dur = r.running ? this.took(NOW - e.t) + ' so far' : this.took(e.dur);
+    r.durStyle = r.running ? 'color:#6fc7d6' : '';
+    r.wash = r.running ? 'background:rgba(111,199,214,.05)' : '';
+    const internal = { Download: 'Download', Detection: 'Evidence', Judging: 'Verdict', Separation: 'Separation', Handoff: 'Handoff', Tagging: 'Tagging' }[e.stage];
+    r.meta = r.running
+      ? 'started ' + this.clockS(e.t) + ' · running ' + this.took(NOW - e.t) + ' · ' + e.key + ':' + internal
+      : 'started ' + this.clockS(e.t) + ' · ' + (e.status === 'ok' ? 'finished ' : e.status + ' ') + this.clockS(e.t + e.dur) + ' · ' + this.took(e.dur) + ' · ' + e.key + ':' + internal;
+    r.open = !!(opts && opts.open);
+    r.chev = r.open ? '▾' : '▸';
+    return r;
+  }
+
+  renderVals() {
+    const { NOW, all } = this.data();
+    const st = this.state;
+    const STAGES = ['Download', 'Detection', 'Judging', 'Separation', 'Handoff', 'Tagging'];
+    const isFail = (e) => e.status === 'failed' || e.status === 'canceled';
+    const filtered = all.filter((e) => (st.stages.length === 0 || st.stages.includes(e.stage)) && (!st.failOnly || isFail(e)));
+    const pageCount = Math.max(1, Math.ceil(filtered.length / st.per));
+    const page = Math.min(st.page, pageCount - 1);
+    const slice = filtered.slice(page * st.per, page * st.per + st.per);
+
+    const rows = [];
+    let bucket = null, prevKey = null;
+    slice.forEach((e) => {
+      const b = NOW - e.t <= 600 ? 'recent' : 'today';
+      if (b !== bucket) {
+        rows.push(b === 'recent'
+          ? { isDivider: true, isEntry: false, label: 'Last 10 minutes', sub: 'since 2:04 PM' }
+          : { isDivider: true, isEntry: false, label: 'Earlier today', sub: 'before 2:04 PM' });
+        bucket = b; prevKey = null;
+      }
+      const r = this.decorate(e, NOW, { open: !!st.open[e.id] });
+      r.showName = e.key !== prevKey;
+      r.repeat = !r.showName;
+      r.toggle = () => this.setState({ open: Object.assign({}, st.open, { [e.id]: !st.open[e.id] }) });
+      prevKey = e.key;
+      rows.push(r);
+    });
+
+    const stagePills = [{ label: 'All', count: all.length, on: st.stages.length === 0, pick: () => this.setState({ stages: [], page: 0 }) }]
+      .concat(STAGES.map((s) => ({
+        label: s,
+        count: all.filter((e) => e.stage === s).length,
+        on: st.stages.includes(s),
+        pick: () => this.setState({ stages: st.stages.includes(s) ? st.stages.filter((x) => x !== s) : st.stages.concat([s]), page: 0 })
+      })))
+      .map((p) => Object.assign(p, { cls: p.on ? 'pill on' : 'pill off', pressed: p.on ? 'true' : 'false' }));
+
+    const sizes = [12, 25, 50, 100].map((n) => ({ n, cls: st.per === n ? 'pill on' : 'pill off', pressed: st.per === n ? 'true' : 'false', pick: () => this.setState({ per: n, page: 0 }) }));
+
+    const pages = [];
+    for (let i = 0; i < pageCount; i++) {
+      if (i < 3 || i === pageCount - 1 || Math.abs(i - page) <= 1) pages.push({ n: i + 1, cls: i === page ? 'pill on' : 'pill off', current: i === page ? 'page' : 'false', pick: () => this.setState({ page: i }) });
+      else if (pages.length && pages[pages.length - 1].n !== '…') pages.push({ n: '…', cls: 'pill off', current: 'false', pick: () => {} });
+    }
+
+    const from = filtered.length ? page * st.per + 1 : 0;
+    const to = Math.min(filtered.length, page * st.per + st.per);
+
+    const weeksRaw = [43, 79, 51, 67, 42, 18, 9, 61, 44, 27, 12, 3];
+    const max = Math.max.apply(null, weeksRaw);
+    const weeks = weeksRaw.map((n, i) => ({
+      n, label: i === weeksRaw.length - 1 ? 'W46 so far' : 'W' + (35 + i),
+      bar: 'width:100%;max-width:48px;height:' + Math.round((n / max) * 140) + 'px;border-radius:3px 3px 0 0;' + (i === weeksRaw.length - 1 ? 'border:1px dashed #6fc7d6;border-bottom:0;box-sizing:border-box' : 'background:#6fc7d6')
+    }));
+    const stageTable = [
+      { name: 'Downloads', done: '1,042', failed: '9', canceled: '3' }, { name: 'Detections', done: '1,018', failed: '4', canceled: '1' },
+      { name: 'Verdicts', done: '617', failed: '50', canceled: '21' }, { name: 'Separations', done: '472', failed: '14', canceled: '29' },
+      { name: 'Handoffs', done: '466', failed: '0', canceled: '0' }, { name: 'Tagging', done: '459', failed: '2', canceled: '0' }
+    ];
+
+    const pick = (id) => all.find((e) => e.id === id);
+    const long = this.decorate(pick('a9'), NOW, { open: false });
+    const longOpen = this.decorate(pick('a9'), NOW, { open: true });
+    const failOpen = this.decorate(pick('a12'), NOW, { open: true });
+    const states = [
+      Object.assign(this.decorate(pick('a2'), NOW), { label: 'Running', note: 'a separation: files written of those expected' }),
+      Object.assign(this.decorate(pick('a1'), NOW), { label: 'Running', note: 'judging: the session’s turn' }),
+      Object.assign(this.decorate(pick('a3'), NOW), { label: 'Finished in the last 10 minutes', note: 'green check' }),
+      Object.assign(this.decorate(pick('g0_0'), NOW), { label: 'Finished earlier', note: 'grey check' }),
+      Object.assign(long, { label: 'A long result, closed', note: 'ellipsis; Took never truncates; full text in the tooltip' }),
+      Object.assign(longOpen, { label: 'The same, opened', note: 'click the result' }),
+      Object.assign(this.decorate(pick('a13'), NOW), { label: 'Canceled', note: 'grey dash, reason in grey' }),
+      Object.assign(failOpen, { label: 'Failed, opened', note: 'red ✕ and red text, for as long as it is listed' })
+    ];
+
+    const narrowSrc = ['a1', 'a2', 'a3', 'a4', 'a9', 'a12'].map(pick);
+    let pk = null;
+    const narrow = narrowSrc.map((e) => { const r = this.decorate(e, NOW); r.showName = e.key !== pk; pk = e.key; return r; });
+
+    return {
+      rows, stagePills, sizes, pages,
+      empty: slice.length === 0,
+      rangeText: filtered.length ? from + '–' + to + ' of ' + filtered.length.toLocaleString('en-US') : '0 of 0',
+      atFirst: page === 0, atLast: page >= pageCount - 1,
+      prev: () => this.setState({ page: Math.max(0, page - 1) }),
+      next: () => this.setState({ page: Math.min(pageCount - 1, page + 1), newAbove: true }),
+      firstPage: () => this.setState({ page: 0, newAbove: false }),
+      hasNewAbove: page > 0 && st.newAbove,
+      failCls: st.failOnly ? 'pill redon' : 'pill off',
+      failPressed: st.failOnly ? 'true' : 'false',
+      failCount: all.filter(isFail).length,
+      toggleFail: () => this.setState({ failOnly: !st.failOnly, page: 0 }),
+      clearAll: () => this.setState({ stages: [], failOnly: false, page: 0 }),
+      recentDone: all.filter((e) => e.status !== 'running' && NOW - e.t <= 600).length,
+      weeks, stageTable, states, narrow
+    };
+  }
+}
+</script>
+</body>
+</html>

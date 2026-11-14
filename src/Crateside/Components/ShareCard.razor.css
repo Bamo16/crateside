@@ -1,0 +1,141 @@
+/* The card is its own layout at a fixed width, never a crop of the page (#152). */
+.card {
+    width: 1200px;
+    padding: 48px 56px 32px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.top h1 {
+    margin: 0 0 20px;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.figures {
+    display: flex;
+    gap: 56px;
+}
+
+.figure {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.label {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-50);
+}
+
+.value {
+    font-size: 30px;
+    font-weight: 500;
+}
+
+.summary {
+    margin: 20px 0 0;
+    color: var(--text-60);
+}
+
+.centers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 28px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-75);
+}
+
+.cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 56px;
+    margin-top: 32px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line-strong);
+}
+
+h3 {
+    margin: 0 0 12px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+h4 {
+    margin: 24px 0 8px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-50);
+}
+
+.muted {
+    color: var(--text-50);
+}
+
+.considered {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.considered li {
+    display: flex;
+    gap: 12px;
+    padding: 4px 0;
+}
+
+.candidate-key {
+    flex: none;
+    min-width: 7rem;
+    font-weight: 600;
+}
+
+.candidate-why {
+    color: var(--text-75);
+}
+
+.sources {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sources li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.source-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+}
+
+.note {
+    margin: 10px 0 0;
+    font-size: 14px;
+}
+
+.flicker {
+    margin: 24px 0 0;
+    color: var(--text-60);
+}
+
+footer {
+    margin-top: 32px;
+    font-size: 12px;
+    color: var(--text-40);
+}

@@ -1,87 +1,216 @@
+using Crateside.Core.Ledger;
+using Crateside.Core.Library;
 using Crateside.Core.Pairing;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Pairing;
 
-public class PartnersTests
+public sealed class PartnersTests
 {
-    private static MusicKey Key(string name) =>
-        MusicKey.FromString(name) ?? throw new ArgumentException($"'{name}' is not a key.");
+    public static TheoryData<DiatonicMode> Modes => [.. Enum.GetValues<DiatonicMode>()];
 
     [Fact]
-    public void All_24_keys_are_reachable_by_default()
+    public void A_plain_key_lists_brief_19s_rows_at_shift_0()
     {
-        // The default never caps; max-shift narrows only on request.
-        Assert.Equal(24, Partners.For(Key("D# major")).Count);
-    }
+        var rows = Partners.For(Center("C", DiatonicMode.Ionian));
 
-    [Fact]
-    public void The_reproduced_d_sharp_major_ordering()
-    {
-        // The exact output the design was verified against, unshifted partners only.
-        var unshifted = Partners.For(Key("D# major"), maxShift: 0);
+        (string, int, Relationship?)[] expected =
+        [
+            ("C major", 7, Relationship.SameKey),
+            ("A minor", 7, Relationship.SameNotes),
+            ("G major", 6, null),
+            ("F major", 6, null),
+            ("G minor", 5, null),
+            ("C minor", 4, null),
+            ("F minor", 3, null),
+        ];
 
-        Assert.Equal([0, 0.1, 10, 10, 20, 30, 40], unshifted.Select(p => p.Score));
         Assert.Equal(
-            ["D♯ Major", "C Minor", "G♯ Major", "A♯ Major", "A♯ Minor", "D♯ Minor", "G♯ Minor"],
-            unshifted.Select(p => p.Key.Name)
+            expected,
+            rows.Select(row => (row.Key.Name, row.NotesShared, row.Relationship))
         );
     }
 
     [Fact]
-    public void Shift_outranks_circle_distance()
+    public void A_dorian_lists_brief_19s_rows_at_shift_0()
     {
-        // A distant key needing no shift beats a close one needing two, because the shift is
-        // the cost actually paid.
-        var partners = Partners.For(Key("C major"));
+        var rows = Partners.For(Center("A", DiatonicMode.Dorian));
 
-        var shifts = partners.Select(p => p.AbsoluteShift).ToArray();
-        Assert.Equal(shifts.Order(), shifts);
+        (string, int, Relationship?)[] expected =
+        [
+            ("A Dorian", 7, Relationship.SameKey),
+            ("G major", 7, Relationship.SameNotes),
+            ("E minor", 7, Relationship.SameNotes),
+            ("A minor", 6, null),
+            ("C major", 6, null),
+            ("D major", 6, null),
+            ("D minor", 5, null),
+            ("A major", 5, null),
+            ("E major", 4, null),
+        ];
+
+        Assert.Equal(
+            expected,
+            rows.Select(row => (row.Key.Name, row.NotesShared, row.Relationship))
+        );
+        Assert.Equal(["A minor"], rows.Where(row => row.IsTag).Select(row => row.Key.Name));
+    }
+
+    [Theory]
+    [InlineData(DiatonicMode.Ionian, "F# minor")]
+    [InlineData(DiatonicMode.Dorian, "G major", "E minor")]
+    [InlineData(DiatonicMode.Phrygian, "F major", "D minor")]
+    [InlineData(DiatonicMode.Lydian, "E major", "C# minor")]
+    [InlineData(DiatonicMode.Mixolydian, "D major", "B minor")]
+    [InlineData(DiatonicMode.Aeolian, "C major")]
+    [InlineData(DiatonicMode.Locrian, "A# major", "G minor")]
+    public void Every_same_notes_key_is_at_shift_0_and_labeled(
+        DiatonicMode mode,
+        params string[] sameNotes
+    ) =>
+        Assert.Equal(
+            sameNotes,
+            Partners
+                .For(Center("A", mode))
+                .Where(row => row.Relationship is Relationship.SameNotes)
+                .Select(row => row.Key.Name)
+        );
+
+    [Theory]
+    [MemberData(nameof(Modes))]
+    public void A_source_is_its_own_first_row(DiatonicMode mode)
+    {
+        var source = Center("A", mode);
+
+        Assert.Equal(
+            (source, 0, 7, Relationship.SameKey),
+            Partners.For(source)[0] is var first
+                ? (first.Key, first.Shift, first.NotesShared, first.Relationship)
+                : default
+        );
     }
 
     [Fact]
-    public void A_narrowed_max_shift_never_drops_the_source_key_itself()
+    public void A_plain_key_keeps_the_shift_rule_on_all_24_keys()
     {
-        foreach (var key in MusicKey.AllKeys)
-            Assert.Contains(Partners.For(key, maxShift: 0), p => p.Key.Equals(key));
-    }
-
-    [Fact]
-    public void The_exact_match_scores_zero_and_the_relative_scores_a_tenth()
-    {
-        var partners = Partners.For(Key("C major"));
-
-        Assert.Equal(0, partners[0].Score);
-        Assert.Equal(Relationship.PerfectMatch, partners[0].Relationship);
-
-        Assert.Equal(0.1, partners[1].Score);
-        Assert.Equal(Relationship.Relative, partners[1].Relationship);
-        Assert.Equal("A Minor", partners[1].Key.Name);
-    }
-
-    [Fact]
-    public void Alt_shifts_are_a_fifth_either_way_and_exclude_the_primary()
-    {
-        foreach (var source in MusicKey.AllKeys)
+        foreach (var source in MusicKey.AllKeys.Select(MusicKey.CenterOf))
         {
-            foreach (var partner in Partners.For(source))
+            foreach (
+                var partner in Partners.For(source, -Partners.FarthestShift, Partners.FarthestShift)
+            )
             {
-                Assert.DoesNotContain(partner.Shift, partner.AltShifts);
-                Assert.All(partner.AltShifts, alt => Assert.InRange(alt, -6, 6));
-                // The primary is the smallest-magnitude route to the same partner.
-                Assert.All(
-                    partner.AltShifts,
-                    alt => Assert.True(Math.Abs(alt) >= partner.AbsoluteShift)
+                var landed = (partner.Key.Chromatic + partner.Shift - source.Chromatic + 12) % 12;
+                var relative = partner.Key == MusicKey.CenterOf(MusicKey.Of(source).Relative);
+
+                Assert.True(
+                    relative ? partner.Shift is 0 : landed is 0 or 5 or 7,
+                    $"{partner.Key.Name} at {partner.Shift} for {source.Name}"
                 );
             }
         }
     }
 
     [Fact]
-    public void A_negative_max_shift_is_rejected() =>
-        Assert.Throws<ArgumentOutOfRangeException>(() => Partners.For(Key("C major"), -1));
+    public void The_widest_shift_is_the_least_that_reaches_every_key_from_every_key()
+    {
+        foreach (var source in MusicKey.AllKeys.Select(MusicKey.CenterOf))
+        {
+            Assert.Equal(
+                24,
+                Partners.For(source, -Partners.WidestShift, Partners.WidestShift).Count
+            );
+            Assert.NotEqual(
+                24,
+                Partners.For(source, 1 - Partners.WidestShift, Partners.WidestShift - 1).Count
+            );
+        }
+    }
+
+    [Fact]
+    public void A_span_away_from_0_lists_keys_at_their_alt_shifts()
+    {
+        var rows = Partners.For(Center("A", DiatonicMode.Dorian), 3, 5);
+
+        Assert.NotEmpty(rows);
+        Assert.All(rows, row => Assert.InRange(row.Shift, 3, 5));
+        Assert.All(rows, row => Assert.Null(row.Relationship));
+        Assert.Contains(rows, row => row.Key.Name == "G major" && row.Shift is 5);
+    }
+
+    [Fact]
+    public void A_key_is_listed_at_its_in_range_shift_closest_to_0()
+    {
+        foreach (var row in Partners.For(Center("C", DiatonicMode.Ionian), -1, 3))
+        {
+            Assert.InRange(row.Shift, -1, 3);
+            Assert.All(
+                row.AltShifts.Where(alt => alt is >= -1 and <= 3),
+                alt => Assert.True(Math.Abs(alt) >= row.AbsoluteShift)
+            );
+        }
+    }
+
+    [Fact]
+    public void Alt_shifts_are_a_fifth_either_way_and_exclude_the_listed_one()
+    {
+        foreach (var partner in Partners.For(Center("D#", DiatonicMode.Ionian), -6, 6))
+        {
+            Assert.DoesNotContain(partner.Shift, partner.AltShifts);
+            Assert.All(partner.AltShifts, alt => Assert.InRange(alt, -6, 6));
+        }
+    }
+
+    [Fact]
+    public void A_mixed_verdict_pairs_as_its_collapse()
+    {
+        var basis = Partners.Basis(Center("A", DiatonicMode.Dorian), mixed: true);
+
+        Assert.Equal(Center("A", DiatonicMode.Aeolian), basis);
+        Assert.Equal(
+            ["A minor", "C major"],
+            Partners.For(basis).Where(row => row.NotesShared is 7).Select(row => row.Key.Name)
+        );
+    }
+
+    [Theory]
+    [InlineData(-7, 0)]
+    [InlineData(0, 7)]
+    [InlineData(2, 1)]
+    public void A_range_outside_6_or_upside_down_is_rejected(int lowest, int highest) =>
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            Partners.For(Center("C", DiatonicMode.Ionian), lowest, highest)
+        );
+
+    [Fact]
+    public void A_picked_modal_track_pairs_from_its_center()
+    {
+        Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
+
+        var modal = TestLedger
+            .FromReal()
+            .Runs.Where(run => run is { IsCollapsed: true, Mixed: false })
+            .ToList();
+
+        Assert.SkipWhen(modal.Count is 0, "The ledger holds no modal verdict.");
+
+        foreach (var run in modal)
+        {
+            var song = new LibrarySong
+            {
+                Song = run.Song,
+                Name = run.DisplayName,
+                Key = MusicKey.Of(run.Center!),
+                Run = run,
+            };
+
+            Assert.Equal(run.Center, Partners.For(song.Center!)[0].Key);
+        }
+    }
+
+    private static TonalCenter Center(string tonic, DiatonicMode mode) => new(tonic, mode);
 }
 
-public class MusicKeyTests
+public sealed class MusicKeyTests
 {
     [Theory]
     [InlineData("G# major", "G♯ Major")]
@@ -110,11 +239,23 @@ public class MusicKeyTests
     [Fact]
     public void The_ledger_spelling_round_trips()
     {
-        // Ableton's recombined keywords and keytag's verdicts are both ASCII+lowercase, so
-        // every key must survive the trip out to that form and back.
         foreach (var key in MusicKey.AllKeys)
             Assert.Equal(key, MusicKey.FromString(key.LedgerName));
     }
+
+    [Fact]
+    public void A_key_round_trips_through_a_center()
+    {
+        foreach (var key in MusicKey.AllKeys)
+            Assert.Equal(key, MusicKey.Of(MusicKey.CenterOf(key)));
+    }
+
+    [Fact]
+    public void A_modal_center_is_tagged_by_its_collapse() =>
+        Assert.Equal(
+            MusicKey.FromString("A minor"),
+            MusicKey.Of(new TonalCenter("A", DiatonicMode.Dorian))
+        );
 
     [Fact]
     public void There_are_24_distinct_keys_with_24_distinct_camelot_codes()
@@ -133,4 +274,18 @@ public class MusicKeyTests
             MusicKey.FromString("Eb minor")?.GetHashCode()
         );
     }
+
+    [Theory]
+    [InlineData("A# minor", "C# major")]
+    [InlineData("C major", "A minor")]
+    [InlineData("B minor", "D major")]
+    public void The_relative_is_the_same_notes_in_the_other_mode(string key, string relative) =>
+        Assert.Equal(MusicKey.FromString(relative), MusicKey.FromString(key)!.Relative);
+
+    [Theory]
+    [InlineData("A# minor", "A♯m")]
+    [InlineData("C# major", "D♭")]
+    [InlineData("B major", "B")]
+    public void The_wheel_names_majors_flat_and_minors_sharp(string key, string shortName) =>
+        Assert.Equal(shortName, MusicKey.FromString(key)!.ShortName);
 }

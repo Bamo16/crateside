@@ -1,0 +1,262 @@
+@using Crateside.Core.Ledger
+@using Crateside.Core.Library
+@using Crateside.Core.Pairing
+
+<div class="working-on">
+    <span class="caps">Working on</span>
+
+    @if (Track is { } track && !_searching)
+    {
+        <div class="card" role="button" tabindex="0" @onclick="StartSearch" @onkeydown="OnCardKey">
+            <div class="card-head">
+                <span class="song">@track.Name</span>
+                @if (track.IsStaged)
+                {
+                    <span class="staged" title="In Staging, not in the library yet">staged</span>
+                }
+                <span class="change">Change ▾</span>
+            </div>
+            <span class="facts">
+                @if (track.Center is { } center)
+                {
+                    <span class="mono key">@(ModeText.Arrow(center, track.Run?.Mixed is true) ?? ModeText.Named(center))</span>
+                    <span class="mono camelot">@MusicKey.Of(center).CamelotCode</span>
+                }
+                else
+                {
+                    <span class="mono key">no key</span>
+                }
+            </span>
+            <span class="facts">
+                @if (Shown is { } shown)
+                {
+                    <span class="mono figure @(shown.IsApproximate ? "approx" : null)">@shown.Text</span>
+                    <span class="mono unit">BPM</span>
+                    <span class="tempo-note">@shown.Brief</span>
+                }
+                else
+                {
+                    <span class="tempo-note">not warped</span>
+                }
+            </span>
+            <span class="meta">
+                @string.Join(" · ", new[] { Genres, Familiarity }.OfType<string>())
+                @if (DetailsHref is { } href)
+                {
+                    @(Genres is null && Familiarity is null ? null : " · ")<a href="@href" @onclick:stopPropagation="true">Track details</a>
+                }
+            </span>
+        </div>
+    }
+    else
+    {
+        <div class="search-wrap">
+            <input type="text" class="search" placeholder="⌕ Search warped and staged tracks" @ref="_box"
+                   @oninput="OnSearch" @onkeydown="Navigate" @onblur="Cancel" />
+
+            @if (_matches.Count > 0)
+            {
+                <ul class="matches">
+                    @for (var i = 0; i < _matches.Count; i++)
+                    {
+                        var song = _matches[i];
+
+                        <li class="@(i == _highlight ? "highlight" : null)" @onmousedown="() => Pick(song)">
+                            <span class="song">@song.Name</span>
+                            @if (song.IsStaged)
+                            {
+                                <span class="staged" title="In Staging, not in the library yet">staged</span>
+                            }
+                            @if (song.Bpm is { } tempo)
+                            {
+                                <TempoFigure Tempo="tempo" />
+                            }
+                            <span class="mono quiet">@song.Key?.CamelotCode</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+
+    <div class="by-hand">
+        <span class="caps">@(Track is null ? "Or by hand" : "From the track")</span>
+        <span class="key-pick">
+            <label class="tonic">
+                <span>Tonic</span>
+                <select class="mono" value="@(Center?.Tonic ?? string.Empty)" @onchange="PickTonic">
+                    <option value="">—</option>
+                    @foreach (var tonic in TonalCenter.Tonics)
+                    {
+                        <option value="@tonic">@tonic.Replace('#', '♯')</option>
+                    }
+                </select>
+            </label>
+            <label class="mode">
+                <span>Mode</span>
+                <select value="@Mode" @onchange="PickMode">
+                    <option value="@DiatonicMode.Ionian">major</option>
+                    <option value="@DiatonicMode.Aeolian">minor</option>
+                    <optgroup label="Modes">
+                        @foreach (var mode in Modes)
+                        {
+                            <option value="@mode">@mode</option>
+                        }
+                    </optgroup>
+                </select>
+            </label>
+        </span>
+        <label>
+            <span>BPM</span>
+            <span class="bpm-field">
+                @if (Shown is { IsApproximate: true })
+                {
+                    <span class="tilde mono">~</span>
+                }
+                <input type="text" class="bpm mono @(IsUnreadable ? "unreadable" : null)" placeholder="e.g. 128"
+                       value="@BpmText" @oninput="e => OnBpm.InvokeAsync(e.Value as string ?? string.Empty)" />
+            </span>
+        </label>
+        <span class="hint">
+            @(Track is null ? "Or pick a warped or staged track above."
+              : Shown is { IsApproximate: true } ? "The tempo drifts, so every figure here is approximate. Typing in the field drops the track."
+              : "The verdict's center, mode included. Editing any of these drops the track and keeps what you picked.")
+        </span>
+    </div>
+</div>
+
+@code {
+    private const int MatchesShown = 8;
+
+    private static readonly DiatonicMode[] Modes =
+    [
+        DiatonicMode.Dorian,
+        DiatonicMode.Phrygian,
+        DiatonicMode.Lydian,
+        DiatonicMode.Mixolydian,
+        DiatonicMode.Locrian,
+    ];
+
+    private string _search = string.Empty;
+    private IReadOnlyList<LibrarySong> _matches = [];
+    private int _highlight;
+    private bool _searching;
+    private bool _focus;
+    private ElementReference _box;
+    private DiatonicMode _mode = DiatonicMode.Ionian;
+
+    [Parameter]
+    public LibrarySong? Track { get; set; }
+
+    /// <summary>Warped songs to pick from, and staged ones.</summary>
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<LibrarySong> Songs { get; set; }
+
+    [Parameter]
+    public string? Familiarity { get; set; }
+
+    [Parameter]
+    public string? DetailsHref { get; set; }
+
+    /// <summary>The center the picker shows: the track's, as it pairs, or the one picked.</summary>
+    [Parameter]
+    public TonalCenter? Center { get; set; }
+
+    [Parameter]
+    public string BpmText { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<LibrarySong> OnPick { get; set; }
+
+    [Parameter]
+    public EventCallback<TonalCenter?> OnCenter { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnBpm { get; set; }
+
+    private string? Genres => Track is { Genres: [_, ..] genres } ? string.Join(", ", genres) : null;
+
+    private DiatonicMode Mode => Center?.Mode ?? _mode;
+
+    private FormattedTempo? Shown => Track?.Bpm is { } tempo ? TempoFormat.Format(tempo) : null;
+
+    private bool IsUnreadable => !string.IsNullOrWhiteSpace(BpmText) && !Core.Pairing.RePitch.TryParseBpm(BpmText, out _);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focus)
+            return;
+
+        _focus = false;
+        await _box.FocusAsync();
+    }
+
+    private Task PickTonic(ChangeEventArgs e) =>
+        OnCenter.InvokeAsync(e.Value is string { Length: > 0 } tonic ? new TonalCenter(tonic, Mode) : null);
+
+    private Task PickMode(ChangeEventArgs e)
+    {
+        _mode = Enum.Parse<DiatonicMode>((string)e.Value!);
+
+        return Center is null ? Task.CompletedTask : OnCenter.InvokeAsync(Center with { Mode = _mode });
+    }
+
+    private void StartSearch()
+    {
+        _searching = true;
+        _focus = true;
+        _search = string.Empty;
+        _matches = [.. Songs.Take(MatchesShown)];
+        _highlight = 0;
+    }
+
+    private void OnCardKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ")
+            StartSearch();
+    }
+
+    private void OnSearch(ChangeEventArgs e)
+    {
+        _search = e.Value?.ToString() ?? string.Empty;
+        _highlight = 0;
+        _matches = string.IsNullOrWhiteSpace(_search)
+            ? []
+            : [.. Songs.Where(song => song.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase)).Take(MatchesShown)];
+    }
+
+    private async Task Navigate(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowDown" when _matches.Count > 0:
+                _highlight = (_highlight + 1) % _matches.Count;
+                break;
+            case "ArrowUp" when _matches.Count > 0:
+                _highlight = (_highlight - 1 + _matches.Count) % _matches.Count;
+                break;
+            case "Enter" when _matches.Count > 0:
+                await Pick(_matches[_highlight]);
+                break;
+            case "Escape":
+                Cancel();
+                break;
+        }
+    }
+
+    /// <summary>Closes the search, back to the track already picked if there is one.</summary>
+    private void Cancel()
+    {
+        _matches = [];
+        _searching = false;
+    }
+
+    private async Task Pick(LibrarySong song)
+    {
+        _search = string.Empty;
+        _matches = [];
+        _searching = false;
+
+        await OnPick.InvokeAsync(song);
+    }
+}

@@ -17,4 +17,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+
+  <!-- Doc comments are written to files for the API's OpenAPI summaries (#167). Nothing requires
+       one, and a <param> is written only where it says what the name cannot (CLAUDE.md), so a
+       missing comment or param tag is not a fault. NoWarn rather than .editorconfig, which cannot
+       reach Razor's generated code. -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+  </PropertyGroup>
 </Project>

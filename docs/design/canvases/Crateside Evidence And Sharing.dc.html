@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evidence and sharing</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&amp;display=swap" rel="stylesheet">
+<style>body{margin:0;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif}a{color:#ece7dc;text-decoration:none}a:hover{color:#fff}button{cursor:pointer;font-family:inherit;background:none;border:0;color:inherit;padding:0}.cap{font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)}.m{font-family:'IBM Plex Mono',monospace}.id{font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px}.note{display:flex;flex-direction:column;gap:14px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7)}.note p{margin:0;text-wrap:pretty}.note b{color:#ece7dc;font-weight:500}.ob{white-space:nowrap;font:500 12.5px 'IBM Plex Sans',sans-serif;padding:5px 12px;border-radius:6px;background:#23211a;border:1px solid rgba(255,255,255,.22);color:#ece7dc}.chip{white-space:nowrap;font:500 10.5px/16px 'IBM Plex Mono',monospace;padding:0 6px;border-radius:4px;border:1px solid rgba(236,231,220,.3);color:rgba(236,231,220,.75);width:fit-content}</style>
+</helmet>
+
+<section style="padding:28px;display:flex;flex-direction:column;gap:56px;width:1720px;box-sizing:border-box;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif">
+  <header style="display:flex;flex-direction:column;gap:8px;max-width:1040px">
+    <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Brief 20 · issue #150 · ADR 0064 · built against 43ca652</div>
+    <h1 style="margin:0;font:600 28px 'IBM Plex Sans',sans-serif">Track details around the judge's text, a key strip and sharing</h1>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty"><strong style="color:#ece7dc;font-weight:500">The evidence panel goes back to two even columns.</strong> On the left is the argument: <i>Why this key</i>, <i>Considered</i>, <i>Human sources</i> and a folded <i>First pass: withheld</i>. On the right is the data: the detectors, the <i>Tonic check</i>, the folded progression and <i>Tempo</i>. Windows leave the panel. Each one opens from its band on the timeline, in a drawer under the warp view. A <strong style="color:#ece7dc;font-weight:500">key strip</strong> becomes the warp view's last lane and replaces <i>Key flicker</i>, with the chord lane and a playhead given room below it. <strong style="color:#ece7dc;font-weight:500">Share</strong> sits at the head of the evidence panel and draws its own 1200 px card.</p>
+    <p style="margin:0;font:400 12.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);text-wrap:pretty">The detector readings, windows and recorded text for the two named tracks come from the brief's screenshots. The new-style texts are mine, rewritten to ADR 0064's budgets from the judge's own arguments, so they are not the judge's words. The withheld track, the song with sections, Takyon's key flicker after its tenth change and Starry Eyed's six changes are all invented.</p>
+  </header>
+
+  <!-- 1a -->
+  <div id="1a" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span class="id">1a</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">The evidence panel, balanced · live: switch the verdict, open Share, the first pass and the progression</span></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">Verdict</span>
+      <sc-for list="{{ vPills }}" as="p" hint-placeholder-count="4"><button onClick="{{ p.go }}" style="white-space:nowrap;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;border:1px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }}">{{ p.label }}</button></sc-for>
+    </div>
+    <div style="display:grid;grid-template-columns:1080px minmax(0,1fr);gap:28px;align-items:start">
+      <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:26px 28px 28px;display:flex;flex-direction:column;gap:22px">
+        <div style="display:flex;align-items:flex-start;gap:16px">
+          <div style="display:flex;flex-direction:column;gap:4px;flex:1">
+            <h3 style="margin:0;font:600 17px 'IBM Plex Sans',sans-serif">{{ P.head }}</h3>
+            <span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ P.sub }}<sc-if value="{{ P.winLink }}" hint-placeholder-val="{{ false }}"><span style="color:rgba(236,231,220,.4)"> · </span><a href="#1b" style="color:rgba(236,231,220,.75);text-decoration:underline;text-underline-offset:3px">{{ P.winLink }}</a></sc-if></span>
+          </div>
+          <div style="position:relative;display:flex;align-items:center;gap:10px">
+            <sc-if value="{{ shared }}" hint-placeholder-val="{{ false }}"><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">✓ {{ shared }}</span></sc-if>
+            <button onClick="{{ toggleMenu }}" aria-haspopup="menu" aria-expanded="{{ menuOpen }}" class="ob" style="display:inline-flex;align-items:center;gap:7px;background:{{ shareBg }}"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M7 1.5v7.5M4 4.5l3-3 3 3M2.5 7.5v4.5h9V7.5"></path></svg>Share<span style="font-size:10px;color:rgba(236,231,220,.6)">▾</span></button>
+            <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+              <div role="menu" style="position:absolute;right:0;top:38px;z-index:5;width:300px;box-sizing:border-box;padding:6px;background:#23211a;border:1px solid rgba(255,255,255,.16);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.45);display:flex;flex-direction:column">
+                <sc-for list="{{ menuItems }}" as="i" hint-placeholder-count="3"><button role="menuitem" onClick="{{ i.go }}" style="text-align:left;display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:5px;background:{{ i.bg }}"><span style="font:500 13px 'IBM Plex Sans',sans-serif">{{ i.t }}</span><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.55)">{{ i.h }}</span></button></sc-for>
+                <div style="margin:4px 4px 2px;padding:8px 6px 2px;border-top:1px solid rgba(255,255,255,.08);font:400 11.5px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">The card is 1200 px wide, on the app's dark palette. Its text is the verdict's own, as on this page.</div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:44px;align-items:start">
+          <div style="display:flex;flex-direction:column;gap:24px">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span class="cap">{{ P.whyLabel }}</span>
+              <sc-if value="{{ P.oldNote }}" hint-placeholder-val="{{ false }}"><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.45)">{{ P.oldNote }}</span></sc-if>
+              <sc-for list="{{ P.why }}" as="p" hint-placeholder-count="2"><p style="margin:0;font:400 14.5px/1.62 'IBM Plex Sans',sans-serif;max-width:62ch;text-wrap:pretty"><sc-for list="{{ p.segs }}" as="s"><span style="font-family:{{ s.ff }};font-size:{{ s.fs }};font-variant-caps:{{ s.fv }};letter-spacing:{{ s.ls }}">{{ s.t }}</span></sc-for></p></sc-for>
+            </div>
+            <sc-if value="{{ P.hasCons }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <span class="cap">{{ P.consLabel }}</span>
+                <sc-for list="{{ P.cons }}" as="c" hint-placeholder-count="2"><div style="display:grid;grid-template-columns:92px minmax(0,1fr);gap:12px;align-items:baseline;padding-top:9px;border-top:1px solid rgba(255,255,255,.06)"><span style="font:500 13.5px 'IBM Plex Mono',monospace;white-space:nowrap">{{ c.k }}</span><span style="font:400 13.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty"><sc-for list="{{ c.segs }}" as="s"><span style="font-family:{{ s.ff }};font-size:{{ s.fs }};font-variant-caps:{{ s.fv }};letter-spacing:{{ s.ls }};color:{{ s.ink }}">{{ s.t }}</span></sc-for></span></div></sc-for>
+              </div>
+            </sc-if>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span class="cap">Human sources</span>
+              <p style="margin:0;font:400 13.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:62ch;text-wrap:pretty">{{ P.human }}</p>
+            </div>
+            <sc-if value="{{ P.firstPass }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:10px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">
+                <button onClick="{{ toggleFold }}" aria-expanded="{{ foldOpen }}" style="text-align:left;display:flex;align-items:baseline;gap:8px;font:500 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span style="font-size:10px;width:10px">{{ foldMark }}</span>First pass: withheld<span style="font-weight:400;color:rgba(236,231,220,.5)">· asked for 3 windows · 21 Oct, 12:01 AM</span></button>
+                <sc-if value="{{ foldOpen }}" hint-placeholder-val="{{ false }}"><p style="margin:0 0 0 18px;font:400 13px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:62ch;text-wrap:pretty"><sc-for list="{{ firstPassSegs }}" as="s"><span style="font-family:{{ s.ff }};font-size:{{ s.fs }};font-variant-caps:{{ s.fv }};letter-spacing:{{ s.ls }}">{{ s.t }}</span></sc-for></p></sc-if>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:24px">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span class="cap">What the detectors reported</span>
+              <div style="display:grid;grid-template-columns:84px 88px 50px 70px minmax(0,1fr);column-gap:10px;padding-bottom:4px;font:400 11px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4)"><span>Detector</span><span>Key</span><span style="text-align:right">Score</span><span>Band</span><span>Runner-up</span></div>
+              <sc-for list="{{ P.dets }}" as="d" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:84px 88px 50px 70px minmax(0,1fr);column-gap:10px;align-items:center;height:32px;border-top:1px solid rgba(255,255,255,.06);white-space:nowrap"><span style="font:500 13.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.85)">{{ d.n }}</span><span style="font:600 13.5px 'IBM Plex Mono',monospace">{{ d.k }}</span><span style="font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75);text-align:right">{{ d.sc }}</span><span><sc-if value="{{ d.chip }}" hint-placeholder-val="{{ false }}"><span class="chip" title="{{ d.tip }}">{{ d.chip }}</span></sc-if></span><span style="font:400 12.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6);overflow:hidden;text-overflow:ellipsis">{{ d.ru }}</span></div></sc-for>
+              <span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);padding-top:6px;border-top:1px solid rgba(255,255,255,.06)">{{ P.backer }}</span>
+            </div>
+            <sc-if value="{{ P.hasTonic }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <span class="cap">Tonic check</span>
+                <p style="margin:0;font:400 14.5px/1.62 'IBM Plex Sans',sans-serif;text-wrap:pretty"><sc-for list="{{ P.tonic }}" as="s"><span style="font-family:{{ s.ff }};font-size:{{ s.fs }};font-variant-caps:{{ s.fv }};letter-spacing:{{ s.ls }}">{{ s.t }}</span></sc-for></p>
+              </div>
+            </sc-if>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:baseline;gap:10px"><span class="cap">Chord progression</span><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.45)">{{ P.progCount }}</span><button onClick="{{ toggleProg }}" style="margin-left:auto;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);text-decoration:underline;text-underline-offset:3px">{{ progBtn }}</button></div>
+              <sc-if value="{{ progFolded }}" hint-placeholder-val="{{ true }}"><div style="font:500 13px/1.9 'IBM Plex Mono',monospace;text-wrap:pretty"><sc-for list="{{ P.runs }}" as="r"><span style="white-space:nowrap">{{ r.c }}<span style="color:rgba(236,231,220,.5);font-weight:400">{{ r.x }}</span></span><span style="color:rgba(236,231,220,.3)">{{ r.sep }}</span></sc-for></div></sc-if>
+              <sc-if value="{{ progOpen }}" hint-placeholder-val="{{ false }}"><div style="font:400 12.5px/1.9 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75);text-wrap:pretty">{{ P.progAll }}</div></sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span class="cap">Tempo</span>
+              <div style="display:flex;align-items:baseline;gap:8px"><span style="font:600 20px 'IBM Plex Mono',monospace">{{ P.tFig }}</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ P.tNote }}</span></div>
+              <sc-for list="{{ P.tRows }}" as="t" hint-placeholder-count="1"><div style="display:grid;grid-template-columns:150px 64px 1fr;gap:10px;align-items:baseline;padding-top:7px;border-top:1px solid rgba(255,255,255,.06)"><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ t.l }}</span><span style="font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75);text-align:right">{{ t.f }}</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ t.r }}</span></div></sc-for>
+            </div>
+            <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.45)">{{ P.recorded }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="note">
+        <p><b>Left is the argument, right is the evidence.</b> Without the windows, the right column is three short blocks plus Tempo, and the left is about 100 words plus a short list. Both end near the same height on a new verdict (Starry Eyed, Takyon). An old verdict still runs long on the left, but nothing on the right grows to match it, and nothing stacks there any more.</p>
+        <p><b>Considered sits under Why this key</b>, with each key in mono in a 92 px column and its sentence beside it. A reader asks "why not G♯ minor?" after reading the why, so it goes there, not by the detectors. A WITHHELD heads it <b>Still open</b>, because those keys are not rejected. An old run with no <i>candidates</i> draws no list.</p>
+        <p><b>First pass: withheld</b> folds at the foot of the left column with its date. It is drawn once, from the run, never per window. Open, it is quieter than the verdict's own text (13 px, <span class="m">--text-60</span>) because it is superseded reasoning.</p>
+        <p><b>The detector row is one line at 494 px</b>: Detector 84 · Key 88 · Score 50 · Band 70 · Runner-up. Column heads replace the inline <i>runner-up</i> word, which would cost a column of width on every row. The heads say <i>Score</i>, not <i>r</i>, because madmom's figure is not an r. The band chip names the band only. Its full text goes in the tooltip: <i>Unreliable band, r below 0.70: distrust</i>. I also gave the other bands a chip (<span class="m">r &gt; 0.75</span>, <span class="m">0.70–0.75</span>), because <i>watch for a relative-key swap</i> was useful on Starry Eyed. None is colored: a band is a fact, not a state.</p>
+        <p><b>The progression folds its loops</b>, with the count (<span class="m">×18</span>) at <span class="m">--text-50</span> and the separators at <span class="m">--text-30</span>, so the runs read first. <i>Show all 70</i> opens the plain list, which is what the judge saw.</p>
+        <p><b>Typesetting is ADR 0064's</b>: keys, chords and figures in Plex Mono at .92 em so they sit on the Sans x-height, and <span style="font-variant-caps:all-small-caps;letter-spacing:.05em">MEDIUM</span> in small caps with no color. Prose spells keys in full (<span class="m">E major</span>), and headings follow: <i>Why E major</i>, not today's <i>Why E maj</i>. The band keeps <span class="m">E maj</span>.</p>
+        <p><b>Share</b> is the panel's one button, at the head of what it shares. The verdict band stays four facts. Its <i>Why E maj ↓</i> link already brings you here, and the card holds this panel's content, not the band's. The menu says what each action makes. Afterwards the button reads <i>✓ Card copied</i> for a few seconds, in neutral ink: it is an acknowledgment, not <i>done</i> in the green sense.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1b -->
+  <div id="1b" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span class="id">1b</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">The warp view as the track's timeline: windows open from their bands, a key strip, room for chords and playback · live: click a window's tag</span></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">Canvas state</span>
+      <sc-for list="{{ tPills }}" as="p" hint-placeholder-count="6"><button onClick="{{ p.go }}" style="white-space:nowrap;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;border:1px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }}">{{ p.label }}</button></sc-for>
+    </div>
+    <div style="display:grid;grid-template-columns:1100px minmax(0,1fr);gap:28px;align-items:start">
+      <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:24px 28px 26px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;min-height:30px">
+          <span class="cap">Warp</span>
+          <span style="white-space:nowrap;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ T.gist }}</span>
+          <span class="ob" style="font-size:12px;padding:3px 10px">Judge again</span>
+          <sc-if value="{{ zoomed }}" hint-placeholder-val="{{ false }}"><span style="margin-left:auto;font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">{{ T.span }}</span><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);padding:0 4px">‹ ›</span></sc-if>
+          <div style="display:flex;gap:6px;margin-left:{{ pillsMl }}"><button onClick="{{ zWhole }}" style="white-space:nowrap;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;border:1px solid {{ zp.wbd }};background:{{ zp.wbg }};color:{{ zp.wfg }}">Whole track</button><span style="white-space:nowrap;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.14);color:rgba(236,231,220,.6)">32 bars</span><button onClick="{{ z8 }}" style="white-space:nowrap;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;border:1px solid {{ zp.ebd }};background:{{ zp.ebg }};color:{{ zp.efg }}">8 bars</button></div>
+        </div>
+        <sc-if value="{{ zoomed }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:200px 832px;column-gap:12px;margin-bottom:6px"><span style="font:400 11px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4);align-self:center">Whole track</span><div style="position:relative;height:16px;border-radius:3px;background:rgba(255,255,255,.04)"><span style="position:absolute;top:0;bottom:0;left:{{ T.ovX }};width:{{ T.ovW }};border:1px solid rgba(236,231,220,.6);border-radius:3px;background:rgba(236,231,220,.1)"></span></div></div>
+        </sc-if>
+
+        <div style="display:grid;grid-template-columns:200px 832px;column-gap:12px;position:relative">
+          <div style="height:44px;box-sizing:border-box;display:flex;align-items:flex-end;padding-bottom:5px;gap:8px">
+            <sc-if value="{{ room }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:8px"><button aria-label="Play" style="width:28px;height:28px;border-radius:50%;border:1px solid rgba(236,231,220,.45);display:inline-flex;align-items:center;justify-content:center"><svg width="10" height="11" viewBox="0 0 10 11" aria-hidden="true"><path d="M1 0.5L9.5 5.5L1 10.5Z" fill="#ece7dc"></path></svg></button><span style="font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">0:47.20 <span style="color:rgba(236,231,220,.4)">/ 2:48</span></span></span></sc-if>
+            <sc-if value="{{ noRoom }}" hint-placeholder-val="{{ true }}"><span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Bar</span></sc-if>
+          </div>
+          <div style="position:relative;width:832px;height:44px;overflow:hidden">
+            <svg width="832" height="44" style="display:block;position:absolute;left:0;top:0"><path d="{{ T.ruler }}" stroke="rgba(236,231,220,.35)"></path></svg>
+            <sc-for list="{{ T.nums }}" as="b" hint-placeholder-count="6"><span style="position:absolute;left:{{ b.px }};top:22px;font:400 10px/12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4);white-space:nowrap">{{ b.n }}</span></sc-for>
+            <sc-for list="{{ T.tags }}" as="w" hint-placeholder-count="3"><button onClick="{{ w.go }}" aria-expanded="{{ w.open }}" style="position:absolute;left:{{ w.px }};top:2px;height:16px;box-sizing:border-box;padding:0 5px;border-radius:3px;background:{{ w.bg }};border:1px {{ w.bs }} {{ w.bd }};color:{{ w.fg }};font:500 10.5px/14px 'IBM Plex Mono',monospace;white-space:nowrap">{{ w.tag }}</button></sc-for>
+          </div>
+          <div style="height:30px;box-sizing:border-box;display:flex;align-items:center;font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);border-top:1px solid rgba(255,255,255,.06)">Tempo from the markers<span style="font:600 12.5px 'IBM Plex Mono',monospace;color:#ece7dc;margin-left:6px">{{ T.tempo }}</span></div>
+          <svg width="832" height="30" style="display:block;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.06)"><line x1="0" x2="832" y1="15" y2="15" stroke="rgba(236,231,220,.75)" stroke-width="1.5"></line></svg>
+          <sc-if value="{{ T.off }}" hint-placeholder-val="{{ true }}">
+            <div style="height:72px;box-sizing:border-box;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;gap:2px"><span style="font:500 12.5px 'IBM Plex Sans',sans-serif">Off the grid</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">holds</span></div>
+            <svg width="832" height="72" style="display:block;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.06)"><line x1="0" x2="832" y1="36" y2="36" stroke="rgba(236,231,220,.25)" stroke-dasharray="3 3"></line><path d="{{ T.offLine }}" fill="none" stroke="rgba(236,231,220,.35)"></path><sc-for list="{{ T.offDots }}" as="o"><circle cx="{{ o.x }}" cy="{{ o.y }}" r="2.4" fill="rgba(236,231,220,.8)"></circle></sc-for></svg>
+          </sc-if>
+          <sc-for list="{{ T.lanes }}" as="l" hint-placeholder-count="2">
+            <div style="height:64px;padding:7px 10px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.06)"><span style="font:500 12.5px 'IBM Plex Sans',sans-serif;white-space:nowrap">{{ l.name }}</span><span style="width:fit-content;white-space:nowrap;font:500 10.5px 'IBM Plex Sans',sans-serif;padding:1px 7px;border-radius:999px;background:{{ l.bg }};color:{{ l.fg }};border:1px {{ l.bs }} {{ l.bd }}">{{ l.chip }}</span></div>
+            <svg width="832" height="64" style="display:block;box-sizing:border-box;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.06)"><path d="{{ l.wave }}" fill="rgba(236,231,220,.42)"></path></svg>
+          </sc-for>
+          <div style="height:52px;box-sizing:border-box;padding:6px 0 0;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:1px"><span style="font:500 12.5px 'IBM Plex Sans',sans-serif">Key</span><span style="font:400 10.5px/13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.45)">{{ T.keyGist }}</span><sc-if value="{{ T.unplaced }}" hint-placeholder-val="{{ false }}"><span style="font:400 10.5px/13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">{{ T.unplaced }}</span></sc-if></div>
+          <div style="position:relative;width:832px;height:52px;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.1)">
+            <svg width="832" height="51" style="display:block;position:absolute;left:0;top:0">
+              <sc-for list="{{ T.raw }}" as="r"><rect x="{{ r.x }}" y="30" width="{{ r.w }}" height="17" fill="rgba(236,231,220,{{ r.a }})"></rect><line x1="{{ r.x }}" x2="{{ r.x }}" y1="44" y2="47" stroke="rgba(236,231,220,.3)"></line></sc-for>
+              <sc-for list="{{ T.kb }}" as="k"><rect x="{{ k.x }}" y="3.5" width="{{ k.w }}" height="44" rx="3" fill="rgba(236,231,220,{{ k.fa }})" stroke="rgba(236,231,220,.55)"></rect></sc-for>
+            </svg>
+            <sc-for list="{{ T.kbl }}" as="k"><span style="position:absolute;left:{{ k.px }};top:8px;font:500 11.5px/14px 'IBM Plex Mono',monospace;white-space:nowrap">{{ k.t }}</span></sc-for>
+            <sc-for list="{{ T.rawl }}" as="r"><span style="position:absolute;left:{{ r.px }};top:31px;font:400 9.5px/14px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.42);white-space:nowrap">{{ r.t }}</span></sc-for>
+          </div>
+          <sc-if value="{{ room }}" hint-placeholder-val="{{ false }}">
+            <div style="height:40px;box-sizing:border-box;padding-top:6px;border-top:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;gap:1px"><span style="font:500 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Chords</span><span style="font:400 10.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4)">with playback · #105</span></div>
+            <div style="height:40px;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.06);padding:5px 0"><div style="height:100%;box-sizing:border-box;border:1px dashed rgba(236,231,220,.22);border-radius:3px;display:flex;align-items:center;justify-content:center;font:400 11px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4)">one detector's chords over time, as blocks with their symbols · detector chosen later</div></div>
+          </sc-if>
+          <div></div>
+          <div style="position:relative;width:832px;height:22px;border-top:1px solid rgba(255,255,255,.06)"><sc-for list="{{ T.times }}" as="t" hint-placeholder-count="6"><span style="position:absolute;left:{{ t.px }};top:4px;font:400 10.5px/13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">{{ t.s }}</span></sc-for></div>
+          <svg width="832" height="{{ T.totalH }}" style="position:absolute;left:212px;top:0;pointer-events:none">
+            <sc-for list="{{ T.bands }}" as="w"><rect x="{{ w.x }}" y="44.5" width="{{ w.w }}" height="{{ w.h }}" fill="{{ w.fill }}" stroke="{{ w.bd }}" stroke-dasharray="{{ w.dash }}"></rect></sc-for>
+            <sc-if value="{{ room }}" hint-placeholder-val="{{ false }}"><line x1="{{ T.ph }}" x2="{{ T.ph }}" y1="20" y2="{{ T.phEnd }}" stroke="#ece7dc" stroke-width="1"></line><path d="{{ T.phHead }}" fill="#ece7dc"></path></sc-if>
+          </svg>
+        </div>
+
+        <sc-if value="{{ drawer }}" hint-placeholder-val="{{ false }}">
+          <div style="position:relative;margin-top:16px">
+            <svg width="16" height="9" style="position:absolute;left:{{ D.caret }};top:-8px" aria-hidden="true"><path d="M0 9L8 1L16 9" fill="#1b1a15" stroke="rgba(255,255,255,.16)"></path><path d="M1 9.5H15" stroke="#1b1a15" stroke-width="2"></path></svg>
+            <div role="region" aria-label="{{ D.label }}" style="display:grid;grid-template-columns:250px minmax(0,1fr) auto;gap:24px;padding:16px 18px;background:#1b1a15;border:1px solid rgba(255,255,255,.16);border-radius:8px">
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <span style="display:flex;align-items:center;gap:8px"><span style="font:500 10px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border-radius:4px;color:{{ D.whoFg }};background:{{ D.whoBg }};border:1px {{ D.bs }} {{ D.whoBd }}">{{ D.who }}</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">{{ D.label }}</span></span>
+                <span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">{{ D.span }}</span>
+                <p style="margin:2px 0 0;font:400 13.5px/1.5 'IBM Plex Sans',sans-serif;text-wrap:pretty"><sc-for list="{{ D.why }}" as="s"><span style="font-family:{{ s.ff }};font-size:{{ s.fs }}">{{ s.t }}</span></sc-for></p>
+                <span style="font:400 12px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.55);text-wrap:pretty"><sc-for list="{{ D.sect }}" as="s"><span style="font-family:{{ s.ff }};font-size:{{ s.fs }}">{{ s.t }}</span></sc-for></span>
+              </div>
+              <div style="display:flex;flex-direction:column">
+                <div style="display:grid;grid-template-columns:84px 88px 50px 70px minmax(0,1fr);column-gap:10px;padding-bottom:4px;font:400 11px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4)"><span>Detector</span><span>Key</span><span style="text-align:right">Score</span><span>Band</span><span>Runner-up</span></div>
+                <sc-for list="{{ D.reads }}" as="d" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:84px 88px 50px 70px minmax(0,1fr);column-gap:10px;align-items:center;height:30px;border-top:1px solid rgba(255,255,255,.06);white-space:nowrap"><span style="font:500 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.85)">{{ d.n }}</span><span style="font:600 13px 'IBM Plex Mono',monospace">{{ d.k }}</span><span style="font:400 12.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75);text-align:right">{{ d.sc }}</span><span><sc-if value="{{ d.chip }}" hint-placeholder-val="{{ false }}"><span class="chip" title="{{ d.tip }}">{{ d.chip }}</span></sc-if></span><span style="font:400 12.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">{{ d.ru }}</span></div></sc-for>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px">
+                <button onClick="{{ closeWin }}" aria-label="Close the window's readings" style="font:400 16px/1 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.55);padding:2px 4px">×</button>
+                <span style="display:flex;align-items:center;gap:6px;margin-top:auto"><button onClick="{{ prevWin }}" aria-label="Previous window" class="ob" style="padding:2px 9px;font-size:12px">‹</button><span style="font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5);white-space:nowrap">{{ D.pos }}</span><button onClick="{{ nextWin }}" aria-label="Next window" class="ob" style="padding:2px 9px;font-size:12px">›</button></span>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+      <div class="note">
+        <p><b>A window opens from its tag.</b> The tag on the ruler is a button. Clicking it fills the tag, strengthens its band in every row, and opens one drawer under the timeline, with a caret at the band's center. The drawer holds the window's label and span, its one-sentence why, what it became (<i>→ section Chorus: E minor</i> or <i>→ no section</i>) and its readings in the panel's detector row. <span class="m">‹ ›</span> step through the windows and × or Esc closes it. Only one is open at a time, so the page never grows by three tables.</p>
+        <p><b>Under the timeline, not beside it.</b> The warp view already spends the full column width, and a drawer beside it would squeeze the plot. A drawer under it keeps the plot's 832 px and lines the caret up with the band. The selected lane's detail (file, seven facts, the two controls) still follows below, unchanged.</p>
+        <p><b>The key strip is the last row before the time axis</b>, 52 px with a slightly stronger top rule, because it describes the song rather than a stem. Its bands are the verdict's centers: outlined boxes with the short key at <span class="m">--text</span>. A single center is one band across the track. The <b>raw running estimate</b> is a 17 px underlay along the strip's foot. Each change is a block shaded by its r (alpha r × 0.22, at most .18), with a 3 px tick where it starts. A change is labeled only where its block is 40 px or wider, at 9.5 px <span class="m">--text-40</span>. Its title gives the rest: <span class="m">0:03.39 · E min · r 0.36</span>. So zoomed out it is texture, and at 8 bars it reads change by change, for the judge's eye.</p>
+        <p><b>A section is placed only where its time is known.</b> The ledger's <span class="m">Section</span> has a label and a center but no times (ADR 0064 leaves timestamps undecided). A section that came from a window takes the window's span. The primary center fills everything else. A section with no time is not drawn: the gutter names it (<span class="m">bridge · C Lyd: no time given</span>). That is the invented <i>Sections</i> state. Without this rule the strip would invent placements.</p>
+        <p><b>Takyon at whole track</b> shows why the strip earns its place. One band says B minor, while the faint underlay reads E minor from 0:21 to 1:57. That is the same tension <i>Why this key</i> argues, now visible on the timeline.</p>
+        <p><b>Room for what comes next</b>: the chord lane goes under the key strip, the same width, its blocks labeled like the key bands. The transport takes the ruler's gutter, the one empty cell at the top left: a 28 px play button and <span class="m">0:47.20 / 2:48</span>, with <i>Bar</i> moving into the tick labels. The playhead is a 1 px <span class="m">--text</span> line with a head on the ruler, crossing every row. It is not teal, because playing is not the machine working. The zoom pills stay where they are.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1c -->
+  <div id="1c" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><span class="id">1c</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">The share card: Copy image and Save image draw this, 1200 px wide · shown full size and at preview size</span></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">Card</span>
+      <sc-for list="{{ cPills }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.go }}" style="white-space:nowrap;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;border:1px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }}">{{ p.label }}</button></sc-for>
+    </div>
+    <div style="display:flex;gap:28px;align-items:flex-start">
+      <sc-for list="{{ copies }}" as="cp" hint-placeholder-count="2">
+        <div style="display:flex;flex-direction:column;gap:14px;width:{{ cp.colW }}">
+          <sc-if value="{{ cp.small }}" hint-placeholder-val="{{ false }}"><span style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">At 36%, about the width a chat gives an image in a message</span></sc-if>
+          <div style="width:{{ cp.wrapW }};height:{{ cp.wrapH }};overflow:hidden;border-radius:{{ cp.r }}">
+            <div style="width:1200px;transform:scale({{ cp.k }});transform-origin:0 0">
+              <div style="width:1200px;box-sizing:border-box;padding:56px 64px 44px;background:#141310;border:1px solid rgba(255,255,255,.1);border-radius:14px;display:flex;flex-direction:column;gap:30px;color:#ece7dc">
+                <div style="font:600 42px/1.2 'IBM Plex Sans',sans-serif;text-wrap:balance"><span style="color:rgba(236,231,220,.7);font-weight:500">{{ C.artist }}</span> – {{ C.title }}</div>
+                <div style="display:grid;grid-template-columns:1.25fr 1fr 1fr;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:12px">
+                  <div style="padding:22px 28px;display:flex;flex-direction:column;gap:10px"><span style="font:500 15px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.45)">Key</span><span style="display:flex;align-items:center;gap:14px;white-space:nowrap"><span style="font:600 76px/1.1 'IBM Plex Mono',monospace;letter-spacing:-.02em">{{ C.key }}</span><sc-if value="{{ C.mode }}" hint-placeholder-val="{{ false }}"><span style="font:500 24px 'IBM Plex Mono',monospace;padding:2px 10px;border:2px solid rgba(236,231,220,.5);border-radius:6px">{{ C.mode }}</span></sc-if></span></div>
+                  <div style="padding:22px 28px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 15px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.45)">Confidence</span><span style="font:500 64px/1.3 'IBM Plex Mono',monospace">{{ C.conf }}</span></div>
+                  <div style="padding:22px 28px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 15px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.45)">BPM</span><span style="font:600 76px/1.1 'IBM Plex Mono',monospace;letter-spacing:-.03em;color:{{ C.bpmInk }}">{{ C.bpm }}</span><span style="font:400 19px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);margin-top:-4px">{{ C.bpmNote }}</span></div>
+                </div>
+                <div style="font:400 24px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);margin-top:-6px">{{ C.sub }}</div>
+                <sc-if value="{{ C.hasStrip }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:8px">
+                    <div style="position:relative;height:56px">
+                      <sc-for list="{{ C.strip }}" as="b"><span style="position:absolute;top:0;bottom:0;left:{{ b.px }};width:{{ b.pw }};box-sizing:border-box;border:2px solid rgba(236,231,220,.55);border-radius:6px;background:rgba(236,231,220,{{ b.fa }});padding:13px 12px 0;font:500 16px 'IBM Plex Mono',monospace;white-space:nowrap;overflow:hidden">{{ b.t }}</span></sc-for>
+                    </div>
+                    <span style="font:400 17px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.55)">{{ C.stripNote }}</span>
+                  </div>
+                </sc-if>
+                <div style="display:flex;flex-direction:column">
+                  <sc-for list="{{ C.dets }}" as="d" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:170px 190px 100px 150px minmax(0,1fr);column-gap:18px;align-items:center;height:52px;border-top:1px solid rgba(255,255,255,.08);white-space:nowrap"><span style="font:500 23px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.8)">{{ d.n }}</span><span style="font:600 25px 'IBM Plex Mono',monospace">{{ d.k }}</span><span style="font:400 23px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75);text-align:right">{{ d.sc }}</span><span><sc-if value="{{ d.chip }}" hint-placeholder-val="{{ false }}"><span style="font:500 18px/26px 'IBM Plex Mono',monospace;padding:0 9px;border-radius:6px;border:2px solid rgba(236,231,220,.3);color:rgba(236,231,220,.75)">{{ d.chip }}</span></sc-if></span><span style="font:400 21px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.55)">{{ d.ruCard }}</span></div></sc-for>
+                  <div style="font:400 19px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);padding-top:12px;border-top:1px solid rgba(255,255,255,.08)">{{ C.backer }}</div>
+                </div>
+                <div style="display:grid;grid-template-columns:{{ C.cols }};gap:48px;padding-top:8px">
+                  <div style="display:flex;flex-direction:column;gap:12px">
+                    <span style="font:500 15px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.45)">Why this key</span>
+                    <sc-for list="{{ C.why }}" as="p"><p style="margin:0;font:400 21px/1.55 'IBM Plex Sans',sans-serif;text-wrap:pretty"><sc-for list="{{ p.segs }}" as="s"><span style="font-family:{{ s.ff }};font-size:{{ s.fs }};font-variant-caps:{{ s.fv }};letter-spacing:{{ s.ls }}">{{ s.t }}</span></sc-for></p></sc-for>
+                  </div>
+                  <sc-if value="{{ C.hasTonic }}" hint-placeholder-val="{{ true }}">
+                    <div style="display:flex;flex-direction:column;gap:12px">
+                      <span style="font:500 15px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.45)">Tonic check</span>
+                      <p style="margin:0;font:400 21px/1.55 'IBM Plex Sans',sans-serif;text-wrap:pretty"><sc-for list="{{ C.tonic }}" as="s"><span style="font-family:{{ s.ff }};font-size:{{ s.fs }};font-variant-caps:{{ s.fv }};letter-spacing:{{ s.ls }}">{{ s.t }}</span></sc-for></p>
+                    </div>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ C.hasCons }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-direction:column;gap:12px">
+                    <span style="font:500 15px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.45)">Considered</span>
+                    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px">
+                      <sc-for list="{{ C.cons }}" as="c"><div style="display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)"><span style="font:600 23px 'IBM Plex Mono',monospace">{{ c.k }}</span><span style="font:400 18.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty"><sc-for list="{{ c.segs }}" as="s"><span style="font-family:{{ s.ff }};font-size:{{ s.fs }};color:{{ s.ink }}">{{ s.t }}</span></sc-for></span></div></sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+                <div style="display:flex;align-items:center;gap:12px;padding-top:18px;border-top:1px solid rgba(255,255,255,.08)">
+                  <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect><rect x="3" y="10.8" width="14" height="2.4" rx="1.2" fill="#e8b45a"></rect><rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect></svg>
+                  <span style="font:600 21px 'IBM Plex Sans',sans-serif">crateside</span>
+                  <span style="margin-left:auto;font:400 17px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ C.date }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <sc-if value="{{ cp.small }}" hint-placeholder-val="{{ false }}">
+            <div class="note">
+              <p><b>Its own layout, top-weighted.</b> The first 630 px (a link-preview ratio) carry everything a friend scans: <span class="m">Artist – Title</span>, then key, confidence and BPM in the band's three cells and short forms, then the subtitle and the three readings. The prose sits below, for whoever opens the image.</p>
+              <p><b>Sizes come from the preview, not the page.</b> At 36% the 76 px key is 27 px and the 21 px prose is under 8 px. So the figures read in the preview, and the prose reads once the image is opened, which is how a picture in a chat gets read. I don't know Discord's exact preview box for a tall image, and it may be smaller. One real paste settles it, and the type scale is the only lever.</p>
+              <p><b>The app's dark palette</b>, for three reasons. The card is a picture of the verdict as crateside shows it, and a friend who later sees the app should recognize it. The color rule (color means state) needs no second palette. And Discord's dark theme, the common case, puts it on near-black, where a light card would glare. On a light chat theme it reads as a dark image, like any screenshot. Nothing on it is colored except the mark's amber.</p>
+              <p><b>Prose takes two columns when there is a tonic check</b> (Why this key left, Tonic check right), and <i>Considered</i> runs underneath as three cells, key over sentence. With no tonic check, Why this key takes the width. The stage flow, sample list, links and the backer line's detail are left off: they mean nothing outside the app.</p>
+              <p><b>A verdict with sections</b> adds the key strip under the subtitle, scaled up. Placed sections are drawn and unplaced ones are named in a line under it, by the same rule as 1b.</p>
+              <p><b>An old long reasoning is cut, not shrunk.</b> The brief says to cut at a paragraph, but every old reasoning is one paragraph (ADR 0064 measured no newlines). So the cut falls at the last sentence ending within 110 words, followed by <i>…</i>. The type size never changes to fit.</p>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1720,"height":4300}}'>
+class Component extends DCLogic {
+  state = { v: 'starry', menu: false, shared: '', fold: false, prog: false, p: 'tk', t: 'takyon', win: -1, zoom: 'whole', room: false, c: 'starry' };
+  W = 832;
+  MONO = "'IBM Plex Mono',monospace";
+  seg(str) {
+    return String(str || '').split(/(\[[^\]]+\]|\^[^^]+\^)/).filter(Boolean).map(p =>
+      p[0] === '[' ? { t: p.slice(1, -1), ff: this.MONO, fs: '.92em', fv: 'normal', ls: '0', ink: '#ece7dc' }
+      : p[0] === '^' ? { t: p.slice(1, -1), ff: 'inherit', fs: 'inherit', fv: 'all-small-caps', ls: '.05em', ink: 'inherit' }
+      : { t: p, ff: 'inherit', fs: 'inherit', fv: 'normal', ls: '0', ink: 'inherit' });
+  }
+  paras(a) { return (a || []).map(p => ({ segs: this.seg(p) })); }
+  det(n, k, sc, chip, ru) {
+    const tips = { 'r < 0.70': 'Unreliable band, r below 0.70: distrust', 'r > 0.75': 'Trust band, r above 0.75: watch for a relative-key swap', '0.70–0.75': 'Middle band, r 0.70–0.75' };
+    return { n, k, sc, chip: chip || '', tip: tips[chip] || '', ru: ru || '', ruCard: ru ? 'or ' + ru : '' };
+  }
+  fmt(s) { s = Math.max(0, s); const m = Math.floor(s / 60), r = Math.floor(s % 60); return m + ':' + String(r).padStart(2, '0'); }
+  rand(seed) { let s = seed; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+
+  data() {
+    if (this._d) return this._d;
+    const HUMAN = 'None found. Underground, non-Anglophone and recent album tracks often have no human analysis at all — the verdict rests on the detectors and the chord check.';
+    const OLD = `No detector ever named [B minor] directly, and r never clears [0.70] anywhere in the track or in any window, so this is a reconstructed reading, not a direct hit — but it ties together every other read cleanly. keydetect's whole-track and intro-window answers ([D major], [A major]) are both the relative major of [B minor]; its own key_alt answers ([E minor], then again [E minor] in the intro window) are [B minor]'s iv chord; madmom/Essentia's shared [F♯ minor] is [B minor]'s v. None of those individually clears the bar (all unbacked, all low-r, 'DISTRUST'-flagged in every single run), but a reconstruction where the real tonic is [B minor] explains all of them at once as different diatonic degrees rather than requiring any one of them to simply be wrong. The decisive piece is the 113–140s window's [F♯] (maj. with [A♯] leading tone)-to-[Bm] motion: a real dominant-to-tonic cadence, which is the kind of evidence the relative-swap problem specifically calls for, and it points to [B minor] over [D major]. I'm not promoting [D major] to its own section at the end of that window: the [D] chord that follows the cadence reads as [B minor]'s III (ending on the relative-major triad, a known closing device) rather than a modulation, since nothing in that window gives [D] its own dominant or cadence establishing it as an independent tonic. The 45–85s drone ([D♯]/[D♯m], all three detectors disagreeing, r under 0.65 throughout) doesn't fit [B minor]'s scale and reads as a non-tonal bridge rather than a fourth candidate key. What keeps this at ^MEDIUM^ rather than ^HIGH^: no detector ever says [B minor] outright, and no human source confirms it — two rounds of searching found only Tunebat, Musicstax (Spotify-derived) and an unreadable, self-contradictory Chordify snippet, all excluded or unverifiable rather than genuine corroboration.`;
+    const FIRST = `Three candidates, none safe to call: (1) [D major] — keydetect's own whole-track pick, but [r=0.527] is below the [0.70] distrust line and it has no backers, a combination right only ~32% of the time historically. (2) [F♯ minor] — madmom and Essentia fully agree on it, a dissent that's right about 75% of the time when keydetect is wrong, and it fits keydetect's documented IV-for-tonic bias ([D] is the IV of [F♯ minor]'s relative, [A major]). But [F♯] natural minor can't account for the [Em] chord that dominates keydetect's own running estimate for roughly the middle third of the track, and the sharp chords backing [F♯ minor] only appear in the first 21 seconds, which could be noisy intro rather than the song's real center. (3) [E minor] — not named by any detector as a top answer, but it's keydetect's own key_alt ([0.455]) and its running key_events estimate holds 'Em' for most of the track's length before shifting to an alternating [D]/[Em] figure near the end ([♭VII–i] is a common minor-key vamp); no backer independently names it, so it has no corroboration of the kind the backing rule rewards. No authoritative or corroborating human source turned up — two searches found only Tunebat (excluded by rule) and a Chordify page that 403'd; the search snippet for it was self-contradictory (claimed its chords belong to [E major] while listing [D]/[E]/[A]/[F] major, which aren't all diatonic to [E major]), so I'm not treating it as read. The long gap in key_events between 21s and 117s could mean a stable [Em] held through that whole stretch, or that the detector had nothing to latch onto there (noise/atonal verse) — windows should settle which, and should isolate the chromatic opening and the late [D]/[Em] figure to see whether either is a real cadence or just texture.`;
+    const takDets = [this.det('keydetect', 'D major', '0.527', 'r < 0.70', 'E minor 0.455'), this.det('madmom', 'F♯ minor', '0.112'), this.det('Essentia', 'F♯ minor', '0.477')];
+    const takTempo = { tFig: '66.97', tNote: 'from your warp', tRows: [{ l: "crateside's reading", f: '66.97', r: 'agrees' }] };
+    const V = {
+      starry: {
+        head: 'Why E major', sub: 'No human sources; 3 detectors and the chord check.', winLink: '', whyLabel: 'Why this key', oldNote: '',
+        why: [`All three detectors name [E major]: keydetect at [r 0.837], backed by madmom ([0.983]) and Essentia ([0.811]). With both backers, keydetect is right about 95% of the time.`,
+          `No human source covers the track: there is no Hooktheory, Musicnotes or Ultimate Guitar page for it. So it stays at ^MEDIUM^: the detectors and the tonic check agree, but nothing a person wrote confirms them.`],
+        consLabel: 'Considered', cons: [['G♯ minor', `The relative. The loop starts on it, but nothing resolves to it.`], ['B major', `keydetect's runner-up at [r 0.740]. [B] only ever turns to [E], as its V.`]],
+        human: HUMAN, firstPass: false,
+        dets: [this.det('keydetect', 'E major', '0.837', 'r > 0.75', 'B major 0.740'), this.det('madmom', 'E major', '0.983'), this.det('Essentia', 'E major', '0.811')],
+        backer: 'keydetect is backed by both madmom and Essentia',
+        tonic: `The harmony is a [G♯m → E] loop with a [B] turnaround, and [B (V) → E (I)] is where the phrases land. The running estimate opens on [E] and keeps returning to it. Nothing resolves to [G♯m] or to [B].`,
+        runs: [['G♯m → E', 5], ['Em', 1], ['G♯m → E', 8], ['Em', 1], ['E → B → E', 1], ['G♯m → E', 1], ['B → E', 1], ['G♯m → E', 10], ['B → E', 1], ['G♯m → E', 6], ['G♯m', 1]],
+        tFig: '—', tNote: 'Not measured.', tRows: [], recorded: 'Recorded 24 Oct 2026, 12:20 PM from the full mix'
+      },
+      takyon: {
+        head: 'Why B minor', sub: "No human sources; 3 detectors, the chord check and 3 judge's windows.", winLink: "3 judge's windows on the timeline ↑", whyLabel: 'Why this key', oldNote: '',
+        why: [`No detector names [B minor], and r never clears [0.70] over the whole file or in any window. This is a reconstruction: every reading the detectors gave is a diatonic degree of [B minor], and the tonic check finds a real cadence onto it.`,
+          `It stays at ^MEDIUM^ because nothing names it outright and no human source confirms it. Tunebat and Musicstax are excluded, and the one Chordify snippet contradicts itself.`],
+        consLabel: 'Considered', cons: [['D major', `The relative, and keydetect's whole-file pick, but at [r 0.527] with no backer.`], ['F♯ minor', `madmom and Essentia's pick. It can't account for the [Em] chord through the middle third.`], ['E minor', `keydetect's runner-up ([0.455]). It is [B minor]'s iv, and nothing cadences to it.`]],
+        human: HUMAN, firstPass: true, dets: takDets,
+        backer: 'keydetect is backed by neither madmom nor Essentia',
+        tonic: `In 1:53–2:20, [F♯ (V)] with its raised seventh [A♯] resolves to [Bm (i)] twice: a real dominant-to-tonic cadence. The [D] that follows reads as [III], a closing device, not a new tonic. The [D♯] drone at 0:45–1:25 fits no candidate and reads as a bridge.`,
+        runs: [['D → D♯', 2], ['D → E', 1]], ...takTempo, recorded: 'Recorded 21 Oct 2026, 12:03 AM from the full mix'
+      },
+      old: {
+        head: 'Why B minor', sub: "No human sources; 3 detectors, the chord check and 3 judge's windows.", winLink: "3 judge's windows on the timeline ↑", whyLabel: 'Why this key', oldNote: 'An older verdict: one paragraph, as the judge wrote it, through the formatter.',
+        why: [OLD], consLabel: 'Considered', cons: [], human: HUMAN, firstPass: true, dets: takDets,
+        backer: 'keydetect is backed by neither madmom nor Essentia', tonic: '',
+        runs: [['D → D♯', 2], ['D → E', 1]], ...takTempo, recorded: 'Recorded 21 Oct 2026, 12:03 AM from the full mix'
+      },
+      withheld: {
+        head: 'Why no key', sub: 'No human sources; 3 detectors split three ways.', winLink: '', whyLabel: 'Why this key', oldNote: '',
+        why: [`The three detectors name three keys over the whole file, all under [r 0.70], and they share their notes. The cadence has to decide between them, and the progression never closes on one.`,
+          `^WITHHELD^ until a window or a human source settles the center. The intro and the last chorus are the likeliest places to hear it.`],
+        consLabel: 'Still open', cons: [['A minor', `madmom's pick and keydetect's runner-up. The loop starts on [Am] but never arrives there.`], ['C major', `The relative, and keydetect's pick at [r 0.612]. [G → C] happens once, at the turnaround.`], ['D Dorian', `Essentia reads [D minor]. The bass holds [D] through the verses under [Dm → G], which is i → IV in [D Dorian].`]],
+        human: HUMAN, firstPass: false,
+        dets: [this.det('keydetect', 'C major', '0.612', 'r < 0.70', 'A minor 0.588'), this.det('madmom', 'A minor', '0.410'), this.det('Essentia', 'D minor', '0.520')],
+        backer: 'keydetect is backed by neither madmom nor Essentia',
+        tonic: `The loop is [Am → Dm → G → C] with no cadence. [G → C] comes once, at the turnaround, and the bass sits on [D] through the verses. Nothing lands.`,
+        runs: [['Am → Dm → G → C', 24], ['Dm → G', 8]], tFig: '96', tNote: 'from your warp', tRows: [{ l: "crateside's reading", f: '96.01', r: 'agrees' }], recorded: 'Recorded 22 Oct 2026, 4:41 PM from the full mix'
+      }
+    };
+    const T = {
+      takyon: { DUR: 168, cs: 14.51, bar: 3.584, bars: 43, zb: 29, tempo: '66.97', off: true, gist: '2 stems · one warp · 1 marker · Complex',
+        lanes: [['Instrumental - Full', 'Your warp'], ['Vocal - Full', 'Your warp']], seeds: [7, 19],
+        keyGist: "B minor, one center · faint: the running estimate, 27 changes", unplaced: '',
+        bands: [[0, 168, 'B min']],
+        raw: [[0.21, 'A min', .49], [0.26, 'G♯ maj', .72], [0.44, 'F♯ maj', .72], [0.65, 'F♯ min', .81], [0.74, 'F♯ maj', .58], [0.81, 'D♯ min', .65], [1.00, 'G♯ min', .57], [1.04, 'D♯ min', .55], [1.95, 'G♯ min', .48], [3.39, 'E min', .36], [6.8, 'F♯ min', .52], [9.1, 'B min', .44], [12.6, 'F♯ min', .55], [17.2, 'D maj', .41], [21.0, 'E min', .39], [117.0, 'D maj', .58], [118.4, 'E min', .47], [120.9, 'D maj', .62], [123.1, 'F♯ min', .54], [125.6, 'B min', .51], [128.2, 'D maj', .60], [131.0, 'E min', .45], [133.7, 'D maj', .63], [136.2, 'E min', .49], [140.8, 'D maj', .57], [146.5, 'E min', .43], [152.0, 'D maj', .55]],
+        wins: [
+          { a: 0, b: 21, bars: 'bars 1–2', who: 'judge', label: 'Chromatic intro', why: `Whether the sharp chords backing [F♯ minor] are the center, or a noisy intro.`, sect: '→ no section: the judge did not place it as a center of its own', reads: [this.det('keydetect', 'A major', '0.619', 'r < 0.70'), this.det('madmom', 'G major', '0.172'), this.det('Essentia', 'F♯ minor', '0.464')] },
+          { a: 45, b: 85, bars: 'bars 9–20', who: 'judge', label: 'Mid-track gap', why: `Whether a stable [Em] holds through the quiet stretch, or the detector has nothing to hold.`, sect: '→ no section: the judge did not place it as a center of its own', reads: [this.det('keydetect', 'G♯ minor', '0.399', 'r < 0.70'), this.det('madmom', 'G major', '0.108'), this.det('Essentia', 'F♯ minor', '0.381')] },
+          { a: 113, b: 140, bars: 'bars 28–36', who: 'judge', label: 'Late D/Em figure', why: `Whether the closing [D]/[Em] figure is a real cadence or texture.`, sect: '→ no section: the [D] after the cadence reads as III of [B minor]', reads: [this.det('keydetect', 'D major', '0.639', 'r < 0.70'), this.det('madmom', 'G major', '0.078'), this.det('Essentia', 'F♯ minor', '0.479')] }
+        ] },
+      starry: { DUR: 189, cs: 0.04, bar: 2.325, bars: 81, zb: 25, tempo: '', off: false, gist: '2 stems · one warp · 1 marker · Complex',
+        lanes: [['Instrumental - Full', 'Starter'], ['Vocal - Full', 'Starter']], seeds: [3, 11],
+        keyGist: 'E major, one center · faint: the running estimate, 6 changes', unplaced: '',
+        bands: [[0, 189, 'E maj']],
+        raw: [[0.3, 'E maj', .62], [1.2, 'G♯ min', .55], [4.8, 'E maj', .79], [62, 'B maj', .58], [70.5, 'E maj', .83], [150.2, 'G♯ min', .51]], wins: [] },
+      sections: { DUR: 200, cs: 0, bar: 2, bars: 100, zb: 33, tempo: '120', off: false, gist: '2 stems · one warp · 1 marker · Complex',
+        lanes: [['Instrumental - Clean', 'Your warp'], ['Vocal - Full', 'Borrowed']], seeds: [5, 23],
+        keyGist: 'A Dorian, with chorus sections from your windows', unplaced: 'bridge · C Lyd: no time given',
+        bands: [[0, 64, 'verse · A Dor'], [64, 96, 'chorus · E min', 1], [96, 162, 'verse · A Dor'], [162, 192, 'chorus · E min', 1], [192, 200, '']],
+        raw: [[0.4, 'A min', .52], [3.0, 'G maj', .48], [8.5, 'A min', .61], [40, 'D maj', .44], [46, 'A min', .58], [66, 'E min', .77], [95, 'A min', .55], [130, 'G maj', .47], [138, 'A min', .6], [163, 'E min', .8], [191, 'A min', .5]],
+        wins: [
+          { a: 64, b: 96, bars: 'bars 33–48', who: 'yours', label: 'Chorus', why: 'Given by you.', sect: '→ section Chorus: [E minor]', reads: [this.det('keydetect', 'E minor', '0.802', 'r > 0.75', 'G major 0.731'), this.det('madmom', 'E minor', '0.871'), this.det('Essentia', 'E minor', '0.790')] },
+          { a: 162, b: 192, bars: 'bars 82–96', who: 'yours', label: 'Chorus', why: 'Given by you.', sect: '→ section Chorus: [E minor]', reads: [this.det('keydetect', 'E minor', '0.781', 'r > 0.75', 'B minor 0.702'), this.det('madmom', 'E minor', '0.844'), this.det('Essentia', 'E minor', '0.768')] }
+        ] }
+    };
+    const C = {
+      starry: { artist: 'Paul Oakenfold', title: 'Starry Eyed Surprise', key: 'E maj', mode: '', conf: 'MEDIUM', bpm: '—', bpmInk: 'rgba(236,231,220,.3)', bpmNote: 'not measured', sub: V.starry.sub, dets: V.starry.dets, backer: V.starry.backer, why: V.starry.why, tonic: V.starry.tonic, cons: V.starry.cons, strip: null, date: 'judged 24 Oct 2026' },
+      sections: { artist: '[Artist]', title: '[Title]', key: 'A min', mode: 'Dor', conf: 'HIGH', bpm: '120', bpmInk: '#ece7dc', bpmNote: 'from your warp', sub: '1 human source; 3 detectors, the chord check and 2 of your windows.',
+        dets: [this.det('keydetect', 'A minor', '0.781', 'r > 0.75', 'C major 0.702'), this.det('madmom', 'A minor', '0.902'), this.det('Essentia', 'A minor', '0.744')], backer: 'keydetect is backed by both madmom and Essentia',
+        why: [`Hooktheory's tab names [A Dorian] for the verse, and all three detectors back [A minor], its tag, over the whole file. Both of your chorus windows read [E minor], above [r 0.78].`, `That makes it ^HIGH^: a human source and every detector agree on the verse, and the choruses are a section of their own, not a dissent.`],
+        tonic: `The verse loop [Am (i) → D (IV)] keeps the Dorian [F♯] and comes home to [Am] every four bars. The chorus turns to [Em], and [B7 (V) → Em (i)] closes it twice. The bridge drifts to [C] over a [D] bass.`,
+        cons: [['G major', `The same notes. The verse never lands on [G].`], ['D major', `keydetect's runner-up in the verse. [D] is the Dorian IV, heard as color.`]],
+        strip: T.sections, stripNote: 'Placed from your two chorus windows · bridge · C Lyd: no time given', date: 'judged 23 Oct 2026' },
+      old: { artist: 'Death Grips', title: 'Takyon (Death Yon)', key: 'B min', mode: '', conf: 'MEDIUM', bpm: '66.97', bpmInk: '#ece7dc', bpmNote: 'from your warp', sub: V.takyon.sub, dets: takDets, backer: V.takyon.backer,
+        why: [OLD.split(' None of those individually')[0] + ' …'], tonic: '', cons: [], strip: null, date: 'judged 21 Oct 2026' }
+    };
+    this._d = { V, T, C, FIRST };
+    return this._d;
+  }
+
+  wave(tr, seed, t0, t1) {
+    const key = tr + seed + t0.toFixed(1) + t1.toFixed(1);
+    this._wc = this._wc || {};
+    if (this._wc[key]) return this._wc[key];
+    const W = this.W; let top = '', bot = [];
+    const h = n => { const x = Math.sin(n * 12.9898 + seed * 78.233) * 43758.5453; return x - Math.floor(x); };
+    for (let x = 0; x <= W; x += 3) {
+      const t = t0 + x / W * (t1 - t0);
+      let env = tr === 'takyon' ? (t > 45 && t < 85 ? .35 : t < 14 ? .5 : .82) : tr === 'starry' ? (t > 118 && t < 126 ? .4 : t > 180 ? .3 : .78) : ((t > 64 && t < 96) || (t > 162 && t < 192) ? .88 : .55);
+      if (seed % 2 && tr === 'takyon' && t > 45 && t < 85) env = .12;
+      const a = env * (.55 + h(Math.floor(t * 9)) * .45);
+      top += (x ? 'L' : 'M') + x + ' ' + (32 - a * 25).toFixed(1); bot.unshift('L' + x + ' ' + (32 + a * 25).toFixed(1));
+    }
+    return (this._wc[key] = top + bot.join('') + 'Z');
+  }
+
+  renderVals() {
+    const S = this.state, D0 = this.data(), W = this.W;
+    const on = (a) => a ? { bg: '#ece7dc', fg: '#0f0e0c', bd: '#ece7dc' } : { bg: 'transparent', fg: 'rgba(236,231,220,.6)', bd: 'rgba(255,255,255,.14)' };
+
+    // 1a
+    const v = D0.V[S.v];
+    const P = { ...v, why: this.paras(v.why), hasCons: v.cons.length > 0, cons: v.cons.map(([k, w]) => ({ k, segs: this.seg(w) })), hasTonic: !!v.tonic, tonic: this.seg(v.tonic) };
+    const n = v.runs.reduce((s, [c, x]) => s + c.split(' → ').length * x, 0);
+    P.progCount = n + (n === 1 ? ' chord' : ' chords') + (v.runs.some(r => r[1] > 1) ? ' · loops folded' : '');
+    P.runs = v.runs.map(([c, x], i) => ({ c, x: x > 1 ? ' ×' + x : '', sep: i < v.runs.length - 1 ? '  ·  ' : '' }));
+    P.progAll = v.runs.flatMap(([c, x]) => Array(x).fill(c)).join(' → ');
+    const vp = [['starry', 'Starry Eyed Surprise · plain'], ['takyon', "Takyon · through judge's windows"], ['old', 'An old verdict · one paragraph, no tonic check'], ['withheld', 'WITHHELD · three keys open']];
+    const fname = S.v === 'withheld' ? '[Artist] – [Title].png' : S.v === 'starry' ? 'Paul Oakenfold – Starry Eyed Surprise.png' : 'Death Grips – Takyon (Death Yon).png';
+    const share = (k, msg) => () => { this.setState({ menu: false, shared: msg }); clearTimeout(this._st); this._st = setTimeout(() => this.setState({ shared: '' }), 2400); };
+
+    // 1b
+    const tr = D0.T[S.t], zoomed = S.zoom === '8';
+    const t0 = zoomed ? tr.cs + (tr.zb - 1) * tr.bar : 0, t1 = zoomed ? t0 + 8 * tr.bar : tr.DUR;
+    const sx = t => (t - t0) / (t1 - t0) * W;
+    const clip = (a, b) => { const x = Math.max(0, sx(a)), x2 = Math.min(W, sx(b)); return x2 > x ? [x, x2 - x] : null; };
+    let ruler = '', nums = [];
+    for (let b = 1; b <= tr.bars + 1; b++) {
+      const t = tr.cs + (b - 1) * tr.bar, x = sx(t);
+      if (x < -0.5 || x > W + 0.5) continue;
+      if (zoomed) { ruler += `M${x.toFixed(1)} 44V36`; nums.push({ px: (x + 3).toFixed(1) + 'px', n: b }); }
+      else if ((b - 1) % 4 === 0) { ruler += `M${x.toFixed(1)} 44V${(b - 1) % 16 ? 39 : 35}`; if ((b - 1) % 16 === 0) nums.push({ px: (x + 3).toFixed(1) + 'px', n: b }); }
+    }
+    const offH = tr.off ? 72 : 0, roomH = S.room ? 40 : 0;
+    const bandH = 30 + offH + 64 * 2 + 52 + roomH - 1;
+    const totalH = 44 + bandH + 1;
+    const wins = tr.wins;
+    const bands = [], tags = [];
+    wins.forEach((w, i) => {
+      const c = clip(w.a, w.b), open = S.win === i, judge = w.who === 'judge';
+      if (!c) return;
+      bands.push({ x: c[0].toFixed(1), w: c[1].toFixed(1), h: bandH, dash: judge ? '4 3' : '', fill: open ? 'rgba(236,231,220,.07)' : judge ? 'transparent' : 'rgba(236,231,220,.04)', bd: open ? 'rgba(236,231,220,.9)' : 'rgba(236,231,220,.5)' });
+      const tag = judge ? 'judge · ' + w.bars : w.label + ' · E min';
+      tags.push({ tag, px: c[0].toFixed(1) + 'px', open: open ? 'true' : 'false', bs: judge && !open ? 'dashed' : 'solid', bg: open ? '#ece7dc' : judge ? '#141310' : 'rgba(236,231,220,.14)', fg: open ? '#0f0e0c' : '#ece7dc', bd: open ? '#ece7dc' : 'rgba(236,231,220,.5)', go: () => this.setState({ win: S.win === i ? -1 : i }) });
+    });
+    const raw = [], rawl = [];
+    tr.raw.forEach(([t, k, r], i) => {
+      const end = i < tr.raw.length - 1 ? tr.raw[i + 1][0] : tr.DUR, c = clip(t, end);
+      if (!c) return;
+      raw.push({ x: c[0].toFixed(1), w: c[1].toFixed(1), a: (r * .22).toFixed(3) });
+      if (c[1] >= 40) rawl.push({ px: (c[0] + 4).toFixed(1) + 'px', t: k });
+    });
+    const kb = [], kbl = [];
+    tr.bands.forEach(([a, b, k, fromWin]) => {
+      const c = clip(a, b); if (!c) return;
+      kb.push({ x: (c[0] + .5).toFixed(1), w: Math.max(c[1] - 1, 0).toFixed(1), fa: fromWin ? '.07' : '.03' });
+      if (k && c[1] >= 56) kbl.push({ px: (c[0] + 7).toFixed(1) + 'px', t: k });
+    });
+    let times = [];
+    const step = zoomed ? 5 : 30;
+    for (let s = Math.ceil(t0 / step) * step; s <= t1; s += step) { const x = sx(s); if (x <= W - 24) times.push({ px: (x + 2).toFixed(1) + 'px', s: this.fmt(s) }); }
+    const r = this.rand(tr.seeds[0] * 31);
+    const offDots = [], offPts = [];
+    if (tr.off) for (let s = 5; s < tr.DUR; s += 10) { const ms = (r() - .5) * 16, x = sx(s); if (x < 0 || x > W) continue; const y = 36 - ms; offDots.push({ x: x.toFixed(1), y: y.toFixed(1) }); offPts.push(x.toFixed(1) + ' ' + y.toFixed(1)); }
+    const chipFor = c => c === 'Your warp' ? { bg: '#ece7dc', fg: '#0f0e0c', bd: '#ece7dc', bs: 'solid' } : c === 'Starter' ? { bg: 'transparent', fg: 'rgba(236,231,220,.75)', bd: 'rgba(255,255,255,.35)', bs: 'dashed' } : { bg: 'transparent', fg: 'rgba(236,231,220,.85)', bd: 'rgba(255,255,255,.3)', bs: 'solid' };
+    const ph = sx(47);
+    const T = {
+      gist: tr.gist, tempo: tr.tempo, off: tr.off, keyGist: tr.keyGist, unplaced: tr.unplaced,
+      span: zoomed ? `bars ${tr.zb}–${tr.zb + 7} · ${this.fmt(t0)}–${this.fmt(t1)}` : '',
+      ovX: (t0 / tr.DUR * W).toFixed(1) + 'px', ovW: ((t1 - t0) / tr.DUR * W).toFixed(1) + 'px',
+      ruler, nums, tags, bands, raw, rawl, kb, kbl, times, totalH,
+      offDots, offLine: offPts.length ? 'M' + offPts.join('L') : '',
+      lanes: tr.lanes.map(([name, chip], i) => ({ name, chip, ...chipFor(chip), wave: this.wave(S.t, tr.seeds[i], t0, t1) })),
+      ph: ph.toFixed(1), phEnd: totalH, phHead: `M${(ph - 5).toFixed(1)} 20H${(ph + 5).toFixed(1)}L${ph.toFixed(1)} 27Z`
+    };
+    const wi = S.win >= 0 && S.win < wins.length ? wins[S.win] : null;
+    let Dd = {};
+    if (wi) {
+      const c = clip(wi.a, wi.b) || [0, 0], mid = Math.min(Math.max(c[0] + c[1] / 2, 12), W - 12);
+      const judge = wi.who === 'judge';
+      Dd = { caret: (212 + mid - 8 + 0).toFixed(1) + 'px', who: wi.who, label: wi.label, span: `${wi.bars} · ${this.fmt(wi.a)}–${this.fmt(wi.b)}`, why: this.seg(wi.why), sect: this.seg(wi.sect), reads: wi.reads, pos: `${S.win + 1} of ${wins.length}`,
+        whoFg: judge ? 'rgba(236,231,220,.85)' : '#0f0e0c', whoBg: judge ? 'transparent' : '#ece7dc', whoBd: judge ? 'rgba(236,231,220,.45)' : '#ece7dc', bs: judge ? 'dashed' : 'solid' };
+    }
+    const tp = [
+      ['tk', 'Takyon', { t: 'takyon', win: -1, zoom: 'whole', room: false }],
+      ['tkw', 'Takyon · a window open', { t: 'takyon', win: 2, zoom: 'whole', room: false }],
+      ['tk8', 'Takyon · 8 bars', { t: 'takyon', win: -1, zoom: '8', room: false }],
+      ['se', 'Starry Eyed Surprise', { t: 'starry', win: -1, zoom: 'whole', room: false }],
+      ['sec', 'Sections (invented)', { t: 'sections', win: 0, zoom: 'whole', room: false }],
+      ['room', 'Room: chords and playback', { t: 'takyon', win: -1, zoom: 'whole', room: true }]
+    ];
+
+    // 1c
+    const c = D0.C[S.c];
+    let strip = [];
+    if (c.strip) strip = c.strip.bands.map(([a, b, k, fw]) => ({ px: (a / c.strip.DUR * 1072).toFixed(1) + 'px', pw: ((b - a) / c.strip.DUR * 1072 - 4).toFixed(1) + 'px', t: (b - a) / c.strip.DUR * 1072 - 4 >= (k || '').length * 9 + 22 ? k : '', fa: fw ? '.08' : '.03' }));
+    const C = { ...c, why: this.paras(c.why), tonic: this.seg(c.tonic), hasTonic: !!c.tonic, cols: c.tonic ? '1fr 1fr' : 'minmax(0,820px)', cons: c.cons.map(([k, w]) => ({ k, segs: this.seg(w) })), hasCons: c.cons.length > 0, hasStrip: !!c.strip, strip, stripNote: c.stripNote || '' };
+    const cp = [['starry', 'Starry Eyed Surprise'], ['sections', 'A verdict with sections (invented)'], ['old', 'An old long reasoning, cut']];
+
+    return {
+      vPills: vp.map(([k, l]) => ({ label: l, ...on(S.v === k), go: () => this.setState({ v: k, fold: false, prog: false, menu: false }) })),
+      P, menuOpen: S.menu, shareBg: S.menu ? '#2e2b22' : '#23211a', shared: S.shared,
+      toggleMenu: () => this.setState({ menu: !S.menu }),
+      menuItems: [
+        { t: 'Copy image', h: 'The card, ready to paste into Discord or a text', bg: 'transparent', go: share('copy', 'Card copied') },
+        { t: 'Save image', h: fname, bg: 'transparent', go: share('save', 'Saved to Downloads') },
+        { t: 'Copy as text', h: 'Markdown, for an agent or a note', bg: 'transparent', go: share('text', 'Copied as Markdown') }
+      ],
+      foldOpen: S.fold, foldMark: S.fold ? '▾' : '▸', toggleFold: () => this.setState({ fold: !S.fold }), firstPassSegs: this.seg(D0.FIRST),
+      progFolded: !S.prog, progOpen: S.prog, progBtn: S.prog ? 'Fold the loops' : 'Show all ' + n, toggleProg: () => this.setState({ prog: !S.prog }),
+
+      tPills: tp.map(([k, l, st]) => ({ label: l, ...on(S.p === k), go: () => this.setState({ p: k, ...st }) })),
+      T, zoomed, room: S.room, noRoom: !S.room, pillsMl: zoomed ? '8px' : 'auto',
+      zp: { wbg: zoomed ? 'transparent' : '#ece7dc', wfg: zoomed ? 'rgba(236,231,220,.6)' : '#0f0e0c', wbd: zoomed ? 'rgba(255,255,255,.14)' : '#ece7dc', ebg: zoomed ? '#ece7dc' : 'transparent', efg: zoomed ? '#0f0e0c' : 'rgba(236,231,220,.6)', ebd: zoomed ? '#ece7dc' : 'rgba(255,255,255,.14)' },
+      zWhole: () => this.setState({ zoom: 'whole' }), z8: () => this.setState({ zoom: '8' }),
+      drawer: !!wi, D: Dd,
+      closeWin: () => this.setState({ win: -1 }),
+      prevWin: () => this.setState({ win: (S.win - 1 + wins.length) % wins.length }),
+      nextWin: () => this.setState({ win: (S.win + 1) % wins.length }),
+
+      cPills: cp.map(([k, l]) => ({ label: l, ...on(S.c === k), go: () => this.setState({ c: k }) })),
+      C,
+      copies: [
+        { colW: '1200px', wrapW: '1200px', wrapH: 'auto', k: 1, r: '0', small: false },
+        { colW: '432px', wrapW: '432px', wrapH: '540px', k: .36, r: '6px', small: true }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

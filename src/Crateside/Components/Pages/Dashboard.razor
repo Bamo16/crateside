@@ -1,0 +1,830 @@
+@page "/"
+@page "/dashboard"
+@layout Crateside.Components.Layout.BareLayout
+@rendermode InteractiveServer
+
+@implements IAsyncDisposable
+
+@using System.Globalization
+@using System.Text
+@using Crateside.Components.Dashboard
+@using Crateside.Core
+@using Crateside.Core.Ableton
+@using Crateside.Core.Beats
+@using Crateside.Core.Familiarity
+@using Crateside.Core.Genres
+@using Crateside.Core.Ledger
+@using Crateside.Core.Library
+@using Crateside.Core.Loudness
+@using Crateside.Core.Orchestration.Edits
+@using Crateside.Core.Orchestration.Handoff
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Orchestration.Loop
+@using Crateside.Core.Orchestration.Verdict
+@using Crateside.Core.Playlist
+@using Crateside.Core.Quota
+@using Crateside.Core.Tracks
+@using Crateside.Core.WorkLists
+@using Humanizer
+
+@inject LibrarySummary Summary
+@inject GenreStore GenreRecords
+@inject FamiliarityStore FamiliarityRecords
+@inject TracksService Tracks
+@inject LedgerStore Ledger
+@inject BeatReader Beats
+@inject TrackAdd Adding
+@inject CachedPlaylist Playlist
+@inject IntakeStore Intake
+@inject JobStore Jobs
+@inject DrainControl Separation
+@inject VerdictControl Judging
+@inject SpendDown Spend
+@inject IQuotaReader Quota
+@inject StageSignals Signals
+@inject CratesidePaths Paths
+@inject Leveling Levels
+@inject IJSRuntime Js
+
+<PageTitle>Dashboard · crateside</PageTitle>
+
+<PageHeader Active="BrandNav.Tab.Dashboard" Shape="PageHeader.Shapes.Bar" />
+
+<div class="body">
+    <div class="grid">
+        <nav class="index" @ref="_index">
+            <span class="index-head">On this page</span>
+            @foreach (var entry in Index)
+            {
+                <a href="dashboard#@entry.Id" data-panel="@entry.Id" class="@(entry.IsPanel ? "panel" : null)">
+                    <span>@entry.Label</span>
+                    <span class="mono count @(entry.Id is TurnId && entry.Count > 0 ? "amber" : entry.Id is ActId && entry.Count > 0 ? "teal" : null)">@entry.Count@(entry.Id is ActId && entry.Count > 0 ? " ●" : null)</span>
+                </a>
+            }
+        </nav>
+
+        <div class="main">
+            <header class="title-row">
+                <div>
+                    <h2>Dashboard</h2>
+                    <p class="subtitle">
+                        <span class="mono">@_distribution.TrackCount.ToString("N0")</span> songs filed,
+                        <span class="mono">@ThisWeek</span> finished this week. Updates as stages move.
+                    </p>
+                </div>
+                <span class="read-at">
+                    <span>
+                        Playlist @Synced
+                        <RefreshButton Title="Check the playlist now" Busy="_syncing" OnClick="Resync" />
+                    </span>
+                    <span>
+                        Library counts read <span class="mono">@Summary.ReadAt.ToLocalTime().ToString("t")</span>
+                        <RefreshButton Title="Re-read the library counts" Busy="_reading" OnClick="Reread" />
+                    </span>
+                </span>
+            </header>
+
+            <DashSection Id="@TurnId" Title="Your turn" Open="@IsOpen(TurnId)" OnToggle="ToggleFold">
+                <Gist>each count opens where it is acted on</Gist>
+                <Summary>
+                    @if (_tiles.Where(tile => tile.Count > 0).ToList() is { Count: > 0 } waiting)
+                    {
+                        @for (var i = 0; i < waiting.Count; i++)
+                        {
+                            var tile = waiting[i];
+                            <text>@(i > 0 ? " · " : null)<span class="mono amber">@tile.Count</span> @tile.Short</text>
+                        }
+                    }
+                    else
+                    {
+                        <text>Nothing is waiting on you.</text>
+                    }
+                </Summary>
+                <ChildContent>
+                    <TurnTiles Tiles="_tiles" />
+                </ChildContent>
+            </DashSection>
+
+            <DashSection Id="@WorkId" Title="Working now" Open="@IsOpen(WorkId)" OnToggle="ToggleFold">
+                <Gist>live</Gist>
+                <Summary>
+                    @if (_rows.FirstOrDefault(row => row.State is TrackState.Separating) is { } separating)
+                    {
+                        <text><span class="teal">Separating</span> @separating.Title</text>
+                    }
+                    else
+                    {
+                        <text>Separation @(Separation.IsPaused ? "paused" : "idle")</text>
+                    }
+                    , <span class="mono">@_rows.Count(row => row.State is TrackState.JudgedInLine)</span> waiting ·
+                    Judging @JudgingState, <span class="mono">@(_rows.Count(row => row.IsAwaitingJudgment) + Judging.FormRunsWaiting)</span> waiting ·
+                    Claude <span class="mono">@(_quota.Utilization is { } used ? $"{used:N0} %" : "—")</span>
+                    @if (Beats.Progress is { Of: > 0 } progress && progress.Read < progress.Of)
+                    {
+                        <text> · beatdetect </text><span class="mono">@progress.Read of @progress.Of</span>
+                    }
+                </Summary>
+                <ChildContent>
+                    <WorkingNow Rows="_rows" Quota="_quota" QuotaReadAt="_quotaReadAt" QuotaReading="_quotaReading" OnRefreshQuota="RefreshQuota" />
+                </ChildContent>
+            </DashSection>
+
+            <DashSection Id="@ActId" Title="Activity" Open="@IsOpen(ActId)" OnToggle="ToggleFold">
+                <Gist>
+                    live ·
+                    @if (_feed.Running > 0)
+                    {
+                        <span class="mono teal">@_feed.Running running</span>
+                    }
+                    else
+                    {
+                        <text>idle</text>
+                    }
+                    ·
+                    <span class="mono">@_feed.FinishedRecently(DateTimeOffset.UtcNow)</span> finished in the last 10 minutes
+                    @if (_feed.LastAt is { } lastAt)
+                    {
+                        <text> · last at <span class="mono">@lastAt.ToLocalTime().ToString("t")</span></text>
+                    }
+                </Gist>
+                <Summary>
+                    @if (_feed.Running > 0)
+                    {
+                        <span class="mono teal">@_feed.Running running</span>
+                    }
+                    else
+                    {
+                        <text>idle</text>
+                    }
+                    @if (_feed.LastFinished is { } finished)
+                    {
+                        <text> · last finished <span class="mono">@finished.FinishedAt?.ToLocalTime().ToString("t")</span>, @finished.Label, @ActivityName(finished.TrackKey)</text>
+                    }
+                    @if (_feed.FailedSince(DateTimeOffset.Now.Date.ToUniversalTime()) is > 0 and var failedToday)
+                    {
+                        <text> · </text><button class="failed-link" @onclick="ShowFailed"><span class="mono">@failedToday</span> failed today</button>
+                    }
+                </Summary>
+                <ChildContent>
+                    <ActivitySection Feed="_feed" Query="_activity" NameOf="ActivityName" Now="DateTimeOffset.UtcNow" OnQuery="SetActivity" />
+                </ChildContent>
+            </DashSection>
+
+            <DashSection Id="@TimeId" Title="Over time" Open="@IsOpen(TimeId)" OnToggle="ToggleFold">
+                <Gist>@TimeGist</Gist>
+                <Summary>
+                    <span class="mono value">@ThisWeek</span> finished this week,
+                    <span class="mono value">@LastWeek</span> last week
+                </Summary>
+                <ChildContent>
+                    <OverTime History="_history" />
+                </ChildContent>
+            </DashSection>
+
+            <DashSection Id="@LibraryId" Title="The library" Open="@IsOpen(LibraryId)" OnToggle="ToggleFold">
+                <Gist>
+                    <span class="mono">@_distribution.TrackCount.ToString("N0")</span> songs, one count per song ·
+                    <span class="mono">@_distribution.KeyedTrackCount.ToString("N0")</span> with a key ·
+                    <span class="mono">@_distribution.FileCount.ToString("N0")</span> files
+                </Gist>
+                <ChildContent>
+                    @if (_distribution.FileCount is 0)
+                    {
+                        <p class="empty">Nothing to count — @_distribution.Root is not readable from here.</p>
+                    }
+                    else
+                    {
+                        @if (_queued is { } queued)
+                        {
+                            <div class="band" id="never-judged">
+                                <span class="band-label">Never judged</span>
+                                <span class="band-value">Queued <span class="mono">@queued</span> for judging</span>
+                            </div>
+                        }
+                        else if (Unjudged.Count > 0)
+                        {
+                            <div class="band" id="never-judged">
+                                <div class="band-line">
+                                    <span class="band-label">Never judged</span>
+                                    <button class="outline" @onclick="QueueUnjudged" disabled="@_reading">
+                                        Queue them for judging
+                                    </button>
+                                </div>
+                                <span class="band-value">
+                                    <span class="mono">@Unjudged.Count</span>
+                                    @("upload".ToQuantity(Unjudged.Count, ShowQuantityAs.None)) tagged by hand before crateside
+                                </span>
+                                <p class="band-status">
+                                    The audit cannot check their keys. Queuing cuts nothing: each is fetched and
+                                    detected, about 44 MB apiece until judged, in the hours before the weekly
+                                    Claude reset when Settings has Library backfill on.
+                                </p>
+                            </div>
+                        }
+
+                        <div class="library">
+                            <KeyDetectors Both="_keysBoth" High="_keysHigh" />
+
+                            @if (_loudness is not null)
+                            {
+                                <ClipGainSpread Spread="_loudness" />
+                            }
+
+                            <section id="p-key">
+                                <h3>By key</h3>
+
+                                <table class="distribution">
+                                    <thead>
+                                        <tr>
+                                            <th class="name-col">Key</th>
+                                            <th class="camelot-col">Camelot</th>
+                                            <th>Songs</th>
+                                            <th class="numeric count-col">Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var count in _allKeys ? Ordered : Ordered.Take(KeysShown))
+                                        {
+                                            <tr class="@(count.Tracks is 0 ? "empty-bucket" : null)">
+                                                <td>@count.Key.Name</td>
+                                                <td class="camelot mono">@count.Key.CamelotCode</td>
+                                                <td class="bar-cell">
+                                                    <span class="bar @count.Key.Mode.ToString().ToLowerInvariant()"
+                                                          style="width: @Percent(count.Tracks, _distribution.Largest)"></span>
+                                                </td>
+                                                <td class="numeric">@count.Tracks</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                                <p class="fold">
+                                    @if (_allKeys)
+                                    {
+                                        <text>All 24 keys · <button class="link" @onclick="() => _allKeys = false">fewer</button></text>
+                                    }
+                                    else
+                                    {
+                                        <text>Showing the top @KeysShown · <button class="link" @onclick="() => _allKeys = true">all 24 keys</button></text>
+                                    }
+                                </p>
+
+                                @if (_distribution.PerishableCount > 0)
+                                {
+                                    <p class="footnote">
+                                        <span class="mono">@_distribution.PerishableCount</span> of these keys
+                                        @(_distribution.PerishableCount is 1 ? "is" : "are") not yet backed by the
+                                        folder's tag store, so a hand edit there would drop them. crateside backs
+                                        them within a few minutes of starting.
+                                    </p>
+                                }
+                            </section>
+
+                            @if (_tempo.Warped > 0)
+                            {
+                                <section id="p-tempo">
+                                    <h3>By tempo</h3>
+                                    <p class="lead">
+                                        Each song's headline BPM: the warp where there is one. Bins and peaks are whole numbers.
+                                        @if (_tempo.Warped == _distribution.TrackCount)
+                                        {
+                                            <text>All <span class="mono">@_tempo.Warped</span> songs are warped.</text>
+                                        }
+                                        else
+                                        {
+                                            <text><span class="mono">@_tempo.Warped</span> of <span class="mono">@_distribution.TrackCount</span> songs are warped.</text>
+                                        }
+                                        The solid part of a bar is the tempos that ten or more songs share.
+                                    </p>
+
+                                    <table class="distribution">
+                                        <thead>
+                                            <tr>
+                                                <th class="name-col">BPM</th>
+                                                <th>Songs</th>
+                                                <th class="numeric count-col">Count</th>
+                                                <th class="peaks-col">Shared by @TempoCounts.SharedBy or more</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var bin in _tempo.Bins)
+                                            {
+                                                <tr class="@(bin.Songs is 0 ? "empty-bucket" : null)">
+                                                    <td class="mono">@bin.Label</td>
+                                                    <td class="bar-cell">
+                                                        <span class="bar split" style="width: @Percent(bin.Songs, _tempo.Largest)">
+                                                            <span class="peak" style="width: @Percent(bin.PeakSongs, bin.Songs)"></span>
+                                                        </span>
+                                                    </td>
+                                                    <td class="numeric">@bin.Songs</td>
+                                                    <td class="peaks mono">
+                                                        @string.Join("  ", bin.Peaks.Select(peak => TempoFormat.Peak(peak.Bpm, peak.Songs)))
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+
+                                    <p class="shapes">
+                                        <span>Steady <span class="mono value">@_tempo.Steady</span></span>
+                                        <span>Mostly steady <span class="mono value">@_tempo.MostlySteady</span></span>
+                                        <span>Drifting <span class="mono value">@_tempo.Drifting</span>, counted at their median</span>
+                                    </p>
+
+                                    @if (_drift.Any(count => count.Judged > 0))
+                                    {
+                                        <p class="lead drift-check">
+                                            The <em>tempo drifts</em> warning, checked against your warps: it caught
+                                            <span class="mono">@Drift(TempoShape.Drifting).Flagged</span> of
+                                            <span class="mono">@Drift(TempoShape.Drifting).Judged</span> drifting before you warped them,
+                                            and warned wrongly on <span class="mono">@Drift(TempoShape.Steady).Flagged</span> of
+                                            <span class="mono">@Drift(TempoShape.Steady).Judged</span> steady and
+                                            <span class="mono">@Drift(TempoShape.MostlySteady).Flagged</span> of
+                                            <span class="mono">@Drift(TempoShape.MostlySteady).Judged</span> mostly steady.
+                                        </p>
+                                    }
+                                </section>
+                            }
+
+                            @if (_starters.Compared > 0)
+                            {
+                                <StarterWarps Counts="_starters" />
+                            }
+
+                            <section id="p-genre">
+                                <h3>By genre</h3>
+                                <p class="lead">
+                                    <span class="mono">@_distribution.UngenredCount</span>
+                                    @("song".ToQuantity(_distribution.UngenredCount, ShowQuantityAs.None))
+                                    carry none of these genres yet: the sources are still being asked, or name nothing the table maps.
+                                </p>
+
+                                <table class="distribution">
+                                    <tbody>
+                                        @foreach (var genre in _distribution.Genres.OrderByDescending(g => g.Tracks))
+                                        {
+                                            <tr class="@(genre.Tracks is 0 ? "empty-bucket" : null)">
+                                                <td class="wide-name-col">@genre.Genre</td>
+                                                <td class="bar-cell">
+                                                    <span class="bar" style="width: @Percent(genre.Tracks, GenreLargest)"></span>
+                                                </td>
+                                                <td class="numeric count-col">@genre.Tracks</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+
+                                @if (_gaps.Count > 0)
+                                {
+                                    <details class="opener">
+                                        <summary>
+                                            What the sources called that no genre covers
+                                            <span class="aside">labels the table does not map onto a genre</span>
+                                        </summary>
+                                        <ul class="gaps">
+                                            @foreach (var gap in _gaps.Take(15))
+                                            {
+                                                <li><span>@gap.Label</span> <span class="numeric">@("song".ToQuantity(gap.Songs))</span></li>
+                                            }
+                                        </ul>
+                                    </details>
+                                }
+                            </section>
+
+                            <section id="p-familiarity">
+                                <h3>By familiarity</h3>
+
+                                <table class="distribution">
+                                    <tbody>
+                                        @foreach (var (value, songs) in _familiarity)
+                                        {
+                                            <tr class="@(value is null ? "empty-bucket" : null)">
+                                                <td class="wide-name-col">@(value ?? "Not answered")</td>
+                                                <td class="bar-cell">
+                                                    <span class="bar" style="width: @Percent(songs, _familiarity.Max(f => f.Songs))"></span>
+                                                </td>
+                                                <td class="numeric count-col">@songs</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+
+                                @if (_distribution.Unkeyed.Count > 0)
+                                {
+                                    <div id="p-unkeyed" class="sub-panel">
+                                        <h4>@("file".ToQuantity(_distribution.Unkeyed.Count)) with no key</h4>
+                                        <details class="opener">
+                                            <summary>
+                                                Show the files
+                                                <span class="aside">Ableton holds no key for these either</span>
+                                            </summary>
+                                            <ul class="unkeyed">
+                                                @foreach (var file in _distribution.Unkeyed)
+                                                {
+                                                    <li>@file</li>
+                                                }
+                                            </ul>
+                                        </details>
+                                    </div>
+                                }
+                            </section>
+
+                            @if (_artists.Artists.Count > 0)
+                            {
+                                <section id="p-artist">
+                                    <h3>By artist</h3>
+                                    <p class="lead">
+                                        Artists with three or more songs, by first credited name:
+                                        <span class="mono">@_artists.Artists.Count</span> of
+                                        <span class="mono">@_artists.AllArtists</span>. The rest have one or two each.
+                                    </p>
+
+                                    <table class="distribution">
+                                        <thead>
+                                            <tr>
+                                                <th class="artist-col">Artist</th>
+                                                <th>Songs</th>
+                                                <th class="numeric count-col">Count</th>
+                                                <th class="keys-col">Keys</th>
+                                                <th class="bpm-col">BPM</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var artist in _allArtists ? _artists.Artists : _artists.Artists.Take(ArtistsShown))
+                                            {
+                                                <tr>
+                                                    <td class="artist" title="@artist.Artist">@artist.Artist</td>
+                                                    <td class="bar-cell">
+                                                        <span class="bar" style="width: @Percent(artist.Songs, _artists.Largest)"></span>
+                                                    </td>
+                                                    <td class="numeric">@artist.Songs</td>
+                                                    <td class="quiet mono">@string.Join(" ", artist.Keys)</td>
+                                                    <td class="quiet mono">@artist.BpmRange</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+
+                                    @if (_artists.Artists.Count > ArtistsShown)
+                                    {
+                                        <p class="fold">
+                                            @if (_allArtists)
+                                            {
+                                                <text>All @_artists.Artists.Count · <button class="link" @onclick="() => _allArtists = false">fewer</button></text>
+                                            }
+                                            else
+                                            {
+                                                <text>Showing @ArtistsShown of @_artists.Artists.Count · <button class="link" @onclick="() => _allArtists = true">all @_artists.Artists.Count</button></text>
+                                            }
+                                        </p>
+                                    }
+                                </section>
+                            }
+                        </div>
+                    }
+                </ChildContent>
+            </DashSection>
+        </div>
+    </div>
+</div>
+
+@code {
+    private const string TurnId = "d-turn";
+    private const string WorkId = "d-work";
+    private const string ActId = "d-act";
+    private const string TimeId = "d-time";
+    private const string LibraryId = "d-lib";
+    private const string FoldCookie = "crateside.dashboard.folded";
+    private const string ActivityCookie = "crateside.dashboard.activity";
+    private const int KeysShown = 8;
+    private const int ArtistsShown = 12;
+
+    private static readonly string[] Sections = [TurnId, WorkId, ActId, TimeId, LibraryId];
+
+    private static readonly TimeSpan Tick = TimeSpan.FromSeconds(1);
+
+    private static readonly TimeSpan QuotaEvery = TimeSpan.FromMinutes(1);
+
+    private KeyDistribution _distribution = null!;
+    private IReadOnlyList<GenreGap> _gaps = [];
+    private TempoCounts _tempo = null!;
+    private ArtistCounts _artists = null!;
+    private IReadOnlyList<DriftCount> _drift = [];
+    private StarterWarpCounts _starters = new([], 0);
+    private IReadOnlyList<(string? Value, int Songs)> _familiarity = [];
+    private KeyDetectorCounts _keysBoth = new(0, [], []);
+    private KeyDetectorCounts _keysHigh = new(0, [], []);
+    private LoudnessSpread? _loudness;
+
+    private IReadOnlyList<TrackRow> _rows = [];
+    private IReadOnlyList<TurnTile> _tiles = [];
+    private JobHistory _history = JobHistory.From([], DateTimeOffset.Now);
+    private ActivityFeed _feed = new([]);
+    private ActivityQuery _activity = new();
+    private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
+    private DateTimeOffset _quotaReadAt;
+    private bool _quotaReading;
+    private readonly HashSet<string> _folded = new(StringComparer.Ordinal);
+    private System.Threading.Timer? _clock;
+    private readonly CancellationTokenSource _circuit = new();
+
+    private bool _reading;
+    private bool _syncing;
+    private int? _queued;
+    private bool _allKeys;
+    private bool _allArtists;
+
+    private ElementReference _index;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _watch;
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    /// <summary>The folded sections, read from the cookie while prerendering, so the first paint is already folded.</summary>
+    [PersistentState]
+    public string[]? Folded { get; set; }
+
+    /// <summary>The activity filters, read from their cookie while prerendering for the same reason.</summary>
+    [PersistentState]
+    public string? ActivityRemembered { get; set; }
+
+    private IReadOnlyList<TrackRowFacts> Unjudged =>
+        [
+            .. _rows
+                .Where(row => row is { IsLibraryOnly: true, Verdict: null, IsAddedByUrl: false, HasUpload: true })
+                .Select(row => row.Facts),
+        ];
+
+    private IEnumerable<KeyCount> Ordered =>
+        _distribution.Counts.OrderByDescending(c => c.Tracks).ThenBy(c => c.Key);
+
+    private int LoudnessCounted => (_loudness?.Instrumentals.Count ?? 0) + (_loudness?.Vocals.Count ?? 0);
+
+    private int Represented => _distribution.Counts.Count(c => c.Tracks > 0);
+
+    private int GenreLargest => _distribution.Genres.Select(g => g.Tracks).DefaultIfEmpty().Max();
+
+    private int ThisWeek => _history.Weeks is [.., { IsCurrent: true } current] ? current.Tracks : 0;
+
+    private int LastWeek => _history.Weeks is [.., var last, { IsCurrent: true }] ? last.Tracks : 0;
+
+    private string JudgingState =>
+        _rows.Any(row => row.State is TrackState.Judging) ? "a track"
+        : Judging.IsPaused ? "paused"
+        : QuotaGuard.HoldOf(_quota, DateTimeOffset.UtcNow) is not null ? "held at the weekly limit"
+        : "idle";
+
+    private string TimeGist =>
+        _history.Since is { } since ? $"since {since.ToLocalTime():d MMMM} · jobs.jsonl" : "jobs.jsonl";
+
+    private IEnumerable<IndexEntry> Index =>
+        new IndexEntry?[]
+        {
+            new(TurnId, "Your turn", _tiles.Sum(tile => tile.Count)),
+            new(WorkId, "Working now", null),
+            new(ActId, "Activity", _feed.Running is > 0 and var running ? running : null),
+            new(TimeId, "Over time", ThisWeek),
+            new(LibraryId, "The library", _distribution.TrackCount),
+            _keysBoth.Songs > 0 ? new("p-kdet", "Key detectors", _keysBoth.Songs, IsPanel: true) : null,
+            new("p-key", "By key", Represented, IsPanel: true),
+            LoudnessCounted > 0 ? new("p-loud", "Loudness adjustments", LoudnessCounted, IsPanel: true) : null,
+            _tempo.Warped > 0 ? new("p-tempo", "By tempo", _tempo.Warped, IsPanel: true) : null,
+            _starters.Compared > 0 ? new("p-starter", "Starter warps", _starters.Compared, IsPanel: true) : null,
+            new("p-genre", "By genre", _distribution.Genres.Count(g => g.Tracks > 0), IsPanel: true),
+            new("p-familiarity", "By familiarity", _familiarity.Count(f => f is { Value: not null, Songs: > 0 }), IsPanel: true),
+            _artists.Artists.Count > 0 ? new("p-artist", "By artist", _artists.Artists.Count, IsPanel: true) : null,
+            _distribution.Unkeyed.Count > 0 ? new("p-unkeyed", "No key", _distribution.Unkeyed.Count, IsPanel: true) : null,
+        }
+            .OfType<IndexEntry>()
+            .Where(entry => !entry.IsPanel || IsOpen(LibraryId));
+
+    protected override async Task OnInitializedAsync()
+    {
+        Folded ??= HttpContext?.Request.Cookies[FoldCookie]?.Split('|') ?? [];
+        _folded.UnionWith(Folded.Intersect(Sections));
+
+        ActivityRemembered ??= HttpContext?.Request.Cookies[ActivityCookie];
+        _activity = ActivityQuery.FromCookie(ActivityRemembered);
+
+        Tracks.Changed += OnChanged;
+        Separation.Changed += OnChanged;
+        Judging.Changed += OnChanged;
+        Spend.Changed += OnChanged;
+
+        Count(Summary.Current);
+        _loudness = await Task.Run(Levels.Spread);
+        await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
+        Follow();
+
+        _quota = await Quota.ReadAsync();
+        _quotaReadAt = DateTimeOffset.UtcNow;
+
+        _clock = new System.Threading.Timer(_ => Redraw(), null, Tick, Tick);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        _module = await Js.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/Dashboard.razor.js");
+        _watch = await _module.InvokeAsync<IJSObjectReference>("watch", _index);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Tracks.Changed -= OnChanged;
+        Separation.Changed -= OnChanged;
+        Judging.Changed -= OnChanged;
+        Spend.Changed -= OnChanged;
+
+        await _circuit.CancelAsync();
+        _clock?.Dispose();
+        _circuit.Dispose();
+
+        try
+        {
+            if (_watch is not null)
+            {
+                await _watch.InvokeVoidAsync("dispose");
+                await _watch.DisposeAsync();
+            }
+
+            if (_module is not null)
+                await _module.DisposeAsync();
+        }
+        // The circuit is already gone when the tab is closed.
+        catch (JSDisconnectedException) { }
+    }
+
+    private bool IsOpen(string id) => !_folded.Contains(id);
+
+    private async Task ToggleFold(string id)
+    {
+        if (!_folded.Remove(id))
+            _folded.Add(id);
+
+        if (_module is not null)
+            await _module.InvokeVoidAsync("remember", FoldCookie, string.Join('|', _folded));
+    }
+
+    private async Task SetActivity(ActivityQuery query)
+    {
+        _activity = query;
+
+        if (_module is not null)
+            await _module.InvokeVoidAsync("remember", ActivityCookie, query.ToCookie());
+    }
+
+    /// <summary>Unfolds Activity with only the failed or canceled actions on show.</summary>
+    private async Task ShowFailed()
+    {
+        _folded.Remove(ActId);
+
+        if (_module is not null)
+            await _module.InvokeVoidAsync("remember", FoldCookie, string.Join('|', _folded));
+
+        await SetActivity(_activity with { FailedOnly = true, Page = 1, AnchorSequence = null });
+    }
+
+    private void OnChanged()
+    {
+        Follow();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Everything that moves with the stages: the rows, the tiles and the job record.</summary>
+    private void Follow()
+    {
+        _rows = Tracks.Current?.Rows ?? [];
+        var updates = Jobs.Updates();
+        _history = JobHistory.From(updates, DateTimeOffset.Now);
+        _feed = ActivityFeed.From(updates);
+        _tiles =
+        [
+            new("In staging", _rows.Count(TrackFilter.InStaging), "ready to warp", "Tracks · In staging", "tracks?filter=InStaging"),
+            new("Needs attention", _rows.Count(TrackFilter.NeedsAttention), "stopped, parked, or with a finding", "Tracks · Needs attention", "tracks?filter=NeedsAttention") { Short = "need attention" },
+            new("Tempo drifts", _rows.Count(TrackFilter.TempoDrifts), "not warped yet: expect a hard warp", "Tracks · Tempo drifts", "tracks?filter=TempoDrifts"),
+            new("Left in the playlist", Intake.LeftInPlaylist.Count, "removals that failed", "Settings · Emptying the playlist", "settings"),
+            new("Gave up", _rows.Count(row => row.State is TrackState.GaveUp), "out of strikes at a stage", "Tracks · Needs attention", "tracks?filter=NeedsAttention"),
+        ];
+    }
+
+    private void Redraw()
+    {
+        if (_circuit.IsCancellationRequested)
+            return;
+
+        _ = InvokeAsync(async () =>
+        {
+            if (DateTimeOffset.UtcNow - _quotaReadAt > QuotaEvery)
+            {
+                _quotaReadAt = DateTimeOffset.UtcNow;
+                _quota = await Quota.ReadAsync();
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    private string Synced => Tracks.Current?.ReadAt is { } read ? $"checked {Clock.Ago(read)}" : "not read yet";
+
+    private async Task RefreshQuota()
+    {
+        _quotaReading = true;
+
+        try
+        {
+            _quota = await Quota.ReadAsync(_circuit.Token);
+            _quotaReadAt = DateTimeOffset.UtcNow;
+        }
+        finally
+        {
+            _quotaReading = false;
+        }
+    }
+
+    /// <summary>Reads the playlist now, and wakes the download stage so a new entry starts at once.</summary>
+    private async Task Resync()
+    {
+        _syncing = true;
+
+        try
+        {
+            Playlist.Invalidate();
+            await Tracks.RefreshAsync(_circuit.Token);
+            Signals.Wake(JobStage.Download);
+            Follow();
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+
+    /// <summary>"Artist – Title", or the ID of a track no longer listed.</summary>
+    private string ActivityName(string trackKey) =>
+        _rows.FirstOrDefault(row => row.TrackKey.Equals(trackKey, StringComparison.Ordinal)) is { } row
+            ? row.ArtistAndTitle is var (artist, title) ? $"{artist} – {title}" : row.Title
+            : trackKey;
+
+    private void Count(KeyDistribution distribution)
+    {
+        _distribution = distribution;
+        _gaps = GenreGaps.From(GenreRecords.Read().Values);
+        _tempo = TempoCounts.From(distribution.Songs);
+        _artists = ArtistCounts.From(distribution.Songs);
+        _starters = StarterWarpCounts.From(distribution.Songs.ToList());
+        _drift = DriftCount.From(distribution.Songs);
+
+        var evidence = Ledger.LatestEvidence().Values;
+        var ledger = Ledger.Read();
+        _keysBoth = KeyDetectorCounts.From(evidence, ledger, highOnly: false);
+        _keysHigh = KeyDetectorCounts.From(evidence, ledger, highOnly: true);
+
+        var familiarity = FamiliarityRecords.Read();
+        var written = distribution
+            .Songs.Select(song => familiarity.GetValueOrDefault(song.Song)?.Written)
+            .ToList();
+
+        _familiarity =
+        [
+            .. FamiliarityVocabulary.All.Select(value => ((string?)value, written.Count(w => w == value))),
+            (null, written.Count(w => w is null)),
+        ];
+    }
+
+    private async Task Reread()
+    {
+        _reading = true;
+
+        Count(await Task.Run(Summary.Refresh));
+        _loudness = await Task.Run(Levels.Spread);
+
+        _reading = false;
+    }
+
+    private async Task QueueUnjudged()
+    {
+        _reading = true;
+
+        try
+        {
+            _queued = Adding.QueueUnjudged(Unjudged);
+
+            await Tracks.RefreshAsync();
+            Follow();
+        }
+        finally
+        {
+            _reading = false;
+        }
+    }
+
+    private DriftCount Drift(TempoShape shape) => _drift.First(count => count.Shape == shape);
+
+    private static string Percent(double part, double whole) =>
+        $"{(whole is 0 ? 0 : part * 100 / whole).ToString("0.#", CultureInfo.InvariantCulture)}%";
+
+    private sealed record IndexEntry(string Id, string Label, int? Count, bool IsPanel = false);
+}

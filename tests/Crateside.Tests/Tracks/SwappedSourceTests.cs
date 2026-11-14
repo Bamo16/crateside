@@ -1,24 +1,21 @@
 using System.Text.Json;
 using Crateside.Core.Ledger;
-using Crateside.Core.Orchestration;
-using Crateside.Core.Queue;
+using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
+using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Tracks;
 
-/// <summary>
-/// One song cut from two uploads. Shaped after the real `Ludacris, Pharrell - Southern
-/// Hospitality` swap of 2026-09-09, which left two rows in the list and a track in the GPU line
-/// that had already been separated (ADR 0014).
-/// </summary>
-public class SwappedSourceTests : IDisposable
+/// <summary>One song cut from two uploads (ADR 0014).</summary>
+public sealed class SwappedSourceTests : IDisposable
 {
     private const string Original = "AhtkGlO7O8c";
     private const string Replacement = "39Z_YiOmHeA";
     private const string Song = "ludacris, pharrell - southern hospitality";
-    private const string FinishedRoot = @"P:\RYAN\Ableton\Mashup Samples";
-    private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
+    private const string FinishedRoot = @"D:\Music\Library";
+    private const string StagingRoot = @"D:\Music\Sample Staging";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -57,32 +54,24 @@ public class SwappedSourceTests : IDisposable
         Assert.Single(rows);
     }
 
-    /// <summary>
-    /// The point of the merge: the panel shows every sample, not just those belonging to
-    /// whichever upload the row happened to be keyed by. The replacement's third file is its
-    /// warp guide, which is used up rather than kept and is therefore not a sample.
-    /// </summary>
+    /// <summary>The replacement's third file is its warp guide, which is not a sample.</summary>
     [Fact]
     public void The_row_carries_every_sample_from_both_uploads()
     {
         var samples = Compose().Single().Samples;
 
         Assert.Equal(4, samples.Count);
-        Assert.Equal(2, samples.Count(s => s.SourceVideoId == Replacement));
-        Assert.Equal(2, samples.Count(s => s.SourceVideoId == Original));
+        Assert.Equal(2, samples.Count(s => s.SourceTrackKey == Replacement));
+        Assert.Equal(2, samples.Count(s => s.SourceTrackKey == Original));
     }
 
     [Fact]
     public void The_replacements_warp_guide_is_still_outstanding() =>
         Assert.True(Compose().Single().HasWarpGuide);
 
-    /// <summary>
-    /// The filenames are identical across the two uploads, so the video ID is the only thing
-    /// that tells them apart.
-    /// </summary>
     [Fact]
     public void Every_sample_says_which_upload_it_came_from() =>
-        Assert.All(Compose().Single().Samples, sample => Assert.NotNull(sample.SourceVideoId));
+        Assert.All(Compose().Single().Samples, sample => Assert.NotNull(sample.SourceTrackKey));
 
     [Fact]
     public void The_old_uploads_samples_are_the_ones_already_in_the_library()
@@ -90,28 +79,23 @@ public class SwappedSourceTests : IDisposable
         var samples = Compose().Single().Samples;
 
         Assert.All(
-            samples.Where(s => s.SourceVideoId == Original),
+            samples.Where(s => s.SourceTrackKey == Original),
             sample => Assert.True(sample.IsInLibrary)
         );
         Assert.All(
-            samples.Where(s => s.SourceVideoId == Replacement),
+            samples.Where(s => s.SourceTrackKey == Replacement),
             sample => Assert.False(sample.IsInLibrary)
         );
     }
 
-    /// <summary>
-    /// The swap cancels the original's three stages and the replacement completes them. Read per
-    /// video ID the original owes a handoff for ever, which is what put an already-separated
-    /// track back in the GPU line.
-    /// </summary>
     [Fact]
     public void A_stage_completed_under_the_replacement_settles_it_for_the_song()
     {
         TrackJob[] jobs =
         [
             Job(Original, JobStage.Separation, JobStatus.Succeeded, "00:37:49"),
-            Job(Original, JobStage.Handoff, JobStatus.Cancelled, "00:22:02"),
-            Job(Original, JobStage.Tagging, JobStatus.Cancelled, "00:22:02"),
+            Job(Original, JobStage.Handoff, JobStatus.Canceled, "00:22:02"),
+            Job(Original, JobStage.Tagging, JobStatus.Canceled, "00:22:02"),
             Job(Replacement, JobStage.Handoff, JobStatus.Succeeded, "00:39:43"),
             Job(Replacement, JobStage.Tagging, JobStatus.Succeeded, "02:43:36"),
         ];
@@ -125,23 +109,19 @@ public class SwappedSourceTests : IDisposable
         TrackJob[] jobs =
         [
             Job(Original, JobStage.Separation, JobStatus.Succeeded, "00:37:49"),
-            Job(Original, JobStage.Handoff, JobStatus.Cancelled, "00:22:02"),
+            Job(Original, JobStage.Handoff, JobStatus.Canceled, "00:22:02"),
         ];
 
         Assert.Equal([Original], ReopenedTracks.From(jobs, Ledger()));
     }
 
-    /// <summary>
-    /// A cancellation that lands after the success is a fresh reopening, not the stale one this
-    /// change exists to ignore.
-    /// </summary>
     [Fact]
     public void A_cancellation_later_than_the_success_reopens_the_song_again()
     {
         TrackJob[] jobs =
         [
             Job(Replacement, JobStage.Handoff, JobStatus.Succeeded, "00:39:43"),
-            Job(Original, JobStage.Handoff, JobStatus.Cancelled, "01:00:00"),
+            Job(Original, JobStage.Handoff, JobStatus.Canceled, "01:00:00"),
         ];
 
         Assert.Equal([Original], ReopenedTracks.From(jobs, Ledger()));
@@ -150,7 +130,7 @@ public class SwappedSourceTests : IDisposable
     [Fact]
     public void A_track_the_ledger_does_not_know_is_still_judged_by_its_own_video_id()
     {
-        TrackJob[] jobs = [Job("zzzzzzzzzzz", JobStage.Handoff, JobStatus.Cancelled, "00:22:02")];
+        TrackJob[] jobs = [Job("zzzzzzzzzzz", JobStage.Handoff, JobStatus.Canceled, "00:22:02")];
 
         Assert.Equal(["zzzzzzzzzzz"], ReopenedTracks.From(jobs, Ledger()));
     }
@@ -158,7 +138,7 @@ public class SwappedSourceTests : IDisposable
     private IReadOnlyList<TrackRow> Compose() =>
         TracksView
             .Compose(
-                QueueView.Compose(
+                WorkListsView.Compose(
                     [],
                     new HashSet<string>(),
                     new HashSet<string>(),
@@ -174,10 +154,10 @@ public class SwappedSourceTests : IDisposable
             )
             .Rows;
 
-    private static StagingSong Staged() =>
+    private static StagedSong Staged() =>
         new()
         {
-            SourceVideoId = Replacement,
+            SourceTrackKey = Replacement,
             DisplayName = "Ludacris, Pharrell - Southern Hospitality",
             Stems =
             [
@@ -187,7 +167,7 @@ public class SwappedSourceTests : IDisposable
             ],
         };
 
-    private static StagingStem StagedStem(string preset) =>
+    private static StagedFile StagedStem(string preset) =>
         new()
         {
             Path = Path.Combine(StagingRoot, $"Southern Hospitality ({preset}).flac"),
@@ -220,18 +200,17 @@ public class SwappedSourceTests : IDisposable
             Preset = preset,
         };
 
-    private static TrackJob Job(string videoId, JobStage stage, JobStatus status, string at) =>
+    private static TrackJob Job(string trackKey, JobStage stage, JobStatus status, string at) =>
         new()
         {
-            Id = $"{videoId}:{stage}",
-            VideoId = videoId,
+            Id = $"{trackKey}:{stage}",
+            TrackKey = trackKey,
             Stage = stage,
             Status = status,
             UpdatedAt = DateTimeOffset.Parse($"2026-09-10T{at}+00:00"),
             Strikes = 0,
         };
 
-    /// <summary>The original run and the restatement that named the replacement upload.</summary>
     private KeyLedger Ledger()
     {
         var path = Path.Combine(_root, "runs.jsonl");
@@ -244,10 +223,10 @@ public class SwappedSourceTests : IDisposable
             ]
         );
 
-        return KeyLedger.Read(path);
+        return TestLedger.From(path);
     }
 
-    private static string Line(string timestamp, string videoId, string? restates) =>
+    private static string Line(string timestamp, string trackKey, string? restates) =>
         JsonSerializer.Serialize(
             new
             {
@@ -255,7 +234,7 @@ public class SwappedSourceTests : IDisposable
                 song = Song,
                 artist = "Ludacris, Pharrell",
                 title = "Southern Hospitality",
-                source_url = $"https://music.youtube.com/watch?v={videoId}",
+                source_url = $"https://music.youtube.com/watch?v={trackKey}",
                 verdict = new { key = "B major", confidence = "MEDIUM" },
                 bpm = new { value = 95.0 },
                 restates,

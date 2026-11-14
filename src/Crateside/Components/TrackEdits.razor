@@ -1,0 +1,374 @@
+@using Crateside.Core.Orchestration.Edits
+@using Crateside.Core.Library
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Orchestration.Loop
+@using Crateside.Core.Samples
+@using Crateside.Core.Tracks
+@implements IDisposable
+@inject TrackRename Rename
+@inject TrackSwap Swap
+@inject StageSignals Signals
+@inject TracksService Tracks
+@inject ActionLog Actions
+@inject NavigationManager Navigation
+
+@if (Part is Parts.Name)
+{
+    <div class="group @(Editing.Open is TrackEdit.Rename ? null : "status")">
+        @if (Editing.Open is TrackEdit.Rename)
+        {
+            <div class="label-line">
+                <span class="stack-label editing">Name · renaming</span>
+            </div>
+            <input class="edit-input" @ref="_box" value="@_draft"
+                   @oninput="e => _draft = e.Value?.ToString() ?? string.Empty"
+                   @onkeydown="OnRenameKey" />
+            <p class="edit-note">
+                Derived <strong>@(Row.DerivedTitle ?? Row.Title)</strong> · from @From(Row.NameSource).
+                Your name wins over the ledger, the file names and the playlist.
+            </p>
+            <p class="stack-status">@Row.RenameDetail</p>
+            @if (_sets is null)
+            {
+                <p class="stack-status">Checking your Ableton sets for these files…</p>
+            }
+            else if (_sets.Blocking is { } open)
+            {
+                <p class="problem"><strong>@open</strong> @TrackRename.OpenSetRefusal</p>
+            }
+            else if (_sets.Refusal is { } refusal)
+            {
+                <p class="problem">@refusal</p>
+            }
+            else if (_sets.Sets.Count > 0)
+            {
+                <p class="stack-status">
+                    Also updates the @("set".ToQuantity(_sets.Sets.Count)) using these files:
+                    <strong>@string.Join(", ", _sets.Sets)</strong>. Each is copied to its project's
+                    Backup folder first.
+                </p>
+            }
+            <div class="actions">
+                <button class="primary" disabled="@(_working || _sets is not { Refusal: null } || !StemFileName.IsUsable(_draft))"
+                        @onclick="ConfirmRename">
+                    Rename · @Row.RenameScope
+                </button>
+                <button class="outline" @onclick="Editing.Close" disabled="@_working">
+                    Cancel
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="label-line">
+                <span class="stack-label">Name</span>
+                <span class="label-actions">
+                    @if (Row.IsRenamed)
+                    {
+                        <button class="outline" @onclick="RevertRename" disabled="@_working">
+                            Revert
+                        </button>
+                    }
+                    <button class="outline" @onclick="() => StartRename(Row.Title)" disabled="@_working">
+                        Rename
+                    </button>
+                </span>
+            </div>
+            <span class="stack-value">@Row.Title</span>
+            <span class="stack-status">
+                @if (Row.DerivedTitle is { } derived)
+                {
+                    <text>renamed by you · was <strong>@derived</strong></text>
+                }
+                else
+                {
+                    <text>named from @From(Row.NameSource)</text>
+                }
+            </span>
+        }
+        @if (_problem is { } problem)
+        {
+            <p class="problem">@problem</p>
+        }
+    </div>
+}
+else if (Part is Parts.Source && HasSource(Row))
+{
+    <div class="stack-part @(Editing.Open is TrackEdit.Swap ? "editing" : null)">
+        @if (Editing.Open is TrackEdit.Swap)
+        {
+            <div class="label-line">
+                <span class="stack-label editing">Source · swapping</span>
+            </div>
+            <input class="edit-input" @ref="_box" value="@_draft" placeholder="https://www.youtube.com/watch?v=…"
+                   @oninput="OnSwapUrl"
+                   @onkeydown="OnSwapKey" />
+            <p class="edit-note">
+                A better upload of the same song. The playlist entry stays as it is.
+            </p>
+            <p class="stack-status">
+                @(_swapPlan?.Refusal ?? _swapPlan?.Detail ?? SwapPlan.DetailFor(Row.Verdict is not null))
+                @if (Row.SamplesLeftInLibrary > 0)
+                {
+                    <text>
+                        @("sample".ToQuantity(Row.SamplesLeftInLibrary)) of the old upload are in
+                        the library; crateside never writes there, so remove them yourself.
+                    </text>
+                }
+            </p>
+            <div class="actions">
+                <button class="danger" disabled="@(_working || _swapPlan?.IsPossible is not true)"
+                        @onclick="ConfirmSwap">
+                    @(_working ? "Swapping…" : SwapScope(_swapPlan))
+                </button>
+                <button class="outline" @onclick="Editing.Close" disabled="@_working">
+                    Cancel
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="label-line">
+                <span class="stack-label">Source</span>
+                <button class="outline" @onclick="StartSwap" disabled="@_working">
+                    Swap source
+                </button>
+            </div>
+            <span class="stack-status">
+                @if (Row.IsSourceSwapped)
+                {
+                    <text>source swapped · cut from <span class="mono url">@Row.StatedSourceUrl</span></text>
+                }
+                else
+                {
+                    <text>cut from the playlist entry's own video</text>
+                }
+            </span>
+        }
+        @if (_problem is { } problem)
+        {
+            <p class="problem">@problem</p>
+        }
+    </div>
+}
+
+@code {
+    private readonly CancellationTokenSource _circuit = new();
+
+    private bool _working;
+    private string? _problem;
+
+    private string _draft = string.Empty;
+
+    // The sets using this track's files; null until checked, which the confirm waits for.
+    private SetCheck? _sets;
+    private SwapPlan? _swapPlan;
+    private ElementReference _box;
+    private bool _focus;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    [Parameter, EditorRequired]
+    public required Parts Part { get; set; }
+
+    /// <summary>Shared with the other part's mount, so opening one box closes the other.</summary>
+    [Parameter, EditorRequired]
+    public required TrackEditing Editing { get; set; }
+
+    /// <summary>A library-only track was never cut by crateside, so it has no source to swap.</summary>
+    public static bool HasSource(TrackRow row) => !row.IsLibraryOnly;
+
+    public void Dispose()
+    {
+        _circuit.Cancel();
+        _circuit.Dispose();
+    }
+
+    /// <summary>
+    /// A box that has just opened takes the cursor — after the render, since an element cannot be
+    /// focused before it exists.
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focus)
+            return;
+
+        _focus = false;
+
+        await _box.FocusAsync();
+    }
+
+    private void StartRename(string draft)
+    {
+        _problem = null;
+        _draft = draft;
+        _focus = true;
+        _sets = null;
+        Editing.Start(TrackEdit.Rename);
+
+        var trackKey = Row.TrackKey;
+
+        _ = Task.Run(() => Rename.SetsUsing(trackKey))
+            .ContinueWith(
+                found =>
+                    InvokeAsync(() =>
+                    {
+                        _sets = found.IsCompletedSuccessfully
+                            ? found.Result
+                            : new SetCheck([], "Your Ableton sets could not be checked.");
+                        StateHasChanged();
+                    }),
+                TaskScheduler.Default
+            );
+    }
+
+    private async Task ConfirmRename()
+    {
+        if (!StemFileName.IsUsable(_draft))
+            return;
+
+        var name = _draft;
+
+        if (Row.DerivedTitle is { } derived && name == derived)
+        {
+            await Reverting();
+
+            return;
+        }
+
+        await Renaming(
+            () => Rename.Apply(Row.TrackKey, name),
+            () => Actions.Record(Row.TrackKey, UserActionKind.Renamed, name)
+        );
+    }
+
+    // A library file's sets have to be warned about first, so the revert goes through the editor.
+    private Task RevertRename()
+    {
+        if (!Row.Samples.Any(sample => sample.IsInLibrary))
+            return Reverting();
+
+        StartRename(Row.DerivedTitle ?? Row.Title);
+
+        return Task.CompletedTask;
+    }
+
+    private Task Reverting() =>
+        Renaming(
+            () => Rename.Revert(Row.TrackKey, Row.DerivedTitle ?? Row.Title),
+            () => Actions.Record(Row.TrackKey, UserActionKind.RenameReverted, Row.DerivedTitle)
+        );
+
+    private async Task Renaming(Func<RenameOutcome> rename, Action record)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            var outcome = rename();
+
+            _problem = outcome.Problem ?? outcome.Note;
+
+            if (outcome.Succeeded)
+            {
+                record();
+                Editing.Close();
+
+                // The name is the sourceless song's key, so its page moved with it.
+                if (!Row.HasUpload && outcome.Name is { } renamed && Navigation.Uri.Contains("/song/", StringComparison.Ordinal))
+                    Navigation.NavigateTo($"song/{Uri.EscapeDataString(SourcelessSongs.KeyNamed(renamed))}", replace: true);
+            }
+
+            await Tracks.RefreshAsync(_circuit.Token);
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task OnRenameKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter")
+            await ConfirmRename();
+        else if (e.Key is "Escape")
+            Editing.Close();
+    }
+
+    private void StartSwap()
+    {
+        _problem = null;
+        _draft = string.Empty;
+        _swapPlan = null;
+        _focus = true;
+        Editing.Start(TrackEdit.Swap);
+    }
+
+    /// <summary>Re-plans as the URL is typed, so the button says what it would do.</summary>
+    private void OnSwapUrl(ChangeEventArgs e)
+    {
+        _draft = e.Value?.ToString() ?? string.Empty;
+        _swapPlan = _draft.Length is 0 ? null : Swap.PlanFor(Row.TrackKey, _draft);
+    }
+
+    private async Task OnSwapKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter")
+            await ConfirmSwap();
+        else if (e.Key is "Escape")
+            Editing.Close();
+    }
+
+    private async Task ConfirmSwap()
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            var url = _draft;
+            var outcome = Swap.Apply(Row.TrackKey, url);
+
+            _problem = outcome.Problem;
+
+            if (outcome.Succeeded)
+            {
+                Actions.Record(Row.TrackKey, UserActionKind.Swapped, url, JobStage.Download);
+                Editing.Close();
+                Signals.Wake(JobStage.Download, JobStage.Separation);
+            }
+
+            await Tracks.RefreshAsync(_circuit.Token);
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private static string SwapScope(SwapPlan? plan) =>
+        plan?.Removing is { Count: > 0 } removing
+            ? $"Swap source · remove {"file".ToQuantity(removing.Count)}"
+            : "Swap source";
+
+    private static string From(TrackNameSource source) =>
+        source switch
+        {
+            TrackNameSource.Files => "the file names",
+            TrackNameSource.Tags => "the file's tags",
+            TrackNameSource.Ledger => "the ledger",
+            TrackNameSource.Resolved => "what StemForge will call it",
+            TrackNameSource.Playlist => "the playlist title",
+            _ => "the video ID",
+        };
+
+    public enum Parts
+    {
+        Name,
+        Source,
+    }
+}

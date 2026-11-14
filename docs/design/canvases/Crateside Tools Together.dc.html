@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif}a{color:#ece7dc;text-decoration:none}a:hover{color:#fff}button{cursor:pointer;font-family:inherit}</style>
+</helmet>
+
+<section style="padding:56px;display:flex;flex-direction:column;gap:48px;width:2672px;box-sizing:border-box;min-height:100vh;background:#0c0b09">
+  <header style="display:flex;flex-direction:column;gap:8px;max-width:960px">
+    <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Brief 12 · issue #79 · built against 9077ac3</div>
+    <h1 style="margin:0;font:600 28px 'IBM Plex Sans',sans-serif">Tools on one page, sharing a selected track</h1>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">The page reads left to right in the order the user works: <strong style="color:#ece7dc;font-weight:500">the selected track</strong>, then <strong style="color:#ece7dc;font-weight:500">Re-Pitch</strong> (pick a shift), then <strong style="color:#ece7dc;font-weight:500">Partners</strong>, which works from the key that shift lands on and says so. Partners groups its keys by relationship: <em>mixes as is</em> and <em>a shift away</em>. A Camelot wheel beside it draws the same groups, so relationships past relative major and minor can be read at a glance. One click flips Partners to the relative key. Re-Pitch folds to one line.</p>
+  </header>
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1a</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Tools · 2560px viewport · live: click a Re-Pitch row, the relative pill, the track card, the ▾</span></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">Canvas state</span>
+      <sc-for list="{{ presets }}" as="p" hint-placeholder-count="6"><button onClick="{{ p.go }}" style="padding:4px 12px;border-radius:999px;border:1px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }};font:500 12.5px 'IBM Plex Sans',sans-serif">{{ p.label }}</button></sc-for>
+    </div>
+    <div style="width:2560px;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+      <div style="display:flex;flex-direction:column;gap:14px;padding:18px 22px;background:#1b1a15;border-bottom:1px solid rgba(255,255,255,.08)"><div style="display:flex;align-items:center;gap:8px;font:600 15px 'IBM Plex Sans',sans-serif;letter-spacing:.02em"><svg width="18" height="18" viewBox="0 0 24 24" style="display:block"><rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect><rect x="3" y="10.8" width="14" height="2.4" rx="1.2" fill="#e8b45a"></rect><rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect></svg>crateside</div><nav style="display:flex;gap:14px"><span style="padding-bottom:3px;border-bottom:2px solid transparent;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Dashboard</span><span style="padding-bottom:3px;border-bottom:2px solid transparent;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Tracks</span><span style="padding-bottom:3px;border-bottom:2px solid #e8b45a;font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc">Tools</span><span style="padding-bottom:3px;border-bottom:2px solid transparent;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Settings</span></nav></div>
+
+      <div style="padding:28px 48px 56px;display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;flex-direction:column;gap:4px"><h2 style="margin:0;font:600 24px 'IBM Plex Sans',sans-serif;letter-spacing:-.01em">Tools</h2><p style="margin:0;font:400 14px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Small helpers for building a mashup, used on the spot, all working from one track.</p></div>
+
+        <div style="display:grid;grid-template-columns:{{ cols }};gap:40px;align-items:start">
+
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <span style="font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)">Working on</span>
+            <sc-if value="{{ sel.hasTrack }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ openPicker }}" style="display:flex;flex-direction:column;gap:8px;padding:14px 16px;background:#1b1a15;border:1px solid {{ sel.cardBd }};border-radius:8px;cursor:pointer" style-hover="border-color:rgba(255,255,255,.3)">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px"><span style="font:500 15px/1.35 'IBM Plex Sans',sans-serif">{{ sel.name }}</span><span style="flex:none;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Change ▾</span></div>
+                <div style="display:flex;gap:18px;font:400 13.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span>{{ sel.key }} <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ sel.cam }}</span></span><span><span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">{{ sel.bpmWhole }}</span> BPM, warped</span></div>
+                <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Drum and bass · Obscure · <span style="text-decoration:underline;text-underline-offset:3px">Track details</span></span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ sel.showSearch }}" hint-placeholder-val="{{ false }}">
+              <div style="position:relative;display:flex;flex-direction:column;gap:6px">
+                <span style="display:flex;align-items:center;gap:8px;box-sizing:border-box;padding:8px 12px;background:#1b1a15;border:1px solid {{ sel.searchBd }};border-radius:8px;font:400 14px 'IBM Plex Sans',sans-serif;color:{{ sel.searchFg }}"><span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">⌕</span>{{ sel.searchText }}</span>
+                <sc-if value="{{ picking }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;top:44px;left:0;right:0;z-index:2;display:flex;flex-direction:column;padding:4px;background:#23211a;border:1px solid rgba(255,255,255,.12);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+                    <sc-for list="{{ picks }}" as="t" hint-placeholder-count="4"><div onClick="{{ t.pick }}" style="display:grid;grid-template-columns:minmax(0,1fr) 58px 38px;gap:8px;align-items:center;padding:7px 8px;border-radius:5px;background:{{ t.bg }};cursor:pointer" style-hover="background:rgba(255,255,255,.06)"><span style="font:400 13.5px 'IBM Plex Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.song }}</span><span style="text-align:right;font:400 12.5px 'IBM Plex Mono',monospace">{{ t.bpm }}</span><span style="font:400 12.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ t.cam }}</span></div></sc-for>
+                    <span style="padding:6px 8px 4px;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Warped songs only · Esc keeps the current one</span>
+                  </div>
+                </sc-if>
+                <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ sel.searchHint }}</span>
+              </div>
+            </sc-if>
+            <div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;background:#1b1a15;border:1px solid rgba(255,255,255,.06);border-radius:8px">
+              <span style="font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)">{{ sel.handLabel }}</span>
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 104px;gap:10px">
+                <label style="display:flex;flex-direction:column;gap:5px"><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Key</span><span style="display:flex;justify-content:space-between;box-sizing:border-box;padding:6px 10px;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:6px;font:400 14px 'IBM Plex Sans',sans-serif;color:{{ sel.keyFg }}">{{ sel.keyField }}<span style="color:rgba(236,231,220,.5)">▾</span></span></label>
+                <label style="display:flex;flex-direction:column;gap:5px"><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">BPM</span><span style="display:block;box-sizing:border-box;padding:6px 10px;background:#141310;border:1px solid rgba(255,255,255,.12);border-radius:6px;font:400 14px 'IBM Plex Mono',monospace;color:{{ sel.bpmFg }}">{{ sel.bpmField }}</span></label>
+              </div>
+              <span style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);text-wrap:pretty">{{ sel.handHint }}</span>
+            </div>
+          </div>
+
+          <sc-if value="{{ repOpen }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div onClick="{{ tRep }}" style="display:flex;align-items:baseline;gap:10px;cursor:pointer;user-select:none"><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5);width:12px">▾</span><h3 style="margin:0;font:600 16px 'IBM Plex Sans',sans-serif">Re-Pitch</h3><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">speed and pitch together</span></div>
+              <p style="margin:0;font:400 13.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty">The <strong style="color:#ece7dc;font-weight:500">arrangement BPM</strong> for each shift, and the key it lands on. Pick a row and Partners works from that key.</p>
+              <div style="display:flex;align-items:center;gap:14px;font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)"><span>Max shift <span style="color:#ece7dc">±3</span></span><span style="position:relative;display:block;width:180px;height:20px"><span style="position:absolute;top:8px;left:0;right:0;height:4px;border-radius:2px;background:rgba(255,255,255,.12)"></span><span style="position:absolute;top:8px;left:0;width:25%;height:4px;border-radius:2px;background:#6fc7d6"></span><span style="position:absolute;top:2px;left:23%;width:16px;height:16px;border-radius:50%;background:#6fc7d6"></span></span></div>
+              <div style="display:flex;flex-direction:column">
+                <div style="display:grid;grid-template-columns:64px 150px minmax(0,1fr) 56px;border-bottom:1px solid rgba(255,255,255,.08);font:600 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)"><span style="padding:8px 12px;text-align:right">Shift</span><span style="padding:8px 12px;text-align:right">Arr. BPM</span><span style="padding:8px 12px">Lands on</span><span style="padding:8px 12px">Cam.</span></div>
+                <sc-for list="{{ rp }}" as="r" hint-placeholder-count="7"><div onClick="{{ r.pick }}" style="display:grid;grid-template-columns:64px 150px minmax(0,1fr) 56px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06);background:{{ r.bg }};cursor:{{ r.cursor }};box-shadow:{{ r.ring }}" style-hover="background:rgba(255,255,255,.05)"><span style="padding:9px 12px;text-align:right;font:{{ r.sfont }};color:{{ r.sfg }}">{{ r.shift }}</span><span onClick="{{ r.copy }}" style="padding:9px 12px;text-align:right;font:500 17px 'IBM Plex Mono',monospace;color:{{ r.fg }};cursor:copy" style-hover="text-decoration:underline;text-underline-offset:4px">{{ r.bpm }}</span><span style="padding:9px 12px;font:{{ r.kfont }};color:{{ r.fg }};display:flex;align-items:center;gap:8px">{{ r.key }}<span style="font:500 11px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ r.tag }}</span></span><span style="padding:9px 12px;font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ r.cam }}</span></div></sc-for>
+              </div>
+              <p style="margin:0;font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);text-wrap:pretty">{{ rpHint }}</p>
+            </div>
+          </sc-if>
+
+          <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+            <sc-if value="{{ repShut }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ tRep }}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px dashed rgba(255,255,255,.18);border-radius:8px;cursor:pointer;font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)" style-hover="border-color:rgba(255,255,255,.3)"><span style="font:400 12px 'IBM Plex Mono',monospace">▸</span><span style="font:600 14px 'IBM Plex Sans',sans-serif;color:#ece7dc">Re-Pitch</span><span>{{ repSummary }}</span></div>
+            </sc-if>
+            <div style="display:flex;align-items:baseline;gap:10px"><h3 style="margin:0;font:600 16px 'IBM Plex Sans',sans-serif">Partners</h3><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">keys to filter for in Ableton's browser, never files</span></div>
+
+            <sc-if value="{{ hasKey }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:8px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+                  <div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)">Working from</span><span style="font:600 20px 'IBM Plex Sans',sans-serif">{{ basis.key }}</span><span style="font:400 14px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">{{ basis.cam }}</span></div>
+                  <div style="display:flex;gap:6px"><sc-for list="{{ basisPills }}" as="p" hint-placeholder-count="2"><button onClick="{{ p.go }}" style="padding:4px 12px;border-radius:999px;border:1px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }};font:500 12.5px 'IBM Plex Sans',sans-serif">{{ p.label }}</button></sc-for></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7)"><span>{{ basis.why }}</span><sc-if value="{{ basis.canReset }}" hint-placeholder-val="{{ false }}"><button onClick="{{ resetShift }}" style="padding:3px 10px;background:#23211a;color:#ece7dc;border:1px solid rgba(255,255,255,.12);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif">{{ basis.resetLabel }}</button></sc-if></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)"><span>Max shift <span style="color:#ece7dc">2 semitones</span></span><span style="position:relative;display:block;width:180px;height:20px"><span style="position:absolute;top:8px;left:0;right:0;height:4px;border-radius:2px;background:rgba(255,255,255,.12)"></span><span style="position:absolute;top:8px;left:0;width:33%;height:4px;border-radius:2px;background:#6fc7d6"></span><span style="position:absolute;top:2px;left:31%;width:16px;height:16px;border-radius:50%;background:#6fc7d6"></span></span></div>
+              <div style="display:flex;flex-direction:column">
+                <div style="display:grid;grid-template-columns:150px 76px 70px 80px minmax(0,1fr) 56px;border-bottom:1px solid rgba(255,255,255,.08);font:600 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)"><span style="padding:8px 12px">Key</span><span style="padding:8px 12px">Camelot</span><span style="padding:8px 12px;text-align:right">Shift</span><span style="padding:8px 12px">Alt</span><span style="padding:8px 12px">Relationship</span><span style="padding:8px 12px;text-align:right">Score</span></div>
+                <div style="padding:14px 12px 6px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Mixes as is</div>
+                <sc-for list="{{ asIs }}" as="p" hint-placeholder-count="7"><div style="display:grid;grid-template-columns:150px 76px 70px 80px minmax(0,1fr) 56px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)"><span style="padding:8px 12px;font:{{ p.kfont }};color:{{ p.kc }}">{{ p.key }}</span><span style="padding:8px 12px;font:400 13px 'IBM Plex Mono',monospace">{{ p.cam }}</span><span style="padding:8px 12px;text-align:right;font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ p.shift }}</span><span style="padding:8px 12px;font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ p.alt }}</span><span style="padding:8px 12px;font:400 14px 'IBM Plex Sans',sans-serif;display:flex;flex-direction:column;gap:1px"><span>{{ p.rel }}</span><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ p.how }}</span></span><span style="padding:8px 12px;text-align:right;font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ p.score }}</span></div></sc-for>
+                <div style="padding:18px 12px 6px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">A shift away · pitch the sample by Shift to land on {{ basis.key }}</div>
+                <sc-for list="{{ away }}" as="p" hint-placeholder-count="4"><div style="display:grid;grid-template-columns:150px 76px 70px 80px minmax(0,1fr) 56px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)"><span style="padding:8px 12px;font:{{ p.kfont }};color:{{ p.kc }}">{{ p.key }}</span><span style="padding:8px 12px;font:400 13px 'IBM Plex Mono',monospace">{{ p.cam }}</span><span style="padding:8px 12px;text-align:right;font:500 13px 'IBM Plex Mono',monospace">{{ p.shift }}</span><span style="padding:8px 12px;font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ p.alt }}</span><span style="padding:8px 12px;font:400 14px 'IBM Plex Sans',sans-serif;display:flex;flex-direction:column;gap:1px"><span>{{ p.rel }}</span><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ p.how }}</span></span><span style="padding:8px 12px;text-align:right;font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ p.score }}</span></div></sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ noKey }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:6px;padding:18px 16px;border:1px dashed rgba(255,255,255,.18);border-radius:8px"><span style="font:500 14px 'IBM Plex Sans',sans-serif">Pick a track, or a key, on the left.</span><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Partners lists the keys that mix with it as is, then those a shift away.</span></div>
+            </sc-if>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+            <span style="font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)">Camelot wheel</span>
+            {{ wheel }}
+            <div style="display:flex;flex-direction:column;gap:6px;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">
+              <span style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:10px;border-radius:2px;background:#ece7dc"></span>Working from</span>
+              <span style="display:flex;align-items:center;gap:8px"><span style="width:14px;height:10px;border-radius:2px;background:rgba(236,231,220,.22)"></span>Mixes as is</span>
+              <span style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:8px;border-radius:2px;border:1px dashed rgba(236,231,220,.6)"></span>A shift away</span>
+              <span style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:8px;border-radius:2px;border:2px solid #ece7dc;box-sizing:border-box"></span>The track's own key, when shifted</span>
+              <span style="padding-top:4px;color:rgba(236,231,220,.5);max-width:300px;text-wrap:pretty">Outer ring major (B), inner ring minor (A). A neighbor on the wheel is a fifth; straight in or out is the relative.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:1000px;text-wrap:pretty">The Re-Pitch figures are computed: 200 at −1 is 188.77 and lands on A♯ minor, 3A. Partners' groups and scores are drawn from a simple Camelot model for the canvas. The build keeps its own calculation and shows it in these two groups. Song names in the picker are illustrative.</p>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+    <div id="1b" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1b</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">How the columns fold as the window narrows</span></div>
+      <div style="width:1100px;box-sizing:border-box;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:24px 32px;display:flex;flex-direction:column;gap:22px">
+        <sc-for list="{{ folds }}" as="f" hint-placeholder-count="4"><div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;align-items:baseline;gap:12px"><span style="font:500 13px 'IBM Plex Mono',monospace">{{ f.w }}</span><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ f.note }}</span></div><div style="display:grid;grid-template-columns:{{ f.cols }};gap:8px"><sc-for list="{{ f.boxes }}" as="b" hint-placeholder-count="4"><span style="display:flex;align-items:center;justify-content:center;height:{{ b.h }};border-radius:6px;background:#1b1a15;border:1px solid rgba(255,255,255,.1);font:500 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);grid-column:{{ b.span }}">{{ b.label }}</span></sc-for></div></div></sc-for>
+      </div>
+    </div>
+
+    <div id="1c" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1c</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">A third tool, later</span></div>
+      <div style="width:1100px;box-sizing:border-box;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:24px 32px;display:flex;flex-direction:column;gap:16px">
+        <div style="display:grid;grid-template-columns:200px 180px 180px minmax(0,1fr);gap:8px">
+          <span style="display:flex;align-items:center;justify-content:center;height:140px;border-radius:6px;background:#1b1a15;border:1px solid rgba(255,255,255,.1);font:500 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">Working on</span>
+          <span style="display:flex;align-items:center;justify-content:center;height:140px;border-radius:6px;background:#1b1a15;border:1px solid rgba(255,255,255,.1);font:500 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">Re-Pitch ▾</span>
+          <span style="display:flex;align-items:center;justify-content:center;height:140px;border-radius:6px;border:1px dashed rgba(255,255,255,.3);font:500 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">Third tool ▾</span>
+          <span style="display:flex;align-items:center;justify-content:center;height:140px;border-radius:6px;background:#1b1a15;border:1px solid rgba(255,255,255,.1);font:500 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">Partners + wheel</span>
+        </div>
+        <p style="margin:0;font:400 13px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);max-width:88ch;text-wrap:pretty">A tool joins as a <strong style="color:#ece7dc;font-weight:500">foldable column</strong> with Re-Pitch's anatomy: a head with ▾, a one-line lead, its controls, its table, a hint. It reads the selected track. If it changes the key or BPM Partners works from, it goes to the left of Partners and the basis line names it ("−1 from Re-Pitch, then …"). If it doesn't, it goes to the right of the wheel. Partners never folds: it is what the page is for. Folded, a tool is one dashed summary line above Partners, stacked in column order. Past four columns at 2560px, the rightmost column wraps under Partners.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { preset: 'shift', track: true, root: 11, minor: true, bpm: 200, shift: -1, rel: false, repOpen: true, picking: false, copied: null };
+  renderVals() {
+    const s = this.state;
+    const mod = n => ((n % 12) + 12) % 12;
+    const flat = ['C','C♯','D','E♭','E','F','F♯','G','A♭','A','B♭','B'];
+    const sharp = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+    const camMin = { 9:8,10:3,11:10,0:5,1:12,2:7,3:2,4:9,5:4,6:11,7:6,8:1 };
+    const camMaj = { 0:8,1:3,2:10,3:5,4:12,5:7,6:2,7:9,8:4,9:11,10:6,11:1 };
+    const kn = (r, m) => (m ? sharp : flat)[mod(r)] + (m ? ' minor' : ' major');
+    const cam = (r, m) => (m ? camMin : camMaj)[mod(r)] + (m ? 'A' : 'B');
+    const sgn = n => n === 0 ? '0' : (n > 0 ? '+' : '−') + Math.abs(n);
+    const presetsDef = {
+      none: { track: false, root: null, minor: true, bpm: null, shift: 0, rel: false, repOpen: true, picking: false },
+      key: { track: false, root: 5, minor: true, bpm: null, shift: 0, rel: false, repOpen: true, picking: false },
+      picking: { track: false, root: null, minor: true, bpm: null, shift: 0, rel: false, repOpen: true, picking: true },
+      track: { track: true, root: 11, minor: true, bpm: 200, shift: 0, rel: false, repOpen: true, picking: false },
+      shift: { track: true, root: 11, minor: true, bpm: 200, shift: -1, rel: false, repOpen: true, picking: false },
+      folded: { track: true, root: 11, minor: true, bpm: 200, shift: -1, rel: false, repOpen: false, picking: false },
+    };
+    const labels = [['none','No track, no key'],['key','A key typed, no BPM'],['picking','Picking: “asc”'],['track','Track selected'],['shift','Shift −1 chosen'],['folded','Re-Pitch folded']];
+    const presets = labels.map(([k,label]) => { const on = s.preset === k; return { label, go: () => this.setState({ ...presetsDef[k], preset: k, copied: null }), bd: on ? '#ece7dc' : 'rgba(255,255,255,.14)', bg: on ? '#ece7dc' : 'transparent', fg: on ? '#0f0e0c' : 'rgba(236,231,220,.75)' }; });
+
+    const hasKey = s.root !== null;
+    const trackName = 'Xi – Ascension to Heaven';
+    const sel = {
+      hasTrack: s.track && !s.picking, showSearch: !s.track || s.picking,
+      name: trackName, key: hasKey ? kn(s.root, s.minor) : '', cam: hasKey ? cam(s.root, s.minor) : '', bpmWhole: s.bpm ? Math.round(s.bpm) : '',
+      cardBd: 'rgba(255,255,255,.14)',
+      searchText: s.picking ? 'asc' : 'Search warped tracks', searchFg: s.picking ? '#ece7dc' : 'rgba(236,231,220,.5)', searchBd: s.picking ? 'rgba(255,255,255,.3)' : 'rgba(255,255,255,.14)',
+      searchHint: s.picking ? '' : 'Picking a track fills the key and BPM below.',
+      handLabel: s.track ? 'From the track' : 'Or by hand',
+      keyField: hasKey ? kn(s.root, s.minor) + ' — ' + cam(s.root, s.minor) : 'No key', keyFg: hasKey ? '#ece7dc' : 'rgba(236,231,220,.5)',
+      bpmField: s.bpm ? s.bpm.toFixed(2) : 'e.g. 128', bpmFg: s.bpm ? '#ece7dc' : 'rgba(236,231,220,.3)',
+      handHint: s.track ? 'The warp BPM and Ableton key. Editing either drops the track and keeps what you typed.' : 'Either is enough. A key alone fills Partners and Re-Pitch\u2019s keys; a BPM alone fills Re-Pitch\u2019s BPMs.',
+    };
+    const picks = [['Xi – Ascension to Heaven','200.00','10A'],['Ascendance – Parallel Lines','174.00','4A'],['Maduk – Ascend','172.00','8A'],['Nhato – Ascension','138.00','9B']].map(([song,bpm,c],i) => ({ song, bpm, cam: c, bg: i === 0 ? 'rgba(255,255,255,.06)' : 'transparent', pick: () => this.setState({ ...presetsDef.track, preset: 'track' }) }));
+
+    const rp = [3,2,1,0,-1,-2,-3].map(n => {
+      const on = hasKey && n === s.shift && n !== 0; const ref = n === 0;
+      return {
+        shift: sgn(n), bpm: s.bpm ? (s.bpm * Math.pow(2, n / 12)).toFixed(2) : '—',
+        key: hasKey ? kn(s.root + n, s.minor) : '—', cam: hasKey ? cam(s.root + n, s.minor) : '—',
+        tag: s.copied === n ? 'copied' : on ? '→ Partners' : (ref && hasKey ? (s.track ? 'the track' : 'as typed') : ''),
+        bg: on ? 'rgba(255,255,255,.08)' : ref ? 'rgba(255,255,255,.03)' : 'transparent',
+        ring: on ? 'inset 0 0 0 1px rgba(236,231,220,.35)' : 'none',
+        fg: !hasKey && !s.bpm ? 'rgba(236,231,220,.3)' : ref ? 'rgba(236,231,220,.6)' : '#ece7dc',
+        sfg: on ? '#ece7dc' : 'rgba(236,231,220,.5)', sfont: on ? "600 13px 'IBM Plex Mono',monospace" : "400 13px 'IBM Plex Mono',monospace",
+        kfont: on ? "600 14px 'IBM Plex Sans',sans-serif" : "400 14px 'IBM Plex Sans',sans-serif",
+        cursor: hasKey ? 'pointer' : 'default',
+        pick: () => { if (hasKey) this.setState(p => ({ shift: p.shift === n ? 0 : n, rel: false, preset: '' })); },
+        copy: e => { if (!s.bpm) return; e.stopPropagation(); this.setState({ copied: n }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ copied: null }), 1400); },
+      };
+    });
+    const rpHint = !hasKey && !s.bpm ? 'Type a BPM or pick a track. The shifts are drawn first, so the math shows before the numbers.' : !s.bpm ? 'No BPM yet: the keys fill, the BPMs wait.' : 'Click a row to send its key to Partners; click it again to go back. Click a BPM to copy it.';
+
+    const wr = hasKey ? (s.rel ? (s.minor ? s.root + s.shift + 3 : s.root + s.shift - 3) : s.root + s.shift) : null;
+    const wm = s.rel ? !s.minor : s.minor;
+    const shiftedKey = hasKey ? kn(s.root + s.shift, s.minor) : '';
+    const own = hasKey ? kn(s.root, s.minor) : '';
+    const from = s.track ? 'the track\u2019s' : 'your';
+    let why = '';
+    if (hasKey) {
+      if (s.shift === 0 && !s.rel) why = s.track ? 'The track\u2019s own key.' : 'The key you typed.';
+      else if (s.shift !== 0 && !s.rel) why = 'Re-Pitch ' + sgn(s.shift) + ' from ' + from + ' ' + own + '.';
+      else if (s.shift === 0) why = 'The relative of ' + from + ' ' + own + '.';
+      else why = 'The relative of ' + shiftedKey + ', which is Re-Pitch ' + sgn(s.shift) + ' from ' + from + ' ' + own + '.';
+    }
+    const basis = { key: hasKey ? kn(wr, wm) : '', cam: hasKey ? cam(wr, wm) : '', why, canReset: hasKey && s.shift !== 0, resetLabel: 'Back to ' + own };
+    const baseKey = hasKey ? kn(s.root + s.shift, s.minor) : '';
+    const relKey = hasKey ? kn(s.minor ? s.root + s.shift + 3 : s.root + s.shift - 3, !s.minor) : '';
+    const pill = (label, on, v) => ({ label, go: () => this.setState({ rel: v, preset: '' }), bd: on ? '#ece7dc' : 'rgba(255,255,255,.14)', bg: on ? '#ece7dc' : 'transparent', fg: on ? '#0f0e0c' : 'rgba(236,231,220,.75)' });
+    const basisPills = hasKey ? [pill(baseKey, !s.rel, false), pill(relKey + ' · relative', s.rel, true)] : [];
+
+    const row = (r, m, rel, how, score, shift, alt, strong) => ({ key: kn(r, m), cam: cam(r, m), rel, how, score: String(score), shift, alt, kfont: strong ? "600 14px 'IBM Plex Sans',sans-serif" : "500 14px 'IBM Plex Sans',sans-serif", kc: strong ? '#7fcf9a' : '#ece7dc', code: cam(r, m) });
+    let asIs = [], away = [];
+    if (hasKey) {
+      const mw = wm, r = wr, relR = mw ? r + 3 : r - 3;
+      const other = mw ? 'major' : 'minor';
+      asIs = [
+        row(r, mw, 'Same key', 'the key itself', 10, '0', '—', true),
+        row(relR, !mw, 'Relative ' + other, 'the same notes, the other mode', 9.5, '0', '—'),
+        row(r + 7, mw, 'A fifth up', 'one step clockwise', 8, '0', '—'),
+        row(r + 5, mw, 'A fifth down', 'one step anticlockwise', 8, '0', '—'),
+        row(relR + 7, !mw, 'Relative of the fifth up', 'diagonal on the wheel', 6, '0', '—'),
+        row(relR + 5, !mw, 'Relative of the fifth down', 'diagonal on the wheel', 6, '0', '—'),
+        row(r, !mw, 'Parallel ' + other, 'the same root, the other mode', 5, '0', '—'),
+      ];
+      away = [[1,'A semitone up',6.5],[-1,'A semitone down',6.5],[2,'A tone up',7],[-2,'A tone down',7]].map(([d,rel,sc]) => { const sh = -d; return row(r + d, mw, rel, 'from ' + kn(r, mw), sc, sgn(sh), sgn(sh > 0 ? sh - 12 : sh + 12)); });
+    }
+
+    const wheel = this.wheel(hasKey ? cam(wr, wm) : null, new Set(asIs.slice(1).map(x => x.code)), new Set(away.map(x => x.code)), hasKey && (s.shift !== 0 || s.rel) ? cam(s.root, s.minor) : null, flat, sharp, camMin, camMaj);
+
+    const cols = s.repOpen ? '340px 540px minmax(0,860px) 340px' : '340px minmax(0,860px) 340px';
+    const repSummary = hasKey && s.shift !== 0 ? sgn(s.shift) + ' · ' + (s.bpm ? (s.bpm * Math.pow(2, s.shift / 12)).toFixed(2) + ' BPM · ' : '') + shiftedKey + ', sent to Partners' : 'no shift chosen';
+    const folds = [
+      { w: '≥ 2200px', note: 'four columns, as 1a', cols: '1fr 1.5fr 2.4fr 1fr', boxes: [['Working on',1,'80px'],['Re-Pitch',1,'80px'],['Partners',1,'80px'],['Wheel',1,'80px']] },
+      { w: '1700–2200', note: 'the wheel moves above Partners\u2019 table, beside its basis box', cols: '1fr 1.5fr 3.4fr', boxes: [['Working on',1,'80px'],['Re-Pitch',1,'80px'],['Partners, wheel on top',1,'80px']] },
+      { w: '1100–1700', note: 'Working on becomes a row across the top; Re-Pitch and Partners side by side', cols: '1fr 2fr', boxes: [['Working on: card · key · BPM in one row','1 / -1','44px'],['Re-Pitch',1,'80px'],['Partners + wheel',1,'80px']] },
+      { w: '< 1100px', note: 'one column: Working on, Re-Pitch (folded by default), Partners, wheel', cols: '1fr', boxes: [['Working on',1,'36px'],['▸ Re-Pitch · summary',1,'28px'],['Partners',1,'60px'],['Wheel',1,'36px']] },
+    ].map(f => ({ ...f, boxes: f.boxes.map(([label,span,h]) => ({ label, span: String(span), h })) }));
+
+    return { presets, sel, picks, picking: s.picking, rp, rpHint, repOpen: s.repOpen, repShut: !s.repOpen, repSummary, tRep: () => this.setState(p => ({ repOpen: !p.repOpen, preset: '' })),
+      openPicker: () => this.setState({ picking: true, preset: 'picking' }), hasKey, noKey: !hasKey, basis, basisPills, resetShift: () => this.setState({ shift: 0, rel: false, preset: '' }),
+      asIs, away, wheel, cols, folds };
+  }
+  wheel(work, near, far, own, flat, sharp, camMin, camMaj) {
+    const h = React.createElement, C = 160, rings = [['B', 112, 156], ['A', 66, 110]];
+    const inv = (map) => { const o = {}; for (const k in map) o[map[k]] = +k; return o; };
+    const byMin = inv(camMin), byMaj = inv(camMaj);
+    const pt = (r, a) => [C + r * Math.sin(a), C - r * Math.cos(a)];
+    const kids = [];
+    for (const [L, r0, r1] of rings) for (let n = 1; n <= 12; n++) {
+      const code = n + L, a0 = ((n % 12) - 0.5) * Math.PI / 6 + 0.012, a1 = ((n % 12) + 0.5) * Math.PI / 6 - 0.012;
+      const [x0,y0] = pt(r1,a0), [x1,y1] = pt(r1,a1), [x2,y2] = pt(r0,a1), [x3,y3] = pt(r0,a0);
+      const d = `M${x0},${y0} A${r1},${r1} 0 0 1 ${x1},${y1} L${x2},${y2} A${r0},${r0} 0 0 0 ${x3},${y3} Z`;
+      const isW = code === work, isN = near.has(code), isF = far.has(code), isO = code === own;
+      kids.push(h('path', { key: 'p' + code, d, fill: isW ? '#ece7dc' : isN ? 'rgba(236,231,220,.22)' : '#1b1a15', stroke: isO ? '#ece7dc' : isF ? 'rgba(236,231,220,.6)' : 'rgba(255,255,255,.08)', strokeWidth: isO ? 2 : 1, strokeDasharray: isF && !isO ? '3 3' : 'none' }));
+      const am = ((n % 12)) * Math.PI / 6, [tx, ty] = pt((r0 + r1) / 2, am);
+      const root = L === 'A' ? byMin[n] : byMaj[n];
+      const nm = (L === 'A' ? sharp : flat)[root] + (L === 'A' ? 'm' : '');
+      const fg = isW ? '#0f0e0c' : (isN || isF || isO) ? '#ece7dc' : 'rgba(236,231,220,.4)';
+      kids.push(h('text', { key: 't' + code, x: tx, y: ty - 3, textAnchor: 'middle', style: { font: "500 11px 'IBM Plex Mono',monospace", fill: fg } }, code));
+      kids.push(h('text', { key: 'n' + code, x: tx, y: ty + 10, textAnchor: 'middle', style: { font: "400 10px 'IBM Plex Sans',sans-serif", fill: fg } }, nm));
+    }
+    return h('svg', { width: 320, height: 320, viewBox: '0 0 320 320', style: { display: 'block' } }, kids);
+  }
+}
+</script>
+</body>
+</html>

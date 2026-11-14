@@ -1,0 +1,23 @@
+/* The warp view's marker shape, drawn only for a warp crateside can true up. */
+.pennant {
+    width: 7px;
+    height: 9px;
+    visibility: visible;
+    flex: none;
+}
+
+.pennant.large {
+    width: 9px;
+    height: 11px;
+}
+
+.pennant.filled polygon {
+    fill: var(--text);
+    fill-opacity: 0.8;
+}
+
+.pennant.hollow polygon {
+    fill: none;
+    stroke: var(--text-60);
+    stroke-width: 1;
+}

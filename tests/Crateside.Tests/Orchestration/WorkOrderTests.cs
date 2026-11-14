@@ -1,13 +1,16 @@
 using Crateside.Core;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
-using Crateside.Core.Queue;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
+using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration;
 
-public class WorkOrderTests : IDisposable
+public sealed class WorkOrderTests : IDisposable
 {
-    private const string VideoId = "dQw4w9WgXcQ";
+    private const string TrackKey = "dQw4w9WgXcQ";
 
     private readonly string _ledgerPath = Path.Combine(
         Path.GetTempPath(),
@@ -26,14 +29,14 @@ public class WorkOrderTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static QueueItem Item(
+    private static WorkItem Item(
         PremiumOutlook outlook = PremiumOutlook.Unknown,
         bool instrumentalRelease = false
     ) =>
         new()
         {
             PlaylistItemId = "PLI1",
-            VideoId = VideoId,
+            TrackKey = TrackKey,
             Title = "Yes - Owner of a Lonely Heart",
             PremiumOutlook = outlook,
             Plan = instrumentalRelease ? StemPlan.InstrumentalRelease : StemPlan.Default,
@@ -50,11 +53,11 @@ public class WorkOrderTests : IDisposable
         File.WriteAllText(
             _ledgerPath,
             $$"""
-            {"timestamp":"2026-08-13T10:00:00Z","song":"yes - owner of a lonely heart","source_url":"https://music.youtube.com/watch?v={{VideoId}}","verdict":{{verdict}}}
+            {"timestamp":"2026-08-13T10:00:00Z","song":"yes - owner of a lonely heart","source_url":"https://music.youtube.com/watch?v={{TrackKey}}","verdict":{{verdict}}}
             """
         );
 
-        return KeyLedger.Read(_ledgerPath);
+        return TestLedger.From(_ledgerPath);
     }
 
     [Theory]
@@ -86,9 +89,7 @@ public class WorkOrderTests : IDisposable
     [Fact]
     public void A_track_with_no_verdict_yet_routes_to_unresolved_rather_than_nowhere()
     {
-        // The bare stems root is never a valid destination for a track that went through this
-        // workflow -- a stem there carries no signal about whether its key was resolved.
-        var order = WorkOrder.Compose(Item(), KeyLedger.Read(_ledgerPath));
+        var order = WorkOrder.Compose(Item(), TestLedger.From(_ledgerPath));
 
         Assert.Equal(StemDestination.UnresolvedKey, order.Destination);
     }
@@ -96,10 +97,6 @@ public class WorkOrderTests : IDisposable
     [Fact]
     public void An_instrumental_release_asks_for_drums_and_keeps_the_source()
     {
-        // There is nothing to separate out, so the drums are the only stem and the source track
-        // is the sample -- which the separator has to place, since crateside directs output and
-        // never moves files itself. Asking for vocal_full here is what made a vocal stem of a
-        // track with no vocals.
         var order = WorkOrder.Compose(Item(instrumentalRelease: true), Ledger("A minor"));
 
         Assert.Empty(order.Recipe.Presets);
@@ -110,8 +107,7 @@ public class WorkOrderTests : IDisposable
     [Fact]
     public void The_users_plan_is_what_the_separator_is_asked_for()
     {
-        // The plan is the record: nothing is derived from a fact about the release any more, so
-        // what the order carries is what the user ticked (ADR 0018).
+        // What the order carries is what the user ticked (ADR 0018).
         var order = WorkOrder.Compose(Item(instrumentalRelease: true), Ledger("A minor"));
 
         Assert.Empty(order.Recipe.Presets);
@@ -129,11 +125,34 @@ public class WorkOrderTests : IDisposable
     }
 
     [Fact]
+    public void A_file_keyed_track_is_stated_by_its_track_key_and_the_ledger_takes_it()
+    {
+        const string key = "file~25edb68200c05e82";
+        using var store = TestLedger.Store();
+
+        var order = WorkOrder.Compose(Item() with { TrackKey = key }, TestLedger.From(_ledgerPath));
+
+        Assert.Equal($"track:{key}", order.SourceUrl);
+        Assert.IsType<RecordOutcome.Recorded>(
+            store.Record(
+                new RunRecord
+                {
+                    RecordedAt = DateTimeOffset.Parse("2026-11-06T00:00:00+00:00"),
+                    Song = "dave wise - lockjaw's saga",
+                    SourceUrl = order.SourceUrl,
+                    Confidence = KeyConfidence.High,
+                    Center = new TonalCenter("C", DiatonicMode.Aeolian),
+                }
+            )
+        );
+    }
+
+    [Fact]
     public void An_art_track_gets_the_music_url()
     {
         var order = WorkOrder.Compose(Item(PremiumOutlook.ArtTrack), Ledger("A minor"));
 
-        Assert.Equal($"https://music.youtube.com/watch?v={VideoId}", order.SourceUrl);
+        Assert.Equal($"https://music.youtube.com/watch?v={TrackKey}", order.SourceUrl);
     }
 
     [Theory]
@@ -143,7 +162,7 @@ public class WorkOrderTests : IDisposable
     {
         var order = WorkOrder.Compose(Item(outlook), Ledger("A minor"));
 
-        Assert.Equal($"https://www.youtube.com/watch?v={VideoId}", order.SourceUrl);
+        Assert.Equal($"https://www.youtube.com/watch?v={TrackKey}", order.SourceUrl);
     }
 
     [Fact]

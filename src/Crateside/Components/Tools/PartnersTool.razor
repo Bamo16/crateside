@@ -1,0 +1,238 @@
+@using Crateside.Core.Ledger
+@using Crateside.Core.Pairing
+
+<section class="tool partners-tool">
+    <div class="title">
+        <h3>Partners</h3>
+        <span class="gist">keys to filter for in Ableton's browser, never files</span>
+    </div>
+
+    @if (Center is null || Own is null)
+    {
+        <div class="no-key">Pick a track, or a key, on the left.</div>
+    }
+    else
+    {
+        <div class="basis-row">
+            <div class="basis">
+                <div class="basis-line">
+                    <span class="caps">Working from</span>
+                    @if (ModeText.Lead(Center, Mixed) is { } lead)
+                    {
+                        <span class="mono lead">@lead <span class="arrow">→</span></span>
+                        <span class="working">@ModeText.Tag(Center)</span>
+                    }
+                    else
+                    {
+                        <span class="working">@ModeText.Named(Center)</span>
+                    }
+                    <span class="mono camelot">@MusicKey.Of(Center).CamelotCode</span>
+                </div>
+                <div class="why">
+                    @Why
+                    @if (Shift is not 0)
+                    {
+                        <button class="outline small" @onclick="() => OnBack.InvokeAsync()">Back to @ModeText.Named(Own)</button>
+                    }
+                </div>
+                @if (Reason is { } reason)
+                {
+                    <div class="reason">@reason</div>
+                }
+                @if (Sections.Count > 0)
+                {
+                    <div class="sections">
+                        <span class="caps">Section</span>
+                        @for (var i = 0; i < Sections.Count; i++)
+                        {
+                            var index = i;
+                            var entry = Sections[i];
+                            var chosen = (Section ?? Primary) == index;
+
+                            <button class="section-pill @(chosen ? "chosen" : null)" aria-pressed="@(chosen ? "true" : "false")"
+                                    @onclick="() => OnSection.InvokeAsync(index == Primary ? null : index)">
+                                <span>@entry.Label</span>
+                                <span class="mono">@Short(entry.Center)</span>
+                                @if (index == Primary)
+                                {
+                                    <span class="primary">primary</span>
+                                }
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="span">
+            <div class="span-row">
+                <span class="span-label">Shift</span>
+                <span class="chips">
+                    @for (var n = -Core.Pairing.Partners.WidestShift; n <= Core.Pairing.Partners.WidestShift; n++)
+                    {
+                        var shift = n;
+                        var inSpan = shift >= Lowest && shift <= Highest;
+
+                        <button class="chip mono @(shift is 0 ? "anchor" : null) @(inSpan ? "in" : null) @(shift == Lowest || shift == Highest ? "end" : null)"
+                                aria-pressed="@(inSpan ? "true" : "false")" @onclick="() => Click(shift)">@MashupPartner.FormatShift(shift)</button>
+                    }
+                </span>
+                <span class="mono span-text">@SpanText</span>
+                <span class="count">@("key".ToQuantity(Partners.Count))</span>
+            </div>
+            <span class="hint">Click a shift to work at it alone; click another to stretch the span to it.</span>
+        </div>
+
+        <table class="partners">
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Camelot</th>
+                    <th>Shift</th>
+                    <th>Notes shared</th>
+                    <th>Alt</th>
+                </tr>
+            </thead>
+            <tbody>
+                @Group("As is · shift 0", Partners.Where(partner => partner.Shift is 0))
+                @Group($"A shift away · pitch the sample by Shift to land on {ModeText.Named(Center)}", Partners.Where(partner => partner.Shift is not 0))
+            </tbody>
+        </table>
+
+        <p class="hint">
+            @(Lowest is 0 && Highest is 0
+                ? $"Every key reaches every other within ±{Core.Pairing.Partners.WidestShift} at its smallest shift; widen the span to see them."
+                : "A key is listed once, at its in-range shift closest to 0. Alt holds its other shifts, a fifth either way.")
+        </p>
+    }
+</section>
+
+@code {
+    /// <summary>The track's center, or the one picked, before any Re-Pitch shift.</summary>
+    [Parameter]
+    public TonalCenter? Own { get; set; }
+
+    [Parameter]
+    public int Shift { get; set; }
+
+    /// <summary>The center Partners works from: <see cref="Own"/> moved by the Re-Pitch shift.</summary>
+    [Parameter]
+    public TonalCenter? Center { get; set; }
+
+    [Parameter]
+    public bool Mixed { get; set; }
+
+    [Parameter]
+    public bool IsTrack { get; set; }
+
+    /// <summary>Whether the track has a verdict, rather than only its samples' Key tag.</summary>
+    [Parameter]
+    public bool HasVerdict { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<Section> Sections { get; set; } = [];
+
+    /// <summary>The section holding the verdict's primary center, if one does.</summary>
+    [Parameter]
+    public int? Primary { get; set; }
+
+    /// <summary>The section chosen, or null for the primary.</summary>
+    [Parameter]
+    public int? Section { get; set; }
+
+    [Parameter]
+    public EventCallback<int?> OnSection { get; set; }
+
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<MashupPartner> Partners { get; set; }
+
+    [Parameter]
+    public int Lowest { get; set; }
+
+    [Parameter]
+    public int Highest { get; set; }
+
+    [Parameter]
+    public EventCallback<(int Lowest, int Highest)> OnSpan { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    private string Why =>
+        (Shift, IsTrack, Section) switch
+        {
+            (not 0, true, _) => $"Re-Pitch {MashupPartner.FormatShift(Shift)} from the track's {ModeText.Named(Own!)}.",
+            (not 0, false, _) => $"Re-Pitch {MashupPartner.FormatShift(Shift)} from the key you picked, {ModeText.Named(Own!)}.",
+            (_, false, _) => "The key you picked.",
+            (_, _, { } index) => $"The {Sections[index].Label}'s center, not the primary.",
+            _ when Primary is { } primary => $"The {Sections[primary].Label}, the primary center: the tag follows it.",
+            _ => HasVerdict ? "The track's verdict." : "The track's Key tag: it has no verdict.",
+        };
+
+    private string? Reason =>
+        (ModeText.Reason(Center!, Mixed), Mixed) switch
+        {
+            ({ } reason, true) => $"{reason.TrimEnd('.')}, and paired as its tag.",
+            var (reason, _) => reason,
+        };
+
+    private string SpanText =>
+        (Lowest, Highest) switch
+        {
+            (0, 0) => "0 only",
+            var (lowest, highest) when lowest == highest => $"{MashupPartner.FormatShift(lowest)} only",
+            var (lowest, highest) => $"{MashupPartner.FormatShift(lowest)} to {MashupPartner.FormatShift(highest)}",
+        };
+
+    private Task Click(int shift) =>
+        OnSpan.InvokeAsync(
+            Lowest == Highest && shift != Lowest
+                ? (Math.Min(Lowest, shift), Math.Max(Lowest, shift))
+                : (shift, shift)
+        );
+
+    private static string Short(TonalCenter center) =>
+        ModeText.Abbreviation(center, mixed: false) is { } mode
+            ? $"{ModeText.Tag(center).Split(' ')[0]} {mode}"
+            : ModeText.Tag(center);
+
+    private RenderFragment Group(string heading, IEnumerable<MashupPartner> partners) =>
+        @<text>
+            @if (partners.ToList() is { Count: > 0 } rows)
+            {
+                <tr class="group"><td colspan="5" class="caps">@heading</td></tr>
+                @foreach (var partner in rows)
+                {
+                    <tr>
+                        <td class="key">
+                            @ModeText.Named(partner.Key)
+                            @switch (partner)
+                            {
+                                case { Relationship: Relationship.SameKey }:
+                                    <span class="label same-key">same key</span>
+                                    break;
+                                case { Relationship: Relationship.SameNotes }:
+                                    <span class="label same-notes">same notes</span>
+                                    break;
+                                case { IsTag: true }:
+                                    <span class="the-tag">the tag</span>
+                                    break;
+                            }
+                        </td>
+                        <td class="mono camelot @(partner.Key.IsModal ? "modal" : null)">@partner.CamelotCode</td>
+                        <td class="mono shift @(partner.Shift is not 0 ? "shifted" : null)">@MashupPartner.FormatShift(partner.Shift)</td>
+                        <td class="shared">
+                            <span class="pips" role="img" aria-label="@partner.NotesShared of 7 notes shared">
+                                @for (var i = 0; i < 7; i++)
+                                {
+                                    <i class="@(i < partner.NotesShared ? "held" : null)"></i>
+                                }
+                            </span>
+                            <span class="mono figure @(partner.NotesShared is 7 ? "all" : null)">@partner.NotesShared of 7</span>
+                        </td>
+                        <td class="mono alts">@partner.AltShiftsDisplay</td>
+                    </tr>
+                }
+            }
+        </text>;
+}

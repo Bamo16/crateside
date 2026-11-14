@@ -1,0 +1,470 @@
+.pbox {
+    display: contents;
+}
+
+.sentinel {
+    height: 1px;
+    margin-bottom: -1px;
+    pointer-events: none;
+}
+
+.player {
+    position: sticky;
+    top: calc(var(--pin-nav) + env(safe-area-inset-top, 0px));
+    z-index: 9;
+    background: var(--raised);
+    border: 1px solid rgba(236, 231, 220, 0.1);
+    border-radius: 10px;
+}
+
+.player.stuck {
+    border-top-color: transparent;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: 9px 14px 8px;
+}
+
+.sp {
+    flex: 1 1 0;
+}
+
+.group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.group.sep {
+    padding-left: 16px;
+    border-left: 1px solid var(--line);
+}
+
+.faint {
+    font-size: 12px;
+    color: var(--text-40);
+    white-space: nowrap;
+}
+
+.pin-id {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    max-width: 260px;
+    padding-right: 16px;
+    border-right: 1px solid var(--line);
+}
+
+.player.stuck .pin-id {
+    display: flex;
+    max-width: 190px;
+}
+
+/* Pinned under the nav the strip has to stay one row on a wide window, so the slider names go. */
+.player.stuck .slider-name {
+    display: none;
+}
+
+.pin-id span {
+    overflow: hidden;
+    font-size: 13.5px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.play {
+    display: grid;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    place-items: center;
+    color: var(--ink);
+    background: var(--text);
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.play:disabled {
+    color: var(--text-30);
+    background: transparent;
+    border: 1px solid var(--line);
+    cursor: default;
+}
+
+.play.loading {
+    color: var(--text-40);
+    background: transparent;
+    border: 2px solid rgba(111, 199, 214, 0.3);
+    border-top-color: var(--teal);
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.ro {
+    min-width: 27ch;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.ro.empty {
+    color: var(--text-40);
+}
+
+.ro ::deep b {
+    font-weight: 600;
+}
+
+.ro ::deep .t75 {
+    color: var(--text-75);
+}
+
+.ro ::deep .t40 {
+    color: var(--text-40);
+}
+
+.picker {
+    position: relative;
+}
+
+.pick {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 210px;
+    min-height: 32px;
+    font-size: 13px;
+}
+
+.pick-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+}
+
+.menu {
+    position: absolute;
+    z-index: 6;
+    padding: 4px;
+    background: var(--raised);
+    border: 1px solid rgba(236, 231, 220, 0.16);
+    border-radius: 8px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+
+.list {
+    top: calc(100% + 4px);
+    left: 0;
+    width: 400px;
+    max-width: calc(100vw - 32px);
+}
+
+.item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 10px;
+    min-height: 34px;
+    padding: 7px 10px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.item:hover:not(.off) {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.item.chosen {
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(236, 231, 220, 0.35);
+}
+
+.item.off {
+    color: var(--text-40);
+    cursor: default;
+}
+
+.item-name {
+    min-width: 0;
+}
+
+.item-status {
+    margin-right: auto;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-50);
+}
+
+.item-status.busy {
+    color: var(--teal);
+}
+
+.item-note {
+    flex-basis: 100%;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-40);
+}
+
+.item .outline.small {
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+.sounds {
+    top: calc(100% + 4px);
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    width: 150px;
+}
+
+.sounds[hidden] {
+    display: none;
+}
+
+.sound {
+    position: relative;
+}
+
+/* The width of the longest name, so a pick never moves what sits beside it. */
+.sound > button {
+    box-sizing: border-box;
+    width: 88px;
+    text-align: center;
+}
+
+.sounds .item.on {
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(236, 231, 220, 0.35);
+}
+
+.click-extras {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.click-extras[hidden],
+.faint[hidden] {
+    display: none;
+}
+
+.tog {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+    padding: 4px 11px;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-75);
+    white-space: nowrap;
+    background: transparent;
+    border: 1px solid var(--text-30);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+/* The Metronome button's icon gives its place to the beat light while the click sounds. */
+.tick {
+    position: relative;
+    display: inline-flex;
+    width: 14px;
+    height: 14px;
+}
+
+.beat {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.beat[hidden] {
+    display: none;
+}
+
+.beat:not([hidden]) + svg {
+    visibility: hidden;
+}
+
+.beat i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px var(--text-50);
+}
+
+.beat[data-side="a"] i:first-child,
+.beat[data-side="b"] i:last-child {
+    background: var(--text);
+    box-shadow: none;
+}
+
+.beat.down[data-side="a"] i:first-child,
+.beat.down[data-side="b"] i:last-child {
+    transform: scale(1.5);
+}
+
+.tog.on {
+    font-weight: 600;
+    color: var(--text);
+    background: rgba(236, 231, 220, 0.14);
+    border-color: var(--text-50);
+}
+
+.tog:disabled {
+    color: var(--text-40);
+    border-color: var(--line);
+    cursor: default;
+}
+
+.outline.small {
+    padding: 3px 9px;
+    font-size: 12px;
+}
+
+input[type="range"] {
+    width: 72px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--text);
+}
+
+[data-click-level] {
+    width: 60px;
+}
+
+.slider-name {
+    font-size: 12px;
+    color: var(--text-60);
+}
+
+.volume svg {
+    color: var(--text-60);
+}
+
+.wave {
+    position: relative;
+    height: 34px;
+    margin: 0 14px 11px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.22);
+    border-radius: 4px;
+    cursor: url("/cursors/speaker.svg") 4 12, default;
+    touch-action: none;
+    user-select: none;
+}
+
+.wave svg,
+.wave canvas {
+    position: absolute;
+    inset: 3px 0;
+    width: 100%;
+    height: calc(100% - 6px);
+}
+
+.wave [hidden] {
+    display: none;
+}
+
+.shape path {
+    fill: rgba(236, 231, 220, 0.5);
+}
+
+.rest {
+    position: absolute;
+    inset: 0;
+    background: rgba(35, 33, 26, 0.62);
+    pointer-events: none;
+}
+
+.mark {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--text);
+    pointer-events: none;
+}
+
+.wave.empty,
+.wave.loading,
+.wave.fail {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 12px;
+    font-size: 12.5px;
+    cursor: default;
+}
+
+.wave.empty {
+    color: var(--text-40);
+    background: transparent;
+    border: 1px dashed var(--line);
+}
+
+.wave.loading {
+    color: var(--teal);
+    background: transparent;
+    border: 1px solid rgba(111, 199, 214, 0.4);
+}
+
+.wave.fail {
+    color: var(--red);
+    background: transparent;
+    border: 1px solid rgba(224, 122, 109, 0.4);
+}
+
+@media (max-width: 56rem) {
+    .sp {
+        flex-basis: 100%;
+        height: 0;
+        margin: -8px 0;
+    }
+
+    .volume {
+        margin-left: auto;
+    }
+
+    .player.stuck .pin-id {
+        max-width: 230px;
+    }
+
+    .player.stuck .pick {
+        width: 180px;
+    }
+}

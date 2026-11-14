@@ -1,0 +1,46 @@
+@using System.Diagnostics
+@using Crateside.Core.Marks
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Tracks
+@inject TrackMarkStore Marks
+@inject TracksService Tracks
+@inject ActionLog Actions
+
+<div class="tag-line">
+    <span class="tag-label">@Label</span>
+    <span class="tag-value @(Marked ? null : "quiet")">@(Marked ? "Marked" : "Not marked")</span>
+    <button class="outline" @onclick="Toggle">@(Marked ? "Clear" : "Mark")</button>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    [Parameter, EditorRequired]
+    public required TrackMark Mark { get; set; }
+
+    // From the store, not the row, which is a rescan behind.
+    private bool Marked => Marks.Of(Row.Song).Contains(Mark);
+
+    private string Label =>
+        Mark switch
+        {
+            TrackMark.ChangesKey => "Changes key",
+            TrackMark.OddBars => "Odd bars",
+            _ => throw new UnreachableException(),
+        };
+
+    private void Toggle()
+    {
+        var marking = !Marked;
+
+        Marks.Set(Row.Song, Mark, marking);
+        Actions.Record(
+            Row.TrackKey,
+            marking ? UserActionKind.MarkSet : UserActionKind.MarkCleared,
+            Label
+        );
+
+        _ = Tracks.RefreshAsync();
+    }
+}

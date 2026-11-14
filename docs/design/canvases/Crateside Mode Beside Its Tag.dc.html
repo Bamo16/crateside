@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif}a{color:#ece7dc;text-decoration:none}a:hover{color:#fff}button{cursor:pointer;font-family:inherit}</style>
+</helmet>
+
+<section style="padding:56px 56px 72px;display:flex;flex-direction:column;gap:56px;width:1600px;box-sizing:border-box;background:#0c0b09">
+  <header style="display:flex;flex-direction:column;gap:10px;max-width:1000px">
+    <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Brief 17 · turn 1 · #114 · ADR 0055</div>
+    <h1 style="margin:0;font:600 28px/1.25 'IBM Plex Sans',sans-serif;text-wrap:pretty">A verdict's mode, shown beside the tag Ableton gets</h1>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty"><strong style="color:#ece7dc;font-weight:500">The tag stays where it is, and the mode comes before it.</strong> Every place that shows a key keeps the tag in the same spot at the same size, so the 96% of plain major and minor songs look exactly as they do now, and a tagged sample and its verdict still read alike. Where the verdict is modal, the mode sits beside the tag. In the dense Tracks row it is a small outlined abbreviation after the tag, with the full sentence on hover. Where there is room it is the arrow, <span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">A Dorian → A min</span>, read top to bottom into the large figure, with the reason written underneath. No color: an outline and the arrow do the work.</p>
+    <p style="margin:0;font:400 12.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Songs in italics aren't real. Figures and sources are made up.</p>
+  </header>
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:12px;scroll-margin-top:24px">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><a href="#1a" style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1a</a><span style="font:500 14px 'IBM Plex Sans',sans-serif">Tracks: an outlined mode after the tag, and the sentence on hover</span></div>
+    <div style="display:grid;grid-template-columns:1040px minmax(0,1fr);gap:28px;align-items:start">
+      <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px">
+        <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 112px 92px 84px 140px 130px;gap:14px;padding:10px 22px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);border-bottom:1px solid rgba(255,255,255,.08)"><span></span><span>Song</span><span>Key</span><span>Confidence</span><span style="text-align:right">BPM</span><span>Genre</span><span>State</span></div>
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="7">
+          <div style="position:relative;display:grid;grid-template-columns:24px minmax(0,1fr) 112px 92px 84px 140px 130px;gap:14px;align-items:center;padding:0 22px;height:46px;border-bottom:1px solid rgba(255,255,255,.06);background:{{ r.bg }}">
+            <span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.35)">›</span>
+            <span style="font:500 14px 'IBM Plex Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:{{ r.ital }}">{{ r.song }}</span>
+            <span title="{{ r.tip }}" style="display:flex;align-items:center;gap:5px;min-width:0"><span style="font:500 13px 'IBM Plex Mono',monospace;white-space:nowrap">{{ r.key }}</span><sc-if value="{{ r.mode }}" hint-placeholder-val="{{ false }}"><span style="flex:none;font:500 10.5px/1 'IBM Plex Mono',monospace;padding:2px 4px 3px;border-radius:3px;border:1px solid rgba(236,231,220,.45);color:rgba(236,231,220,.85);white-space:nowrap">{{ r.mode }}</span></sc-if></span>
+            <span style="font:500 12px 'IBM Plex Mono',monospace;color:{{ r.confInk }}">{{ r.conf }}</span>
+            <span style="text-align:right;font:600 14px 'IBM Plex Mono',monospace">{{ r.bpm }}<span style="visibility:hidden">.00</span></span>
+            <span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">{{ r.genre }}</span>
+            <span style="display:inline-flex;width:fit-content;font:500 12px 'IBM Plex Sans',sans-serif;padding:3px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2);color:rgba(236,231,220,.8)">{{ r.state }}</span>
+            <sc-if value="{{ r.open }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;z-index:2;top:40px;left:398px;width:330px;padding:12px 14px;background:#23211a;border:1px solid rgba(255,255,255,.18);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:6px">
+                <span style="font:500 13px 'IBM Plex Mono',monospace">{{ r.arrow }}</span>
+                <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty">{{ r.why }}</span>
+                <sc-if value="{{ r.more }}" hint-placeholder-val="{{ false }}"><span style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ r.more }}</span></sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7)">
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">The tag doesn't move.</b> Scanning the Key column still lines up every tag at the same left edge, and plain rows are unchanged. A modal row adds one outlined abbreviation after the tag: <span style="font-family:'IBM Plex Mono',monospace">Dor Phr Lyd Mixo Loc</span>, and <span style="font-family:'IBM Plex Mono',monospace">maj/min</span> for mixed. It's outlined like a corroborating source badge, so it reads as <i>about this key</i> without looking like a state.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Hover gives the arrow and the reason</b>, the same words as Track details. The same-notes key is named with its Camelot code and nothing is said about distance.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Ionian and Aeolian get no mark.</b> They are major and minor. The three modes the ledger stored as <i>major</i> become Ionian and look as they do now.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Sections get no mark in the row.</b> The row shows the primary center, the one the tag follows. The other centers are listed in the tooltip and drawn on Track details.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Width:</b> the Key column grows to 112px so the longest case, <span style="font-family:'IBM Plex Mono',monospace">A♯ min maj/min</span>, fits on one line. Plain rows leave the extra space empty.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="1b" style="display:flex;flex-direction:column;gap:12px;scroll-margin-top:24px">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><a href="#1b" style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1b</a><span style="font:500 14px 'IBM Plex Sans',sans-serif">Track details' band: the mode leads into the large tag</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.35fr;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;max-width:1280px">
+      <div style="padding:22px 26px;display:flex;flex-direction:column;gap:8px">
+        <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Key</span>
+        <span title="Dorian is a minor mode, so it is tagged by its tonic. Same notes as G major (9B)." style="font:500 18px/1.2 'IBM Plex Mono',monospace;color:#ece7dc">A Dorian <span style="color:rgba(236,231,220,.6)">→</span></span>
+        <span style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">A min</span>
+        <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty">Dorian is a minor mode, so it is tagged by its tonic. Same notes as <span style="font-family:'IBM Plex Mono',monospace">G major (9B)</span>.</span>
+        <span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">tagged <span style="font-family:'IBM Plex Mono',monospace">A min</span> in Ableton on 2 of 2 samples</span>
+      </div>
+      <div style="padding:22px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px;justify-content:flex-end">
+        <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Confidence</span>
+        <span style="font:500 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.02em">HIGH</span>
+        <span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">judged 14 Oct 2026</span>
+      </div>
+      <div style="padding:22px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px;justify-content:flex-end">
+        <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">BPM</span>
+        <span style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">96</span>
+        <span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">from your warp</span>
+      </div>
+      <div style="padding:22px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px;justify-content:flex-end">
+        <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Where it is</span>
+        <span style="display:inline-flex;width:fit-content;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 10px;border-radius:999px;color:#7fcf9a;border:1px solid rgba(127,207,154,.3)">done</span>
+        <span style="font:400 13px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">In Mashup Samples since 15 Oct. Nothing left to do.</span>
+        <span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-decoration:underline;text-underline-offset:3px">Why A Dorian ↓</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;max-width:1280px">
+      <sc-for list="{{ keyCells }}" as="k" hint-placeholder-count="4">
+        <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;gap:12px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Key</span><span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4)">{{ k.label }}</span></div>
+          <sc-if value="{{ k.lead }}" hint-placeholder-val="{{ true }}"><span style="font:500 18px/1.2 'IBM Plex Mono',monospace">{{ k.lead }} <span style="color:rgba(236,231,220,.6)">→</span></span></sc-if>
+          <span style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">{{ k.tag }}</span>
+          <sc-if value="{{ k.why }}" hint-placeholder-val="{{ true }}"><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty">{{ k.why }}</span></sc-if>
+          <sc-if value="{{ k.more }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-direction:column;gap:3px;padding-top:6px;border-top:1px solid rgba(255,255,255,.08)"><sc-for list="{{ k.more }}" as="m" hint-placeholder-count="2"><span style="display:flex;gap:8px;align-items:baseline;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)"><span style="width:52px">{{ m.l }}</span><span style="font:500 12.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.85)">{{ m.k }}</span></span></sc-for></span></sc-if>
+          <span style="font:400 12.5px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ k.sub }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;max-width:1280px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7)">
+      <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">The tag stays large</b>, because it is what Ableton holds, and it lines up with the sample list's <i>Ableton key</i> column below. The mode sits on the line above at 18px in mono with an arrow, so the cell reads as one statement from top to bottom. The old line <i>really A Dorian, tagged as A min</i> is replaced by the reason. The other cells line up along their bottom edge, so the band's figures stay level.</p>
+      <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Sections:</b> the large figure is the primary center, and the other centers are listed under a hairline as label and key, each with its own arrow where it is modal. <i>Why …</i> in the Where-it-is cell takes you to the drawing in <a href="#1c" style="text-decoration:underline">1c</a>.</p>
+      <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Mixed is one line, not a mark</b>: the lead reads <span style="font-family:'IBM Plex Mono',monospace">A mixed →</span> and the reason says which part the tag follows. <b style="color:#ece7dc;font-weight:500">Room for <i>no tonal center</i></b>: the same three lines work as <span style="font-family:'IBM Plex Mono',monospace">no tonal center →</span>, a <span style="font-family:'IBM Plex Mono',monospace">—</span> figure, and a reason. Nothing here assumes there is a tonic.</p>
+    </div>
+  </div>
+
+  <div id="1c" style="display:flex;flex-direction:column;gap:12px;scroll-margin-top:24px">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><a href="#1c" style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1c</a><span style="font:500 14px 'IBM Plex Sans',sans-serif">Why this key, for a song with sections: centers on the time axis, sources by what they covered</span></div>
+    <div style="display:grid;grid-template-columns:900px minmax(0,1fr);gap:28px;align-items:start">
+      <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:26px 28px;display:flex;flex-direction:column;gap:22px">
+        <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span style="font:600 16px 'IBM Plex Sans',sans-serif">Why G Mixolydian</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">three centers; the tag follows the verse</span></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Centers</span>
+          <div style="position:relative;width:844px;height:58px">
+            <sc-for list="{{ segs }}" as="s" hint-placeholder-count="6"><span style="position:absolute;left:{{ s.px }};width:{{ s.pw }};top:4px;height:34px;box-sizing:border-box;padding:0 4px;border-radius:3px;background:{{ s.fill }};border:1px solid {{ s.stroke }};color:{{ s.ink }};font:500 11px/32px 'IBM Plex Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.t }}</span></sc-for>
+            <sc-for list="{{ segTimes }}" as="t" hint-placeholder-count="4"><span style="position:absolute;left:{{ t.px }};top:43px;font:400 10.5px/13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">{{ t.s }}</span></sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ centers }}" as="c" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:90px 260px minmax(0,1fr);gap:14px;align-items:baseline;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)">
+                <span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">{{ c.l }}</span>
+                <span style="font:500 13px 'IBM Plex Mono',monospace">{{ c.k }}</span>
+                <span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ c.n }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-bottom:6px">Sources</span>
+          <sc-for list="{{ sources }}" as="s" hint-placeholder-count="4">
+            <div style="display:grid;grid-template-columns:16px 112px 150px minmax(0,1fr);gap:12px;align-items:baseline;padding:9px 0;border-top:1px solid rgba(255,255,255,.06);font:400 13px 'IBM Plex Sans',sans-serif">
+              <span style="font-family:'IBM Plex Mono',monospace;text-align:center;color:{{ s.markInk }}">{{ s.mark }}</span>
+              <span style="font:500 10px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-align:center;padding:1px 0;border-radius:4px;color:{{ s.bInk }};background:{{ s.bBg }};border:1px {{ s.bStyle }} {{ s.bBd }}">{{ s.badge }}</span>
+              <span style="display:flex;flex-direction:column;gap:3px"><span style="text-decoration:underline;text-underline-offset:2px;color:rgba(236,231,220,.75)">{{ s.site }}</span><span style="width:fit-content;font:500 11px 'IBM Plex Sans',sans-serif;padding:1px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.2);color:rgba(236,231,220,.75)">{{ s.cover }}</span></span>
+              <span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-family:'IBM Plex Mono',monospace;color:{{ s.kInk }}">{{ s.said }}</span><span style="font:400 12.5px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);text-wrap:pretty">{{ s.rel }}</span></span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7)">
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Centers on the track's time axis</b>, where the sections have times (windows the maintainer gave, brief 18). The primary is filled, and each other center is outlined. A repeated section is drawn each time it occurs. Under the strip there is one line per center with its label, its arrow and what it is, and the primary says the tag follows it.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Without times</b> (a source wrote "chorus only"), the strip isn't drawn and the list stands on its own. Nothing is placed on the axis that wasn't timed.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Each source says what it covered</b>, as a neutral chip under its name: <i>whole song</i>, <i>chorus only</i>. Its ✓ or ✗ is judged against that section, so a chorus-only E minor is a ✓ <i>agrees with the chorus</i> and not a dissent. A source that disagrees with a section says which one. A whole-song reading that matches only a section says so and stays muted.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">A stated mode is shown in full</b>, <span style="font-family:'IBM Plex Mono',monospace">G Mixolydian</span>, and no longer as <span style="font-family:'IBM Plex Mono',monospace">G major (mixolydian)</span>. The source said the mode, so the mode is shown first.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="1d" style="display:flex;flex-direction:column;gap:12px;scroll-margin-top:24px">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><a href="#1d" style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1d</a><span style="font:500 14px 'IBM Plex Sans',sans-serif">Partners: the same-notes key as a third basis pill</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.55)">proposal; not asked of this issue</span></div>
+    <div style="display:grid;grid-template-columns:620px minmax(0,1fr);gap:28px;align-items:start">
+      <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:12px">
+        <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Working from</span>
+        <span style="font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty"><span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">A min (8A)</span>, the tag of <span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">A Dorian</span>. Its samples are tagged this way, so it's what Live will match on.</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span style="font:500 12px 'IBM Plex Mono',monospace;padding:4px 11px;border-radius:999px;background:#ece7dc;color:#0f0e0c">A min</span>
+          <span style="font:500 12px 'IBM Plex Mono',monospace;padding:4px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.14);color:rgba(236,231,220,.6)">C maj <span style="font-family:'IBM Plex Sans',sans-serif">relative</span></span>
+          <span style="font:500 12px 'IBM Plex Mono',monospace;padding:4px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.14);color:rgba(236,231,220,.6)">G maj <span style="font-family:'IBM Plex Sans',sans-serif">same notes</span></span>
+        </div>
+      </div>
+      <p style="margin:0;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Worth building, small.</b> A Dorian uses G major's seven notes, so G-major material sits on it without a clash, which the tag alone can't tell Partners. Offer the same-notes key as a third pill beside the relative, only for a modal verdict. Picking it re-sorts the table from that basis, as the relative pill does now, and the wheel rings the track's own tag. Plain verdicts get no third pill, since their same-notes key is the tag or its relative.</p>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const plain = { mode: false, open: false, bg: 'transparent' };
+    const W = 844, dur = 210, x = s => s / dur * W;
+    const segDefs = [[0, 38, 'verse', 'G Mixo', 1], [38, 70, 'chorus', 'E min', 0], [70, 108, 'verse', 'G Mixo', 1], [108, 140, 'chorus', 'E min', 0], [140, 166, 'bridge', 'C Lyd', 0], [166, 210, 'chorus', 'E min', 0]];
+    const segs = segDefs.map(([a, b, l, k, p]) => ({ x: x(a) + 1, w: x(b) - x(a) - 2, tx: x(a) + 8, t: l + ' · ' + k, fill: p ? 'rgba(236,231,220,.16)' : 'transparent', stroke: p ? 'rgba(236,231,220,.5)' : 'rgba(236,231,220,.35)', dash: '', ink: p ? '#ece7dc' : 'rgba(236,231,220,.75)' }));
+    segs.forEach(s => { s.px = s.x.toFixed(1) + 'px'; s.pw = s.w.toFixed(1) + 'px'; });
+    const segTimes = [0, 60, 120, 180].map(s => ({ px: (x(s) + 2).toFixed(1) + 'px', s: Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') }));
+    const auth = { bInk: '#0f0e0c', bBg: '#ece7dc', bStyle: 'solid', bBd: '#ece7dc', badge: 'authoritative' };
+    const corr = { bInk: '#ece7dc', bBg: 'transparent', bStyle: 'solid', bBd: 'rgba(236,231,220,.6)', badge: 'corroborating' };
+    const algo = { bInk: 'rgba(236,231,220,.6)', bBg: 'transparent', bStyle: 'dashed', bBd: 'rgba(236,231,220,.3)', badge: 'algorithmic' };
+    const ok = { mark: '✓', markInk: '#ece7dc', kInk: '#ece7dc' }, no = { mark: '✗', markInk: 'rgba(236,231,220,.6)', kInk: 'rgba(236,231,220,.6)' };
+    return {
+      rows: [
+        { ...plain, song: 'Neon Tide', key: 'G♯ min', conf: 'HIGH', confInk: '#ece7dc', bpm: '127', genre: 'Future Bass', state: 'In Library', tip: 'G♯ minor' },
+        { ...plain, song: 'Song A', ital: 'italic', key: 'A min', mode: 'Dor', open: true, bg: 'rgba(255,255,255,.03)', conf: 'HIGH', confInk: '#ece7dc', bpm: '96', genre: 'Funk', state: 'In Library', arrow: 'A Dorian → A min', why: 'Dorian is a minor mode, so it is tagged by its tonic. Same notes as G major (9B).', tip: 'A Dorian → A min · Dorian is a minor mode, so it is tagged by its tonic. Same notes as G major (9B).' },
+        { ...plain, song: 'Song B', ital: 'italic', key: 'E♭ maj', conf: 'MEDIUM', confInk: 'rgba(236,231,220,.75)', bpm: '122', genre: 'House', state: 'In Library', tip: 'E♭ major' },
+        { ...plain, song: 'Song C', ital: 'italic', key: 'G maj', mode: 'Mixo', conf: 'HIGH', confInk: '#ece7dc', bpm: '104', genre: 'Rock', state: 'Ready', tip: 'G Mixolydian (verse) → G maj · Mixolydian is a major mode, so it is tagged by its tonic. Same notes as C major (8B). Also E minor (chorus), C Lydian (bridge).' },
+        { ...plain, song: 'Song D', ital: 'italic', key: 'F♯ min', mode: 'Phr', conf: 'MEDIUM', confInk: 'rgba(236,231,220,.75)', bpm: '140', genre: 'Metal', state: 'In Library', tip: 'F♯ Phrygian → F♯ min · Phrygian is a minor mode, so it is tagged by its tonic. Same notes as D major (10B).' },
+        { ...plain, song: 'Song E', ital: 'italic', key: 'A min', mode: 'maj/min', conf: 'HIGH', confInk: '#ece7dc', bpm: '118', genre: 'Pop', state: 'In Library', tip: 'A mixed → A min · Major melody over minor harmony; tagged by the harmony.' },
+        { ...plain, song: 'Song F', ital: 'italic', key: 'C min', conf: 'HIGH', confInk: '#ece7dc', bpm: '174', genre: 'Drum and bass', state: 'In Library', tip: 'C minor' }
+      ],
+      keyCells: [
+        { label: 'plain, 96%', tag: 'G♯ min', sub: 'tagged in Ableton on 2 of 2 samples' },
+        { label: 'major mode', lead: 'G Lydian', tag: 'G maj', why: 'Lydian is a major mode, so it is tagged by its tonic. Same notes as D major (10B).', sub: 'tagged in Ableton on 3 of 3 samples' },
+        { label: 'three sections', lead: 'G Mixolydian', tag: 'G maj', why: 'Mixolydian is a major mode, so it is tagged by its tonic. Same notes as C major (8B).', more: [{ l: 'chorus', k: 'E min' }, { l: 'bridge', k: 'C Lydian → C maj' }], sub: 'the verse, and the tag follows it' },
+        { label: 'mixed', lead: 'A mixed', tag: 'A min', why: 'Major melody over minor harmony; tagged by the harmony.', sub: 'tagged in Ableton on 2 of 2 samples' }
+      ],
+      segs, segTimes,
+      centers: [
+        { l: 'verse', k: 'G Mixolydian → G maj', n: 'primary · the tag follows it · 0:00, 1:10' },
+        { l: 'chorus', k: 'E min', n: '0:38, 1:48, 2:46' },
+        { l: 'bridge', k: 'C Lydian → C maj', n: '2:20' }
+      ],
+      sources: [
+        { ...ok, ...auth, site: 'musescore.com', cover: 'whole song', said: 'G Mixolydian', rel: 'agrees with the song' },
+        { ...ok, ...corr, site: 'hooktheory.com', cover: 'chorus only', said: 'E minor', rel: 'agrees with the chorus' },
+        { ...no, ...corr, site: 'chordify.net', cover: 'bridge only', said: 'G major', rel: 'disagrees with the bridge (C Lydian), not the song' },
+        { ...no, ...algo, site: 'tunebat.com', cover: 'whole song', said: 'E minor', rel: 'matches the chorus, not the song; an algorithmic dissent does not demote' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+/* The groups are drawn by the components mounted here, so everything below reaches into them. */
+
+.stack,
+.stack-body,
+.stack-col,
+.below-name {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Wrapped once, keeping handoff 06's order: Go, Next and Tags, then Name and Start over. */
+@media (min-width: 1200px) {
+    .stack-body.two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 28px;
+        align-items: start;
+    }
+
+    .stack-body.two > .stack-col > ::deep .group:first-child {
+        padding-top: 0;
+        border-top: none;
+    }
+}
+
+/* Picking swaps the action block for its own lead, summary and buttons, in the same spot. */
+.picking {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.picking .lead {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+}
+
+.pending {
+    color: var(--red);
+}
+
+.confirm-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 14px;
+    border: 1px solid rgba(232, 180, 90, 0.45);
+    border-radius: 8px;
+}
+
+.dimmed {
+    opacity: 0.45;
+}
+
+.stack ::deep .group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+}
+
+.stack-body > .stack-col:first-child > ::deep .group:first-child {
+    padding-top: 0;
+    border-top: none;
+}
+
+.stack ::deep .group.tags {
+    gap: 6px;
+}
+
+.stack ::deep .group.status {
+    gap: 4px;
+}
+
+.start-over {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 4px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.stack ::deep .stack-part {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stack ::deep .stack-part.editing {
+    gap: 8px;
+}
+
+.stack ::deep .label-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 28px;
+}
+
+.stack ::deep .label-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.stack ::deep .stack-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-50);
+}
+
+.stack ::deep .stack-label.faint {
+    color: var(--text-40);
+}
+
+.stack ::deep .stack-label.editing {
+    color: var(--amber);
+}
+
+.stack ::deep .stack-value {
+    font-size: 13px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.stack ::deep .stack-status {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-50);
+}
+
+.stack ::deep .stack-status strong {
+    font-weight: 400;
+    color: var(--text-75);
+}
+
+.problem {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: var(--red);
+}

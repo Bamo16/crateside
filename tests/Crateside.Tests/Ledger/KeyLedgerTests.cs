@@ -3,7 +3,7 @@ using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Ledger;
 
-public class KeyLedgerTests : IDisposable
+public sealed class KeyLedgerTests : IDisposable
 {
     private readonly string _path = Path.Combine(
         Path.GetTempPath(),
@@ -24,7 +24,7 @@ public class KeyLedgerTests : IDisposable
     private KeyLedger ReadLines(params string[] lines)
     {
         File.WriteAllLines(_path, lines);
-        return KeyLedger.Read(_path);
+        return TestLedger.From(_path);
     }
 
     private static string Line(
@@ -69,7 +69,7 @@ public class KeyLedgerTests : IDisposable
         Assert.Equal("kobaryo - kawaii", run.Song);
         Assert.Equal("D# minor", run.Key);
         Assert.Equal(KeyConfidence.Medium, run.Confidence);
-        Assert.Equal("wqqARL9SDec", run.SourceVideoId);
+        Assert.Equal("wqqARL9SDec", run.SourceTrackKey);
         Assert.Equal(145, run.Bpm);
         Assert.True(run.HasTaggableKey);
     }
@@ -102,9 +102,7 @@ public class KeyLedgerTests : IDisposable
     [Fact]
     public void A_video_id_resolves_through_the_identity_to_the_newest_verdict()
     {
-        // The supersede carries no URL at all. Going straight from video ID to "the run that
-        // mentioned it" would return the stale WITHHELD; resolving to the identity first is
-        // what makes the newer verdict win.
+        // The supersede carries no URL, so only resolving to the identity first finds it.
         var ledger = ReadLines(
             Line(
                 "2026-08-01T00:00:00+00:00",
@@ -116,49 +114,43 @@ public class KeyLedgerTests : IDisposable
             Line("2026-08-12T00:00:00+00:00", "a - b", null, "C# minor", "MEDIUM")
         );
 
-        Assert.True(ledger.TryGetLatestByVideoId("NSLYAT7sjAA", out var run));
+        Assert.True(ledger.TryGetLatestByTrackKey("NSLYAT7sjAA", out var run));
         Assert.Equal("C# minor", run.Key);
         Assert.Equal(KeyConfidence.Medium, run.Confidence);
     }
 
     [Fact]
-    public void A_line_carrying_no_verdict_would_take_the_songs_key_away()
+    public void A_line_carrying_no_verdict_is_refused_rather_than_taking_the_songs_key_away()
     {
-        // Why a restatement carries the whole verdict rather than just the new URL (keytag ADR
-        // 0008): latest-wins cannot distinguish "says nothing" from "says no key", so a bare
-        // alias resolves the new ID and blanks the song at the same time.
-        var ledger = ReadLines(
-            Line(
-                "2026-08-01T00:00:00+00:00",
-                "a - b",
-                "https://www.youtube.com/watch?v=NSLYAT7sjAA",
-                "C# minor",
-                "HIGH"
-            ),
-            JsonSerializer.Serialize(
-                new
-                {
-                    timestamp = "2026-08-12T00:00:00+00:00",
-                    song = "a - b",
-                    source_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                }
-            )
+        // Why a restatement carries the whole verdict (ADR 0055).
+        File.WriteAllLines(
+            _path,
+            [
+                Line(
+                    "2026-08-01T00:00:00+00:00",
+                    "a - b",
+                    "https://www.youtube.com/watch?v=NSLYAT7sjAA",
+                    "C# minor",
+                    "HIGH"
+                ),
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        timestamp = "2026-08-12T00:00:00+00:00",
+                        song = "a - b",
+                        source_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    }
+                ),
+            ]
         );
+        using var store = TestLedger.Store(_path);
 
-        Assert.True(ledger.TryGetLatestByVideoId("dQw4w9WgXcQ", out var swapped));
-        Assert.Null(swapped.Key);
-        Assert.False(swapped.HasTaggableKey);
-
-        // And it reaches back through the original ID too, so the damage is not confined to the
-        // new video.
-        Assert.True(ledger.TryGetLatestByVideoId("NSLYAT7sjAA", out var original));
-        Assert.Null(original.Key);
+        Assert.True(store.Read().TryGetLatestByTrackKey("NSLYAT7sjAA", out var original));
+        Assert.Equal("C# minor", original.Key);
+        Assert.False(store.Read().HasRunFor("dQw4w9WgXcQ"));
     }
 
-    /// <summary>
-    /// A restatement as <c>keytag-restate</c> writes one — shape taken from a real
-    /// <c>--dry-run</c>, verdict copied from the run it names.
-    /// </summary>
+    /// <summary>A restatement line.</summary>
     private static string Restatement(
         string timestamp,
         string song,
@@ -215,15 +207,13 @@ public class KeyLedgerTests : IDisposable
             )
         );
 
-        Assert.True(ledger.TryGetLatestByVideoId("NEWnewNEWne", out var viaNew));
+        Assert.True(ledger.TryGetLatestByTrackKey("NEWnewNEWne", out var viaNew));
         Assert.Equal("C# minor", viaNew.Key);
 
-        // The old ID keeps resolving: stems cut from the old video are still that song.
-        Assert.True(ledger.TryGetLatestByVideoId("OLDoldOLDol", out var viaOld));
+        Assert.True(ledger.TryGetLatestByTrackKey("OLDoldOLDol", out var viaOld));
         Assert.Equal(viaNew.Key, viaOld.Key);
         Assert.Equal(viaNew.Confidence, viaOld.Confidence);
 
-        // Both count as judged, so neither is picked up for a second verdict run.
         Assert.True(ledger.HasRunFor("NEWnewNEWne"));
         Assert.True(ledger.HasRunFor("OLDoldOLDol"));
     }
@@ -231,7 +221,6 @@ public class KeyLedgerTests : IDisposable
     [Fact]
     public void A_re_judgment_after_a_restatement_still_wins_through_both_ids()
     {
-        // A restatement is not a floor: it is just the latest line until a real run is later.
         var ledger = ReadLines(
             Line("2026-09-01T00:00:00+00:00", "a - b", Watch("OLDoldOLDol"), "C# minor", "MEDIUM"),
             Restatement(
@@ -245,9 +234,9 @@ public class KeyLedgerTests : IDisposable
             Line("2026-09-10T00:00:00+00:00", "a - b", Watch("NEWnewNEWne"), "F major")
         );
 
-        foreach (var videoId in (string[])["OLDoldOLDol", "NEWnewNEWne"])
+        foreach (var trackKey in (string[])["OLDoldOLDol", "NEWnewNEWne"])
         {
-            Assert.True(ledger.TryGetLatestByVideoId(videoId, out var run));
+            Assert.True(ledger.TryGetLatestByTrackKey(trackKey, out var run));
             Assert.Equal("F major", run.Key);
             Assert.Equal(KeyConfidence.High, run.Confidence);
         }
@@ -256,7 +245,6 @@ public class KeyLedgerTests : IDisposable
     [Fact]
     public void A_restatement_leaves_the_song_count_alone()
     {
-        // It names an existing identity, so it adds a source URL rather than a song.
         var ledger = ReadLines(
             Line("2026-09-01T00:00:00+00:00", "a - b", Watch("OLDoldOLDol"), "C# minor", "MEDIUM"),
             Restatement(
@@ -272,12 +260,11 @@ public class KeyLedgerTests : IDisposable
         Assert.Equal(1, ledger.SongCount);
     }
 
-    private static string Watch(string videoId) => $"https://music.youtube.com/watch?v={videoId}";
+    private static string Watch(string trackKey) => $"https://music.youtube.com/watch?v={trackKey}";
 
     [Fact]
     public void A_withheld_run_still_counts_as_having_been_processed()
     {
-        // The removal predicate is "a verdict was recorded", not "a key was produced".
         var ledger = ReadLines(
             Line(
                 "2026-08-01T00:00:00+00:00",
@@ -289,7 +276,7 @@ public class KeyLedgerTests : IDisposable
         );
 
         Assert.True(ledger.HasRunFor("NSLYAT7sjAA"));
-        Assert.True(ledger.TryGetLatestByVideoId("NSLYAT7sjAA", out var run));
+        Assert.True(ledger.TryGetLatestByTrackKey("NSLYAT7sjAA", out var run));
         Assert.Null(run.Key);
         Assert.False(run.HasTaggableKey);
     }
@@ -297,7 +284,6 @@ public class KeyLedgerTests : IDisposable
     [Theory]
     [InlineData("LOW")]
     [InlineData("WITHHELD")]
-    [InlineData("SOMETHING_NEW")]
     public void Only_high_and_medium_verdicts_are_taggable(string confidence)
     {
         var ledger = ReadLines(
@@ -308,9 +294,20 @@ public class KeyLedgerTests : IDisposable
     }
 
     [Fact]
+    public void A_confidence_the_ledger_does_not_know_is_refused()
+    {
+        File.WriteAllLines(
+            _path,
+            [Line("2026-08-01T00:00:00+00:00", "a - b", null, "C major", "SOMETHING_NEW")]
+        );
+        using var store = TestLedger.Store(_path);
+
+        Assert.Empty(store.Read().Runs);
+    }
+
+    [Fact]
     public void A_malformed_line_is_skipped_not_fatal()
     {
-        // The file is append-only and may be caught mid-write.
         var ledger = ReadLines(
             Line("2026-08-01T00:00:00+00:00", "a - b", null, "C major"),
             "",
@@ -324,7 +321,7 @@ public class KeyLedgerTests : IDisposable
     [Fact]
     public void An_absent_ledger_reads_empty_rather_than_throwing()
     {
-        var ledger = KeyLedger.Read(Path.Combine(Path.GetTempPath(), "no-such-ledger.jsonl"));
+        var ledger = TestLedger.From(Path.Combine(Path.GetTempPath(), "no-such-ledger.jsonl"));
 
         Assert.Empty(ledger.Runs);
         Assert.False(ledger.HasRunFor("NSLYAT7sjAA"));
@@ -342,6 +339,6 @@ public class KeyLedgerTests : IDisposable
             )
         );
 
-        Assert.False(ledger.TryGetLatestByVideoId("vfBJjufAG1E", out _));
+        Assert.False(ledger.TryGetLatestByTrackKey("vfBJjufAG1E", out _));
     }
 }

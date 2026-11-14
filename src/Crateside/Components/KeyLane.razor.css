@@ -1,0 +1,86 @@
+.gutter {
+    display: flex;
+    align-items: center;
+    font-size: 11.5px;
+    color: var(--text-50);
+}
+
+/* The key strip: the verdict's centers as bands. */
+.key-gutter {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 10px 6px 0;
+    border-top: 1px solid rgba(236, 231, 220, 0.1);
+}
+
+.key-name {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.gist {
+    font-size: 10.5px;
+    line-height: 1.35;
+    color: var(--text-40);
+}
+
+.unplaced {
+    font-size: 10.5px;
+    color: var(--text-60);
+}
+
+.key-strip {
+    position: relative;
+    min-height: 52px;
+    overflow: hidden;
+    border-top: 1px solid rgba(236, 231, 220, 0.1);
+}
+
+.key-band {
+    padding: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: url("/cursors/speaker.svg") 4 12, default;
+    position: absolute;
+    top: 3.5px;
+    height: 44px;
+    box-sizing: border-box;
+    border: 1px solid rgba(236, 231, 220, 0.55);
+    border-radius: 3px;
+    background: rgba(236, 231, 220, 0.03);
+}
+
+.key-band:hover,
+.key-band.picked {
+    border-color: rgba(236, 231, 220, 0.9);
+}
+
+.key-band.picked {
+    background: rgba(236, 231, 220, 0.14);
+}
+
+/* A start only the judge gave: dashed, since nothing places it. */
+.key-band.unbacked {
+    border-style: dashed;
+}
+
+.key-band.from-window {
+    background: rgba(236, 231, 220, 0.07);
+}
+
+.key-label {
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    right: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text);
+}

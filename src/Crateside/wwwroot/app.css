@@ -1,10 +1,12 @@
 /* A single dark palette: this is a bench tool that sits open next to Ableton, which is dark.
-   Warm rather than the blue-grey it started as, because it is looked at for hours beside artwork
+   Warm rather than the blue-gray it started as, because it is looked at for hours beside artwork
    and waveforms and a cool UI competes with them.
 
    The palette is defined once here and the older semantic names alias onto it, so a page written
-   against --accent or --warn keeps working and picks up the new colours for free. */
+   against --accent or --warn keeps working and picks up the new colors for free. */
 :root {
+    /* The pinned site nav's height, which the player pins beneath. */
+    --pin-nav: 38px;
     /* Surfaces, darkest first. --ink is for text *on* a filled chip, never for a background. */
     --bg: #141310;
     --surface: #1b1a15;
@@ -13,7 +15,7 @@
 
     --text: #ece7dc;
 
-    /* The three colours that mean something, and nothing else is coloured:
+    /* The three colors that mean something, and nothing else is colored:
        teal = the machine is working, amber = it is the user's turn, red = needs attention.
        Green is only ever "done", which is a state the user has already left behind. */
     --teal: #6fc7d6;
@@ -55,8 +57,9 @@
        score — and it reads worse the wider it gets, because the eye has to travel between
        related numbers. Tracks has song titles in it and needs the room (#20). */
     --table-partners: 50rem;
-    --table-library: 64rem;
+    --table-library: 56rem;
     --table-tracks: 92rem;
+    --table-activity: 97.5rem;
 
     /* Older names, kept as aliases. --text-dim and --muted were doing the job --text-75 and
        --text-50 do now; --accent was a blue that no longer exists. */
@@ -117,4 +120,154 @@ h1:focus {
 
 .blazor-error-boundary::after {
     content: "An error has occurred.";
+}
+
+/* Controls shared by every page and component; a page's scoped rule still wins where it sets one. */
+/* One page, one list, one row per track. The row never moves: state is a column rather than an
+   address, which is the whole argument for replacing the sections this page came from. */
+
+/* Every number, key, timestamp and count. They are read as values and compared down a column,
+   which proportional digits defeat — a BPM of 111 and one of 128 should be the same width. */
+.mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+.outline {
+    flex: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.outline:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
+.pill.off {
+    color: var(--text-75);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pill.on {
+    border: 1px solid transparent;
+    color: var(--ink);
+}
+
+.pill.on.amber {
+    background: var(--amber);
+}
+
+.pill.on.red {
+    background: var(--red);
+}
+
+.pill.on.teal,
+.pill.on.plain {
+    background: var(--text);
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* The evidence link is an anchor because it navigates; it is drawn as a button because it sits in
+   a row of them and nothing about it is a different kind of act. */
+a.outline {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+/* Filled, because releasing a hold is the one thing on this panel the user came to do. */
+.primary {
+    flex: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--text);
+    border: 0;
+    border-radius: 6px;
+    padding: 7px 12px;
+    cursor: pointer;
+}
+
+.danger {
+    flex: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--red);
+    background: rgba(224, 122, 109, 0.18);
+    border: 1px solid rgba(224, 122, 109, 0.45);
+    border-radius: 6px;
+    padding: 7px 12px;
+    cursor: pointer;
+}
+
+.danger:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.primary:disabled,
+.outline:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
+
+/* While the view's window or a handle is dragged the whole page wears its cursor, so it cannot flicker off the strip (handoff 22, 3b·3). */
+body.pb-locked,
+body.pb-locked * {
+    user-select: none !important;
+}
+
+body.pb-locked-start,
+body.pb-locked-start * {
+    cursor: url("/cursors/bracket-start.svg") 10 12, ew-resize !important;
+}
+
+body.pb-locked-end,
+body.pb-locked-end * {
+    cursor: url("/cursors/bracket-end.svg") 14 12, ew-resize !important;
+}
+
+body.pb-locked-body,
+body.pb-locked-body * {
+    cursor: grabbing !important;
+}
+
+/* The rows a window drag draws itself (playback/rows.js) cover the server's until the rows come back drawn for the final window. */
+[data-covered] > * {
+    visibility: hidden;
+}
+
+/* Under scroll follow's sliding strip a row's fixed labels stay where they are, over it. */
+[data-covered="strip"] > .range,
+[data-covered="strip"] > .off-label {
+    visibility: visible;
+    z-index: 4;
 }

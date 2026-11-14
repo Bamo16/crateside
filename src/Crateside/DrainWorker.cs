@@ -1,4 +1,7 @@
 using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Loop;
+using Crateside.Core.Orchestration.Separation;
 
 namespace Crateside;
 
@@ -8,8 +11,8 @@ namespace Crateside;
 /// </summary>
 public sealed class DrainWorker(
     SeparationDrainer drainer,
-    SeparationInterlock interlock,
     DrainControl control,
+    StageSignals signals,
     ILogger<DrainWorker> logger
 ) : BackgroundService
 {
@@ -33,9 +36,9 @@ public sealed class DrainWorker(
             {
                 break;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                logger.LogError(e, "Drain tick failed");
+                logger.LogError(ex, "Drain tick failed");
             }
 
             try
@@ -50,37 +53,66 @@ public sealed class DrainWorker(
     }
 
     /// <summary>
-    /// Squares the job store against reality before anything is allowed to launch. On Windows a
-    /// child process is not killed with its parent, so a <c>stemforge-cli</c> from a previous
-    /// crateside run may still be alive and must be found rather than duplicated.
+    /// Squares the job store against reality before anything launches, since a previous run's
+    /// <c>stemforge-cli</c> may still be alive, or may have finished while crateside was down.
     /// </summary>
     private void Reconcile()
     {
-        var reconciliation = interlock.Reconcile();
+        if (JobObject.KillsChildrenOnExit())
+            logger.LogWarning(
+                "crateside is running inside a job that kills its children when it exits, as "
+                    + "under dotnet run: a restart will end any separation in progress. Start it "
+                    + "with the run task."
+            );
+
+        var reconciliation = drainer.Reconcile();
 
         foreach (var job in reconciliation.Adopted)
             logger.LogInformation(
-                "Adopted separation of {VideoId} still running as process {ProcessId}",
-                job.VideoId,
+                "Adopted separation of {TrackKey} still running as process {ProcessId}",
+                job.TrackKey,
                 job.ProcessId
+            );
+
+        LogSettled(reconciliation);
+    }
+
+    private void LogSettled(SeparationReconciliation reconciliation)
+    {
+        foreach (var settled in reconciliation.Finished)
+            logger.LogInformation(
+                "Separation of {TrackKey} finished while nobody was watching ({Count} stems)",
+                settled.Job.TrackKey,
+                settled.OutputFiles.Count
             );
 
         foreach (var job in reconciliation.Abandoned)
             logger.LogWarning(
-                "Separation of {VideoId} did not survive: {Error}",
-                job.VideoId,
+                "Separation of {TrackKey} did not finish: {Error}",
+                job.TrackKey,
                 job.Error
             );
+
+        if (reconciliation.Finished.Count > 0)
+            signals.WakeAllBut(JobStage.Separation);
     }
 
     private async Task<TimeSpan> TickAsync(CancellationToken stoppingToken)
     {
+        // An adopted separation reports nothing when it ends; this is how it gets noticed.
+        LogSettled(drainer.SettleEnded());
+
         var tick = await drainer.DrainOnceAsync(stoppingToken);
 
         switch (tick)
         {
             case { Outcome: DrainOutcome.Ran, Order: { } order, Result: { } result }:
                 LogRun(order, result);
+
+                // Stems nobody has been told about yet: the handoff would otherwise wait out its
+                // own interval behind a separation that has already finished.
+                if (result.Outcome is SeparationOutcome.Succeeded)
+                    signals.WakeAllBut(JobStage.Separation);
 
                 // Refused: the GPU is busy with an adopted run.
                 return result.Outcome is SeparationOutcome.Refused ? IdleDelay : BusyDelay;

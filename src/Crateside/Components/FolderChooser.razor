@@ -1,0 +1,60 @@
+@using Crateside.Core
+@inject FolderBrowser Browser
+
+<div class="scrim" @onclick="Cancel">
+    <div class="dialog" role="dialog" aria-label="@Title" @onclick:stopPropagation>
+        <h3>@Title</h3>
+
+        <div class="here mono">
+            @(_listing.Path is { Length: > 0 } here ? here : "This computer")
+        </div>
+
+        <div class="folders">
+            @if (_listing.Parent is { } parent)
+            {
+                <button class="folder up" @onclick="() => Open(parent)">↑ Up</button>
+            }
+
+            @foreach (var folder in _listing.Folders)
+            {
+                <button class="folder" @onclick="() => Open(folder.Path)">@folder.Name</button>
+            }
+
+            @if (_listing.Folders.Count is 0)
+            {
+                <span class="empty">No folders here.</span>
+            }
+        </div>
+
+        <div class="footer">
+            <button class="outline" @onclick="Cancel">Cancel</button>
+            <button class="primary" disabled="@(_listing.Path.Length is 0)" @onclick="Choose">
+                Choose this folder
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private FolderListing _listing = new(string.Empty, null, []);
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Start { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<string> Chosen { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback Canceled { get; set; }
+
+    protected override void OnInitialized() => _listing = Browser.List(Start);
+
+    private void Open(string path) => _listing = Browser.List(path);
+
+    private Task Choose() => Chosen.InvokeAsync(_listing.Path);
+
+    private Task Cancel() => Canceled.InvokeAsync();
+}

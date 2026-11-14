@@ -1,0 +1,107 @@
+.tag-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 28px;
+}
+
+.tag-label {
+    flex: none;
+    width: 88px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-50);
+}
+
+.tag-value {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.tag-value.quiet {
+    font-weight: 400;
+    color: var(--text-50);
+}
+
+.measuring {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 4px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+}
+
+.held {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+}
+
+.fields {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fields label span {
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.fields input {
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 8px 11px;
+    outline: none;
+}
+
+.fields input:focus {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.fields input::placeholder {
+    color: var(--text-35);
+}
+
+.kind {
+    display: flex;
+    gap: 8px;
+}
+
+.kind .on {
+    border-color: rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.problem {
+    margin: 0;
+    font-size: 12px;
+    color: var(--bad, #e5766a);
+}

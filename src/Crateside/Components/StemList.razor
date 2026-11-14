@@ -1,0 +1,410 @@
+@using Crateside.Core.Ledger
+@using Crateside.Core.Plans
+@using Crateside.Core.Samples
+@using Crateside.Core.Tracks
+
+@{
+    var picker = Editor.PickerFor(Row);
+    var picking = Editor.IsPicking(Row);
+    var ticking = Row.CanChangePlan || picking;
+}
+
+@if (ticking || Row.Samples.Count > 0 || Row.HasWarpGuide)
+{
+    <div class="stems @(ticking ? "ticking" : null)">
+        @if (ticking && Headed)
+        {
+            <div class="panel-head">
+                @if (Row.CanChangePlan)
+                {
+                    <text>Will be cut into</text>
+                    <span class="head-note">changes apply now · nothing has been made yet</span>
+                }
+                else
+                {
+                    <span class="changing">Changing what is cut</span>
+                    @if (!picker.IsAdditive && picker.ChangesAnything)
+                    {
+                        <span class="pending"> · re-cut pending</span>
+                    }
+                }
+            </div>
+        }
+
+        <div class="stem-heads">
+            <span></span>
+            <span>Sample</span>
+            <span>Ableton key</span>
+            <span>Where it is</span>
+            <span></span>
+        </div>
+
+        @* One list in both states: the lines on disk stay put, and the rest grow in around them (handoff 13b). *@
+        @foreach (var band in Grouped(picker, Row))
+        {
+            <div class="grow @(ticking ? "shown" : null)" @key="band.Label">
+                <div class="grow-inner">
+                    <div class="stem-band">@band.Label</div>
+                </div>
+            </div>
+
+            @foreach (var line in band.Lines)
+            {
+                var file = line.Files.FirstOrDefault();
+                var tickable = ticking && line is { IsPinned: false };
+
+                <div class="grow @(ticking || line.IsOnDisk ? "shown" : null)" @key="KeyOf(line)">
+                    <div class="grow-inner">
+                        <div class="stem @(ticking ? LineTone(line) : line.Kind is StemKind.WarpGuide ? "guide" : null) @(tickable ? "tickable" : null)"
+                             title="@(ticking ? Hover(line, Row) : null)"
+                             @onclick="() => Pick(line, tickable)">
+                            <span class="tick @TickTone(line)">@TickMark(line)</span>
+                            <span class="stem-label">
+                                @PickLabel(line)
+                                @if (line.Kind is StemKind.WarpGuide)
+                                {
+                                    <span class="kind">warp guide</span>
+                                }
+                                @if (line.IsNotPremium)
+                                {
+                                    <span class="premium-badge" title="The upload offered no premium audio, so this file is the best it had.">not premium</span>
+                                }
+                            </span>
+                            @if (file is not null && line.Kind is not StemKind.WarpGuide)
+                            {
+                                <span class="mono stem-tag @TagTone(file)">@Tag(file)</span>
+                            }
+                            else
+                            {
+                                <span class="mono stem-tag dim">—</span>
+                            }
+                            @if (ticking && line.State is not StemState.Kept)
+                            {
+                                <span class="mono stem-where @StateTone(line)">@StateWord(line, picker)</span>
+                            }
+                            else
+                            {
+                                <span class="mono stem-where @(line.IsInLibrary ? "good" : null)">@(file is null ? "—" : Where(file))</span>
+                            }
+                            <span class="stem-note">
+                                @if (ticking)
+                                {
+                                    @Note(line, Row)
+                                }
+                                else if (line.Kind is StemKind.WarpGuide)
+                                {
+                                    <text>for placing markers; deleted after warping</text>
+                                }
+                                else if (file is not null)
+                                {
+                                    @Upload(file)
+                                }
+                            </span>
+                        </div>
+
+                        @foreach (var extra in line.Files.Skip(1))
+                        {
+                            <div class="stem extra">
+                                <span class="tick"></span>
+                                <span class="stem-label"></span>
+                                <span class="mono stem-tag @TagTone(extra)">@Tag(extra)</span>
+                                <span class="mono stem-where @(extra.IsInLibrary ? "good" : null)">@Where(extra)</span>
+                                <span class="stem-note">@Upload(extra)</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (band.TakesSources && Row.HasUpload)
+            {
+                <div class="grow @(ticking ? "shown" : null)" @key="OpenersKey">
+                    <div class="grow-inner">
+                        @if (!FormsBeside && SourceForms.IsOpen(Editor, Row))
+                        {
+                            <SourceForms Editor="Editor" Row="Row" />
+                        }
+                        else
+                        {
+                            var adding = Editor.Adding == Row.TrackKey;
+                            var adopting = Editor.Adopting == Row.TrackKey;
+
+                            <div class="source-openers">
+                                <button class="opener compact @(adding ? "open" : adopting ? "dimmed" : null)"
+                                        @onclick="() => Editor.StartAdding(Row)" disabled="@(!ticking || Editor.Working)"
+                                        title="another file of this song · kept whole, never separated">
+                                    <span class="mono">+</span>
+                                    <span>@(adding ? "Adding a source →" : "Add a source")</span>
+                                </button>
+                                <button class="opener compact @(adopting ? "open" : adding ? "dimmed" : null)"
+                                        @onclick="() => Editor.StartAdopting(Row)" disabled="@(!ticking || Editor.Working)"
+                                        title="one you made by hand · taken in where it is">
+                                    <span class="mono">+</span>
+                                    <span>@(adopting ? "Adopting a file →" : "Adopt a file")</span>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+
+        @if (Row.HasUpload)
+        {
+        <div class="grow @(ticking ? null : "shown")" @key="OpenerKey">
+            <div class="grow-inner">
+                <button class="opener" @onclick="() => Editor.TogglePicking(Row)" disabled="@(ticking || Editor.Working)">
+                    <span class="mono">+</span>
+                    <span>Change what is cut</span>
+                    <span class="opener-hint">@OpenerHint(picker)</span>
+                </button>
+            </div>
+        </div>
+        }
+
+        @if (picking && !FormsBeside)
+        {
+            <button class="opener closer" @onclick="() => Editor.TogglePicking(Row)" disabled="@Editor.Working">
+                <span class="mono">−</span>
+                <span>Close</span>
+                <span class="opener-hint">
+                    @(picker.ChangesAnything ? "nothing is changed until you confirm" : null)
+                </span>
+            </button>
+        }
+    </div>
+}
+else
+{
+    <div class="stems">
+        @if (Headed)
+        {
+            <div class="panel-head">@StemsHeading(Row)</div>
+        }
+        <p class="no-samples">No samples yet · what happens next is beside this</p>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required StemEditor Editor { get; set; }
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    /// <summary>The row draws the add and adopt forms and Close in its side column, so the list does not.</summary>
+    [Parameter]
+    public bool FormsBeside { get; set; }
+
+    /// <summary>The Tracks row leaves the heading out: its header already names the track (handoff 13).</summary>
+    [Parameter]
+    public bool Headed { get; set; } = true;
+
+    /// <summary>A sample line was clicked outside picking, so the warp view selects its lane.</summary>
+    [Parameter]
+    public EventCallback<string> OnSelect { get; set; }
+
+    private static string PickLabel(StemChoice line) =>
+        line switch
+        {
+            { AddedSource: { } added } => added.Label,
+            { Kind: StemKind.Source } => "Source",
+            _ => line.Label,
+        };
+
+    /// <summary>A preset's description and a line's note, which the compact line has no room for.</summary>
+    private static string? Hover(StemChoice line, TrackRow row) =>
+        string.Join(
+            " · ",
+            new[] { line.Kind is StemKind.Preset ? line.Description : null, Note(line, row) }.Where(
+                text => text is { Length: > 0 }
+            )
+        ) is { Length: > 0 } hover
+            ? hover
+            : null;
+
+    /// <summary>A coming line in flight says only "coming", since nothing records whether the running cut has it.</summary>
+    private static string StateWord(StemChoice line, StemPicker picker) =>
+        line switch
+        {
+            { State: StemState.Coming } => picker.IsCutInFlight ? "coming" : "new",
+            { State: StemState.Going } => "removed",
+            { State: StemState.NotMade, Kind: StemKind.Source } => "not kept",
+            { State: StemState.NotMade } => "not made",
+            { IsInLibrary: true } => "Library",
+            _ => "Staging",
+        };
+
+    private static string? StateTone(StemChoice line) =>
+        line switch
+        {
+            { State: StemState.Coming } => "new",
+            { State: StemState.Going } => "gone",
+            { State: StemState.NotMade } => "dim",
+            { IsInLibrary: true } => "good",
+            _ => null,
+        };
+
+    /// <summary>What the opener says it would let you reach, without opening it.</summary>
+    private static string OpenerHint(StemPicker picker)
+    {
+        var unmade = picker.Lines.Count(line =>
+            line is { State: StemState.NotMade, Kind: StemKind.Preset }
+        );
+
+        return unmade is 0
+            ? "the source track"
+            : $"{"more preset".ToQuantity(unmade)}, the source track";
+    }
+
+    /// <summary>The mark in a line's first cell: a tick, an empty box, or a pinned dot.</summary>
+    private static string TickMark(StemChoice line) =>
+        line switch
+        {
+            { Kind: StemKind.WarpGuide } => "●",
+            { Kind: StemKind.Unrecognized } => "✓",
+            { IsWanted: true } => "✓",
+            _ => string.Empty,
+        };
+
+    private static string? TickTone(StemChoice line) =>
+        line switch
+        {
+            { IsPinned: true } => "pinned",
+            { State: StemState.Coming } => "coming",
+            { State: StemState.Going } => "going",
+            { IsWanted: true } => "on",
+            _ => null,
+        };
+
+    private static string? LineTone(StemChoice line) =>
+        line switch
+        {
+            { Kind: StemKind.WarpGuide } => "guide",
+            { Kind: StemKind.Unrecognized } => "unrecognized",
+            { State: StemState.Coming } => "coming",
+            { State: StemState.Going } => "going",
+            { State: StemState.NotMade } => "unmade",
+            _ => null,
+        };
+
+    private static string? Note(StemChoice line, TrackRow row) =>
+        line switch
+        {
+            { State: StemState.Going } => "deleted from Staging, with its .asd",
+            { Kind: StemKind.WarpGuide, IsOnDisk: true } => "already cut — no new guide is made",
+            { Kind: StemKind.WarpGuide, IsWanted: true } => "cut alongside the new files",
+            { Kind: StemKind.WarpGuide } => "nothing is being made, so no guide is needed",
+            { IsInLibrary: true, State: StemState.Kept } => "in the library — not crateside's to remove",
+            { Kind: StemKind.Unrecognized } => line.Description,
+            { State: StemState.Kept } when row.HasSeveralUploads => string.Join(
+                " · ",
+                line.Uploads
+            ),
+            { State: StemState.Kept } => "kept",
+            // A preset's description is nine lines of wrapped text across the panel; it reads
+            // on hover instead, where it is wanted only once.
+            { Kind: StemKind.Preset } => null,
+            _ => line.Description,
+        };
+
+    private static string StemsHeading(TrackRow row) =>
+        row.Folder is { } folder
+            ? $"Stems · {Path.GetFileName(folder)} / {row.Title}"
+            : $"Stems · {row.Title}";
+
+    private static string Where(TrackSample sample) =>
+        sample switch
+        {
+            { IsInLibrary: true } => "Library",
+            { HasDefaultClip: true } => "Staging · warped",
+            _ => "Staging",
+        };
+
+    // The key Ableton holds, never the verdict's — on a row where they disagree, the verdict
+    // with a tick beside it would say the opposite of what is true.
+    private static string Tag(TrackSample sample) =>
+        sample switch
+        {
+            { AbletonKey: { } key } => $"{KeyText.Spell(key)} ✓",
+            { IsInLibrary: true } => "—",
+            _ => "not tagged",
+        };
+
+    // Dim, not red: nothing read this file's tag, so "not tagged" would be a claim (ADR 0003).
+    private static string TagTone(TrackSample sample) =>
+        sample switch
+        {
+            { IsKeyTagged: true } => "good",
+            { IsInLibrary: true } => "dim",
+            _ => "bad",
+        };
+
+    private const string OpenersKey = "sources:openers";
+    private const string OpenerKey = "opener";
+
+    private async Task Pick(StemChoice line, bool tickable)
+    {
+        if (tickable)
+            Editor.Toggle(Row, line);
+        else if (line.Files is [var file, ..])
+            await OnSelect.InvokeAsync(file.Path);
+    }
+
+    /// <summary>The picker's lines in the list's order: Vocal, Instrumental, the whole track, other sources, then the rest.</summary>
+    private static IReadOnlyList<ListBand> Grouped(StemPicker picker, TrackRow row)
+    {
+        var lines = picker.Lines.ToList();
+        var claimed = lines.SelectMany(line => line.Files).ToHashSet();
+
+        // A file no line claims (the preset list failed to load, say) is still drawn, never hidden.
+        var unclaimed = row
+            .Samples.Where(sample => !claimed.Contains(sample))
+            .Select(sample => new StemChoice
+            {
+                Label = sample.Label,
+                Kind = StemKind.Unrecognized,
+                IsWanted = true,
+                Files = [sample],
+            });
+
+        List<ListBand> bands =
+        [
+            .. picker
+                .Bands.Where(band => band.Lines.Any(line => line.Kind is StemKind.Preset))
+                .OrderBy(band => band.Label.Equals("Vocal", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                .Select(band => new ListBand(band.Label, band.Lines)),
+            new(
+                "Whole track",
+                [
+                    .. lines.Where(line => line is { Kind: StemKind.Source, AddedSource: null }),
+                    .. lines.Where(line => line.Kind is StemKind.WarpGuide),
+                ]
+            ),
+            new("Other sources", [.. lines.Where(line => line.AddedSource is not null)], TakesSources: true),
+            new("No longer offered", [.. lines.Where(line => line.Kind is StemKind.Unrecognized), .. unclaimed]),
+        ];
+
+        return [.. bands.Where(band => band.Lines.Count > 0 || band.TakesSources)];
+    }
+
+    private static string KeyOf(StemChoice line) =>
+        line.PresetId ?? line.AddedSource?.TrackKey ?? $"{line.Kind}:{line.Label}";
+
+    /// <summary>Which upload a file came from, said only where the song has been cut from more than one.</summary>
+    private RenderFragment? Upload(TrackSample sample)
+    {
+        if (!Row.HasSeveralUploads)
+            return null;
+
+        var added = Row.IsAddedSource(sample.SourceTrackKey);
+        var current = sample.SourceTrackKey == Row.TrackKey;
+
+        return @<span class="upload @(added ? "added" : current ? "current" : "superseded")">
+            @(added ? "added source" : current ? "new upload" : "old upload")
+            <span class="mono">@sample.SourceTrackKey</span>
+        </span>;
+    }
+
+    private sealed record ListBand(string Label, IReadOnlyList<StemChoice> Lines, bool TakesSources = false);
+}

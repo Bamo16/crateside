@@ -6,18 +6,20 @@
 
     <ItemGroup>
         <!-- DataProtectionProvider.Create, for standing up a real key ring in tests. -->
-        <PackageReference
-            Include="Microsoft.AspNetCore.DataProtection.Extensions"
-            Version="10.0.11"
-        />
-        <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.9.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-        <PackageReference Include="TagLibSharp" Version="2.3.0" />
-        <PackageReference Include="xunit.v3" Version="3.2.2" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection.Extensions" />
+        <!-- An in-process server for the API's tests, standing on synthetic state. -->
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+        <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="TagLibSharp" />
+        <PackageReference Include="xunit.v3" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Crateside.Core\Crateside.Core.csproj" />
+        <ProjectReference Include="..\..\src\Crateside\Crateside.csproj" />
     </ItemGroup>
 
     <ItemGroup>

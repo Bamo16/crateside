@@ -1,0 +1,96 @@
+@using Crateside.Core.Ledger
+@using Crateside.Core.Tracks
+
+@{
+    var picker = Editor.PickerFor(Row);
+}
+
+@if (Editor.Plan is { } confirm)
+{
+    @if (picker.IsCutInFlight)
+    {
+        <p class="detail">
+            crateside is cutting this track. A tick is kept straight away;
+            anything this cut does not make shows as missing once it lands,
+            and dropping a file waits until then.
+        </p>
+    }
+    else if (confirm.Refusal is { } refusal)
+    {
+        <p class="warning">@refusal</p>
+    }
+    else if (picker.IsAdditive)
+    {
+        <p class="adding">
+            @("more file".ToQuantity(picker.Adding)). Nothing removed.
+        </p>
+
+        <p class="detail">
+            @StemEditor.Cost(confirm.Recipe)
+            @if (Row.Key is { } key)
+            {
+                <text>Tagged @KeyText.Spell(key) from the verdict already in hand, so no quota is spent. </text>
+            }
+            @confirm.AudioDetail
+            @Untouched(picker)
+        </p>
+    }
+    else
+    {
+        <p class="warning">
+            Removes @("file".ToQuantity(picker.Removing)) from Staging.
+            @Balance(picker)
+        </p>
+
+        <p class="detail">
+            Anything you have done to @(picker.Removing is 1 ? "it" : "them")
+            in Ableton is lost.
+            @StemEditor.Cost(confirm.Recipe)
+            @if (Row.Key is { } key)
+            {
+                <text>The key stays @KeyText.Spell(key) — detection does not run again, so no quota is spent. </text>
+            }
+            @(confirm.MakesSomething ? confirm.AudioDetail : null)
+        </p>
+    }
+
+    <div class="actions">
+        @if (confirm.IsPossible && picker.ChangesAnything && !picker.IsCutInFlight)
+        {
+            <button class="@(picker.IsAdditive ? "primary" : "danger")"
+                    @onclick="() => Editor.ConfirmRecutAsync(Row)" disabled="@Editor.Working">
+                @(Editor.Working ? "Cutting…" : CutLabel(picker))
+            </button>
+        }
+        <button class="outline" @onclick="Editor.CancelPicking" disabled="@Editor.Working">
+            Keep as is
+        </button>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required StemEditor Editor { get; set; }
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    /// <summary>What the button does, named by what it costs.</summary>
+    private static string CutLabel(StemPicker picker) =>
+        picker switch
+        {
+            { IsAdditive: true } => $"Cut {"more file".ToQuantity(picker.Adding)}",
+            { Adding: 0 } => $"Remove {"file".ToQuantity(picker.Removing)}",
+            _ => $"Cut {picker.Adding} · remove {picker.Removing}",
+        };
+
+    /// <summary>How many of the ticked lines survive untouched.</summary>
+    private static string Balance(StemPicker picker) =>
+        $"{picker.Adding} new, {picker.Keeping} kept.";
+
+    private static string Untouched(StemPicker picker) =>
+        picker.Keeping is 0
+            ? string.Empty
+            : $"The {"file".ToQuantity(picker.Keeping)} already in Staging "
+                + $"{(picker.Keeping is 1 ? "is" : "are")} untouched.";
+}

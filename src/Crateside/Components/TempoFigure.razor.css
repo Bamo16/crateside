@@ -1,0 +1,19 @@
+.figure {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.figure.approx {
+    font-weight: 400;
+}
+
+.figure.estimate {
+    color: var(--text-50);
+}
+
+.pad {
+    visibility: hidden;
+}

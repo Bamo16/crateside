@@ -1,0 +1,112 @@
+@using System.Globalization
+@using System.Text
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Tracks
+@inject JobStore Jobs
+@inject DeletionLog Deletions
+@inject ActionLog Actions
+@inject StageNotes Notes
+@inject IJSRuntime Js
+
+<section id="activity" class="activity">
+    <div class="activity-head">
+        <button class="toggle" @onclick="() => _open = !_open">
+            <span class="mono chevron">@(_open ? "▾" : "▸")</span>
+            <span class="title">Activity</span>
+            <span class="summary">@Summary</span>
+        </button>
+        <button class="outline" @onclick="Copy" disabled="@(_rows.Count is 0)">
+            @(_copied ? "Copied" : "Copy all")
+        </button>
+    </div>
+
+    @if (_open)
+    {
+        <div class="filters">
+            @foreach (var filter in Enum.GetValues<Filter>())
+            {
+                <button class="pill @(_filter == filter ? "on plain" : "off")" @onclick="() => _filter = filter">
+                    @filter
+                </button>
+            }
+        </div>
+
+        @if (Shown.Count is 0)
+        {
+            <p class="empty">Nothing here.</p>
+        }
+        else
+        {
+            <div class="box">
+                <ActivityRows Actions="Shown" Now="DateTimeOffset.UtcNow" ShowTrack="false" />
+            </div>
+        }
+    }
+</section>
+
+@code {
+    private IReadOnlyList<ActivityAction> _rows = [];
+    private bool _open;
+    private bool _copied;
+    private Filter _filter = Filter.All;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    /// <summary>What the copied text opens with: the name, id, state and verdict, one per line.</summary>
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<string> Header { get; set; }
+
+    private enum Filter
+    {
+        All,
+        Problems,
+        You,
+    }
+
+    private IReadOnlyList<ActivityAction> Shown =>
+        _filter switch
+        {
+            Filter.Problems => [.. _rows.Where(row => row.IsFailedOrCanceled)],
+            Filter.You => [.. _rows.Where(TrackActivity.IsYou)],
+            _ => _rows,
+        };
+
+    private string Summary =>
+        _rows is [var latest, ..]
+            ? $"{"entry".ToQuantity(_rows.Count)} · last {Stamp(latest.StartedAt)}"
+            : "nothing recorded";
+
+    protected override void OnParametersSet()
+    {
+        var uploads = Row.Facts.Uploads.ToHashSet(StringComparer.Ordinal);
+
+        _rows = TrackActivity.Build(
+            Jobs.History(Row.TrackKey),
+            Deletions.All().Where(deletion => deletion.TrackKey is { } id && uploads.Contains(id)),
+            Actions.For(Row.TrackKey),
+            Notes.For(uploads)
+        );
+    }
+
+    private async Task Copy()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var text = new StringBuilder();
+
+        foreach (var line in Header)
+            text.AppendLine(line);
+
+        text.AppendLine($"copied {Stamp(now)}, {"entry".ToQuantity(_rows.Count)}");
+        text.AppendLine();
+
+        foreach (var row in _rows)
+            text.AppendLine(TrackActivity.CopyLine(row, now, Stamp));
+
+        await Js.InvokeVoidAsync("navigator.clipboard.writeText", text.ToString());
+        _copied = true;
+    }
+
+    private static string Stamp(DateTimeOffset at) =>
+        at.ToLocalTime().ToString($"yyyy-MM-dd {CultureInfo.CurrentCulture.DateTimeFormat.LongTimePattern} zzz");
+}

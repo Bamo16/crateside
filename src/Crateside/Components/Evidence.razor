@@ -1,195 +1,600 @@
+@using System.Globalization
+@using Crateside.Core
 @using Crateside.Core.Ledger
+@using Crateside.Core.Orchestration
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Orchestration.Verdict
+@using Crateside.Core.Tracks
+@using Crateside.Core.Warps
+@inject KnownBuilds Builds
+@inject PageChoices Choices
+@inject TracksService Tracks
+@inject ActionLog Actions
+@inject IJSRuntime Js
+@implements IAsyncDisposable
 
-<div class="evidence">
-    <section class="argument">
-        <h3>Why this key</h3>
-        @if (Run.Reasoning is { Length: > 0 } reasoning)
-        {
-            <p class="reasoning">@reasoning</p>
-        }
-        else
-        {
-            <p class="muted">No reasoning was recorded for this run.</p>
-        }
-
-        <h4>Human sources</h4>
-        @if (Run.Sources.Count == 0)
-        {
-            <p class="muted">
-                None found. Underground, non-Anglophone and recent album tracks often have no
-                human analysis at all — the verdict rests on the detectors and the chord check.
-            </p>
-        }
-        else
-        {
-            <ul class="sources">
-                @foreach (var source in Run.Sources.OrderByDescending(s => s.Kind))
+<div class="panel">
+    <header class="head">
+        <div class="titles">
+            <h2>@Heading</h2>
+            <p class="subtitle">
+                @Summary
+                @if (WindowsNote is { } windows)
                 {
-                    <li class="source @source.Kind.ToString().ToLowerInvariant() @source.Stance.ToString().ToLowerInvariant()">
-                        <span class="stance" title="@StanceTitle(source.Stance)">@StanceMark(source.Stance)</span>
-                        <span class="kind" title="@KindTitle(source.Kind)">@KindLabel(source.Kind)</span>
-                        @if (source.Link is { } link)
-                        {
-                            <a href="@link" target="_blank" rel="noopener noreferrer">@(source.Host ?? link.ToString())</a>
-                        }
-                        @if (source.Via is { Length: > 0 } via)
-                        {
-                            <span class="via">@via</span>
-                        }
-                        @if (source.StatesKey is { Length: > 0 } stated)
-                        {
-                            <span class="states-key">@stated@(source.StatesMode is { Length: > 0 } m ? $" ({m})" : null)</span>
-                        }
-                        else if (source.States is { Length: > 0 } states)
-                        {
-                            <span class="states">@states</span>
-                        }
-                        @if (source.Note is { Length: > 0 } note)
-                        {
-                            <span class="note" title="The agent's note on this source.">@note</span>
-                        }
-                        @if (source.KindDisagreesWithHost)
-                        {
-                            <span class="problem" title="@HostMismatchTitle(source)">kind ≠ host</span>
-                        }
-                    </li>
+                    <text> · </text><a class="to-timeline" href="@WarpViewLink">@windows</a>
                 }
-            </ul>
-            @if (Run.Sources.Any(s => s.StatesKey is { Length: > 0 } && s.States is { Length: > 0 }))
-            {
-                <details class="source-prose">
-                    <summary>What each source actually said</summary>
-                    <ul>
-                        @foreach (var source in Run.Sources.Where(s => s.States is { Length: > 0 }))
-                        {
-                            <li><span class="host">@(source.Host ?? source.Via ?? "source")</span> @source.States</li>
-                        }
-                    </ul>
-                </details>
-            }
-        }
-    </section>
-
-    <section class="measurements">
-        <h3>What the detectors reported</h3>
-
-        <table class="algorithms">
-            <tbody>
-                @foreach (var algorithm in Run.Algorithms)
+            </p>
+        </div>
+        @if (Subject is not null)
+        {
+            <div class="share-menu" @onkeydown="OnShareKeyAsync">
+                <button @ref="_shareButton" class="outline share" aria-haspopup="menu" aria-expanded="@(_menuOpen ? "true" : "false")" disabled="@(_sharing is not null)" @onclick="() => _menuOpen = !_menuOpen">
+                    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+                        <path d="M8 10V2M5 5l3-3 3 3M3 9v4h10V9" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    Share <span class="caret">▾</span>
+                </button>
+                @if (_menuOpen)
                 {
-                    <tr>
-                        <th>@algorithm.Name</th>
-                        <td class="algo-key">@(algorithm.Key ?? "—")</td>
-                        <td class="detail">
-                            @if (algorithm.Error is { Length: > 0 } error)
+                    <div class="backdrop" @onclick="() => _menuOpen = false"></div>
+                    <div class="menu" role="menu">
+                        <button role="menuitem" @onclick="() => ShareAsync(ShareAction.CopyImage)">Copy image</button>
+                        <button role="menuitem" @onclick="() => ShareAsync(ShareAction.SaveImage)">Save image</button>
+                        <button role="menuitem" @onclick="() => ShareAsync(ShareAction.CopyText)">Copy as text</button>
+                    </div>
+                }
+                <span class="share-status" role="status">@_shared</span>
+            </div>
+        }
+    </header>
+
+    @if (_sharing is not null && Subject is not null)
+    {
+        <div class="share-stage" aria-hidden="true"><ShareCard Subject="Subject" Run="Run" /></div>
+    }
+
+    <div class="evidence">
+        <section class="argument">
+            @if (Run.Sections.Count > 1 && Run.Center is { } primary)
+            {
+                <h4 class="first">Centers</h4>
+                <ul class="centers">
+                    @foreach (var part in Run.Sections)
+                    {
+                        <li class="@(IsPicked(part.Label) ? "picked" : null)">
+                            <button class="section-pick" aria-pressed="@(IsPicked(part.Label) ? "true" : "false")" title="@(IsPicked(part.Label) ? "Back to the whole track" : "What was found for this section")" @onclick="() => PickAsync(part.Label)">
+                                <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
+                                <span class="mono center-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
+                                <span class="muted">@(part.Center == primary ? "primary · the tag follows it" : part.IsHypothesis ? "possible key change (the judge's reading, unconfirmed)" : part.Support is { } support ? $"confirmed by {SupportText(support)}" : null)</span>
+                            </button>
+                        </li>
+                    }
+                </ul>
+
+                @if (Picked is { } picked)
+                {
+                    <div class="picked-section" role="region" aria-label="@picked.Section.Label">
+                        <h4 class="first">
+                            <ProseText Text="@picked.Section.Label" Inline="true" />: @ModeText.Named(picked.Section.Center)
+                            @if (picked.Section.Start is { } start)
                             {
-                                <span class="problem">@error</span>
+                                <span class="muted"> · from @WarpWording.Time(start)</span>
                             }
-                            else if (algorithm.RunnerUpKey is { } runnerUp)
-                            {
-                                <span title="CREMA reports no usable confidence; this is how close second place was.">
-                                    runner-up @runnerUp @(algorithm.RunnerUpRatio is { } r ? $"({r:F3})" : null)
-                                </span>
-                            }
-                            else if (algorithm.Confidence is { } confidence)
-                            {
-                                <span>@confidence.ToString("F3")</span>
-                                @if (algorithm.Flag is { Length: > 0 } flag)
+                        </h4>
+
+                        @foreach (var reading in picked.Windows)
+                        {
+                            <div class="picked-window">
+                                <p>
+                                    <span class="who @(reading.Window.AskedBy is WindowAsker.User ? "yours" : "judges")">@(reading.Window.AskedBy is WindowAsker.User ? "yours" : "judge")</span>
+                                    <span class="mono">@reading.Window.Name</span>
+                                    @if (Run.WhyOf(reading.Window) is { } windowWhy)
+                                    {
+                                        <text> · </text><ProseText Text="@windowWhy" Inline="true" />
+                                    }
+                                </p>
+                                <DetectorRows Algorithms="reading.Algorithms" Heads="true" />
+                            </div>
+                        }
+                        @if (picked.Windows.Count == 0)
+                        {
+                            <p class="muted">No window of its own: this section was placed from the whole track.</p>
+                        }
+
+                        @if (picked.Naming.Count > 0)
+                        {
+                            <h4>Sources that named it</h4>
+                            <ul class="picked-sources">
+                                @foreach (var source in picked.Naming)
                                 {
-                                    <span class="flag @flag.ToLowerInvariant()">@flag</span>
+                                    <li>@_sourceLine(source)</li>
                                 }
-                            }
-                        </td>
-                    </tr>
+                            </ul>
+                        }
+                        @if (picked.WholeSong.Count > 0)
+                        {
+                            <h4>Sources that covered the whole song</h4>
+                            <ul class="picked-sources">
+                                @foreach (var source in picked.WholeSong)
+                                {
+                                    <li>@_sourceLine(source)</li>
+                                }
+                            </ul>
+                        }
+
+                        <p class="muted">The judge wrote one reasoning for the whole track; it follows.</p>
+                    </div>
                 }
-            </tbody>
-        </table>
+            }
 
-        @if (Run.Agreement.FirstOrDefault(p => p.IsRelative) is { } split)
-        {
-            <p class="relative-split" title="@StatusTitle("relative")">
-                <strong>Relative split</strong>
-                <span class="pair">@split.Pair</span>
-                landed on relative keys. Nothing in the numbers above can break this tie —
-                only the cadence or a human source.
-            </p>
-        }
-
-        @if (Run.TonicCheck is { Length: > 0 } tonicCheck)
-        {
-            <h4>Tonic check</h4>
-            <p class="tonic-check">@tonicCheck</p>
-        }
-
-        @if (Run.Chords.Count > 0)
-        {
-            <h4>Chord progression</h4>
-            <p class="chords">
-                @string.Join(" → ", Compact ? Run.Chords.Take(CompactChordLimit) : Run.Chords)
-                @if (Compact && Run.Chords.Count > CompactChordLimit)
-                {
-                    <span class="muted"> (+@(Run.Chords.Count - CompactChordLimit) more)</span>
-                }
-            </p>
-        }
-
-        @if (!Compact && Run.KeyEvents.Count > 0)
-        {
-            <h4>Key flicker</h4>
-            <ul class="flicker">
-                @foreach (var e in Run.KeyEvents)
-                {
-                    <li><span class="t">@e.Seconds.ToString("F2")s</span> @e.Key <span class="r">r=@e.R.ToString("F2")</span></li>
-                }
-            </ul>
-        }
-
-        <h4>Tempo</h4>
-        <p class="tempo">
-            @if (Run.Bpm is { } bpm)
+            <h3>@(Pending ? "Why the rules gave no ruling" : "Why this key")</h3>
+            @if (!Pending && Run is { Candidates: [], TonicCheck: null, DecidedBy: DecidedBy.Judge })
             {
-                <strong>@Math.Round(bpm)</strong>
-                <span class="muted">from @(Run.BpmSource ?? "unknown")</span>
+                <p class="older">An older verdict: one paragraph, as the judge wrote it, through the formatter.</p>
+            }
+            @if (Run.Reasoning is { Length: > 0 } reasoning)
+            {
+                <div class="reasoning"><ProseText Text="@reasoning" /></div>
             }
             else
             {
-                <span class="muted">No recommendation recorded.</span>
+                <p class="muted">No reasoning was recorded for this run.</p>
             }
-            @if (Run.BeatdetectBpm is { } rough)
-            {
-                <span class="beatdetect @(Run.BpmConflicts ? "conflict" : null)"
-                      title="The runner's own estimate, kept as a cross-check. Frequently wrong, especially by a factor of two.">
-                    beatdetect @rough.ToString("F1")
-                </span>
-            }
-            @if (Run.BpmConflicts)
-            {
-                <span class="problem"
-                      title="Not a clean half or double, so this is not just a tempo-octave choice — one of the two is simply wrong.">
-                    conflict
-                </span>
-            }
-        </p>
 
-        <p class="provenance muted">
-            Recorded @Run.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
-            @if (Run.InputKind is { Length: > 0 } kind)
+            @if (Run.Candidates.Count > 0)
             {
-                <text> from the @kind.Replace('_', ' ')</text>
+                <h4>@(Withheld ? "Still open" : "Considered")</h4>
+                <ul class="considered">
+                    @foreach (var candidate in Run.Candidates)
+                    {
+                        <li>
+                            <span class="candidate-key"><ProseText Text="@candidate.Key" Inline="true" Mono="true" /></span>
+                            <span class="candidate-why"><ProseText Text="@candidate.Why" Inline="true" /></span>
+                        </li>
+                    }
+                </ul>
             }
-        </p>
-    </section>
+
+            <h4>Human sources</h4>
+            @if (Run.Sources.Count == 0)
+            {
+                <p class="muted">
+                    @if (Pending)
+                    {
+                        <text>None found.</text>
+                    }
+                    else
+                    {
+                        <text>None found. Underground, non-Anglophone and recent album tracks often have no
+                    human analysis at all — the verdict rests on the detectors@(Run.DecidedBy is DecidedBy.Rules ? "" : " and the chord check").</text>
+                    }
+                </p>
+            }
+            else
+            {
+                <ul class="sources">
+                    @foreach (var source in Run.Sources.OrderByDescending(s => s.Kind))
+                    {
+                        <li class="source @source.Kind.ToString().ToLowerInvariant() @source.Stance.ToString().ToLowerInvariant() @(source.IsRemoved ? "removed" : null)">
+                            <span class="stance" title="@StanceTitle(source.Stance)">@StanceMark(source.Stance)</span>
+                            <span class="kind" title="@KindTitle(source.Kind)">@KindLabel(source.Kind)</span>
+                            <span class="said">
+                                <span class="where">
+                                    @if (source.Link is { } link)
+                                    {
+                                        <a href="@link" target="_blank" rel="noopener noreferrer">@(source.Host ?? link.ToString())</a>
+                                    }
+                                    @if (source.Via is { Length: > 0 } via)
+                                    {
+                                        <span class="via">@via</span>
+                                    }
+                                    @if (source.KindDisagreesWithHost)
+                                    {
+                                        <span class="problem" title="@HostMismatchTitle(source)">kind ≠ host</span>
+                                    }
+                                </span>
+                                <span class="covers"><ProseText Text="@source.Covers" Inline="true" /></span>
+                                @if (source.StatesKey is { Length: > 0 } stated)
+                                {
+                                    <span class="states-key"><ProseText Text="@ModeText.Stated(stated, source.StatesMode)" Inline="true" Mono="true" /></span>
+                                    @if (source.Relation is { } relation)
+                                    {
+                                        <span class="relation"><ProseText Text="@relation" Inline="true" /></span>
+                                    }
+                                    @if (ModeText.Elaboration(stated, source.StatesMode, source.States) is { } more)
+                                    {
+                                        <span class="states"><ProseText Text="@more" Inline="true" /></span>
+                                    }
+                                }
+                                else if (source.States is { Length: > 0 } states)
+                                {
+                                    <span class="states"><ProseText Text="@states" Inline="true" /></span>
+                                }
+                                @if (source.Note is { Length: > 0 } note)
+                                {
+                                    <span class="note" title="The agent's note on this source."><ProseText Text="@note" Inline="true" /></span>
+                                }
+                                @if (Row is not null && !Pending && source.Id is { } id && source.Kind is not SourceKind.Ear)
+                                {
+                                    <span class="removal">
+                                        @if (source.IsRemoved)
+                                        {
+                                            <span>Removed by you · not counted</span>
+                                            <button class="outline" disabled="@_working" @onclick="() => SetRemovedAsync(id, false)">Undo</button>
+                                        }
+                                        else
+                                        {
+                                            <button class="outline" disabled="@_working" title="Stop counting this source for this song" @onclick="() => SetRemovedAsync(id, true)">Remove</button>
+                                        }
+                                    </span>
+                                }
+                            </span>
+                        </li>
+                    }
+                </ul>
+            }
+
+            @if (Row is not null)
+            {
+                <PageCorrections Row="Row" Run="Run" />
+            }
+
+            @if (Run.FirstPass is { } firstPass)
+            {
+                <details class="first-pass">
+                    <summary>First pass: withheld<span class="tail">@FirstPassTail</span></summary>
+                    <div class="first-body"><ProseText Text="@firstPass" /></div>
+                </details>
+            }
+        </section>
+
+        <section class="measurements">
+            @if (Run.Direction is { Length: > 0 } || Ear is not null)
+            {
+                <div class="direction">
+                    @if (Run.Direction is { Length: > 0 } direction)
+                    {
+                        <h4 class="first">Your note to the judge</h4>
+                        <p class="note-to-judge">"@direction"</p>
+                    }
+                    @if (Ear is { } ear)
+                    {
+                        <p class="ear-line">
+                            Your ear: <span class="mono"><ProseText Text="@(ModeText.Stated(ear.StatesKey, ear.StatesMode) ?? ear.States)" Inline="true" Mono="true" /></span>
+                            @if (ear.Note is { Length: > 0 } weight)
+                            {
+                                <text> · </text><ProseText Text="@weight" Inline="true" />
+                            }
+                            · run of @Run.Timestamp.ToLocalTime().ToString("d MMM, h:mm tt")
+                        </p>
+                    }
+                </div>
+            }
+
+            @if (Run.Algorithms.Count > 0)
+            {
+                <h3>What the detectors reported</h3>
+                <DetectorRows Algorithms="Run.Algorithms" Heads="true" />
+                @if (Run.LateReading is { } late)
+                {
+                    <p class="muted late-reading">@late.Note(BuildLabel(late.Sha256))</p>
+                }
+            }
+            else
+            {
+                <p class="muted no-readings">This run has no detector readings.</p>
+            }
+
+            @if (Run.Backers is { } backers)
+            {
+                <p class="backers">
+                    keydetect is backed by
+                    @(backers switch
+                    {
+                        [] => "neither madmom nor Essentia",
+                        [var one] => $"{Shown(one)} only",
+                        _ => "both madmom and Essentia",
+                    })
+                </p>
+            }
+
+            @if (Run.Agreement.FirstOrDefault(p => p.IsRelative) is { } split)
+            {
+                <p class="relative-split" title="@StatusTitle("relative")">
+                    <strong>Relative split</strong>
+                    @split.Detectors
+                    landed on relative keys. Nothing in the numbers above can break this tie —
+                    only the cadence or a human source.
+                </p>
+            }
+
+            @if (Run.TonicCheck is { Length: > 0 } tonicCheck)
+            {
+                <h4>Tonic check</h4>
+                <div class="tonic-check"><ProseText Text="@tonicCheck" /></div>
+            }
+
+            @if (Run.Chords.Count > 0)
+            {
+                var progression = Progression.Fold(Run.Chords);
+                var folds = progression.Any(segment => segment.IsLoop);
+
+                <div class="chords-head">
+                    <h4>Chord progression</h4>
+                    <span class="chords-count">@("chord".ToQuantity(Run.Chords.Count))@(folds && !_chordsOpen ? " · loops folded" : null)</span>
+                    @if (folds)
+                    {
+                        <button class="link" @onclick="() => _chordsOpen = !_chordsOpen">@(_chordsOpen ? "Fold the loops" : $"Show all {Run.Chords.Count}")</button>
+                    }
+                </div>
+
+                @if (_chordsOpen || !folds)
+                {
+                    <p class="chords all">@string.Join(' ', Run.Chords.Select(JudgeProse.Chord))</p>
+                }
+                else
+                {
+                    <p class="chords">
+                        @foreach (var (segment, index) in progression.Select((segment, index) => (segment, index)))
+                        {
+                            @if (index > 0)
+                            {
+                                <span class="sep"> · </span>
+                            }
+                            <span class="run">@segment.Arrowed@if (segment.IsLoop) { <span class="repeats">&nbsp;×@segment.Repeats</span> }</span>
+                        }
+                    </p>
+                }
+            }
+
+            <h4>Tempo</h4>
+            @if (Tempo is { } tempo)
+            {
+                var shown = TempoFormat.Format(tempo);
+                <p class="tempo">
+                    <strong class="mono @(shown.IsApproximate ? "approx" : null) @(shown.IsEstimate ? "estimate" : null)">@shown.Text</strong>
+                    <span class="tempo-note">@shown.Note</span>
+                </p>
+                <ul class="tempo-sources">
+                    @foreach (var line in TempoFormat.Others(tempo))
+                    {
+                        <li>
+                            <span class="label">@line.Label</span>
+                            <span class="mono figure @(line.Figure?.IsApproximate is true ? "approx" : null)">@(line.Figure?.Text ?? "—")<span class="pad">@(line.Figure?.Padding ?? ".00")</span></span>
+                            <span class="comment @(line.IsConflict ? "conflict" : null)">@line.Comment</span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <p class="tempo"><span class="muted">Not measured.</span></p>
+            }
+
+            <p class="provenance muted">
+                Recorded @Run.Timestamp.ToLocalTime().ToString($"yyyy-MM-dd {CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern}")
+                @if (Run.InputKind is { Length: > 0 } kind)
+                {
+                    <text> from the @kind.Replace('_', ' ')</text>
+                }
+            </p>
+        </section>
+    </div>
 </div>
 
 @code {
-    private const int CompactChordLimit = 24;
-
     [Parameter, EditorRequired]
     public required RunEvidence Run { get; set; }
 
-    /// <summary>Trims to what answers "why this key" at a glance.</summary>
+    /// <summary>The head line: <c>Why E major</c>, or <c>Why no key</c> for a withheld verdict.</summary>
+    [Parameter, EditorRequired]
+    public required string Heading { get; set; }
+
+    /// <summary>What the verdict rested on, in one line under the head.</summary>
     [Parameter]
-    public bool Compact { get; set; }
+    public string? Summary { get; set; }
+
+    /// <summary>Whether the run is no verdict at all: the evidence of a track the rules left open.</summary>
+    [Parameter]
+    public bool Pending { get; set; }
+
+    /// <summary>Whether the verdict is WITHHELD, whose Considered keys are still open.</summary>
+    [Parameter]
+    public bool Withheld { get; set; }
+
+    /// <summary>Where the warp view is, for the note that leads to the windows drawn there; null where there is none.</summary>
+    [Parameter]
+    public string? WarpViewLink { get; set; }
+
+    /// <summary>The song's headline tempo; the panel lists its other sources under it.</summary>
+    [Parameter]
+    public TrackTempo? Tempo { get; set; }
+
+    /// <summary>The track the evidence is for, where the person may correct the pages it rests on (ADR 0078).</summary>
+    [Parameter]
+    public TrackRow? Row { get; set; }
+
+    /// <summary>The label of the section whose own findings are shown first; null for the whole track.</summary>
+    [Parameter]
+    public string? SelectedSection { get; set; }
+
+    private static string SupportText(SectionSupport support) =>
+        support switch
+        {
+            SectionSupport.HumanSource => "a human source",
+            SectionSupport.Asked => "the maintainer's window",
+            _ => "the detectors in its windows",
+        };
+
+    [Parameter]
+    public EventCallback<string?> SelectedSectionChanged { get; set; }
+
+    /// <summary>What the share card and the copied text are headed with; null where there is no verdict to share.</summary>
+    [Parameter]
+    public ShareSubject? Subject { get; set; }
+
+    private enum ShareAction
+    {
+        CopyImage,
+        SaveImage,
+        CopyText,
+    }
+
+    private ShareAction? _sharing;
+    private bool _menuOpen;
+    private ElementReference _shareButton;
+    private string? _shared;
+    private IJSObjectReference? _module;
+    private bool _chordsOpen;
+    private bool _working;
+
+    private async Task OnShareKeyAsync(KeyboardEventArgs key)
+    {
+        if (key is not { Key: "Escape" } || !_menuOpen)
+            return;
+
+        _menuOpen = false;
+        await _shareButton.FocusAsync();
+    }
+
+    private async Task ShareAsync(ShareAction action)
+    {
+        _menuOpen = false;
+        _shared = null;
+
+        if (Subject is null)
+            return;
+
+        if (action is ShareAction.CopyText)
+            await RunAsync(action, module => module.InvokeVoidAsync("copyText", ShareText.Markdown(Subject, Run)));
+        else
+            _sharing = action;
+    }
+
+    // The card is drawn from the page: it renders first and is captured after.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_sharing is not { } action || Subject is null)
+            return;
+
+        await RunAsync(
+            action,
+            module =>
+                action is ShareAction.CopyImage
+                    ? module.InvokeVoidAsync("copyImage", ".share-stage > *")
+                    : module.InvokeVoidAsync("saveImage", ".share-stage > *", ShareText.FileName(Subject.Name))
+        );
+        _sharing = null;
+        StateHasChanged();
+    }
+
+    private async Task RunAsync(ShareAction action, Func<IJSObjectReference, ValueTask> work)
+    {
+        try
+        {
+            _module ??= await Js.InvokeAsync<IJSObjectReference>("import", "./Components/Evidence.razor.js");
+            await work(_module);
+            _shared = action switch
+            {
+                ShareAction.CopyImage => "Image copied",
+                ShareAction.SaveImage => "Image saved",
+                _ => "Text copied",
+            };
+        }
+        catch (JSException ex)
+        {
+            _shared = $"Could not share: {ex.Message}";
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+            await _module.DisposeAsync();
+    }
+
+    private SectionEvidence? Picked =>
+        SelectedSection is { } label ? SectionEvidence.Of(Run, label) : null;
+
+    private bool IsPicked(string label) =>
+        string.Equals(SelectedSection, label, StringComparison.OrdinalIgnoreCase);
+
+    private Task PickAsync(string label) =>
+        SelectedSectionChanged.InvokeAsync(IsPicked(label) ? null : label);
+
+    private readonly RenderFragment<EvidenceSource> _sourceLine = source =>
+        @<text>
+            @if (source.Link is { } link)
+            {
+                <a href="@link" target="_blank" rel="noopener noreferrer">@(source.Host ?? link.ToString())</a>
+            }
+            else
+            {
+                <text>(no page)</text>
+            }
+            @if (source.StatesKey is { Length: > 0 } stated)
+            {
+                <text> · </text><ProseText Text="@ModeText.Stated(stated, source.StatesMode)" Inline="true" Mono="true" />
+            }
+            @if (source.Relation is { } relation)
+            {
+                <text> · </text><ProseText Text="@relation" Inline="true" />
+            }
+        </text>;
+
+    private async Task SetRemovedAsync(string source, bool removed)
+    {
+        _working = true;
+
+        try
+        {
+            var order = BarJudging.OrderFor(Row!);
+
+            if (removed ? Choices.RemoveSource(order, source) : Choices.RestoreSource(order, source))
+            {
+                Actions.Record(Row!.TrackKey, removed ? UserActionKind.SourceRemoved : UserActionKind.SourceRestored, source);
+                await Tracks.RefreshAsync(CancellationToken.None);
+            }
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private string? BuildLabel(string? sha256) =>
+        sha256 is null
+            ? null
+            : Builds
+                .All(FfmpegFilter.Keydetect)
+                .FirstOrDefault(known => known.Build.Sha256.Equals(sha256, StringComparison.OrdinalIgnoreCase))
+                ?.Build.Label;
+
+    /// <summary>What the user said they hear, recorded as a source of its own kind.</summary>
+    private EvidenceSource? Ear => Run.Sources.FirstOrDefault(source => source.Kind is SourceKind.Ear);
+
+    private string? WindowsNote =>
+        WarpViewLink is not null && Run.Windows is { Count: > 0 } windows
+            ? windows.Select(window => window.AskedBy).Distinct().ToList() switch
+            {
+                [WindowAsker.User] => $"{"window".ToQuantity(windows.Count)} of yours on the timeline ↑",
+                [WindowAsker.Judge] or [null] => $"{windows.Count} judge's {"window".ToQuantity(windows.Count, ShowQuantityAs.None)} on the timeline ↑",
+                _ => $"{"window".ToQuantity(windows.Count)} on the timeline ↑",
+            }
+            : null;
+
+    private string FirstPassTail =>
+        Run.Windows.Count(window => window.AskedBy is not WindowAsker.User) is > 0 and var asked
+            ? $" · asked for {"window".ToQuantity(asked)}"
+            : string.Empty;
+
+    /// <summary>A backer as the detector table names it.</summary>
+    private static string Shown(string backer) =>
+        backer switch
+        {
+            "essentia_edma" => "Essentia",
+            _ => backer,
+        };
 
     private static string StanceMark(SourceStance stance) =>
         stance switch
@@ -209,8 +614,8 @@
         };
 
     private static string HostMismatchTitle(EvidenceSource source) =>
-        $"Recorded as {source.RecordedKind}, but its host is catalogued as "
-        + $"{KindLabel(source.KindFromHost)}. Worth a look: filing a chord recogniser as anything "
+        $"Recorded as {source.RecordedKind}, but its host is cataloged as "
+        + $"{KindLabel(source.KindFromHost)}. Worth a look: filing a chord recognizer as anything "
         + "else is the mistake the hard rule exists to prevent.";
 
     private static string KindLabel(SourceKind kind) =>
@@ -219,7 +624,7 @@
             SourceKind.Authoritative => "authoritative",
             SourceKind.Corroborating => "corroborating",
             SourceKind.Algorithmic => "algorithmic",
-            SourceKind.ChordRecogniser => "chords only",
+            SourceKind.ChordRecognizer => "chords only",
             SourceKind.Unclassified => "unclassified",
             _ => "no link",
         };
@@ -232,8 +637,8 @@
             SourceKind.Corroborating => "Human transcription. Solid, but consensus-dependent.",
             SourceKind.Algorithmic =>
                 "Shares the failure modes this tool exists to catch — corroboration only, never the answer.",
-            SourceKind.ChordRecogniser =>
-                "An automatic chord recogniser. Its chords are evidence; its key is another algorithm's guess and may never be the basis of a verdict.",
+            SourceKind.ChordRecognizer =>
+                "An automatic chord recognizer. Its chords are evidence; its key is another algorithm's guess and may never be the basis of a verdict.",
             SourceKind.Unclassified => "Neither recorded nor a host the catalog lists — read the agent's note.",
             _ => "No link to judge by.",
         };

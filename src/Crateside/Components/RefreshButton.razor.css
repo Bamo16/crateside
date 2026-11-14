@@ -1,0 +1,53 @@
+.refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    vertical-align: middle;
+    color: var(--text-50);
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.refresh:hover:not(:disabled) {
+    color: var(--text);
+    background: var(--raised);
+}
+
+.refresh:disabled {
+    cursor: default;
+}
+
+svg {
+    width: 13px;
+    height: 13px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.busy {
+    color: var(--teal);
+}
+
+.busy svg {
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .busy svg {
+        animation: none;
+    }
+}

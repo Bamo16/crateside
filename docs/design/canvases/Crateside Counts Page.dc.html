@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif}a{color:#ece7dc;text-decoration:none}a:hover{color:#fff}button{cursor:pointer;font-family:inherit}</style>
+</helmet>
+
+<section style="padding:56px;display:flex;flex-direction:column;gap:48px;width:1336px;box-sizing:border-box;min-height:100vh;background:#0c0b09">
+  <header style="display:flex;flex-direction:column;gap:8px;max-width:900px">
+    <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Brief 08 · issues #68, #60, #56 · built against e6c3802</div>
+    <h1 style="margin:0;font:600 28px 'IBM Plex Sans',sans-serif">Library becomes Counts</h1>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">One long page of bar tables, one count per song, with a small sticky index on the left. The tab is renamed <strong style="color:#ece7dc;font-weight:500">Counts</strong>: it says what the page does without promising a dashboard. The one real action (never-judged uploads) sits in its own band above the reports; the unbacked-keys notice becomes a footnote under By key, since crateside fixes that on its own. Every new panel reuses the bar-table style. Nothing new is colored.</p>
+  </header>
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1a</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">The whole page · 1280px viewport</span></div>
+    <div style="width:1224px;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+      <div style="display:flex;flex-direction:column;gap:14px;padding:18px 22px;background:#1b1a15;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:28px"><div style="display:flex;align-items:center;gap:8px;font:600 15px 'IBM Plex Sans',sans-serif;letter-spacing:.02em"><svg width="18" height="18" viewBox="0 0 24 24" style="display:block"><rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect><rect x="3" y="10.8" width="14" height="2.4" rx="1.2" fill="#e8b45a"></rect><rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect></svg>crateside</div><nav style="display:flex;gap:14px"><span style="padding-bottom:3px;border-bottom:2px solid transparent;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Tracks</span><span style="padding-bottom:3px;border-bottom:2px solid #e8b45a;font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc">Counts</span><span style="padding-bottom:3px;border-bottom:2px solid transparent;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Tools</span><span style="padding-bottom:3px;border-bottom:2px solid transparent;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Settings</span></nav></div>
+
+      <div style="padding:0 48px 48px;display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;max-width:1112px">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <h2 style="margin:0;font:600 24px 'IBM Plex Sans',sans-serif;letter-spacing:-.01em">Counts</h2>
+            <p style="margin:0;font:400 14px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);max-width:64ch;text-wrap:pretty">What is finished and filed, counted one per song however many samples it has. <span style="font-family:'IBM Plex Mono',monospace">451</span> songs, <span style="font-family:'IBM Plex Mono',monospace">438</span> with a key across <span style="font-family:'IBM Plex Mono',monospace">24</span> of 24 keys, <span style="font-family:'IBM Plex Mono',monospace">1,612</span> files.</p>
+          </div>
+          <button style="flex:none;padding:7px 14px;background:#23211a;color:#ece7dc;border:1px solid rgba(255,255,255,.12);border-radius:6px;font:500 13px 'IBM Plex Sans',sans-serif">Re-read</button>
+        </div>
+
+        <div style="max-width:1112px;display:flex;flex-direction:column;gap:6px;padding:14px 16px;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+            <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Never judged</span>
+            <button style="padding:5px 12px;background:#23211a;color:#ece7dc;border:1px solid rgba(255,255,255,.12);border-radius:6px;font:500 12.5px 'IBM Plex Sans',sans-serif">Queue them for judging</button>
+          </div>
+          <div style="font:500 14px 'IBM Plex Sans',sans-serif"><span style="font-family:'IBM Plex Mono',monospace">14</span> uploads tagged by hand before crateside</div>
+          <p style="margin:0;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:80ch;text-wrap:pretty">The audit cannot check their keys. Queuing cuts nothing: each is fetched and detected, about 44 MB apiece until judged, one per idle Claude window when Settings has that on.</p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:168px minmax(0,896px);gap:48px;align-items:start">
+          <nav style="position:sticky;top:24px;display:flex;flex-direction:column;gap:2px;padding-top:4px">
+            <div style="padding:0 10px 8px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">On this page</div>
+            <sc-for list="{{ toc }}" as="t" hint-placeholder-count="7"><a href="#{{ t.id }}" style="display:flex;justify-content:space-between;gap:8px;padding:6px 10px;border-radius:6px;font:500 13px 'IBM Plex Sans',sans-serif;color:{{ t.fg }};background:{{ t.bg }}" style-hover="background:#1b1a15;color:#ece7dc"><span>{{ t.label }}</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">{{ t.n }}</span></a></sc-for>
+          </nav>
+
+          <div style="display:flex;flex-direction:column;gap:44px;min-width:0">
+
+            <section id="p-key" style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:baseline;gap:12px"><h3 style="margin:0;font:600 16px 'IBM Plex Sans',sans-serif">By key</h3><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">unchanged</span></div>
+              <div style="display:grid;grid-template-columns:110px 80px minmax(0,1fr) 64px;border-bottom:1px solid rgba(255,255,255,.08);font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)"><span style="padding:6px 12px">Key</span><span style="padding:6px 12px">Camelot</span><span style="padding:6px 12px">Songs</span><span style="padding:6px 12px;text-align:right">Count</span></div>
+              <div style="display:flex;flex-direction:column;margin-top:-10px">
+                <sc-for list="{{ keys }}" as="k" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:110px 80px minmax(0,1fr) 64px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)"><span style="padding:5px 12px;font:400 14px 'IBM Plex Sans',sans-serif">{{ k.name }}</span><span style="padding:5px 12px;font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ k.cam }}</span><span style="padding:5px 12px"><span style="display:block;height:12px;border-radius:2px;width:{{ k.w }};background:{{ k.c }}"></span></span><span style="padding:5px 12px;text-align:right;font:400 13px 'IBM Plex Mono',monospace">{{ k.n }}</span></div></sc-for>
+                <div style="padding:8px 12px;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Showing the top 8 · <span style="color:#ece7dc;text-decoration:underline;text-underline-offset:3px">all 24 keys</span></div>
+              </div>
+              <p style="margin:0;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:80ch;text-wrap:pretty"><span style="font-family:'IBM Plex Mono',monospace">3</span> of these keys are not yet backed by the folder's tag store, so a hand edit there would drop them. crateside backs them within a few minutes of starting.</p>
+            </section>
+
+            <section id="p-tempo" style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:baseline;gap:12px"><h3 style="margin:0;font:600 16px 'IBM Plex Sans',sans-serif">By tempo</h3><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">new</span></div>
+              <p style="margin:0;font:400 13.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);max-width:72ch;text-wrap:pretty">The BPM from each warp, set by ear. All <span style="font-family:'IBM Plex Mono',monospace">451</span> songs are warped. The solid part of a bar is the tempos that ten or more songs share.</p>
+              <div style="display:grid;grid-template-columns:110px minmax(0,1fr) 64px 280px;border-bottom:1px solid rgba(255,255,255,.08);font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)"><span style="padding:6px 12px">BPM</span><span style="padding:6px 12px">Songs</span><span style="padding:6px 12px;text-align:right">Count</span><span style="padding:6px 12px">Shared by 10 or more</span></div>
+              <div style="display:flex;flex-direction:column;margin-top:-10px">
+                <sc-for list="{{ tempo }}" as="b" hint-placeholder-count="14"><div style="display:grid;grid-template-columns:110px minmax(0,1fr) 64px 280px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)"><span style="padding:5px 12px;font:400 13px 'IBM Plex Mono',monospace">{{ b.label }}</span><span style="padding:5px 12px"><span style="display:flex;height:12px;border-radius:2px;overflow:hidden;width:{{ b.w }};background:rgba(111,199,214,.35)"><span style="height:12px;width:{{ b.pw }};background:#6fc7d6"></span></span></span><span style="padding:5px 12px;text-align:right;font:400 13px 'IBM Plex Mono',monospace">{{ b.n }}</span><span style="padding:5px 12px;font:400 12.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">{{ b.peaks }}</span></div></sc-for>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px 24px;padding:4px 12px;font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">
+                <span>Steady <span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">392</span></span>
+                <span>Steady with changes <span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">23</span></span>
+                <span>Unsteady <span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">36</span>, counted at their median</span>
+              </div>
+            </section>
+
+            <section id="p-genre" style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:baseline;gap:12px"><h3 style="margin:0;font:600 16px 'IBM Plex Sans',sans-serif">By genre</h3><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">unchanged, with What the sources called the rest</span></div>
+              <p style="margin:0;font:400 13.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);max-width:72ch;text-wrap:pretty"><span style="font-family:'IBM Plex Mono',monospace">312</span> songs carry no genre yet: nobody has settled one. <span style="color:#ece7dc;text-decoration:underline;text-underline-offset:3px">Answer them on Tracks</span></p>
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ genres }}" as="g" hint-placeholder-count="7"><div style="display:grid;grid-template-columns:190px minmax(0,1fr) 64px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)"><span style="padding:5px 12px;font:400 14px 'IBM Plex Sans',sans-serif;color:{{ g.fg }}">{{ g.name }}</span><span style="padding:5px 12px"><span style="display:block;height:12px;border-radius:2px;min-width:1px;width:{{ g.w }};background:{{ g.c }}"></span></span><span style="padding:5px 12px;text-align:right;font:400 13px 'IBM Plex Mono',monospace;color:{{ g.fg }}">{{ g.n }}</span></div></sc-for>
+              </div>
+            </section>
+
+            <section id="p-fam" style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:baseline;gap:12px"><h3 style="margin:0;font:600 16px 'IBM Plex Sans',sans-serif">By familiarity</h3><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">new, the same shape as genre</span></div>
+              <div style="display:flex;flex-direction:column">
+                <sc-for list="{{ fam }}" as="g" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:190px minmax(0,1fr) 64px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)"><span style="padding:5px 12px;font:400 14px 'IBM Plex Sans',sans-serif;color:{{ g.fg }}">{{ g.name }}</span><span style="padding:5px 12px"><span style="display:block;height:12px;border-radius:2px;width:{{ g.w }};background:{{ g.c }}"></span></span><span style="padding:5px 12px;text-align:right;font:400 13px 'IBM Plex Mono',monospace;color:{{ g.fg }}">{{ g.n }}</span></div></sc-for>
+              </div>
+            </section>
+
+            <section id="p-artist" style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;align-items:baseline;gap:12px"><h3 style="margin:0;font:600 16px 'IBM Plex Sans',sans-serif">By artist</h3><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">new</span></div>
+              <p style="margin:0;font:400 13.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);max-width:72ch;text-wrap:pretty">Artists with three or more songs, by first credited name: <span style="font-family:'IBM Plex Mono',monospace">20</span> of <span style="font-family:'IBM Plex Mono',monospace">344</span>. The rest have one or two each.</p>
+              <div style="display:grid;grid-template-columns:170px minmax(0,1fr) 56px 150px 96px;border-bottom:1px solid rgba(255,255,255,.08);font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)"><span style="padding:6px 12px">Artist</span><span style="padding:6px 12px">Songs</span><span style="padding:6px 12px;text-align:right">Count</span><span style="padding:6px 12px">Keys</span><span style="padding:6px 12px">BPM</span></div>
+              <div style="display:flex;flex-direction:column;margin-top:-10px">
+                <sc-for list="{{ artists }}" as="a" hint-placeholder-count="12"><div style="display:grid;grid-template-columns:170px minmax(0,1fr) 56px 150px 96px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)"><span style="padding:5px 12px;font:400 14px 'IBM Plex Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.name }}</span><span style="padding:5px 12px"><span style="display:block;height:12px;border-radius:2px;width:{{ a.w }};background:#6fc7d6"></span></span><span style="padding:5px 12px;text-align:right;font:400 13px 'IBM Plex Mono',monospace">{{ a.n }}</span><span style="padding:5px 12px;font:400 12.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">{{ a.keys }}</span><span style="padding:5px 12px;font:400 12.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">{{ a.bpm }}</span></div></sc-for>
+                <div style="padding:8px 12px;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Showing 12 of 20 · <span style="color:#ece7dc;text-decoration:underline;text-underline-offset:3px">all 20</span></div>
+              </div>
+            </section>
+
+            <section id="p-det" style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:baseline;gap:12px"><h3 style="margin:0;font:600 16px 'IBM Plex Sans',sans-serif">Detectors against the warps</h3><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">new · detail in 1b</span></div>
+              <p style="margin:0;font:400 13.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);max-width:72ch;text-wrap:pretty">How often each detector's BPM matches the one set by ear, on the <span style="font-family:'IBM Plex Mono',monospace">332</span> songs that have both.</p>
+              <div style="display:grid;grid-template-columns:190px minmax(0,1fr) minmax(0,1fr);border-bottom:1px solid rgba(255,255,255,.08);font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)"><span style="padding:6px 12px">Reads the tempo</span><span style="padding:6px 12px">keytag, recommended</span><span style="padding:6px 12px">beatdetect, raw</span></div>
+              <div style="display:flex;flex-direction:column;margin-top:-14px">
+                <sc-for list="{{ bands }}" as="b" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:190px minmax(0,1fr) minmax(0,1fr);align-items:center;border-bottom:1px solid rgba(255,255,255,.06);background:{{ b.bg }}"><span style="padding:6px 12px;display:flex;flex-direction:column;gap:1px"><span style="font:{{ b.weight }} 14px 'IBM Plex Sans',sans-serif">{{ b.name }}</span><span style="font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ b.rule }}</span></span><span style="padding:6px 12px;display:grid;grid-template-columns:minmax(0,1fr) 40px;gap:10px;align-items:center"><span style="display:block;height:12px;border-radius:2px;width:{{ b.kw }};background:#6fc7d6"></span><span style="text-align:right;font:400 13px 'IBM Plex Mono',monospace">{{ b.k }}</span></span><span style="padding:6px 12px;display:grid;grid-template-columns:minmax(0,1fr) 40px;gap:10px;align-items:center"><span style="display:block;height:12px;border-radius:2px;width:{{ b.bw }};background:#6fc7d6"></span><span style="text-align:right;font:400 13px 'IBM Plex Mono',monospace">{{ b.b }}</span></span></div></sc-for>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px;padding-top:6px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Where the misses land · detected ÷ warped</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">exact matches left out</span></div>
+                <sc-for list="{{ strips }}" as="s" hint-placeholder-count="2"><div style="display:grid;grid-template-columns:190px minmax(0,1fr);align-items:end"><span style="padding:0 12px 4px;font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">{{ s.name }}</span><div style="position:relative;height:64px;display:flex;align-items:flex-end;gap:1px;border-bottom:1px solid rgba(255,255,255,.12)"><sc-for list="{{ s.cols }}" as="c" hint-placeholder-count="60"><span style="flex:1;height:{{ c.h }};background:{{ c.c }};border-radius:1px 1px 0 0"></span></sc-for></div></div></sc-for>
+                <div style="display:grid;grid-template-columns:190px minmax(0,1fr)"><span></span><div style="position:relative;height:30px"><sc-for list="{{ ticks }}" as="t" hint-placeholder-count="7"><span style="position:absolute;left:{{ t.x }};transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px"><span style="width:1px;height:5px;background:rgba(236,231,220,.3)"></span><span style="font:400 11.5px 'IBM Plex Mono',monospace;color:{{ t.fg }}">{{ t.label }}</span></span></sc-for></div></div>
+              </div>
+            </section>
+
+            <section id="p-unkeyed" style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:baseline;gap:12px"><h3 style="margin:0;font:600 16px 'IBM Plex Sans',sans-serif">6 files with no key</h3><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">unchanged, closed by default</span></div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px dashed rgba(255,255,255,.18);border-radius:6px;font:500 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span style="font-family:'IBM Plex Mono',monospace">▸</span><span>Show the files</span><span style="margin-left:auto;font-weight:400;color:rgba(236,231,220,.5)">Ableton holds no key for these either</span></div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:900px;text-wrap:pretty">Order runs from what is always full (key, tempo) to what fills slowly (genre, familiarity), then artists, then the detector study, then the leftovers. Key and artists show their top rows with an <em>all</em> link, so the page stays a page. The index highlights the section in view; below 1100px it becomes a wrapping row of links under the title. Counts, song names and the key and genre spreads are illustrative; the tempo bins, shapes, artist counts and detector totals are the brief's measured figures.</p>
+  </div>
+
+  <div id="1b" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1b</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Detectors · a band opened to its songs</span></div>
+    <div style="width:992px;box-sizing:border-box;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:24px 48px;display:flex;flex-direction:column;gap:12px">
+      <p style="margin:0;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:72ch">Clicking a count in the detector table opens that band's songs under it. One band open at a time; clicking again closes it.</p>
+      <div style="display:grid;grid-template-columns:190px minmax(0,1fr) minmax(0,1fr);align-items:center;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03)"><span style="padding:6px 12px;display:flex;flex-direction:column;gap:1px"><span style="font:600 14px 'IBM Plex Sans',sans-serif">Two-thirds or three-quarters</span><span style="font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">×2/3 · ×3/4 · ±2</span></span><span style="padding:6px 12px;display:grid;grid-template-columns:minmax(0,1fr) 40px;gap:10px;align-items:center"><span style="display:block;height:12px;border-radius:2px;width:3%;background:#6fc7d6"></span><span style="text-align:right;font:400 13px 'IBM Plex Mono',monospace">6</span></span><span style="padding:6px 12px;display:grid;grid-template-columns:minmax(0,1fr) 40px;gap:10px;align-items:center"><span style="display:block;height:12px;border-radius:2px;width:43%;background:#6fc7d6"></span><span style="text-align:right;font:500 13px 'IBM Plex Mono',monospace;text-decoration:underline;text-underline-offset:3px">88</span></span></div>
+      <div style="margin:0 0 0 190px;display:flex;flex-direction:column;gap:10px;padding:14px 16px;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+          <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">beatdetect · 88 songs read at two-thirds or three-quarters</span>
+          <div style="display:flex;gap:8px"><button style="padding:5px 12px;background:#23211a;color:#ece7dc;border:1px solid rgba(255,255,255,.12);border-radius:6px;font:500 12.5px 'IBM Plex Sans',sans-serif">Copy as text</button><button style="padding:5px 12px;background:transparent;color:rgba(236,231,220,.75);border:1px solid rgba(255,255,255,.12);border-radius:6px;font:500 12.5px 'IBM Plex Sans',sans-serif">Close</button></div>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 70px 70px 70px;border-bottom:1px solid rgba(255,255,255,.08);font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)"><span style="padding:5px 0">Song</span><span style="padding:5px 0;text-align:right">Warp</span><span style="padding:5px 0;text-align:right">Read</span><span style="padding:5px 0;text-align:right">Ratio</span></div>
+        <div style="display:flex;flex-direction:column;margin-top:-10px">
+          <sc-for list="{{ missed }}" as="m" hint-placeholder-count="8"><div style="display:grid;grid-template-columns:minmax(0,1fr) 70px 70px 70px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06)"><span style="padding:5px 0;font:400 13.5px 'IBM Plex Sans',sans-serif">{{ m.song }}</span><span style="padding:5px 0;text-align:right;font:400 13px 'IBM Plex Mono',monospace">{{ m.warp }}</span><span style="padding:5px 0;text-align:right;font:400 13px 'IBM Plex Mono',monospace">{{ m.read }}</span><span style="padding:5px 0;text-align:right;font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">{{ m.ratio }}</span></div></sc-for>
+          <div style="padding:8px 0 0;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">80 more · <span style="color:#ece7dc;text-decoration:underline;text-underline-offset:3px">show all</span></div>
+        </div>
+      </div>
+      <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:80ch;text-wrap:pretty"><em>Copy as text</em> puts the band on the clipboard as plain lines (<span style="font-family:'IBM Plex Mono',monospace">song · warp · read · ratio</span>), ready to paste into a message to the filter's maintainer. Song names and per-song figures here are illustrative.</p>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const pct = (n, max) => (max ? Math.max(0.3, n * 100 / max) : 0).toFixed(1) + '%';
+    const toc = [['p-key','By key','24'],['p-tempo','By tempo','451'],['p-genre','By genre','7'],['p-fam','By familiarity','2'],['p-artist','By artist','20'],['p-det','Detectors','332'],['p-unkeyed','No key','6']]
+      .map(([id,label,n],i) => ({ id, label, n, fg: i === 1 ? '#ece7dc' : 'rgba(236,231,220,.6)', bg: i === 1 ? '#1b1a15' : 'transparent' }));
+    const keyRaw = [['A minor','8A',38,'m'],['F minor','4A',34,'m'],['C major','8B',31,'M'],['G♯ minor','1A',29,'m'],['E minor','9A',27,'m'],['D minor','7A',25,'m'],['G major','9B',23,'M'],['C♯ minor','12A',22,'m']];
+    const keys = keyRaw.map(([name,cam,n,m]) => ({ name, cam, n, w: pct(n,38), c: m === 'm' ? '#6fc7d6' : '#e8b45a' }));
+    const peaks = { '100–109': [[100,10]], '120–129': [[128,16],[126,14],[125,12],[120,11]], '130–139': [[130,15]], '150–159': [[150,12]], '170–179': [[174,26]] };
+    const bins = [['70–79',7],['80–89',28],['90–99',55],['100–109',46],['110–119',25],['120–129',92],['130–139',48],['140–149',38],['150–159',25],['160–169',20],['170–179',53],['180–189',8],['190–199',4],['200–219',2]];
+    const tempo = bins.map(([label,n]) => { const p = peaks[label] || []; const s = p.reduce((a,[,c]) => a + c, 0); return { label, n, w: pct(n,92), pw: (s * 100 / n).toFixed(1) + '%', peaks: p.map(([b,c]) => `${b} ×${c}`).join('  ') }; });
+    const gRaw = [['Drum and bass',38],['House',29],['Hip hop',26],['Future bass',19],['Pop',14],['Dubstep',9],['Trance',4]];
+    const genres = gRaw.map(([name,n]) => ({ name, n, w: pct(n,38), c: '#6fc7d6', fg: '#ece7dc' }));
+    const fam = [['Mainstream',142,'#6fc7d6','#ece7dc'],['Obscure',221,'#6fc7d6','#ece7dc'],['Not answered',88,'rgba(255,255,255,.08)','rgba(236,231,220,.5)']].map(([name,n,c,fg]) => ({ name, n, w: pct(n,221), c, fg }));
+    const aRaw = [['Ludacris',12,'4A 7A 11A','78–100'],['Fox Stevenson',9,'1A 8A 6B','128–174'],["Snail's House",7,'8B 9B 4B','100–128'],['PSYQUI',6,'4A 9A','128–174'],['1991',4,'1A 12A','170–174'],['Aiobahn',4,'8B 3B','128–150'],['Kreayshawn',4,'8A 5A','95–130'],['Lil Wayne',4,'2A 7A 9A','75–155'],['Porter Robinson',4,'8B 11B','85–128'],['S3RL',4,'4A 8A','174–180'],['50 Cent',3,'8A 10A','82–95'],['DMX',3,'4A 7A','92–97']];
+    const artists = aRaw.map(([name,n,keys,bpm]) => ({ name, n, keys, bpm, w: pct(n,12) }));
+    const bRaw = [['Exact','within 0.5',205,124],['Close','within 2',31,18],['Half or double','×½ · ×2 · ±2',29,41],['Two-thirds or three-quarters','×2/3 · ×3/4 · ±2',6,88],['Wrong','anything else',61,61]];
+    const bands = bRaw.map(([name,rule,k,b],i) => ({ name, rule, k, b, kw: pct(k,205), bw: pct(b,205), weight: i === 3 ? 600 : 400, bg: i === 3 ? 'rgba(255,255,255,.03)' : 'transparent' }));
+    const lo = Math.log2(0.4), hi = Math.log2(2.2), N = 64;
+    const xOf = r => ((Math.log2(r) - lo) / (hi - lo) * 100).toFixed(2) + '%';
+    const mk = spikes => { const cols = []; for (let i = 0; i < N; i++) { const r = Math.pow(2, lo + (i + .5) / N * (hi - lo)); let v = 0.6 + 0.4 * Math.sin(i * 2.3) ; for (const [c,a,w] of spikes) v += a * Math.exp(-Math.pow(Math.log2(r / c) / w, 2)); const near1 = Math.abs(Math.log2(r)) < 0.02; cols.push({ h: near1 ? '0px' : Math.max(1, Math.round(v * 1.1)) + 'px', c: '#6fc7d6' }); } return cols; };
+    const strips = [
+      { name: 'keytag, recommended', cols: mk([[0.5,10,.04],[2,9,.04],[0.667,4,.03],[0.97,6,.03],[1.03,6,.03]]) },
+      { name: 'beatdetect, raw', cols: mk([[0.667,56,.025],[0.75,28,.025],[0.5,14,.04],[2,12,.04],[0.97,4,.03],[1.03,4,.03]]) },
+    ];
+    const ticks = [[0.5,'½'],[2/3,'2/3'],[0.75,'3/4'],[1,'1'],[4/3,'4/3'],[1.5,'3/2'],[2,'2']].map(([r,label]) => ({ x: xOf(r), label, fg: (r === 2/3 || r === 0.75) ? '#ece7dc' : 'rgba(236,231,220,.5)' }));
+    const missed = [['1991 - If Only',174,116],['S3RL - Pretty Rave Girl',174,130],['Fox Stevenson - Sandblast',174,116],['PSYQUI - Hype feat. Such',150,112],['Porter Robinson - Language',128,85],['Aiobahn - Daydreamer',150,100],["Snail's House - Pixel Galaxy",128,96],['Lil Wayne - A Milli',151,113]]
+      .map(([song,w,r]) => ({ song, warp: w, read: r, ratio: (r / w).toFixed(2) }));
+    return { toc, keys, tempo, genres, fam, artists, bands, strips, ticks, missed };
+  }
+}
+</script>
+</body>
+</html>

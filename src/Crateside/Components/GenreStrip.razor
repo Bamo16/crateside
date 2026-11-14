@@ -1,0 +1,83 @@
+@using Crateside.Core.Genres
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Tracks
+@inject GenreStore Genres
+@inject TracksService Tracks
+@inject ActionLog Actions
+
+@if (Shape is Shapes.Cell)
+{
+    @if (Row.Genre is { Genres: [_, ..] genres } record)
+    {
+        <span class="cell-value" title="@Note(record)">@string.Join(", ", genres)</span>
+    }
+}
+else
+{
+    <ChoiceStrip Label="Genre" Choices="Choices" Value="@Chosen(Row.Genre)" Quiet="IsQuiet(Row.Genre)"
+                 Note="@Note(Row.Genre)" Disabled="_working" OnChoose="SettleGenre" />
+}
+
+@code {
+    private bool _working;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    [Parameter]
+    public Shapes Shape { get; set; }
+
+    private IReadOnlyList<ChoiceStrip.Choice> Choices =>
+        [.. GenreVocabulary.All.Select(genre => new ChoiceStrip.Choice(genre, genre, GenreTone(Row.Genre, genre)))];
+
+    private static string? GenreTone(GenreRecord? record, string genre) =>
+        record switch
+        {
+            { IsTheUsersAnswer: true } when record.Mine.Contains(genre) => "settled",
+            { IsTheUsersAnswer: false } when record.Assigned.Contains(genre) => "suggested",
+            _ => null,
+        };
+
+    private static string? Chosen(GenreRecord? record) =>
+        record is { IsTheUsersAnswer: true } ? record.Mine.First(GenreVocabulary.IsGenre) : null;
+
+    private static bool IsQuiet(GenreRecord? record) =>
+        record is null or { Genres.Count: 0, LookedUpAt: null };
+
+    public static string Note(GenreRecord? record) =>
+        record switch
+        {
+            null or { LookedUpAt: null, Heard.Count: 0 } => "not looked up yet",
+            { IsTheUsersAnswer: true } => "your call",
+            { FromSources.Count: 0, LearnedFrom: { } artist } => $"from your answers for {artist}",
+            { Heard.Count: 0 } => "the sources know nothing of it",
+            _ => $"styles: {string.Join(", ", record.Styles.Take(4))}",
+        };
+
+    private async Task SettleGenre(string? genre)
+    {
+        if (genre is null)
+            return;
+
+        _working = true;
+
+        try
+        {
+            Genres.Choose(Row.Song, genre);
+            Actions.Record(Row.TrackKey, UserActionKind.GenreSettled, genre);
+
+            await Tracks.RefreshAsync();
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    /// <summary>The stack's strip, or the collapsed row's cell (#65).</summary>
+    public enum Shapes
+    {
+        Strip,
+        Cell,
+    }
+}

@@ -1,0 +1,424 @@
+.body {
+    padding: 0 clamp(1rem, 4vw, 3rem) 3rem;
+    max-width: var(--table-tracks);
+}
+
+.back {
+    display: inline-block;
+    margin-bottom: 0.75rem;
+    color: var(--text-60);
+    text-decoration: none;
+    font-size: 13px;
+}
+
+/* The header strip (handoff 22 §1): the cover, the title and four cells, in one box. */
+.hs {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+        "cover title"
+        "cover cells";
+    grid-template-rows: auto 1fr;
+    margin-bottom: 10px;
+    overflow: hidden;
+    background: var(--surface);
+    border-radius: 10px;
+}
+
+/* As tall as the strip, and so as wide: the column takes its width from the cover's ratio. */
+.hs-cover {
+    grid-area: cover;
+    position: relative;
+    aspect-ratio: 1;
+    min-height: 152px;
+    background: #2b2820;
+}
+
+.hs-cover ::deep .cover {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0;
+}
+
+.hs-title {
+    grid-area: title;
+    min-width: 0;
+    padding: 15px 22px 12px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 30px;
+}
+
+.meta,
+.notice {
+    margin: 3px 0 0;
+    font-size: 13.5px;
+    color: var(--text-60);
+}
+
+.notice {
+    margin: 0.3rem 0 1.5rem;
+    font-size: 14px;
+}
+
+.meta a {
+    color: var(--text);
+    text-decoration: underline;
+    text-decoration-color: var(--text-40);
+    text-underline-offset: 3px;
+}
+
+/* Every cell is label, value, caption and, where one has it, a foot, on rows the four share. */
+.cells {
+    grid-area: cells;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: auto auto 1fr;
+    border-top: 1px solid var(--line);
+}
+
+.cells.has-foot {
+    grid-template-rows: auto auto auto auto;
+}
+
+.cell {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 3;
+    min-width: 0;
+    border-left: 1px solid var(--line);
+}
+
+.cells.has-foot .cell {
+    grid-row: span 4;
+}
+
+.cell:first-child {
+    border-left: none;
+}
+
+.cell-head {
+    display: contents;
+}
+
+.cell-foot {
+    display: none;
+}
+
+.cells.has-foot .cell-foot {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    min-width: 0;
+    padding: 9px 22px 11px;
+    border-top: 1px solid var(--line);
+}
+
+.cells.has-foot .cell-foot:empty {
+    padding-block: 0;
+}
+
+.label {
+    padding: 10px 22px 0;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.library-only .cell:first-child .label {
+    color: var(--text-75);
+}
+
+.line {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0 12px;
+    padding: 2px 22px 0;
+}
+
+.value {
+    font-size: 28px;
+    line-height: 34px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.value.conf {
+    font-weight: 500;
+}
+
+.value.conf.call {
+    font-size: 22px;
+}
+
+.value.empty,
+.value.conf.none {
+    color: var(--text-30);
+}
+
+.value.conf.weak {
+    color: var(--red);
+}
+
+.value.bpm.ready {
+    color: var(--amber);
+}
+
+.value.bpm.approx {
+    font-weight: 400;
+}
+
+.value.bpm.estimate {
+    color: var(--text-50);
+}
+
+.value.bpm ::deep .pennant {
+    margin-left: 4px;
+    vertical-align: top;
+}
+
+.note {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    min-width: 0;
+    padding: 1px 22px 11px;
+    overflow: hidden;
+    font-size: 12.5px;
+    line-height: 1.3;
+    color: var(--text-60);
+}
+
+.lead {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-75);
+}
+
+.lead .arrow {
+    color: var(--text-60);
+}
+
+.sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sections li {
+    display: flex;
+}
+
+.section-pick {
+    display: flex;
+    gap: 0.6rem;
+    align-items: baseline;
+    color: inherit;
+    text-decoration: none;
+}
+
+.section-pick:hover .section-label {
+    color: var(--text);
+}
+
+.section-label {
+    font-size: 12.5px;
+    color: var(--text-60);
+}
+
+.sep {
+    color: var(--text-40);
+}
+
+.key-lines {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.key-lines .sections {
+    padding: 2px 22px 0;
+    box-sizing: border-box;
+}
+
+.section-key {
+    font-size: 12.5px;
+    font-weight: 500;
+}
+
+.explain {
+    font-size: 12.5px;
+    color: var(--text-75);
+}
+
+.where-line {
+    align-items: center;
+    min-height: 34px;
+}
+
+.where-note {
+    display: block;
+}
+
+.where-note .next {
+    margin-right: 8px;
+}
+
+.next {
+    font-size: 12.5px;
+    color: var(--text-75);
+}
+
+.elapsed {
+    font-size: 13px;
+    color: var(--teal);
+}
+
+.progress {
+    width: 100%;
+    height: 3px;
+    overflow: hidden;
+    background: var(--line-strong);
+    border-radius: 2px;
+}
+
+.progress span {
+    display: block;
+    height: 100%;
+    background: var(--teal);
+}
+
+.why {
+    font-size: 12.5px;
+    color: var(--text-60);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.back:hover,
+.why:hover {
+    color: var(--text);
+}
+
+.columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 19rem;
+    gap: 44px;
+    margin-top: 2rem;
+}
+
+.evidence-section {
+    margin-top: 2.5rem;
+    scroll-margin-top: 1rem;
+}
+
+.evidence-section h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.summary {
+    margin: 0.25rem 0 0;
+    color: var(--text-60);
+}
+
+@media (max-width: 60rem) {
+    .columns {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* At 56rem the cover is 96 px beside the title and the cells go two by two under both (handoff 22 §1). */
+@media (max-width: 56rem) {
+    .hs {
+        grid-template-columns: 96px minmax(0, 1fr);
+        grid-template-areas:
+            "cover title"
+            "cells cells";
+        grid-template-rows: auto auto;
+    }
+
+    .hs-cover {
+        width: 96px;
+        height: 96px;
+        min-height: 0;
+        aspect-ratio: auto;
+    }
+
+    .hs-title {
+        padding: 12px 18px 10px;
+    }
+
+    h1 {
+        font-size: 21px;
+        line-height: 27px;
+    }
+
+    .cells {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: none;
+        grid-auto-rows: auto;
+    }
+
+    .cells.has-foot {
+        grid-template-rows: none;
+    }
+
+    .cell:nth-child(odd) {
+        border-left: none;
+    }
+
+    .cell:nth-child(n + 3) {
+        border-top: 1px solid var(--line);
+    }
+}
+
+/* Judging from these bars (#116): the invitation where the verdict is withheld or split, and the run while it goes. */
+.invitation {
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--text-75);
+}
+
+.invite {
+    width: fit-content;
+    white-space: nowrap;
+    font-size: 12.5px;
+}
+
+.judging-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    width: fit-content;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--teal);
+    color: var(--ink);
+}
+
+.judging-chip .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ink);
+}

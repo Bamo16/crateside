@@ -23,9 +23,9 @@ public sealed class JanitorWorker(WorkingSetJanitor janitor, ILogger<JanitorWork
                         discarded
                     );
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                logger.LogWarning(e, "Working-set sweep failed");
+                logger.LogWarning(ex, "Working-set sweep failed");
             }
 
             try

@@ -1,9 +1,12 @@
 <div class="cell brand-cell">
-    <span class="brand">crateside</span>
+    <a class="brand" href="">
+        <img src="@Assets["brand/mark.svg"]" width="18" height="18" alt="" />
+        crateside
+    </a>
     <nav>
-        <a class="tab @(Active is Tab.Tracks ? "active" : null)" href="">Tracks</a>
-        <a class="tab @(Active is Tab.Library ? "active" : null)" href="library">Library</a>
-        <a class="tab @(Active is Tab.Partners ? "active" : null)" href="partners">Partners</a>
+        <a class="tab @(Active is Tab.Dashboard ? "active" : null)" href="">Dashboard</a>
+        <a class="tab @(Active is Tab.Tracks ? "active" : null)" href="tracks">Tracks</a>
+        <a class="tab @(Active is Tab.Tools ? "active" : null)" href="tools">Tools</a>
         <a class="tab @(Active is Tab.Settings ? "active" : null)" href="settings">Settings</a>
     </nav>
 </div>
@@ -11,9 +14,9 @@
 @code {
     public enum Tab
     {
+        Dashboard,
         Tracks,
-        Library,
-        Partners,
+        Tools,
         Settings,
     }
 

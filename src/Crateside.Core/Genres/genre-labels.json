@@ -1,0 +1,857 @@
+{
+  "acid breaks": [
+    "Breakbeat"
+  ],
+  "acid jazz": [
+    "Funk",
+    "Jazz"
+  ],
+  "acoustic rock": [
+    "Rock"
+  ],
+  "afro house": [
+    "House"
+  ],
+  "alternative": [
+    "Rock"
+  ],
+  "alternative dance": [
+    "EDM"
+  ],
+  "alternative hip hop": [
+    "Hip Hop"
+  ],
+  "alternative metal": [
+    "Rock"
+  ],
+  "alternative pop": [
+    "Pop"
+  ],
+  "alternative punk": [
+    "Rock"
+  ],
+  "alternative r&b": [
+    "R&B"
+  ],
+  "alternative rock": [
+    "Rock"
+  ],
+  "amapiano": [
+    "House"
+  ],
+  "ambient": [
+    "Ambient"
+  ],
+  "ambient techno": [
+    "Techno"
+  ],
+  "americana": [
+    "Folk"
+  ],
+  "anime": [
+    "Pop"
+  ],
+  "anti folk": [
+    "Folk"
+  ],
+  "aor": [
+    "Rock"
+  ],
+  "arena rock": [
+    "Rock"
+  ],
+  "art pop": [
+    "Pop"
+  ],
+  "art rock": [
+    "Rock"
+  ],
+  "atmospheric drum and bass": [
+    "Drum & Bass"
+  ],
+  "avant garde pop": [
+    "Pop"
+  ],
+  "baroque pop": [
+    "Pop"
+  ],
+  "bass": [
+    "EDM"
+  ],
+  "bass house": [
+    "House"
+  ],
+  "bassline": [
+    "Electronica"
+  ],
+  "bedroom pop": [
+    "Pop"
+  ],
+  "big beat": [
+    "Breakbeat"
+  ],
+  "big room house": [
+    "EDM"
+  ],
+  "bitpop": [
+    "Electronica"
+  ],
+  "blue eyed soul": [
+    "Soul"
+  ],
+  "blues": [
+    "Blues"
+  ],
+  "boom bap": [
+    "Hip Hop"
+  ],
+  "bossa nova": [
+    "Jazz"
+  ],
+  "breakbeat": [
+    "Breakbeat"
+  ],
+  "breakbeat hardcore": [
+    "Breakbeat"
+  ],
+  "breakcore": [
+    "Breakbeat"
+  ],
+  "breaks": [
+    "Breakbeat"
+  ],
+  "bubblegum bass": [
+    "EDM"
+  ],
+  "bubblegum dance": [
+    "Pop",
+    "EDM"
+  ],
+  "bubblegum pop": [
+    "Pop"
+  ],
+  "chamber pop": [
+    "Pop"
+  ],
+  "chicano rap": [
+    "Hip Hop"
+  ],
+  "chillout": [
+    "Ambient"
+  ],
+  "chillwave": [
+    "Electronica"
+  ],
+  "chipmunk soul": [
+    "Hip Hop",
+    "Soul"
+  ],
+  "chiptune": [
+    "Electronica"
+  ],
+  "christian hip hop": [
+    "Hip Hop"
+  ],
+  "city pop": [
+    "Pop"
+  ],
+  "classic rock": [
+    "Rock"
+  ],
+  "cloud rap": [
+    "Hip Hop"
+  ],
+  "club": [
+    "EDM"
+  ],
+  "comedy hip hop": [
+    "Hip Hop"
+  ],
+  "comedy rock": [
+    "Rock"
+  ],
+  "complextro": [
+    "EDM"
+  ],
+  "conscious hip hop": [
+    "Hip Hop"
+  ],
+  "contemporary r&b": [
+    "R&B"
+  ],
+  "country": [
+    "Folk"
+  ],
+  "country folk": [
+    "Folk"
+  ],
+  "country pop": [
+    "Pop"
+  ],
+  "crunk": [
+    "Hip Hop"
+  ],
+  "crunkcore": [
+    "Hip Hop",
+    "Rock"
+  ],
+  "dance": [
+    "EDM"
+  ],
+  "dance pop": [
+    "Pop"
+  ],
+  "dance punk": [
+    "Rock"
+  ],
+  "dance rock": [
+    "Rock"
+  ],
+  "dancefloor drum and bass": [
+    "Drum & Bass"
+  ],
+  "dancehall": [
+    "Dancehall"
+  ],
+  "dark wave": [
+    "Electronica"
+  ],
+  "darksynth": [
+    "Electronica"
+  ],
+  "deep house": [
+    "House"
+  ],
+  "deep soul": [
+    "Soul"
+  ],
+  "digital fusion": [
+    "Electronica"
+  ],
+  "dirty south": [
+    "Hip Hop"
+  ],
+  "disco": [
+    "Disco"
+  ],
+  "djent": [
+    "Rock"
+  ],
+  "downtempo": [
+    "Electronica"
+  ],
+  "dream pop": [
+    "Pop"
+  ],
+  "dream trance": [
+    "EDM"
+  ],
+  "drill and bass": [
+    "Drum & Bass"
+  ],
+  "drum and bass": [
+    "Drum & Bass"
+  ],
+  "drum n bass": [
+    "Drum & Bass"
+  ],
+  "drumnbass": [
+    "Drum & Bass"
+  ],
+  "drumstep": [
+    "EDM"
+  ],
+  "dub": [
+    "Dub"
+  ],
+  "dubstep": [
+    "Dubstep"
+  ],
+  "east coast hip hop": [
+    "Hip Hop"
+  ],
+  "easy listening": [
+    "Pop"
+  ],
+  "ebm": [
+    "Electronica"
+  ],
+  "edm": [
+    "EDM"
+  ],
+  "electro": [
+    "Electro"
+  ],
+  "electro disco": [
+    "Disco"
+  ],
+  "electro house": [
+    "House",
+    "Electro"
+  ],
+  "electronic": [
+    "Electronica"
+  ],
+  "electronica": [
+    "Electronica"
+  ],
+  "electropop": [
+    "Synthpop"
+  ],
+  "emo": [
+    "Rock"
+  ],
+  "emo rap": [
+    "Hip Hop"
+  ],
+  "euro house": [
+    "House"
+  ],
+  "eurodance": [
+    "Pop",
+    "EDM"
+  ],
+  "europop": [
+    "Pop"
+  ],
+  "experimental": [
+    "Experimental"
+  ],
+  "experimental hip hop": [
+    "Hip Hop",
+    "Experimental"
+  ],
+  "experimental rock": [
+    "Rock"
+  ],
+  "festival progressive house": [
+    "EDM"
+  ],
+  "fidget house": [
+    "House"
+  ],
+  "fitness and workout": [
+    "EDM"
+  ],
+  "folk": [
+    "Folk"
+  ],
+  "folk pop": [
+    "Pop",
+    "Folk"
+  ],
+  "folk rock": [
+    "Folk",
+    "Rock"
+  ],
+  "french electro": [
+    "Electronica"
+  ],
+  "french house": [
+    "House"
+  ],
+  "funk": [
+    "Funk"
+  ],
+  "funk metal": [
+    "Funk"
+  ],
+  "funk rock": [
+    "Funk"
+  ],
+  "funktronica": [
+    "Electronica"
+  ],
+  "future bass": [
+    "EDM"
+  ],
+  "future bounce": [
+    "EDM"
+  ],
+  "future core": [
+    "EDM"
+  ],
+  "future funk": [
+    "Funk",
+    "Electronica"
+  ],
+  "future garage": [
+    "Garage"
+  ],
+  "g funk": [
+    "Hip Hop",
+    "Funk"
+  ],
+  "g house": [
+    "House"
+  ],
+  "gabber": [
+    "EDM"
+  ],
+  "gangsta rap": [
+    "Hip Hop"
+  ],
+  "garage": [
+    "Garage"
+  ],
+  "garage house": [
+    "House"
+  ],
+  "garage punk": [
+    "Rock"
+  ],
+  "garage rock": [
+    "Rock"
+  ],
+  "garage rock revival": [
+    "Rock"
+  ],
+  "glam metal": [
+    "Rock"
+  ],
+  "glam rock": [
+    "Rock"
+  ],
+  "glitch": [
+    "Electronica"
+  ],
+  "glitch hop": [
+    "Electronica"
+  ],
+  "glitch pop": [
+    "Pop"
+  ],
+  "grime": [
+    "Hip Hop"
+  ],
+  "groove metal": [
+    "Rock"
+  ],
+  "grunge": [
+    "Rock"
+  ],
+  "happy hardcore": [
+    "EDM"
+  ],
+  "hard rock": [
+    "Rock"
+  ],
+  "hard trance": [
+    "EDM"
+  ],
+  "hardcore hip hop": [
+    "Hip Hop"
+  ],
+  "hardcore punk": [
+    "Rock"
+  ],
+  "hardcore techno": [
+    "EDM"
+  ],
+  "heavy metal": [
+    "Rock"
+  ],
+  "hi nrg": [
+    "EDM"
+  ],
+  "hip hop": [
+    "Hip Hop"
+  ],
+  "hip hop rap": [
+    "Hip Hop"
+  ],
+  "hip hop soul": [
+    "Hip Hop",
+    "Soul"
+  ],
+  "hip house": [
+    "Hip Hop",
+    "House"
+  ],
+  "house": [
+    "House"
+  ],
+  "houston sound": [
+    "Hip Hop"
+  ],
+  "idm": [
+    "Electronica"
+  ],
+  "idm experimental": [
+    "Electronica",
+    "Experimental"
+  ],
+  "indie": [
+    "Indie"
+  ],
+  "indie pop": [
+    "Indie",
+    "Pop"
+  ],
+  "indie rock": [
+    "Indie",
+    "Rock"
+  ],
+  "indie rock rock pop": [
+    "Indie",
+    "Rock"
+  ],
+  "indietronica": [
+    "Indie",
+    "Pop"
+  ],
+  "industrial": [
+    "Electronica"
+  ],
+  "industrial metal": [
+    "Rock"
+  ],
+  "industrial rock": [
+    "Rock"
+  ],
+  "international pop": [
+    "Pop"
+  ],
+  "italo house": [
+    "House"
+  ],
+  "j pop": [
+    "Pop"
+  ],
+  "jangle pop": [
+    "Pop"
+  ],
+  "jazz": [
+    "Jazz"
+  ],
+  "jazz funk": [
+    "Funk",
+    "Jazz"
+  ],
+  "jazz fusion": [
+    "Jazz"
+  ],
+  "jazz rap": [
+    "Hip Hop"
+  ],
+  "jerk rap": [
+    "Hip Hop"
+  ],
+  "jersey club rap": [
+    "Hip Hop"
+  ],
+  "jungle": [
+    "Drum & Bass"
+  ],
+  "jungle drumnbass": [
+    "Drum & Bass"
+  ],
+  "k pop": [
+    "Pop"
+  ],
+  "kawaii future bass": [
+    "EDM"
+  ],
+  "korean indie": [
+    "Pop"
+  ],
+  "latin": [
+    "Latin"
+  ],
+  "latin music": [
+    "Latin"
+  ],
+  "latin pop": [
+    "Pop"
+  ],
+  "liquid funk": [
+    "Drum & Bass"
+  ],
+  "lo fi": [
+    "Electronica"
+  ],
+  "lolicore": [
+    "Pop"
+  ],
+  "math rock": [
+    "Rock"
+  ],
+  "melodic dubstep": [
+    "Dubstep"
+  ],
+  "melodic hardcore": [
+    "Rock"
+  ],
+  "metal": [
+    "Rock"
+  ],
+  "miami bass": [
+    "Hip Hop"
+  ],
+  "midtempo bass": [
+    "EDM"
+  ],
+  "mod": [
+    "Rock"
+  ],
+  "neo psychedelia": [
+    "Indie"
+  ],
+  "neo soul": [
+    "Soul"
+  ],
+  "neue deutsche harte": [
+    "Rock"
+  ],
+  "neurofunk": [
+    "Drum & Bass"
+  ],
+  "new jack swing": [
+    "R&B"
+  ],
+  "new rave": [
+    "EDM"
+  ],
+  "new romantic": [
+    "Synthpop",
+    "Rock"
+  ],
+  "new wave": [
+    "Synthpop",
+    "Rock"
+  ],
+  "noise": [
+    "Rock"
+  ],
+  "nu disco": [
+    "Disco"
+  ],
+  "nu jazz": [
+    "Jazz"
+  ],
+  "nu metal": [
+    "Rock"
+  ],
+  "piano rock": [
+    "Rock"
+  ],
+  "political hip hop": [
+    "Hip Hop"
+  ],
+  "pop": [
+    "Pop"
+  ],
+  "pop latino": [
+    "Pop"
+  ],
+  "pop punk": [
+    "Rock"
+  ],
+  "pop rap": [
+    "Pop",
+    "Hip Hop"
+  ],
+  "pop rock": [
+    "Pop",
+    "Rock"
+  ],
+  "pop soul": [
+    "Pop",
+    "Soul"
+  ],
+  "post grunge": [
+    "Rock"
+  ],
+  "post punk": [
+    "Rock"
+  ],
+  "post punk revival": [
+    "Rock"
+  ],
+  "power pop": [
+    "Pop"
+  ],
+  "prog rock art rock": [
+    "Rock"
+  ],
+  "progressive house": [
+    "House"
+  ],
+  "progressive metal": [
+    "Rock"
+  ],
+  "progressive pop": [
+    "Pop"
+  ],
+  "progressive rock": [
+    "Rock"
+  ],
+  "progressive trance": [
+    "EDM"
+  ],
+  "psychedelic folk": [
+    "Folk"
+  ],
+  "psychedelic pop": [
+    "Pop"
+  ],
+  "psychedelic rock": [
+    "Rock"
+  ],
+  "psychedelic soul": [
+    "Soul"
+  ],
+  "punk": [
+    "Rock"
+  ],
+  "punk rock": [
+    "Rock"
+  ],
+  "r&b": [
+    "R&B"
+  ],
+  "r&b soul": [
+    "R&B",
+    "Soul"
+  ],
+  "rap": [
+    "Hip Hop"
+  ],
+  "rap hip hop": [
+    "Hip Hop"
+  ],
+  "rap metal": [
+    "Hip Hop",
+    "Rock"
+  ],
+  "rap rock": [
+    "Hip Hop",
+    "Rock"
+  ],
+  "rapcore": [
+    "Hip Hop",
+    "Rock"
+  ],
+  "rave": [
+    "EDM"
+  ],
+  "reggae": [
+    "Reggae"
+  ],
+  "reggaeton": [
+    "Reggaeton"
+  ],
+  "rock": [
+    "Rock"
+  ],
+  "rock opera": [
+    "Rock"
+  ],
+  "shoegaze": [
+    "Rock"
+  ],
+  "singer songwriter": [
+    "Folk"
+  ],
+  "ska": [
+    "Rock"
+  ],
+  "ska punk": [
+    "Rock"
+  ],
+  "slowcore": [
+    "Rock"
+  ],
+  "soft rock": [
+    "Rock"
+  ],
+  "sophisti pop": [
+    "Pop"
+  ],
+  "soul": [
+    "Soul"
+  ],
+  "soul and funk": [
+    "Soul",
+    "Funk"
+  ],
+  "southern hip hop": [
+    "Hip Hop"
+  ],
+  "southern rock": [
+    "Rock"
+  ],
+  "space rock": [
+    "Rock"
+  ],
+  "speed garage": [
+    "Garage"
+  ],
+  "symphonic prog": [
+    "Rock"
+  ],
+  "symphonic rock": [
+    "Rock"
+  ],
+  "synth funk": [
+    "Synthpop"
+  ],
+  "synth pop": [
+    "Synthpop"
+  ],
+  "synthpop": [
+    "Synthpop"
+  ],
+  "synthwave": [
+    "Synthpop"
+  ],
+  "tech house": [
+    "House"
+  ],
+  "techno": [
+    "Techno"
+  ],
+  "techno house": [
+    "Techno",
+    "House"
+  ],
+  "teen pop": [
+    "Pop"
+  ],
+  "trance": [
+    "EDM"
+  ],
+  "trap": [
+    "Trap"
+  ],
+  "trap edm": [
+    "EDM"
+  ],
+  "trip hop": [
+    "Electronica"
+  ],
+  "tropical house": [
+    "EDM"
+  ],
+  "uk drill": [
+    "Hip Hop"
+  ],
+  "uk garage": [
+    "Garage"
+  ],
+  "uk hardcore": [
+    "EDM"
+  ],
+  "underground hip hop": [
+    "Hip Hop"
+  ],
+  "west coast hip hop": [
+    "Hip Hop"
+  ],
+  "wonky": [
+    "Electronica"
+  ],
+  "wonky techno": [
+    "Electronica"
+  ]
+}
