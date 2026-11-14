@@ -112,7 +112,7 @@ open, no fold, drawn when the track has samples.
 - **Head line**: `WARP`, then `{n} stems · one warp · {markers} · {mode}`, or `{stem} warped on its
   own` at `--text` (the only loud thing; not colored). No zoom pills (handoff 22). At the right, the
   readout in mono at `--text` (`bars 17–24 · 1:11–1:40`, one bar `bar 24 · …`, the whole track
-  `whole track · 2:49` at `--text-75`), `−` `+` (zoom out and in about the window's centre) and
+  `whole track · 2:49` at `--text-75`), `−` `+` (zoom out and in about the window's centre, or the playhead while Follow holds it in view) and
   `‹ ›`, disabled at the track's ends, which move the window
   by half its width (whole bars, at least one); *Go to the playhead · bar 31* (`.outline` small)
   sits left of the readout while the playhead is outside the window. Left of the buttons, a **Grid**
@@ -122,15 +122,17 @@ open, no fold, drawn when the track has samples.
   about the bar under the pointer (a pinch arrives as the same, and its small turns add up to steps);
   **Shift + wheel** pans; a plain wheel scrolls the page. **`+` / `-`** zoom about the playhead when
   it is in the window, else the centre (not with Ctrl, not in a text field). **Right-click** over the
-  rows opens a small menu (the grid's four choices, the current one checked, *Zoom in*, *Zoom out*)
-  that closes on an outside click or Esc. A wheel gesture ends 150 ms after the last turn, and only
-  then does the rows' server render, the loop and the remembered zoom follow, as after a handle drag.
+  rows opens a small menu (the grid's four choices and Follow's three, the current one of each
+  checked, *Zoom in*, *Zoom out*, *Set the loop to the view*) that closes on an outside click or
+  Esc. A wheel gesture ends 150 ms after the last turn, and only then do the rows' server render and
+  the remembered zoom follow, as after a handle drag. Zooming never moves the loop.
 - **The beat grid**: 1px lines behind every lane and the tempo line, at the ruler's own bars and beats
   (the time ticks without a warp), nothing without a beat position. The lines are the finest of 1/16,
   1/8, beat and bar that stay at least 64 (Wide), 36 (Medium) or 20 (Narrow) px apart on an 832px
   plot, and every 2nd, 4th, 8th… bar when even a bar is closer. Bar lines at 16% of `--text`'s ink, beats
   8%, subdivisions 3.5%; they sit under the waveform, flags, marker lines and transient ticks.
-  Drawn by `WarpView.razor` (`GridLines`) and, while a window is dragged or wheeled, by `playback/rows.js`.
+  Drawn by `WarpView.razor` (`GridLines`) and, while a window is dragged, wheeled or scrolls with
+  the playhead, by `playback/rows.js`.
 - **Rows**: **View** (the overview strip, below) · ruler (40px in every state; loop bar, bar ticks,
   clip-start
   notch labelled `clip start` in the bar-number row, which takes the place of any number it would
@@ -147,9 +149,9 @@ open, no fold, drawn when the track has samples.
   …*. The milliseconds are drawn here only, never on the lanes.
 - **The View row and its window** (handoff 22, ADR 0094). The overview strip is drawn at all times:
   34px on `--surface`, radius 3, the whole file's shape at `--text` 30%. Its **window** is the
-  view, the loop and what playback follows: a box from its start to its end, fill `--text` 7% (12%
-  hovered, 17% pressed), a 1px `--text` 50% line top and bottom (3px at full strength while loop is
-  on), `--bg` 66% outside it. Each **handle** is a 6px `--text` 70% bar centered on an edge, the
+  view and nothing else: a box from its start to its end, fill `--text` 7% (12% hovered, 17%
+  pressed), a 1px `--text` 50% line top and bottom, `--bg` 66% outside it. The loop, when there is
+  one, is a 3px bar along the strip's top over its range, `--text` 50%, full strength while it is on. Each **handle** is a 6px `--text` 70% bar centered on an edge, the
   strip's full height, with a 1×10px `--ink` notch; its target is 16px (8 either side), narrower on
   the inside of a window under 32px. Edges snap to bar lines plus the file's first and last sample
   (whole seconds without a warp) and the window is at least one bar (4 seconds without a warp).
@@ -162,11 +164,35 @@ open, no fold, drawn when the track has samples.
   `role="slider"` (←/→ a bar, Shift four, Home/End), the body a button (←/→, Enter as a
   double-click); a keyboard move is reported on key-up. The gutter says `View` and a hint for the state
   (`pull a handle to zoom · double-click for 8 bars`, `drag to move · double-click for the whole
-  track`, `looping these 8 bars`).
-- **Following**: while playing, with loop off, the playhead reaching the window's right edge moves
-  the window on by half its width (whole bars, rounded up, at least one), and at the track's end the
-  window stops against it. Following yields while looping, during a drag, and after the person moved
-  the window away from the playhead, until the playhead is next inside it.
+  track`).
+- **The loop's braces**: the loop is a range of its own, apart from the window. It is drawn over the
+  ruler as a bar in the gap above it between two bracket ends, with a 1px line down the lanes at
+  each end; dim while the loop is off, full strength while it is on, and an end outside the view is
+  left open. Turning **Loop** on with no braces sets them to the view; *Set the loop to the view*
+  in the right-click menu does it at any time. Either end drags (the `[` and `]` cursors) and so
+  does the bar between; they snap to the beat grid's lines as drawn, to bars with the grid off, and
+  to whole seconds without a warp, and an end stops one step short of the other. Ends are
+  `role="slider"` and the bar a button: ←/→ move a step, Shift four. Zooming and panning leave the
+  braces where they are. The audio loops between them to the sample (`loopStart`/`loopEnd`), with
+  the click in time; a playhead outside a loop being turned on or moved goes to its start, and a
+  seek past its end plays on. The braces last as long as the page stays on the track.
+- **Following** (`Follow`: `Off · Page · Scroll`, in the header beside Grid and in the right-click
+  menu, kept in the browser, Page at first). **Page**: the playhead reaching the window's right
+  edge moves the window on a whole window, on bars; after a jump (the loop's) the window starts at
+  the playhead's bar. **Scroll**: while playing, the view moves under a playhead held at its
+  centre; near the track's start and end, and until it first reaches the centre, the playhead
+  moves instead. The window is off the bars while it scrolls and goes to the nearest bars when
+  playback stops; at the loop's jump the view centres on the loop's start. Both yield on the whole
+  track and during a drag. **Moving the view by hand turns Follow off** and the control shows Off:
+  dragging the window or a handle, ‹ ›, Shift + wheel, the window's arrow keys. Zooming does not (it
+  zooms about the playhead), nor does a seek. The choice kept in the browser is the last one
+  picked, which *Go to the playhead* and a reload bring back.
+- **Scroll draws a strip, not frames**: the ruler, tempo line, *Off the grid*, lanes, key strip and
+  axis are drawn once in the browser across six views (from half a view before the window) and slid
+  with a `transform` on whole device pixels, the braces with them; the strip is drawn again only
+  when the window runs off it or its width changes. The rows' fixed labels stay put above it. The
+  overview's window and the readout follow ten times a second. The server is told the window when
+  the scroll ends, and its rows replace the strip.
 - **The playhead** is 1px `--text` from the ruler's top to the key strip's foot with a 10×7 head on the
   ruler, above the bands; not drawn in the plot while outside the window. The overview strip and the
   player's slim waveform always show it.
@@ -174,7 +200,7 @@ open, no fold, drawn when the track has samples.
   `--text` 30% line shows where), exactly where the pointer is without a warp; playing carries on,
   paused stays paused. A click on a lane seeks there, selects the lane and plays its stem. A key band
   is a `<button>` titled `chorus · E minor · ▶ from 1:53` and seeks to its start. The drawer's *Play
-  window* seeks to the window's start and plays (with loop on it sets the view to the window). A seek
+  window* seeks to the window's start and plays (with loop on it sets the braces to the window). A seek
   outside the window brings the window, at its width, to the bar that holds the spot. The overview
   strip, tempo line, *Off the grid*, the time axis and the gutters never seek. A lane's gutter wears a
   14px speaker glyph at its top right while its stem is what plays.
@@ -289,7 +315,7 @@ open list); **the position** in mono 14 (`bar 19.3.1` at 600 · `1:20.80` at 75%
 400px listbox of 34px rows, the file playing wearing the chosen-row style); **Metronome** (a pill toggle
 that is the chosen pill when on), **Sound** (`Classic ▾`, a three-row list of Classic · Click ·
 Wood that plays the pick once, accent then beat) and the metronome level (60px, labelled `Metronome`); **Loop**
-after a divider (disabled on the whole track with `needs a zoomed view` beside it); **volume** (a
+after a divider (titled `Loop between the braces over the ruler`); **volume** (a
 speaker, `Main` and a 72px range). Ranges are native with `accent-color: var(--text)`; volume, metronome level and sound are kept in
 the browser, the metronome and loop start off on every load. Playing is `--text`, never teal; teal appears
 only while a file loads or downloads, red only for a load that failed.
@@ -298,7 +324,7 @@ only while a file loads or downloads, red only for a load that failed.
   part after the playhead under a 62% `--raised` scrim, and a 1px `--text` playhead. A click seeks to
   the spot and a held press scrubs, sounding nothing until release.
 - **Pinned**: the site nav is one slim row (`--pin-nav`, 38px) that stays at the top of Track details, and the strip is
-  `position: sticky` directly beneath it (both clear the safe-area inset). Stuck, the hints beside Loop and the
+  `position: sticky` directly beneath it (both clear the safe-area inset). Stuck, the
   slider names go so the controls stay on one row. It loses its top border and radius, gains
   `0 10px 28px rgba(0,0,0,.55)` and leads with a 36px cover and the track's name (13.5/600, 190px at
   most) closed by a `--line` divider. At 56rem the controls wrap once (play, position, picker; then
@@ -593,8 +619,8 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   tells the page when a drag lets go (and on a click, key or double-click), so a drag at the whole
   track, where a redraw is heaviest, never waits on a round trip. During the drag the handles, the
   window's box, the readout, the tag and the playhead move in the browser every frame, and the ruler,
-  lanes and key bands keep the window they had until release. A follow step is reported too (the
-  handoff says it is not).
+  lanes and key bands are drawn in the browser over the server's until its rows arrive. A page turn
+  is reported too (the handoff says it is not); a scroll is reported when it ends.
 - **Track details' Activity is one line a row** (2026-11-12): glyph, time, stage or actor, the result and
   Took, truncating with an ellipsis only when the panel is narrower than that. A row expands only
   when its line cuts the text, and then wraps in place; the time cell's hover title holds the start,
