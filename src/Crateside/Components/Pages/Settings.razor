@@ -258,63 +258,54 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         <section>
             <h3>Live's Collections</h3>
 
-            @foreach (var meaning in Enum.GetValues<BrowserCollection>())
-            {
-                <div class="row">
-                    <div class="name">
-                        <span>@CollectionSettings.Name(meaning)</span>
-                        <span class="gist">@CollectionNote(meaning)</span>
-                    </div>
-                    <div class="control">
-                        <div class="pick">
-                            <button class="pill off" aria-haspopup="listbox" aria-expanded="@(_openCollection == meaning)"
-                                    @onclick="() => _openCollection = _openCollection == meaning ? null : meaning">
-                                @if (_collections.NumberOf(meaning) is { } current)
-                                {
-                                    <span class="swatch c@(current)"></span>
-                                    @CollectionColours[current - 1]
-                                }
-                                else
-                                {
-                                    @:None
-                                }
-                                &#9662;
-                            </button>
-                            @if (_openCollection == meaning)
+            <div class="collections">
+                @foreach (var meaning in Enum.GetValues<BrowserCollection>())
+                {
+                    <span class="meaning">@CollectionSettings.Name(meaning)</span>
+                    <div class="pick" @onkeydown="OnCollectionKeyAsync">
+                        <button @ref="_collectionButtons[meaning]" class="pill off" aria-haspopup="listbox" aria-expanded="@(_openCollection == meaning)"
+                                @onclick="() => _openCollection = _openCollection == meaning ? null : meaning">
+                            @if (_collections.NumberOf(meaning) is { } current)
                             {
-                                <div class="pick-list" role="listbox">
-                                    <button class="pill @(_collections.NumberOf(meaning) is null ? "on plain" : "off")"
-                                            @onclick="() => SetCollection(meaning, null)">None</button>
-                                    @for (var number = CollectionSettings.Lowest; number <= CollectionSettings.Highest; number++)
-                                    {
-                                        var chosen = number;
-                                        var usedBy = Enum.GetValues<BrowserCollection>()
-                                            .Where(other => other != meaning && _collections.NumberOf(other) == chosen)
-                                            .Select(other => (BrowserCollection?)other)
-                                            .FirstOrDefault();
-                                        <button class="pill @(_collections.NumberOf(meaning) == chosen ? "on plain" : "off")"
-                                                disabled="@(usedBy is not null)"
-                                                @onclick="() => SetCollection(meaning, chosen)"><span class="swatch c@(chosen)"></span>@CollectionColours[chosen - 1]@if (usedBy is { } owner) { <span class="gist"> used by @CollectionSettings.Name(owner)</span> }</button>
-                                    }
-                                </div>
+                                <span class="swatch c@(current)"></span>
+                                @CollectionColours[current - 1]
                             }
-                        </div>
+                            else
+                            {
+                                @:None
+                            }
+                            &#9662;
+                        </button>
+                        @if (_openCollection == meaning)
+                        {
+                            <div class="backdrop" @onclick="() => _openCollection = null"></div>
+                            <div class="pick-list" role="listbox">
+                                <button class="pill @(_collections.NumberOf(meaning) is null ? "on plain" : "off")"
+                                        @onclick="() => SetCollection(meaning, null)">None</button>
+                                @for (var number = CollectionSettings.Lowest; number <= CollectionSettings.Highest; number++)
+                                {
+                                    var chosen = number;
+                                    var usedBy = Enum.GetValues<BrowserCollection>()
+                                        .Where(other => other != meaning && _collections.NumberOf(other) == chosen)
+                                        .Select(other => (BrowserCollection?)other)
+                                        .FirstOrDefault();
+                                    <button class="pill @(_collections.NumberOf(meaning) == chosen ? "on plain" : "off")"
+                                            disabled="@(usedBy is not null)"
+                                            @onclick="() => SetCollection(meaning, chosen)"><span class="swatch c@(chosen)"></span>@CollectionColours[chosen - 1]@if (usedBy is { } owner) { <span class="gist"> used by @CollectionSettings.Name(owner)</span> }</button>
+                                }
+                            </div>
+                        }
                     </div>
-                </div>
-            }
-
-            <div class="row">
-                <div class="name">
-                    <span class="gist">
-                        A meaning set to None writes nothing. crateside adds and removes only the
-                        numbers chosen here, so a Collection you set yourself on any other number
-                        stays. Turning a meaning off, or moving it to another number, does not clear
-                        the old number on files already marked; clear it in Live.
-                    </span>
-                </div>
-                <div class="control">
-                </div>
+                    <span class="gist">@CollectionNote(meaning)</span>
+                }
             </div>
+
+            <span class="status note">
+                A meaning set to None writes nothing. crateside adds and removes only the
+                numbers chosen here, so a Collection you set yourself on any other number
+                stays. Turning a meaning off, or moving it to another number, does not clear
+                the old number on files already marked; clear it in Live.
+            </span>
         </section>
 
         <section>
@@ -948,6 +939,16 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
     private CollectionSettings _collections = new();
     private BrowserCollection? _openCollection;
+    private readonly Dictionary<BrowserCollection, ElementReference> _collectionButtons = [];
+
+    private async Task OnCollectionKeyAsync(KeyboardEventArgs key)
+    {
+        if (key is not { Key: "Escape" } || _openCollection is not { } open)
+            return;
+
+        _openCollection = null;
+        await _collectionButtons[open].FocusAsync();
+    }
 
     private static readonly string[] CollectionColours = ["Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Grey"];
 
