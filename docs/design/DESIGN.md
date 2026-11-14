@@ -112,16 +112,19 @@ open, no fold, drawn when the track has samples.
 - **Head line**: `WARP`, then `{n} stems · one warp · {markers} · {mode}`, or `{stem} warped on its
   own` at `--text` (the only loud thing; not colored). No zoom pills (handoff 22). At the right, the
   readout in mono at `--text` (`bars 17–24 · 1:11–1:40`, one bar `bar 24 · …`, the whole track
-  `whole track · 2:49` at `--text-75`), `−` `+` (zoom out and in about the window's centre, or the playhead while Follow holds it in view) and
+  `whole track · 2:49` at `--text-75`), `−` `+` (zoom out and in about the playhead) and
   `‹ ›`, disabled at the track's ends, which move the window
   by half its width (whole bars, at least one); *Go to the playhead · bar 31* (`.outline` small)
   sits left of the readout while the playhead is outside the window. Left of the buttons, a **Grid**
   pick: `Off · Wide · Medium · Narrow` (default Medium; kept in the browser with the player's settings).
 - **Zooming without the handles**: one step is ×1.5 of the window's width, on whole bars, never under
   one bar (a view without a warp, 4 s) nor over the whole track. **Ctrl + wheel** over the view zooms
-  about the bar under the pointer (a pinch arrives as the same, and its small turns add up to steps);
-  **Shift + wheel** pans; a plain wheel scrolls the page. **`+` / `-`** zoom about the playhead when
-  it is in the window, else the centre (not with Ctrl, not in a text field). **Right-click** over the
+  about the bar under the pointer, or about the playhead while Follow holds it in view during
+  playback (a pinch arrives as the same, and its small turns add up to steps); **Shift + wheel**
+  pans; a plain wheel scrolls the page. **`−` `+`, the `+` / `-` keys** (not with Ctrl, not in a
+  text field) **and the menu's zoom items** centre the new window on the playhead, wherever it
+  was, as far as the track's ends allow. In Scroll every zoom leaves the playhead where it is on
+  screen. **Right-click** over the
   rows opens a small menu (the grid's four choices and Follow's three, the current one of each
   checked, *Zoom in*, *Zoom out*, *Set the loop to the view*) that closes on an outside click or
   Esc. A wheel gesture ends 150 ms after the last turn, and only then do the rows' server render and
@@ -150,7 +153,10 @@ open, no fold, drawn when the track has samples.
 - **The View row and its window** (handoff 22, ADR 0094). The overview strip is drawn at all times:
   34px on `--surface`, radius 3, the whole file's shape at `--text` 30%. Its **window** is the
   view and nothing else: a box from its start to its end, fill `--text` 7% (12% hovered, 17%
-  pressed), a 1px `--text` 50% line top and bottom, `--bg` 66% outside it. The loop, when there is
+  pressed), a 1px `--text` 50% line top and bottom, `--bg` 66% outside it. It is never drawn
+  narrower than 28px (`OVERVIEW_MIN_PIXELS`), so the body between the handles can be grabbed: a
+  narrower range gets a 28px box centred on it, kept inside the strip, and a drag still moves the
+  true range. The loop, when there is
   one, is a 3px bar along the strip's top over its range, `--text` 50%, full strength while it is on. Each **handle** is a 6px `--text` 70% bar centered on an edge, the
   strip's full height, with a 1×10px `--ink` notch; its target is 16px (8 either side), narrower on
   the inside of a window under 32px. Edges snap to bar lines plus the file's first and last sample
@@ -190,9 +196,12 @@ open, no fold, drawn when the track has samples.
 - **Scroll draws a strip, not frames**: the ruler, tempo line, *Off the grid*, lanes, key strip and
   axis are drawn once in the browser across six views (from half a view before the window) and slid
   with a `transform` on whole device pixels, the braces with them; the strip is drawn again only
-  when the window runs off it or its width changes. The rows' fixed labels stay put above it. The
-  overview's window and the readout follow ten times a second. The server is told the window when
-  the scroll ends, and its rows replace the strip.
+  when the window runs off it or its width changes. The field cuts the strip off with
+  `overflow-x: clip`, so it never widens the page. The rows' fixed labels stay put above it. The
+  overview's window is painted on the same frame as the playhead and the strip, its place and
+  width in one write (a `transform` on whole device pixels); the readout follows ten times a
+  second. The server is told the window when the scroll ends, zooms included, and its rows
+  replace the strip.
 - **The playhead** is 1px `--text` from the ruler's top to the key strip's foot with a 10×7 head on the
   ruler, above the bands; not drawn in the plot while outside the window. The overview strip and the
   player's slim waveform always show it.
@@ -313,7 +322,9 @@ page; `Play (Space)` / `Pause (Space)`; Space toggles anywhere except a text fie
 open list); **the position** in mono 14 (`bar 19.3.1` at 600 · `1:20.80` at 75% · `/ 2:49` at 40%,
 27ch wide; without a warp `1:20.80 / 2:49`); **the picker** (an `.outline` button 210px wide opening a
 400px listbox of 34px rows, the file playing wearing the chosen-row style); **Metronome** (a pill toggle
-that is the chosen pill when on), **Sound** (`Classic ▾`, a three-row list of Classic · Click ·
+that is the chosen pill when on; while it ticks, its icon gives way to a **beat light**, two 5px
+dots of which the lit one swaps side on every beat and is larger on a bar's first, timed from the
+audio clock each click is scheduled at, less the output's latency), **Sound** (`Classic ▾`, a three-row list of Classic · Click ·
 Wood that plays the pick once, accent then beat) and the metronome level (60px, labelled `Metronome`); **Loop**
 after a divider (titled `Loop between the braces over the ruler`); **volume** (a
 speaker, `Main` and a 72px range). Ranges are native with `accent-color: var(--text)`; volume, metronome level and sound are kept in
