@@ -6,6 +6,7 @@
 
 import { AudioEngine } from "./playback/audio.js";
 import { Loop } from "./playback/loop.js";
+import { Follow } from "./playback/follow.js";
 import { Overview } from "./playback/overview.js";
 import { PlayerStrip } from "./playback/player.js";
 import { Rows } from "./playback/rows.js";
@@ -14,8 +15,8 @@ import { Window } from "./playback/window.js";
 import { makeGrid } from "./playback/grid.js";
 import { SNAP, readSettings } from "./playback/shared.js";
 
-class Playback extends View(Rows(Overview(Loop(Window(PlayerStrip(AudioEngine(class {}))))))) {
-    settings = { volume: 0.8, clickLevel: 0.6, sound: "classic", grid: "medium", ...readSettings() };
+class Playback extends View(Rows(Overview(Follow(Loop(Window(PlayerStrip(AudioEngine(class {})))))))) {
+    settings = { volume: 0.8, clickLevel: 0.6, sound: "classic", grid: "medium", follow: "page", ...readSettings() };
     trackKey = null;
     files = [];
     fileId = null;
@@ -93,7 +94,6 @@ class Playback extends View(Rows(Overview(Loop(Window(PlayerStrip(AudioEngine(cl
         this.failure = null;
         this.loopOn = this.clickOn = false;
         this.loop = null;
-        this.leftBehind = false;
         this.rememberedZoom = null;
         this.window = { start: 0, end: 0 };
     }
@@ -101,6 +101,7 @@ class Playback extends View(Rows(Overview(Loop(Window(PlayerStrip(AudioEngine(cl
     mountView(root, dotnet) {
         this.unmountView();
         this.view = { root, dotnet, abort: new AbortController(), inFlight: false, pending: null };
+        this.following = this.settings.follow === "off" ? "off" : "page";
 
         const { signal } = this.view.abort;
 
@@ -139,6 +140,7 @@ class Playback extends View(Rows(Overview(Loop(Window(PlayerStrip(AudioEngine(cl
         this.observer?.disconnect();
         this.view = null;
         this.drag = null;
+        this.braceDrag = null;
         document.body.classList.remove("pb-locked", "pb-locked-start", "pb-locked-end", "pb-locked-body");
     }
 
@@ -162,7 +164,6 @@ class Playback extends View(Rows(Overview(Loop(Window(PlayerStrip(AudioEngine(cl
                 this.grid = null;
                 this.snapCache = null;
                 this.window = { start: 0, end: 0 };
-                this.leftBehind = false;
             }
 
             this.trackKey = trackKey;
