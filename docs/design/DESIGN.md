@@ -130,7 +130,7 @@ open, no fold, drawn when the track has samples.
   1/8, beat and bar that stay at least 64 (Wide), 36 (Medium) or 20 (Narrow) px apart on an 832px
   plot, and every 2nd, 4th, 8th… bar when even a bar is closer. Bar lines at 16% of `--text`'s ink, beats
   8%, subdivisions 3.5%; they sit under the waveform, flags, marker lines and transient ticks.
-  Drawn by `WarpView.razor` (`GridLines`) and, while a window is dragged or wheeled, by playback.js.
+  Drawn by `WarpView.razor` (`GridLines`) and, while a window is dragged or wheeled, by `playback/rows.js`.
 - **Rows**: **View** (the overview strip, below) · ruler (40px in every state; loop bar, bar ticks,
   clip-start
   notch labelled `clip start` in the bar-number row, which takes the place of any number it would
