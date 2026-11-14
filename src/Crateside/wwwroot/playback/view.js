@@ -74,6 +74,7 @@ export const View = (Base) =>
                 braces: root?.querySelector("[data-braces]"),
                 overviewLoop: root?.querySelector("[data-overview-loop]"),
             });
+            this.judging = Boolean(root?.querySelector(".ruler.dragging"));
         }
 
         layoutField() {
@@ -205,6 +206,19 @@ export const View = (Base) =>
 
             if (target.closest("[data-overview]"))
                 return;
+
+            const keys = target.closest(".key-strip");
+
+            // Under the sliding strip the key's bands are not the server's to click.
+            if (keys && this.strip) {
+                const at = this.plotTime(event, keys);
+                const under = this.live?.keys?.find((key) => at >= key.start && at < key.end);
+
+                if (under)
+                    this.seek(under.start);
+
+                return;
+            }
 
             const band = target.closest(".key-band[data-start]");
 

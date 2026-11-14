@@ -101,7 +101,7 @@ class Playback extends View(Rows(Overview(Follow(Loop(Window(PlayerStrip(AudioEn
     mountView(root, dotnet) {
         this.unmountView();
         this.view = { root, dotnet, abort: new AbortController(), inFlight: false, pending: null };
-        this.following = this.settings.follow === "off" ? "off" : "page";
+        this.following = this.settings.follow;
 
         const { signal } = this.view.abort;
 
@@ -141,6 +141,7 @@ class Playback extends View(Rows(Overview(Follow(Loop(Window(PlayerStrip(AudioEn
         this.view = null;
         this.drag = null;
         this.braceDrag = null;
+        this.scrolling = null;
         document.body.classList.remove("pb-locked", "pb-locked-start", "pb-locked-end", "pb-locked-body");
     }
 
@@ -238,8 +239,8 @@ class Playback extends View(Rows(Overview(Follow(Loop(Window(PlayerStrip(AudioEn
         const at = this.scrubbing ? this.scrubbing.at : this.playing ? this.position() : this.parked;
 
         this.paintPosition(at);
-        this.paintPlayhead(at);
         this.follow(at);
+        this.paintPlayhead(at);
     }
 }
 

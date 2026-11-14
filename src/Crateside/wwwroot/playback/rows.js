@@ -1,9 +1,9 @@
-// The rows, redrawn here while the window is dragged. The warp view tells the whole track's rows once
-// (setLive); a drag draws them from that over the server's own, which are hidden until the rows come back
-// drawn for the final window. The drawing mirrors WarpView.razor (ruler, lanes, tempo and off-grid rows,
-// axis) and KeyLane.razor.
+// The rows, redrawn here while the window is dragged or scrolls with the playhead. The warp view tells the
+// whole track's rows once (setLive); a drag draws them from that over the server's own, which are hidden
+// until the rows come back drawn for the final window. Scroll follow draws a strip several views wide and
+// slides it. The drawing mirrors WarpView.razor (ruler, lanes, tempo and off-grid rows, axis) and KeyLane.razor.
 
-import { GRID_MIN_PIXELS, COLUMNS, PLOT_PIXELS, FLAG_ROOM, xOf, clampX, pct, px, escapeHtml, clock } from "./shared.js";
+import { GRID_MIN_PIXELS, COLUMNS, PLOT_PIXELS, FLAG_ROOM, xOf, clampX, pct, px as plotPx, escapeHtml, clock } from "./shared.js";
 
 export const Rows = (Base) =>
     class extends Base {
@@ -11,6 +11,8 @@ export const Rows = (Base) =>
         liveLayers = null;
         liveShown = null;
         liveTimer = 0;
+        // Scroll follow's strip: the stretch of the track it is drawn for, how many views wide that is, and its sliding box.
+        strip = null;
 
         setLive(live) {
             for (const lane of live.lanes) {
@@ -34,6 +36,8 @@ export const Rows = (Base) =>
             const scopeOf = (element) => [...(element?.attributes ?? [])].find((attribute) => attribute.name.startsWith("b-"))?.name ?? "data-none";
             const own = scopeOf(ruler);
             const layers = [];
+            const { strip } = this;
+            const into = strip?.box ?? field;
             const cover = (target, kind, lane) => {
                 if (!target)
                     return;
@@ -48,14 +52,15 @@ export const Rows = (Base) =>
                     margin: "0",
                     left: `${target.offsetLeft - ruler.offsetLeft}px`,
                     top: `${target.offsetTop - ruler.offsetTop}px`,
-                    width: `${target.offsetWidth}px`,
+                    width: `${target.offsetWidth * (strip?.wide ?? 1)}px`,
                     height: `${target.offsetHeight}px`,
                 });
 
-                for (const kept of target.querySelectorAll(".range, .off-label"))
+                // A row's fixed labels: copied onto a still layer, left showing through over a sliding one.
+                for (const kept of strip ? [] : target.querySelectorAll(".range, .off-label"))
                     layer.append(kept.cloneNode(true));
 
-                field.insertBefore(layer, field.firstChild);
+                into.insertBefore(layer, into.firstChild);
 
                 const entry = { kind, target, layer, lane, scope: kind === "keys" ? scopeOf(target) : own, viewScope: own };
 
@@ -97,13 +102,26 @@ export const Rows = (Base) =>
             }
 
             this.liveLayers = null;
+
+            if (this.strip) {
+                const { field, braces } = this.els;
+
+                this.strip.box.remove();
+                this.strip = null;
+                field?.style.removeProperty("clip-path");
+                braces?.style.removeProperty("transform");
+            }
         }
 
+        // The rows for the window as it stands, over the server's.
         paintLive() {
             const { live } = this;
 
             if (!live || this.duration <= 0)
                 return;
+
+            if (this.strip)
+                this.stopLive();
 
             this.startLive();
 
@@ -116,8 +134,70 @@ export const Rows = (Base) =>
                 return;
 
             this.liveShown = [from, to];
+            this.drawLive({ from, to, wide: 1 });
+        }
 
-            const view = { from, to, zoomed: to - from < live.seconds - 0.001 };
+        // A strip from `from` to `to`, `wide` views across, in a box that slideStrip moves; the field clips it to the plot.
+        paintStrip(from, to, wide) {
+            const { field } = this.els;
+
+            this.stopLive();
+
+            if (!this.live || !field || this.duration <= 0)
+                return;
+
+            const box = document.createElement("div");
+
+            Object.assign(box.style, { position: "absolute", left: "0", top: "0", width: "0", height: "0", willChange: "transform" });
+            field.insertBefore(box, field.firstChild);
+            // Room above for the loop's braces and below for the axis, which hangs under the field.
+            field.style.clipPath = "inset(-12px 0 -40px 0)";
+            this.strip = { from, to, wide, box };
+            this.startLive();
+
+            if (!this.liveLayers) {
+                this.stopLive();
+
+                return;
+            }
+
+            this.drawLive({ from, to, wide });
+            this.paintLoop();
+        }
+
+        // The strip, and the braces drawn on its scale, moved so that `start` is at the plot's left edge, on a whole device pixel.
+        slideStrip(start) {
+            const { strip } = this;
+            const { field, braces } = this.els;
+
+            if (!strip || !field)
+                return;
+
+            const ratio = window.devicePixelRatio || 1;
+            const offset = ((start - strip.from) / (strip.to - strip.from)) * strip.wide * field.offsetWidth;
+            const transform = `translate3d(${-Math.round(offset * ratio) / ratio}px,0,0)`;
+
+            if (strip.transform === transform)
+                return;
+
+            strip.transform = transform;
+            strip.box.style.transform = transform;
+
+            if (braces)
+                braces.style.transform = transform;
+        }
+
+        // What the plot's percentages are of: the window, or the strip while one is drawn.
+        plotSpan() {
+            const { strip } = this;
+
+            return strip ? { from: strip.from, to: strip.to, wide: strip.wide } : { from: this.window.start, to: this.window.end, wide: 1 };
+        }
+
+        drawLive(view) {
+            const { from, to, wide } = view;
+
+            view.zoomed = (to - from) / wide < this.live.seconds - 0.001;
 
             for (const layer of this.liveLayers) {
                 const bands = this.bandsHtml(view, layer, layer.kind === "ruler");
@@ -125,7 +205,7 @@ export const Rows = (Base) =>
                 if (layer.kind === "ruler")
                     layer.layer.innerHTML = this.rulerHtml(view, layer.scope) + bands;
                 else if (layer.kind === "axis")
-                    layer.layer.innerHTML = this.timeTicks(from, to)
+                    layer.layer.innerHTML = this.timeTicks(from, to, wide)
                         .map((at) => `<span ${layer.scope} class="mono" style="left:${pct(xOf(view, at))}%">${clock(Math.round(at))}</span>`)
                         .join("");
                 else if (layer.kind === "keys")
@@ -137,7 +217,7 @@ export const Rows = (Base) =>
                 else
                     this.paintLane(layer, view, bands);
 
-                layer.target.setAttribute("data-covered", "");
+                layer.target.setAttribute("data-covered", this.strip ? "strip" : "");
             }
         }
 
@@ -158,8 +238,10 @@ export const Rows = (Base) =>
                 .join("");
         }
 
-        timeTicks(from, to) {
-            const every = to - from > 120 ? 30 : to - from > 40 ? 10 : 2;
+        // `wide` is how many views the stretch is drawn across: the spacing goes by one view's seconds.
+        timeTicks(from, to, wide = 1) {
+            const shown = (to - from) / wide;
+            const every = shown > 120 ? 30 : shown > 40 ? 10 : 2;
             const ticks = [];
 
             for (let at = Math.ceil(from / every) * every; at <= to; at += every)
@@ -171,14 +253,15 @@ export const Rows = (Base) =>
         // WarpView.razor's ruler: time ticks without a warp, else the grid's bars, the loop and the clip start.
         rulerHtml(view, scope) {
             const { live, grid } = { live: this.live, grid: this.grid };
-            const { from, to } = view;
+            const { from, to, wide } = view;
+            const px = (pixels) => plotPx(pixels) / wide;
             const html = [];
             const clipX = live.clip && xOf(view, live.clip.start) >= 0 && xOf(view, live.clip.start) <= 100 ? xOf(view, live.clip.start) : null;
             const toLeft = clipX !== null && clipX > 100 - px(72);
             const underClip = (at) => clipX !== null && (toLeft ? at > clipX - px(90) && at < clipX - px(7) : at > clipX - px(19) && at < clipX + px(66));
 
             if (live.timeRuler) {
-                for (const at of this.timeTicks(from, to)) {
+                for (const at of this.timeTicks(from, to, wide)) {
                     html.push(`<span ${scope} class="tick numbered" style="left:${pct(xOf(view, at))}%"></span>`);
                     html.push(`<span ${scope} class="mono bar-number" style="left:${pct(xOf(view, at))}%">${clock(Math.round(at))}</span>`);
                 }
@@ -194,14 +277,14 @@ export const Rows = (Base) =>
                     );
                 }
 
-                if (xOf(view, end) >= 0 && xOf(view, end) <= 92)
+                if (xOf(view, end) >= 0 && xOf(view, end) <= 100 - 8 / wide)
                     html.push(`<span ${scope} class="mono loop-word" style="left:calc(${pct(xOf(view, end))}% + 4px)">${on ? "loop" : "loop off"}</span>`);
             }
 
             if (grid && !live.timeRuler) {
                 const first = grid.beatAt(from);
                 const last = grid.beatAt(to);
-                const bars = (last - first) / grid.perBar;
+                const bars = (last - first) / grid.perBar / wide;
                 const [tickEvery, numberEvery] = bars > 48 ? [4, 16] : bars > 14 ? [1, 4] : [1, 1];
 
                 for (let index = grid.indexAt(from); ; index++) {
@@ -240,19 +323,19 @@ export const Rows = (Base) =>
         gridHtml(view, scope) {
             const minPixels = GRID_MIN_PIXELS[this.settings.grid];
             const { live, grid } = this;
-            const { from, to } = view;
+            const { from, to, wide } = view;
             const lines = [];
 
             if (!minPixels || !live)
                 return "";
 
             if (live.timeRuler) {
-                for (const at of this.timeTicks(from, to))
+                for (const at of this.timeTicks(from, to, wide))
                     lines.push([at, "bar"]);
             } else if (grid) {
                 const [first, last] = [grid.beatAt(from), grid.beatAt(to)];
                 const multiple = (beat, unit) => Math.abs(beat / unit - Math.round(beat / unit)) < 1e-4;
-                const step = this.gridStep(from, to, minPixels);
+                const step = this.gridStep(from, to, minPixels, wide);
 
                 for (let n = step ? Math.ceil(first / step - 1e-6) : 0; step && n * step <= last + 1e-6; n++) {
                     const beat = n * step;
@@ -269,10 +352,10 @@ export const Rows = (Base) =>
         }
 
         // The grid's spacing in beats over a view: the finest of 1/16, 1/8, beat and bar that stays `minPixels` apart, else every 2nd, 4th, 8th… bar.
-        gridStep(from, to, minPixels) {
+        gridStep(from, to, minPixels, wide = 1) {
             const { grid } = this;
             const middle = (grid.beatAt(from) + grid.beatAt(to)) / 2;
-            const apart = (step) => ((grid.secondsAt(middle + step) - grid.secondsAt(middle)) / (to - from)) * PLOT_PIXELS;
+            const apart = (step) => ((grid.secondsAt(middle + step) - grid.secondsAt(middle)) / (to - from)) * PLOT_PIXELS * wide;
             const step = [grid.unit / 4, grid.unit / 2, grid.unit, grid.perBar].find((candidate) => apart(candidate) >= minPixels);
 
             if (step)
@@ -301,7 +384,7 @@ export const Rows = (Base) =>
                         return "";
 
                     const classes = `key-band${band.fromWindow ? " from-window" : ""}${band.unbacked ? " unbacked" : ""}${band.pickable ? " pickable" : ""}${band.picked ? " picked" : ""}`;
-                    const label = ((right - left) / 100) * PLOT_PIXELS >= 56 ? `<span ${scope} class="mono key-label">${escapeHtml(band.label)}</span>` : "";
+                    const label = ((right - left) / 100) * PLOT_PIXELS * view.wide >= 56 ? `<span ${scope} class="mono key-label">${escapeHtml(band.label)}</span>` : "";
 
                     return `<button ${scope} type="button" tabindex="-1" class="${classes}" style="left:${pct(left)}%;width:${pct(right - left)}%">${label}</button>`;
                 })
@@ -352,13 +435,15 @@ export const Rows = (Base) =>
         // A lane: each channel's envelope, then its markers, transients, clip start and the bands.
         paintLane(layer, view, bands) {
             const { lane, path, dyn, scope } = layer;
-            const { from, to } = view;
+            const { from, to, wide } = view;
+            const columns = Math.round(COLUMNS * wide);
             const html = [];
 
-            path.setAttribute("d", this.wavePath(lane.peaks, from, to));
+            path.ownerSVGElement.setAttribute("viewBox", `0 0 ${columns} 45`);
+            path.setAttribute("d", this.wavePath(lane.peaks, from, to, columns));
 
             const visible = lane.markers.map((at) => xOf(view, at)).filter((at) => at >= 0 && at <= 100);
-            const flags = visible.every((at, i) => i === 0 || ((at - visible[i - 1]) / 100) * PLOT_PIXELS >= FLAG_ROOM);
+            const flags = visible.every((at, i) => i === 0 || ((at - visible[i - 1]) / 100) * PLOT_PIXELS * wide >= FLAG_ROOM);
 
             for (const at of lane.markers) {
                 const at100 = xOf(view, at);
@@ -398,7 +483,8 @@ export const Rows = (Base) =>
             this.putGrid(layer, view);
         }
 
-        wavePath({ columns, channels, bytes }, from, to) {
+        // `across` columns of the plot, each the loudest of the track's columns it covers.
+        wavePath({ columns, channels, bytes }, from, to, across) {
             const perColumn = this.live.seconds / columns;
             const gap = channels > 1 ? 2 : 0;
             const each = (45 - gap * (channels - 1)) / channels;
@@ -407,12 +493,12 @@ export const Rows = (Base) =>
             for (let channel = 0; channel < channels; channel++) {
                 const center = channel * (each + gap) + each / 2;
                 const base = channel * columns * 2;
-                const upper = new Array(COLUMNS);
-                const lower = new Array(COLUMNS);
+                const upper = new Array(across);
+                const lower = new Array(across);
 
-                for (let x = 0; x < COLUMNS; x++) {
-                    const first = Math.floor((from + ((to - from) * x) / COLUMNS) / perColumn);
-                    const last = Math.max(first, Math.floor((from + ((to - from) * (x + 1)) / COLUMNS) / perColumn) - 1);
+                for (let x = 0; x < across; x++) {
+                    const first = Math.floor((from + ((to - from) * x) / across) / perColumn);
+                    const last = Math.max(first, Math.floor((from + ((to - from) * (x + 1)) / across) / perColumn) - 1);
                     let [low, high] = [0, 0];
 
                     for (let column = Math.max(first, 0); column <= Math.min(last, columns - 1); column++) {
@@ -429,7 +515,7 @@ export const Rows = (Base) =>
                     const min = Math.min(-low / 255, max - 0.02);
 
                     upper[x] = `${x + 0.5},${(center - (max * each) / 2).toFixed(2)}`;
-                    lower[COLUMNS - 1 - x] = `${x + 0.5},${(center - (min * each) / 2).toFixed(2)}`;
+                    lower[across - 1 - x] = `${x + 0.5},${(center - (min * each) / 2).toFixed(2)}`;
                 }
 
                 path.push(`M${upper.join(" ")} ${lower.join(" ")}Z`);

@@ -59,6 +59,8 @@ export const Overview = (Base) =>
             if (!overview || event.button !== 0 || this.duration <= 0 || this.drag)
                 return;
 
+            this.settleScroll();
+
             const region = this.regionAt(event);
             const box = overview.getBoundingClientRect();
             const at = ((event.clientX - box.left) / box.width) * this.duration;

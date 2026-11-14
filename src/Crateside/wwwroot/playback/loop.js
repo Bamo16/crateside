@@ -69,8 +69,8 @@ export const Loop = (Base) =>
             if (!braces)
                 return;
 
-            const { start: from, end: to } = this.window;
-            const x = (at) => ((at - from) / (to - from)) * 100;
+            const { from, to, wide } = this.plotSpan();
+            const x = (at) => ((at - from) / (to - from)) * 100 * wide;
             const visible = shown && loop.end > from && loop.start < to;
 
             braces.hidden = !visible;
@@ -78,7 +78,7 @@ export const Loop = (Base) =>
             if (!visible)
                 return;
 
-            const [left, right] = [clamp(x(loop.start), 0, 100), clamp(x(loop.end), 0, 100)];
+            const [left, right] = [clamp(x(loop.start), 0, 100 * wide), clamp(x(loop.end), 0, 100 * wide)];
             const [startIn, endIn] = [loop.start >= from - SNAP, loop.end <= to + SNAP];
 
             braces.classList.toggle("on", this.loopOn);
