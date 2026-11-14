@@ -331,10 +331,7 @@ export const View = (Base) =>
             if (event.target.closest?.("input:not([type=range]), textarea, select, [contenteditable]"))
                 return;
 
-            const at = this.playing ? this.position() : this.parked;
-            const { start, end } = this.window;
-
             event.preventDefault();
-            this.zoomBy(zoomIn ? 1 / ZOOM_STEP : ZOOM_STEP, at >= start && at <= end ? at : undefined);
+            this.zoomBy(zoomIn ? 1 / ZOOM_STEP : ZOOM_STEP);
         }
     };

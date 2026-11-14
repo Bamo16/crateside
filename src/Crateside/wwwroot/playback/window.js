@@ -1,6 +1,6 @@
 // The view's window: what moves it (zoom, pan), the bars it snaps to, and telling the warp view.
 
-import { SNAP, MIN_WINDOW_SECONDS, ZOOM_STEP, WHEEL_PER_STEP, WHEEL_SETTLE_MS, clamp, PLOT_PIXELS, clock } from "./shared.js";
+import { SNAP, MIN_WINDOW_SECONDS, OVERVIEW_MIN_PIXELS, ZOOM_STEP, WHEEL_PER_STEP, WHEEL_SETTLE_MS, clamp, PLOT_PIXELS, clock } from "./shared.js";
 
 export const Window = (Base) =>
     class extends Base {
@@ -166,18 +166,10 @@ export const Window = (Base) =>
                 return;
 
             const { start, end } = this.window;
-            const [from, to] = [(start / this.duration) * 100, (end / this.duration) * 100];
             const whole = this.isWhole();
-            const set = (selector, style) => {
-                const element = overview.querySelector(selector);
 
-                if (element)
-                    Object.assign(element.style, style);
-            };
-
-            set(".win", { left: `${from}%`, width: `${to - from}%` });
-            set(".dim.a", { left: "0", width: `${whole ? 0 : from}%` });
-            set(".dim.b", { left: `${to}%`, right: "0", display: whole ? "none" : "block" });
+            this.overviewBox = null;
+            this.paintOverviewWindow();
 
             for (const [selector, label, now] of [
                 [".hd.l", "Window start", start],
@@ -211,6 +203,41 @@ export const Window = (Base) =>
                 hint.textContent = whole ? "pull a handle to zoom · double-click for 8 bars" : "drag to move · double-click for the whole track";
 
             this.paintLoop();
+        }
+
+        // The overview's window and the dimming either side of it, placed in one write on whole device pixels, so both
+        // edges move on the same frame. It is never drawn narrower than OVERVIEW_MIN_PIXELS: a tighter window keeps
+        // that size, centred on the range it stands for.
+        paintOverviewWindow() {
+            const overview = this.els.overview;
+
+            if (!overview || this.duration <= 0)
+                return;
+
+            const across = overview.clientWidth;
+            const { start, end } = this.window;
+            const shown = this.overviewBox;
+
+            if (shown && shown.across === across && shown.start === start && shown.end === end)
+                return;
+
+            const ratio = window.devicePixelRatio || 1;
+            const snap = (pixels) => Math.round(pixels * ratio) / ratio;
+            const [from, to] = [(start / this.duration) * across, (end / this.duration) * across];
+            const width = snap(Math.max(to - from, Math.min(OVERVIEW_MIN_PIXELS, across)));
+            const left = snap(clamp((from + to - width) / 2, 0, across - width));
+            const whole = this.isWhole();
+            const set = (selector, style) => {
+                const element = overview.querySelector(selector);
+
+                if (element)
+                    Object.assign(element.style, style);
+            };
+
+            this.overviewBox = { across, start, end, left, width };
+            set(".win", { left: "0", width: `${width}px`, transform: `translate3d(${left}px,0,0)` });
+            set(".dim.a", { left: "0", width: `${whole ? 0 : left}px` });
+            set(".dim.b", { left: `${left + width}px`, right: "0", display: whole ? "none" : "block" });
         }
 
         followIntoViewForce(at) {
@@ -253,20 +280,39 @@ export const Window = (Base) =>
             return { start: snaps[first], end: snaps[end] };
         }
 
-        // − and +: one step about `anchor`, else about the playhead while the view follows it, else about the window's centre.
-        zoomBy(factor, anchor) {
+        // − and +, their keys and the menu's items: one step about the playhead, which goes to the window's centre
+        // unless the track's start or end is in the way.
+        zoomBy(factor) {
             if (this.duration <= 0)
                 return;
 
-            const { start, end } = this.window;
+            if (this.canScroll())
+                return this.zoomScrolling(this.window, factor, true);
+
             const at = this.playing ? this.position() : this.parked;
-            const held = this.following !== "off" && at >= start && at <= end ? at : (start + end) / 2;
-            const next = this.zoomed({ start, end }, factor, anchor ?? held, true);
+            const half = (this.window.end - this.window.start) / 2;
+            const next = this.zoomed({ start: at - half, end: at + half }, factor, at, true);
 
             this.setWindow(next.start, next.end, { final: true });
         }
 
-        // Ctrl + wheel zooms about the bar under the pointer, shift + wheel pans; a plain wheel scrolls the page.
+        // While the view scrolls a zoom changes only the window's width, by whole bars from `base`: the playhead keeps
+        // its place on screen, and the scroll draws its strip again on the next frame.
+        zoomScrolling(base, factor, force) {
+            const at = this.position();
+            const { start, end } = this.window;
+            const place = clamp((at - start) / (end - start), 0, 1);
+            const half = (base.end - base.start) / 2;
+            const next = this.zoomed({ start: at - half, end: at + half }, factor, at, force);
+            const width = next.end - next.start;
+            const from = clamp(at - place * width, 0, this.duration - width);
+
+            this.window = { start: from, end: from + width };
+            this.rememberIfZoomed();
+        }
+
+        // Ctrl + wheel zooms about the bar under the pointer, or about the playhead while the view follows it in
+        // playback; shift + wheel pans; a plain wheel scrolls the page.
         // A gesture is the turns until the wheel rests: the window is worked out from where it began, so a pinch's
         // small deltas add up to steps instead of each rounding away, and the rows are told once, when it ends.
         onWheel(event) {
@@ -275,7 +321,6 @@ export const Window = (Base) =>
 
             event.preventDefault();
             this.hideViewMenu();
-            this.settleScroll();
 
             const ruler = this.view.root.querySelector(".grid > .ruler");
             const mode = event.ctrlKey ? "zoom" : "pan";
@@ -285,10 +330,19 @@ export const Window = (Base) =>
             if (this.wheel && this.wheel.mode !== mode)
                 this.endWheel();
 
+            const scrolls = this.wheel?.scrolls ?? (mode === "zoom" && this.canScroll());
+
+            if (!scrolls)
+                this.settleScroll();
+
+            const at = this.playing ? this.position() : this.parked;
+            const followed = this.playing && this.following !== "off" && at >= this.window.start && at <= this.window.end;
+
             this.wheel ??= {
                 mode,
+                scrolls,
                 base: { ...this.window },
-                anchor: ruler ? this.plotTime(event, ruler) : (this.window.start + this.window.end) / 2,
+                anchor: followed ? at : ruler ? this.plotTime(event, ruler) : (this.window.start + this.window.end) / 2,
                 total: 0,
                 timer: 0,
             };
@@ -301,6 +355,13 @@ export const Window = (Base) =>
 
             const { base } = gesture;
             let next;
+
+            if (gesture.scrolls) {
+                if (this.canScroll())
+                    this.zoomScrolling(base, ZOOM_STEP ** (gesture.total / WHEEL_PER_STEP), false);
+
+                return;
+            }
 
             if (mode === "zoom") {
                 next = this.zoomed(base, ZOOM_STEP ** (gesture.total / WHEEL_PER_STEP), gesture.anchor, false);
@@ -329,6 +390,10 @@ export const Window = (Base) =>
 
             clearTimeout(gesture.timer);
             this.wheel = null;
+
+            // A zoom while scrolling moved nothing the server draws; it hears when the scroll ends.
+            if (gesture.scrolls)
+                return;
 
             const { start, end } = this.window;
 

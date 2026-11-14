@@ -11,6 +11,8 @@ export const WHEEL_SETTLE_MS = 150;
 // The beat grid: the fewest pixels between two lines at each density (GridLines.MinPixels in C#).
 export const GRID_MIN_PIXELS = { wide: 64, medium: 36, narrow: 20 };
 export const DRAG_THRESHOLD = 3;
+// The overview's window is never drawn narrower than this: two handles with a body to grab between them.
+export const OVERVIEW_MIN_PIXELS = 28;
 export const SETTINGS_KEY = "crateside.playback";
 // The music is leveled to this loudness (LUFS) and never raised, so the click, at full scale on top,
 // stays clear of a loud master; a file with no reading is lowered by the fallback instead.
