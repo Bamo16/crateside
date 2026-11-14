@@ -92,7 +92,7 @@ export const Follow = (Base) =>
                 this.following === "scroll" &&
                 this.playing &&
                 !this.drag &&
-                !this.wheel &&
+                (!this.wheel || this.wheel.scrolls) &&
                 !this.judging &&
                 Boolean(this.live && this.view && this.els.field) &&
                 this.duration > 0 &&
@@ -143,7 +143,10 @@ export const Follow = (Base) =>
             if (!this.scrolling)
                 return;
 
-            const { bars } = this.scrolling;
+            const { span } = this.scrolling;
+            const { start, end } = this.window;
+            // A zoom the scroll never drew leaves its bar count behind.
+            const bars = Math.abs(end - start - span) > 1e-6 ? Math.max(1, this.indexOf(end) - this.indexOf(start)) : this.scrolling.bars;
             const snaps = this.snaps();
             const first = clamp(this.indexOf(this.window.start), 0, snaps.length - 1 - bars);
 

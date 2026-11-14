@@ -11,7 +11,11 @@ export const Overview = (Base) =>
             const strip = this.els.overview;
             const box = strip.getBoundingClientRect();
             const x = event.clientX - box.left;
-            const [xs, xe] = [(this.window.start / this.duration) * box.width, (this.window.end / this.duration) * box.width];
+            // The window as drawn, which is wider than its range when zoomed in tightly.
+            const drawn = this.overviewBox;
+            const [xs, xe] = drawn
+                ? [drawn.left, drawn.left + drawn.width]
+                : [(this.window.start / this.duration) * box.width, (this.window.end / this.duration) * box.width];
             const inner = Math.min(8, Math.max(0, (xe - xs) / 4));
             const body = xe - xs;
 

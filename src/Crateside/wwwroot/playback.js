@@ -240,6 +240,7 @@ class Playback extends View(Rows(Overview(Follow(Loop(Window(PlayerStrip(AudioEn
 
         this.paintPosition(at);
         this.follow(at);
+        this.paintOverviewWindow();
         this.paintPlayhead(at);
     }
 }
