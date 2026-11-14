@@ -14,11 +14,21 @@ import { View } from "./playback/view.js";
 import { Window } from "./playback/window.js";
 import { makeGrid } from "./playback/grid.js";
 import { SNAP, readSettings } from "./playback/shared.js";
+import { SOUNDS } from "./playback/sounds.js";
 
 class Playback extends View(Rows(Overview(Follow(Loop(Window(PlayerStrip(AudioEngine(class {})))))))) {
     settings = { volume: 0.8, clickLevel: 0.6, sound: "classic", grid: "medium", follow: "page", ...readSettings() };
     trackKey = null;
     files = [];
+
+    constructor() {
+        super();
+
+        // A sound kept by the browser that is no longer offered.
+        if (!(this.settings.sound in SOUNDS))
+            this.settings.sound = "classic";
+    }
+
     fileId = null;
     duration = 0;
     grid = null;
