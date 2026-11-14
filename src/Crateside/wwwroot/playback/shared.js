@@ -1,7 +1,10 @@
 // What the playback modules share: constants, the plot's arithmetic, formatting and the remembered settings.
 
 export const SNAP = 1e-6;
-export const LOOKAHEAD = 0.15;
+// How far ahead of the audio clock the clicks are queued. The queue is filled from a timer on the main
+// thread, and a beat the timer reaches only after its time has passed is never heard, so this has to
+// outlast the longest stall a redraw or a throttled tab can cause.
+export const LOOKAHEAD = 1.2;
 export const START_DELAY = 0.06;
 export const MIN_WINDOW_SECONDS = 4;
 // One zoom step, and how far the wheel must turn (in pixels of deltaY) for one.

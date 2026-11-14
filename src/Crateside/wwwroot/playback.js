@@ -196,6 +196,10 @@ class Playback extends View(Rows(Overview(Follow(Loop(Window(PlayerStrip(AudioEn
     setGrid(source, duration, laneFiles) {
         const first = this.duration === 0;
 
+        const told = JSON.stringify(source);
+        const regridded = told !== this.gridTold;
+
+        this.gridTold = told;
         this.grid = makeGrid(source);
         this.duration = duration || this.buffer?.duration || 0;
         this.snapCache = null;
@@ -209,6 +213,11 @@ class Playback extends View(Rows(Overview(Follow(Loop(Window(PlayerStrip(AudioEn
         }
 
         this.laneFiles = laneFiles ?? [];
+
+        // Clicks queued on the grid as it was would sound on the old beats.
+        if (regridded && this.clickOn)
+            this.requeueClicks();
+
         this.syncPlayer();
         this.viewRendered();
     }

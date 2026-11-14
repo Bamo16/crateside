@@ -19,6 +19,8 @@ export const AudioEngine = (Base) =>
         session = null;
         scheduler = null;
         clickOn = false;
+        // What every queued click plays into: its gain is the metronome's level, and cutting it loose silences the queue.
+        clickBus = null;
 
         ensureContext() {
             if (this.ctx && this.ctx.state !== "closed")
@@ -272,6 +274,8 @@ export const AudioEngine = (Base) =>
             }
 
             this.session?.clicks.clear();
+            this.clickBus?.disconnect();
+            this.clickBus = null;
 
             if (this.session)
                 this.session.beats.length = 0;
@@ -426,7 +430,13 @@ export const AudioEngine = (Base) =>
         }
 
         sound(when, accent) {
-            const node = SOUNDS[this.settings.sound](this.ctx, this.master, when, accent, this.settings.clickLevel);
+            if (!this.clickBus) {
+                this.clickBus = this.ctx.createGain();
+                this.clickBus.gain.value = this.settings.clickLevel;
+                this.clickBus.connect(this.master);
+            }
+
+            const node = SOUNDS[this.settings.sound](this.ctx, this.clickBus, when, accent, 1);
 
             this.session?.clicks.add(node);
             node.onended = () => this.session?.clicks.delete(node);
@@ -451,8 +461,9 @@ export const AudioEngine = (Base) =>
             ];
         }
 
-        // The music keeps playing: only the clicks already scheduled are dropped, and the next ones use the new voice.
-        swapClickVoice() {
+        // The music keeps playing: only the clicks already queued are dropped, and the queue is filled again
+        // from now, with the voice and the grid as they are.
+        requeueClicks() {
             if (!this.session)
                 return;
 
@@ -464,8 +475,10 @@ export const AudioEngine = (Base) =>
         setClick(on) {
             this.clickOn = on && Boolean(this.grid);
 
-            if (this.clickOn && this.playing && this.session)
-                this.session.scheduledTo = this.ctx.currentTime;
+            if (this.clickOn)
+                this.requeueClicks();
+            else
+                this.stopClicks();
 
             this.syncPlayer();
         }

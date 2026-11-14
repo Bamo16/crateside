@@ -183,7 +183,7 @@ export const PlayerStrip = (Base) =>
                 this.syncPlayer();
 
                 if (this.playing)
-                    this.swapClickVoice();
+                    this.requeueClicks();
                 else
                     this.preview();
 
@@ -202,6 +202,7 @@ export const PlayerStrip = (Base) =>
                 this.master && (this.master.gain.value = this.settings.volume);
             } else if (input.matches("[data-click-level]")) {
                 this.settings.clickLevel = Number(input.value);
+                this.clickBus && (this.clickBus.gain.value = this.settings.clickLevel);
             } else {
                 return;
             }
