@@ -119,6 +119,64 @@ export const Overview = (Base) =>
                 overview.addEventListener(name, handler);
         }
 
+        // The tempo line and the lanes, right of their labels: where a middle press pans the view.
+        overPanRows(event) {
+            if (event.button !== 1 || !this.view)
+                return false;
+
+            const root = this.view.root;
+            const lanes = root.querySelectorAll(".grid > .lane > .plot");
+            const top = root.querySelector(".grid > .tempo-line") ?? lanes[0];
+            const field = this.els.field?.getBoundingClientRect();
+
+            if (!top || !field)
+                return false;
+
+            const bottom = (lanes[lanes.length - 1] ?? top).getBoundingClientRect().bottom;
+
+            return (
+                event.clientX >= field.left && event.clientX <= field.right && event.clientY >= top.getBoundingClientRect().top && event.clientY <= bottom
+            );
+        }
+
+        // A middle press held and dragged pans: the rows follow the pointer, as far as the track's ends.
+        onPanDown(event) {
+            const overview = this.view?.root.querySelector("[data-overview]");
+
+            if (!overview || this.duration <= 0 || this.drag || this.isWhole() || !this.overPanRows(event))
+                return;
+
+            this.settleScroll();
+            this.hideViewMenu();
+            overview.setPointerCapture(event.pointerId);
+
+            this.drag = {
+                overview,
+                region: "pan",
+                pointerId: event.pointerId,
+                x0: event.clientX,
+                moved: false,
+                before: { ...this.window },
+                across: this.els.field.getBoundingClientRect().width,
+                width: this.indexOf(this.window.end) - this.indexOf(this.window.start),
+            };
+
+            document.body.classList.add("pb-locked", "pb-locked-body");
+
+            const listeners = {
+                pointermove: (e) => this.onOverviewMove(e),
+                pointerup: (e) => this.finishDrag(e),
+                pointercancel: () => this.cancelDrag(),
+                lostpointercapture: (e) => this.drag && this.finishDrag(e),
+            };
+
+            this.drag.listeners = listeners;
+            this.startLive();
+
+            for (const [name, handler] of Object.entries(listeners))
+                overview.addEventListener(name, handler);
+        }
+
         onOverviewMove(event) {
             if (!this.drag)
                 return;
@@ -142,7 +200,14 @@ export const Overview = (Base) =>
             let [start, end] = [this.indexOf(this.window.start), this.indexOf(this.window.end)];
             let tag;
 
-            if (region === "body") {
+            if (region === "pan") {
+                const { before, x0, across } = this.drag;
+                const wanted = this.indexOf(clamp(before.start - ((event.clientX - x0) / across) * (before.end - before.start), 0, this.duration));
+
+                start = clamp(wanted, 0, snaps.length - 1 - width);
+                end = start + width;
+                tag = { at: (snaps[start] + snaps[end]) / 2, text: this.barsLabel(snaps[start], snaps[end]) };
+            } else if (region === "body") {
                 const wanted = this.indexOf(clamp(at - grab, 0, this.duration));
 
                 start = clamp(wanted, 0, snaps.length - 1 - width);

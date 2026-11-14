@@ -120,6 +120,9 @@ class Playback extends View(Rows(Overview(Follow(Loop(Window(PlayerStrip(AudioEn
         root.addEventListener("pointerleave", () => this.hideSeekLine(), { signal });
         root.addEventListener("pointerdown", (event) => this.onOverviewDown(event), { signal });
         root.addEventListener("pointerdown", (event) => this.onBraceDown(event), { signal });
+        root.addEventListener("pointerdown", (event) => this.onPanDown(event), { signal });
+        // The browser starts its own scrolling from a middle press on mousedown, which only that event can refuse.
+        root.addEventListener("mousedown", (event) => this.overPanRows(event) && event.preventDefault(), { signal });
         root.addEventListener("keydown", (event) => this.onBraceKey(event), { signal });
         root.addEventListener("dblclick", (event) => this.onOverviewDouble(event), { signal });
         root.addEventListener("keydown", (event) => this.onOverviewKey(event), { signal });
