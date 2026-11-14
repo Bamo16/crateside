@@ -526,10 +526,15 @@ link restores it, and the tab reopens where it was left until a restart.
 
 ## Settings
 
-Handoff 10. Every setting is one **row**: name (14px/500) and a one-line gist (`--text-60`) in a
-260px left column; the control, then a one-line status (12.5px, `--text-60`) on the right; a
-`--line` rule under it. Sections are 16px/600 `h3`s, 40px apart, in a 944px body.
+Handoff 10, relaid on 2026-11-13. Every setting is one **row**: the name (14px/500) and the control
+share the first line, the control's status (12.5px, `--text-60`) under it, and the gist
+(`--text-60`) runs under both across the row's full width. No rule between rows: rows sit 18px apart.
+Sections are 16px/600 `h3`s. The body is capped at 112rem and, from 1200px wide, flows its sections
+into two columns (a section never splits); below that it is one column.
 
+- **Live's Collections is a compact table**: meaning, colour dropdown, gist, one line each, with the
+  None footnote under it. The dropdown's options do not wrap, and it closes on an outside click or
+  Escape, as Share does.
 - **Choices are `.pill` chips**, the chosen one `.pill.on.plain`. A click saves at once.
 - **One sentence per status.** Arithmetic is a number ("288 of 10,000 quota units a day").
 - **Folders are read-only**: name, the path in mono, and Open (or *Show in folder* for a file).
