@@ -1,0 +1,17 @@
+@using Crateside.Core.Warps
+
+<span class="menu ctx" data-warp-menu role="menu" aria-label="View" hidden>
+    <span class="ctx-head">Grid</span>
+    @foreach (var choice in Enum.GetValues<GridDensity>())
+    {
+        <button class="item" role="menuitemradio" data-grid="@choice.ToString().ToLowerInvariant()" aria-checked="@(choice == Grid ? "true" : "false")">@choice</button>
+    }
+    <span class="ctx-rule"></span>
+    <button class="item" role="menuitem" data-zoom-in>Zoom in <span class="ctx-key">+</span></button>
+    <button class="item" role="menuitem" data-zoom-out>Zoom out <span class="ctx-key">−</span></button>
+</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public GridDensity Grid { get; set; }
+}

@@ -27,92 +27,6 @@
     color: var(--text);
 }
 
-.zoom {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-left: auto;
-}
-
-.nav {
-    padding: 2px 8px;
-}
-
-.gridpick {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin: 0 10px;
-    font-size: 11.5px;
-}
-
-.gridpick button[aria-pressed="true"] {
-    background: rgba(236, 231, 220, 0.16);
-    color: var(--text);
-}
-
-/* The right-click menu over the view: the grid's choices and the zoom steps. */
-.menu.ctx {
-    position: fixed;
-    z-index: 20;
-    display: flex;
-    flex-direction: column;
-    min-width: 170px;
-    padding: 4px;
-    background: var(--raised);
-    border: 1px solid rgba(236, 231, 220, 0.16);
-    border-radius: 8px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
-}
-
-.menu.ctx[hidden] {
-    display: none;
-}
-
-.ctx-head {
-    padding: 4px 10px 2px;
-    font-size: 11px;
-    color: var(--text-40);
-}
-
-.ctx-rule {
-    height: 1px;
-    margin: 4px 6px;
-    background: rgba(236, 231, 220, 0.12);
-}
-
-.ctx .item {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px 6px 24px;
-    font: inherit;
-    font-size: 13px;
-    color: var(--text);
-    text-align: left;
-    background: transparent;
-    border: 0;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-.ctx .item:hover {
-    background: rgba(255, 255, 255, 0.07);
-}
-
-.ctx .item[aria-checked="true"]::before {
-    content: "✓";
-    position: absolute;
-    left: 8px;
-}
-
-.ctx-key {
-    margin-left: auto;
-    padding-left: 16px;
-    color: var(--text-40);
-}
-
 /* The beat grid: first in its row, so the waveform, markers and transient ticks draw over it. */
 .gl-box {
     position: absolute;
@@ -307,9 +221,7 @@
 
 .ghost[hidden],
 .tip[hidden],
-.speaker[hidden],
-.seekline[hidden],
-[data-goto][hidden] {
+.speaker[hidden] {
     display: none;
 }
 
@@ -335,51 +247,6 @@
     border-radius: 3px;
     transform: translateX(-50%);
     pointer-events: none;
-}
-
-.readout {
-    font-size: 11.5px;
-    color: var(--text);
-}
-
-.readout.whole {
-    color: var(--text-75);
-}
-
-/* Seeking and the playhead: one overlay over the plot column, from the ruler's top to the key strip's foot. */
-.field {
-    position: absolute;
-    z-index: 3;
-    pointer-events: none;
-}
-
-.playhead {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    margin-left: -0.5px;
-    background: var(--text);
-}
-
-.playhead::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -4.5px;
-    border-top: 7px solid var(--text);
-    border-right: 5px solid transparent;
-    border-left: 5px solid transparent;
-}
-
-.playhead[hidden] {
-    display: none;
-}
-
-.seekline {
-    position: absolute;
-    width: 1px;
-    background: var(--text-30);
 }
 
 .speaker {
