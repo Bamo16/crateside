@@ -108,7 +108,7 @@ export const Rows = (Base) =>
 
                 this.strip.box.remove();
                 this.strip = null;
-                field?.style.removeProperty("clip-path");
+                field?.style.removeProperty("overflow-x");
                 braces?.style.removeProperty("transform");
             }
         }
@@ -137,7 +137,7 @@ export const Rows = (Base) =>
             this.drawLive({ from, to, wide: 1 });
         }
 
-        // A strip from `from` to `to`, `wide` views across, in a box that slideStrip moves; the field clips it to the plot.
+        // A strip from `from` to `to`, `wide` views across, in a box that slideStrip moves; the field cuts it off at the plot's sides.
         paintStrip(from, to, wide) {
             const { field } = this.els;
 
@@ -150,8 +150,8 @@ export const Rows = (Base) =>
 
             Object.assign(box.style, { position: "absolute", left: "0", top: "0", width: "0", height: "0", willChange: "transform" });
             field.insertBefore(box, field.firstChild);
-            // Room above for the loop's braces and below for the axis, which hangs under the field.
-            field.style.clipPath = "inset(-12px 0 -40px 0)";
+            // Cut off at the plot's sides only: the loop's braces sit above the field and the axis hangs under it.
+            field.style.overflowX = "clip";
             this.strip = { from, to, wide, box };
             this.startLive();
 
