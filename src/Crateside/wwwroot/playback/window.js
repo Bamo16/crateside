@@ -330,6 +330,10 @@ export const Window = (Base) =>
             if (this.wheel && this.wheel.mode !== mode)
                 this.endWheel();
 
+            // A pan is the view moved by hand, however little of it there was.
+            if (mode === "pan")
+                this.releaseFollow();
+
             const scrolls = this.wheel?.scrolls ?? (mode === "zoom" && this.canScroll());
 
             if (!scrolls)
@@ -374,12 +378,8 @@ export const Window = (Base) =>
                 next = { start: snaps[at], end: snaps[at + span] };
             }
 
-            if (next.start !== this.window.start || next.end !== this.window.end) {
-                if (mode === "pan")
-                    this.releaseFollow();
-
+            if (next.start !== this.window.start || next.end !== this.window.end)
                 this.setWindow(next.start, next.end);
-            }
         }
 
         endWheel() {
