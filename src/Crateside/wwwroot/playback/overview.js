@@ -233,10 +233,7 @@ export const Overview = (Base) =>
                 return;
             }
 
-            // From press to release there was no follow; a window that left the playhead behind stays put.
-            const at = this.playing ? this.position() : this.parked;
-
-            this.leftBehind = at < this.window.start || at > this.window.end;
+            this.releaseFollow();
             this.setWindow(this.window.start, this.window.end, { final: true });
             this.pushWindow();
             this.settleLive();
@@ -313,10 +310,7 @@ export const Overview = (Base) =>
                 return;
 
             this.keyMoved = false;
-
-            const at = this.playing ? this.position() : this.parked;
-
-            this.leftBehind = at < this.window.start || at > this.window.end;
+            this.releaseFollow();
             this.setWindow(this.window.start, this.window.end, { final: true });
             this.pushWindow();
         }

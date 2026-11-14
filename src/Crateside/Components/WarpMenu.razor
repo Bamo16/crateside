@@ -7,6 +7,10 @@
         <button class="item" role="menuitemradio" data-grid="@choice.ToString().ToLowerInvariant()" aria-checked="@(choice == Grid ? "true" : "false")">@choice</button>
     }
     <span class="ctx-rule"></span>
+    <span class="ctx-head">Follow</span>
+    <button class="item" role="menuitemradio" data-follow="off">Off</button>
+    <button class="item" role="menuitemradio" data-follow="page">Page</button>
+    <span class="ctx-rule"></span>
     <button class="item" role="menuitem" data-zoom-in>Zoom in <span class="ctx-key">+</span></button>
     <button class="item" role="menuitem" data-zoom-out>Zoom out <span class="ctx-key">−</span></button>
     <span class="ctx-rule"></span>

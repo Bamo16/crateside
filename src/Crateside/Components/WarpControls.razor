@@ -10,6 +10,11 @@
             <button class="outline small" data-grid="@choice.ToString().ToLowerInvariant()" aria-pressed="@(choice == Grid ? "true" : "false")">@choice</button>
         }
     </span>
+    <span class="gridpick" role="group" aria-label="Follow the playhead">
+        <span class="faint">Follow</span>
+        <button class="outline small" data-follow="off" title="The view stays where it is put">Off</button>
+        <button class="outline small" data-follow="page" title="The view moves on a whole window when the playhead reaches its right edge">Page</button>
+    </span>
     <button class="outline mono nav" data-zoom-out title="Zoom out (Ctrl + wheel)" aria-label="Zoom out">−</button>
     <button class="outline mono nav" data-zoom-in title="Zoom in (Ctrl + wheel)" aria-label="Zoom in">+</button>
     <button class="outline mono nav" data-earlier title="Earlier" aria-label="Earlier">‹</button>

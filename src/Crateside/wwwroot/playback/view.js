@@ -10,6 +10,7 @@ export const View = (Base) =>
             this.findViewElements();
             this.layoutField();
             this.paintWindow();
+            this.paintFollow();
             this.paintLanes();
             this.copyShape();
         }
@@ -41,9 +42,6 @@ export const View = (Base) =>
                         goto.textContent = label;
                 }
             }
-
-            if (inside)
-                this.leftBehind = false;
         }
 
         paintPlayWindow(at) {
@@ -190,8 +188,11 @@ export const View = (Base) =>
             if (target.closest("[data-brace]"))
                 return;
 
+            if (target.closest("[data-follow]"))
+                return this.setFollow(target.closest("[data-follow]").dataset.follow);
+
             if (target.closest("[data-goto]")) {
-                this.leftBehind = false;
+                this.resumeFollow();
                 this.followIntoViewForce(this.playing ? this.position() : this.parked);
 
                 return;

@@ -1,4 +1,4 @@
-// The view's window: what moves it (zoom, pan, follow), the bars it snaps to, and telling the warp view.
+// The view's window: what moves it (zoom, pan), the bars it snaps to, and telling the warp view.
 
 import { SNAP, MIN_WINDOW_SECONDS, ZOOM_STEP, WHEEL_PER_STEP, WHEEL_SETTLE_MS, clamp, PLOT_PIXELS, clock } from "./shared.js";
 
@@ -6,7 +6,6 @@ export const Window = (Base) =>
     class extends Base {
         window = { start: 0, end: 0 };
         rememberedZoom = null;
-        leftBehind = false;
         wheel = null;
 
         // A seek to a spot outside the window brings the window, at its width, to start on that bar.
@@ -15,8 +14,6 @@ export const Window = (Base) =>
 
             if (!this.view || (at >= start && at < end) || this.isWhole())
                 return;
-
-            this.leftBehind = false;
 
             const snaps = this.snaps();
             const width = this.indexOf(end) - this.indexOf(start);
@@ -162,25 +159,6 @@ export const Window = (Base) =>
             return first === last ? `${first}` : `${first}–${last}`;
         }
 
-        follow(at) {
-            const { start, end } = this.window;
-
-            if (!this.playing || this.loopOn || this.drag || this.leftBehind || this.isWhole() || at < end)
-                return;
-
-            // The playhead reached the right edge while following: the window moves on by half its width.
-            const snaps = this.snaps();
-            const first = this.indexOf(start);
-            const last = this.indexOf(end);
-            const half = Math.max(1, Math.ceil((last - first) / 2));
-            const next = Math.min(first + half, snaps.length - 1 - (last - first));
-
-            if (next === first)
-                return;
-
-            this.setWindow(snaps[next], snaps[next + (last - first)]);
-        }
-
         paintWindow() {
             const overview = this.els.overview;
 
@@ -275,15 +253,16 @@ export const Window = (Base) =>
             return { start: snaps[first], end: snaps[end] };
         }
 
-        // − and +: one step about the window's centre, or about `anchor`.
+        // − and +: one step about `anchor`, else about the playhead while the view follows it, else about the window's centre.
         zoomBy(factor, anchor) {
             if (this.duration <= 0)
                 return;
 
             const { start, end } = this.window;
-            const next = this.zoomed({ start, end }, factor, anchor ?? (start + end) / 2, true);
+            const at = this.playing ? this.position() : this.parked;
+            const held = this.following !== "off" && at >= start && at <= end ? at : (start + end) / 2;
+            const next = this.zoomed({ start, end }, factor, anchor ?? held, true);
 
-            this.leftBehind = true;
             this.setWindow(next.start, next.end, { final: true });
         }
 
@@ -334,7 +313,9 @@ export const Window = (Base) =>
             }
 
             if (next.start !== this.window.start || next.end !== this.window.end) {
-                this.leftBehind = true;
+                if (mode === "pan")
+                    this.releaseFollow();
+
                 this.setWindow(next.start, next.end);
             }
         }
@@ -368,7 +349,7 @@ export const Window = (Base) =>
             const half = Math.max(1, Math.ceil((last - first) / 2));
             const next = clamp(first + direction * half, 0, snaps.length - 1 - (last - first));
 
-            this.leftBehind = true;
+            this.releaseFollow();
             this.setWindow(snaps[next], snaps[next + (last - first)], { final: true });
         }
 
@@ -377,7 +358,6 @@ export const Window = (Base) =>
 
             if (!this.isWhole()) {
                 this.rememberedZoom = { ...this.window };
-                this.leftBehind = false;
                 this.setWindow(0, this.duration, { final: true });
 
                 return;
@@ -393,7 +373,6 @@ export const Window = (Base) =>
                 next = { start: snaps[first], end: snaps[first + width] };
             }
 
-            this.leftBehind = false;
             this.setWindow(next.start, next.end, { final: true });
         }
     };
