@@ -34,3 +34,106 @@
     width: 1px;
     background: var(--text-30);
 }
+
+/* The loop's braces: a thin bar just over the ruler with a mark at each end, and a line from each end down through the lanes. */
+.braces {
+    position: absolute;
+    top: -11px;
+    bottom: 0;
+    border-right: 1px solid var(--text-30);
+    border-left: 1px solid var(--text-30);
+    color: var(--text-35);
+}
+
+.braces.on {
+    border-color: var(--text-50);
+    color: var(--text-75);
+}
+
+.braces[hidden] {
+    display: none;
+}
+
+/* An end outside the view has no mark and no line. */
+.braces.open-left,
+.braces.on.open-left {
+    border-left-color: transparent;
+}
+
+.braces.open-right,
+.braces.on.open-right {
+    border-right-color: transparent;
+}
+
+.braces.open-left .brace-end.start,
+.braces.open-right .brace-end.end {
+    display: none;
+}
+
+.brace-bar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 9px;
+    pointer-events: auto;
+    cursor: grab;
+}
+
+.brace-bar::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    right: 0;
+    left: 0;
+    height: 2px;
+    background: currentColor;
+}
+
+.brace-end {
+    position: absolute;
+    top: 0;
+    width: 9px;
+    height: 9px;
+    pointer-events: auto;
+}
+
+.brace-end::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border: 2px solid currentColor;
+}
+
+.brace-end.start {
+    left: -5px;
+    cursor: url("/cursors/bracket-start.svg") 10 12, ew-resize;
+}
+
+.brace-end.start::before {
+    left: 4px;
+    border-right: 0;
+}
+
+.brace-end.end {
+    right: -5px;
+    cursor: url("/cursors/bracket-end.svg") 14 12, ew-resize;
+}
+
+.brace-end.end::before {
+    right: 4px;
+    border-left: 0;
+}
+
+.brace-bar:hover,
+.brace-end:hover {
+    color: var(--text);
+}
+
+.brace-bar:focus-visible,
+.brace-end:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 1px;
+}

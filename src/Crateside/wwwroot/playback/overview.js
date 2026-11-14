@@ -79,7 +79,6 @@ export const Overview = (Base) =>
                 x0: event.clientX,
                 moved: false,
                 before: { ...this.window },
-                loop: this.loopOn ? { ...this.window } : null,
                 grab: region === "start" ? at - this.window.start : region === "end" ? at - this.window.end : at - this.window.start,
                 width: this.indexOf(this.window.end) - this.indexOf(this.window.start),
             };
@@ -217,7 +216,6 @@ export const Overview = (Base) =>
                 tip.hidden = true;
 
             this.drag = null;
-            this.paintGhost();
 
             return drag;
         }

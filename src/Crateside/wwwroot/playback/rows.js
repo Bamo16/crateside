@@ -251,15 +251,8 @@ export const Rows = (Base) =>
                     lines.push([at, "bar"]);
             } else if (grid) {
                 const [first, last] = [grid.beatAt(from), grid.beatAt(to)];
-                const middle = (first + last) / 2;
-                const apart = (step) => ((grid.secondsAt(middle + step) - grid.secondsAt(middle)) / (to - from)) * PLOT_PIXELS;
                 const multiple = (beat, unit) => Math.abs(beat / unit - Math.round(beat / unit)) < 1e-4;
-                let step = [grid.unit / 4, grid.unit / 2, grid.unit, grid.perBar].find((candidate) => apart(candidate) >= minPixels);
-
-                for (let bars = 2; !step && bars <= 1024; bars *= 2) {
-                    if (apart(grid.perBar * bars) >= minPixels)
-                        step = grid.perBar * bars;
-                }
+                const step = this.gridStep(from, to, minPixels);
 
                 for (let n = step ? Math.ceil(first / step - 1e-6) : 0; step && n * step <= last + 1e-6; n++) {
                     const beat = n * step;
@@ -273,6 +266,24 @@ export const Rows = (Base) =>
                 return "";
 
             return `<div ${scope} class="gl-box" aria-hidden="true">${lines.map(([at, kind]) => `<span ${scope} class="gl ${kind}" style="left:${pct(xOf(view, at))}%"></span>`).join("")}</div>`;
+        }
+
+        // The grid's spacing in beats over a view: the finest of 1/16, 1/8, beat and bar that stays `minPixels` apart, else every 2nd, 4th, 8th… bar.
+        gridStep(from, to, minPixels) {
+            const { grid } = this;
+            const middle = (grid.beatAt(from) + grid.beatAt(to)) / 2;
+            const apart = (step) => ((grid.secondsAt(middle + step) - grid.secondsAt(middle)) / (to - from)) * PLOT_PIXELS;
+            const step = [grid.unit / 4, grid.unit / 2, grid.unit, grid.perBar].find((candidate) => apart(candidate) >= minPixels);
+
+            if (step)
+                return step;
+
+            for (let bars = 2; bars <= 1024; bars *= 2) {
+                if (apart(grid.perBar * bars) >= minPixels)
+                    return grid.perBar * bars;
+            }
+
+            return null;
         }
 
         // The grid goes first in its row, behind everything else drawn there.

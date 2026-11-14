@@ -67,8 +67,7 @@
     max-width: 190px;
 }
 
-/* Pinned under the nav the strip has to stay one row on a wide window, so the hint beside Loop and the slider names go. */
-.player.stuck [data-loop-note],
+/* Pinned under the nav the strip has to stay one row on a wide window, so the slider names go. */
 .player.stuck .slider-name {
     display: none;
 }

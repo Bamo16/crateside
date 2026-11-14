@@ -73,6 +73,8 @@ export const View = (Base) =>
                 earlier: root?.querySelector("[data-earlier]"),
                 later: root?.querySelector("[data-later]"),
                 hint: root?.querySelector("[data-view-hint]"),
+                braces: root?.querySelector("[data-braces]"),
+                overviewLoop: root?.querySelector("[data-overview-loop]"),
             });
         }
 
@@ -113,6 +115,9 @@ export const View = (Base) =>
         onViewMove(event) {
             if (this.drag)
                 return this.onOverviewMove(event);
+
+            if (this.braceDrag)
+                return;
 
             const target = event.target;
 
@@ -179,6 +184,12 @@ export const View = (Base) =>
             if (target.closest("[data-later]"))
                 return this.pan(1);
 
+            if (target.closest("[data-loop-view]"))
+                return this.loopTheView();
+
+            if (target.closest("[data-brace]"))
+                return;
+
             if (target.closest("[data-goto]")) {
                 this.leftBehind = false;
                 this.followIntoViewForce(this.playing ? this.position() : this.parked);
@@ -236,18 +247,17 @@ export const View = (Base) =>
             if (button.dataset.on === "1")
                 return this.pause();
 
-            if (this.loopOn || this.window.start > start || this.window.end <= start) {
-                // The window to loop is the bars the reading covers, outward to whole bars.
-                const first = this.floorIndex(start);
-                const last = Math.max(first + 1, this.snaps().findIndex((point) => point >= end - 1e-6));
+            if (this.loopOn) {
+                // The loop is the bars the reading covers, outward to whole bars.
                 const snaps = this.snaps();
+                const first = this.floorIndex(start);
+                const last = Math.max(first + 1, snaps.findIndex((point) => point >= end - 1e-6));
 
-                if (this.loopOn)
-                    this.setWindow(snaps[first], snaps[last < 0 ? snaps.length - 1 : last], { final: true });
-                else
-                    this.followIntoView(start);
+                this.loop = { start: snaps[first], end: snaps[last < 0 ? snaps.length - 1 : last] };
+                this.paintLoop();
             }
 
+            this.followIntoView(start);
             this.parked = start;
 
             if (this.playing)
