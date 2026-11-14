@@ -4,7 +4,6 @@ import { SNAP, MIN_WINDOW_SECONDS, ZOOM_STEP, WHEEL_PER_STEP, WHEEL_SETTLE_MS, c
 
 export const Window = (Base) =>
     class extends Base {
-        loopOn = false;
         window = { start: 0, end: 0 };
         rememberedZoom = null;
         leftBehind = false;
@@ -30,50 +29,13 @@ export const Window = (Base) =>
             return this.window.start <= SNAP && this.window.end >= this.duration - 0.001;
         }
 
-        setLoop(on) {
-            if (on && this.isWhole())
-                on = false;
-
-            this.loopOn = on;
-
-            if (on) {
-                const at = this.playing ? this.position() : this.parked;
-
-                // Switched on with the playhead outside the window: playback moves to its start at once.
-                if (at < this.window.start || at >= this.window.end) {
-                    this.parked = this.window.start;
-                    this.leftBehind = false;
-                }
-            }
-
-            this.restart();
-            this.syncPlayer();
-            this.paintWindow();
-        }
-
         // Everything that moves the window goes through here; the warp view is told, coalesced.
         setWindow(start, end, { final = false, silent = false } = {}) {
             const moved = start !== this.window.start || end !== this.window.end;
 
             this.window = { start, end };
 
-            if (final && this.loopOn) {
-                if (this.isWhole()) {
-                    this.loopOn = false;
-                    this.syncPlayer();
-                }
-
-                const at = this.playing ? this.position() : this.parked;
-
-                if (this.loopOn && (at < start || at >= end))
-                    this.parked = start;
-
-                this.restart();
-            }
-
-            if (!this.loopOn || final)
-                this.rememberIfZoomed();
-
+            this.rememberIfZoomed();
             this.paintWindow();
             this.paintPlayhead();
 
@@ -238,7 +200,6 @@ export const Window = (Base) =>
             set(".win", { left: `${from}%`, width: `${to - from}%` });
             set(".dim.a", { left: "0", width: `${whole ? 0 : from}%` });
             set(".dim.b", { left: `${to}%`, right: "0", display: whole ? "none" : "block" });
-            overview.querySelector(".win")?.classList.toggle("loop", this.loopOn);
 
             for (const [selector, label, now] of [
                 [".hd.l", "Window start", start],
@@ -269,30 +230,9 @@ export const Window = (Base) =>
                 later.disabled = end >= this.duration - 0.001;
 
             if (hint)
-                hint.textContent = this.loopOn
-                    ? `looping these ${this.grid ? "bars" : "seconds"}`
-                    : whole
-                      ? "pull a handle to zoom · double-click for 8 bars"
-                      : "drag to move · double-click for the whole track";
+                hint.textContent = whole ? "pull a handle to zoom · double-click for 8 bars" : "drag to move · double-click for the whole track";
 
-            this.paintGhost();
-        }
-
-        paintGhost() {
-            const ghost = this.els.overview?.querySelector(".ghost");
-
-            if (!ghost)
-                return;
-
-            const old = this.drag?.loop;
-            const show = Boolean(old) && this.drag?.moved;
-
-            ghost.hidden = !show;
-
-            if (show) {
-                ghost.style.left = `${(old.start / this.duration) * 100}%`;
-                ghost.style.width = `${((old.end - old.start) / this.duration) * 100}%`;
-            }
+            this.paintLoop();
         }
 
         followIntoViewForce(at) {

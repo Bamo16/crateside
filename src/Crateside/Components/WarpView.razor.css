@@ -138,10 +138,6 @@
     border-color: var(--text);
 }
 
-.win.loop {
-    border-top: 3px solid var(--text);
-}
-
 .win:focus-visible,
 .hd:focus-visible {
     outline: 2px solid var(--text);
@@ -210,16 +206,20 @@
     cursor: grab;
 }
 
-.ghost {
+/* Where the loop's braces stand on the whole track. */
+.ov-loop {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    border: 1px dashed var(--text-50);
-    border-radius: 2px;
+    top: -1px;
+    height: 3px;
+    background: var(--text-50);
     pointer-events: none;
 }
 
-.ghost[hidden],
+.ov-loop.on {
+    background: var(--text);
+}
+
+.ov-loop[hidden],
 .tip[hidden],
 .speaker[hidden] {
     display: none;

@@ -205,10 +205,11 @@ export const AudioEngine = (Base) =>
             this.music.gain.value = 10 ** (this.musicDb / 20);
             source.connect(this.music);
 
-            if (this.loopOn && this.window.end > this.window.start) {
+            // Started past the loop's end, it plays on to the end of the file.
+            if (this.loopOn && this.loop && start < this.loop.end - 0.001) {
                 source.loop = true;
-                source.loopStart = this.window.start;
-                source.loopEnd = Math.min(this.window.end, this.buffer.duration);
+                source.loopStart = this.loop.start;
+                source.loopEnd = Math.min(this.loop.end, this.buffer.duration);
             }
 
             const when = this.ctx.currentTime + START_DELAY;

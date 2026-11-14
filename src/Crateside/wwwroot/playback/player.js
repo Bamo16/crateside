@@ -76,13 +76,10 @@ export const PlayerStrip = (Base) =>
             set("[data-click-level]", (input) => (input.value = String(this.settings.clickLevel)));
             set("[data-volume]", (input) => (input.value = String(this.settings.volume)));
             set("[data-loop]", (button) => {
-                const whole = this.isWhole();
-
-                button.disabled = !hasFiles || whole;
+                button.disabled = !hasFiles;
                 button.setAttribute("aria-pressed", String(this.loopOn));
                 button.classList.toggle("on", this.loopOn);
             });
-            set("[data-loop-note]", (element) => (element.hidden = !hasFiles || !this.isWhole()));
             set("[data-click-menu]", (menu) => {
                 for (const item of menu.querySelectorAll("[data-sound]"))
                     item.classList.toggle("on", item.dataset.sound === this.settings.sound);

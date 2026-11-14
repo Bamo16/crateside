@@ -5,6 +5,7 @@
 // Each concern is a class in ./playback/ that this one is built from; they share its state through `this`.
 
 import { AudioEngine } from "./playback/audio.js";
+import { Loop } from "./playback/loop.js";
 import { Overview } from "./playback/overview.js";
 import { PlayerStrip } from "./playback/player.js";
 import { Rows } from "./playback/rows.js";
@@ -13,7 +14,7 @@ import { Window } from "./playback/window.js";
 import { makeGrid } from "./playback/grid.js";
 import { SNAP, readSettings } from "./playback/shared.js";
 
-class Playback extends View(Rows(Overview(Window(PlayerStrip(AudioEngine(class {})))))) {
+class Playback extends View(Rows(Overview(Loop(Window(PlayerStrip(AudioEngine(class {}))))))) {
     settings = { volume: 0.8, clickLevel: 0.6, sound: "classic", grid: "medium", ...readSettings() };
     trackKey = null;
     files = [];
@@ -91,6 +92,7 @@ class Playback extends View(Rows(Overview(Window(PlayerStrip(AudioEngine(class {
         this.parked = 0;
         this.failure = null;
         this.loopOn = this.clickOn = false;
+        this.loop = null;
         this.leftBehind = false;
         this.rememberedZoom = null;
         this.window = { start: 0, end: 0 };
@@ -106,6 +108,8 @@ class Playback extends View(Rows(Overview(Window(PlayerStrip(AudioEngine(class {
         root.addEventListener("pointermove", (event) => this.onViewMove(event), { signal });
         root.addEventListener("pointerleave", () => this.hideSeekLine(), { signal });
         root.addEventListener("pointerdown", (event) => this.onOverviewDown(event), { signal });
+        root.addEventListener("pointerdown", (event) => this.onBraceDown(event), { signal });
+        root.addEventListener("keydown", (event) => this.onBraceKey(event), { signal });
         root.addEventListener("dblclick", (event) => this.onOverviewDouble(event), { signal });
         root.addEventListener("keydown", (event) => this.onOverviewKey(event), { signal });
         root.addEventListener("keyup", (event) => this.onOverviewKeyUp(event), { signal });
@@ -148,6 +152,7 @@ class Playback extends View(Rows(Overview(Window(PlayerStrip(AudioEngine(class {
             this.parked = 0;
             this.failure = null;
             this.loopOn = false;
+            this.loop = null;
             this.rememberedZoom = null;
             this.fileId = null;
 
@@ -185,6 +190,11 @@ class Playback extends View(Rows(Overview(Window(PlayerStrip(AudioEngine(class {
 
         if (first || this.window.end <= 0 || this.window.end > this.duration + SNAP)
             this.window = { start: 0, end: this.duration };
+
+        if (this.loop && this.loop.end > this.duration + SNAP) {
+            this.loop = null;
+            this.loopOn = false;
+        }
 
         this.laneFiles = laneFiles ?? [];
         this.syncPlayer();
