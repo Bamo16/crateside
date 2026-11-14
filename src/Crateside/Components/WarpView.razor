@@ -45,6 +45,15 @@
                 <span class="zoom">
                     <button class="outline small" data-goto hidden></button>
                     <span class="mono readout" data-readout></span>
+                    <span class="gridpick" role="group" aria-label="Beat grid" title="The beat grid behind the waveforms">
+                        <span class="faint">Grid</span>
+                        @foreach (var choice in Enum.GetValues<GridDensity>())
+                        {
+                            <button class="outline small" data-grid="@choice.ToString().ToLowerInvariant()" aria-pressed="@(choice == _gridDensity ? "true" : "false")">@choice</button>
+                        }
+                    </span>
+                    <button class="outline mono nav" data-zoom-out title="Zoom out (Ctrl + wheel)" aria-label="Zoom out">−</button>
+                    <button class="outline mono nav" data-zoom-in title="Zoom in (Ctrl + wheel)" aria-label="Zoom in">+</button>
                     <button class="outline mono nav" data-earlier title="Earlier" aria-label="Earlier">‹</button>
                     <button class="outline mono nav" data-later title="Later" aria-label="Later">›</button>
                 </span>
@@ -194,7 +203,7 @@
                     <span class="mono tip" hidden></span>
                 </div>
 
-                @{ var bands = Bands(group); var clipWord = ClipWord(group, from, to); }
+                @{ var bands = Bands(group); var clipWord = ClipWord(group, from, to); var gridLines = GridLinesFor(group, from, to); }
                 <span class="gutter faint ruler-gutter">
                     <span>@(group.Lender is null ? "Time" : "Bar")</span>
                     @if (_form is not null)
@@ -272,6 +281,7 @@
                         }
                     </span>
                     <div class="tempo-line" title="@("marker".ToQuantity(group.SharedMarkers.Count)) · @Headline?.Note">
+                        @GridBox(gridLines, from, to)
                         <svg viewBox="0 0 @Columns 40" preserveAspectRatio="none">
                             <line class="dashed" x1="0" x2="@Columns" y1="@P(Y(figure, low, high))" y2="@P(Y(figure, low, high))" />
                             <path d="@TempoPath(group, from, to, low, high)" />
@@ -370,6 +380,7 @@
                             <span class="sub">@(Working(stem) ? $"writing {wording.Name(group.Lender!.Path)}'s warp" : wording.Sub(stem))</span>
                         </span>
                         <div class="plot">
+                            @GridBox(gridLines, from, to)
                             @if (stem.Sidecar is null)
                             {
                                 <div class="empty @(stem.Owner is WarpOwner.WaitingForLive ? "waiting" : null)">
@@ -542,12 +553,53 @@
                     </div>
                 </div>
             }
+
+            <span class="menu ctx" data-warp-menu role="menu" aria-label="View" hidden>
+                <span class="ctx-head">Grid</span>
+                @foreach (var choice in Enum.GetValues<GridDensity>())
+                {
+                    <button class="item" role="menuitemradio" data-grid="@choice.ToString().ToLowerInvariant()" aria-checked="@(choice == _gridDensity ? "true" : "false")">@choice</button>
+                }
+                <span class="ctx-rule"></span>
+                <button class="item" role="menuitem" data-zoom-in>Zoom in <span class="ctx-key">+</span></button>
+                <button class="item" role="menuitem" data-zoom-out>Zoom out <span class="ctx-key">−</span></button>
+            </span>
         }
     </section>
 }
 
 @code {
     private const int Columns = 832;
+
+    private GridDensity _gridDensity = GridDensity.Medium;
+
+    /// <summary>The grid's density, as the browser remembers it; told when the view mounts and when the person picks one.</summary>
+    [JSInvokable]
+    public void SetGridDensity(string density)
+    {
+        if (Enum.TryParse<GridDensity>(density, ignoreCase: true, out var parsed) && parsed != _gridDensity)
+        {
+            _gridDensity = parsed;
+            StateHasChanged();
+        }
+    }
+
+    // The lines behind a row, as the ruler's own ticks: time ticks when there is no warp, else the density's pick of bars and beats.
+    private IReadOnlyList<(double At, GridStrength Strength)> GridLinesFor(WarpGroup group, double from, double to) =>
+        (_gridDensity, group.Lender) switch
+        {
+            (GridDensity.Off, _) => [],
+            (_, null) => [.. TimeTicks(from, to).Select(at => (at, GridStrength.Bar))],
+            _ => GridLines.Between(group, from, to, _gridDensity),
+        };
+
+    private RenderFragment GridBox(IReadOnlyList<(double At, GridStrength Strength)> lines, double from, double to) =>
+        @<div class="gl-box" aria-hidden="true">
+            @foreach (var (at, strength) in lines)
+            {
+                <span class="gl @strength.ToString().ToLowerInvariant()" style="left: @P(X(at, from, to))%"></span>
+            }
+        </div>;
 
     /// <summary>The pixels a plot is at the page's width cap, for deciding whether flags have room.</summary>
     private const double PlotPixels = 832;

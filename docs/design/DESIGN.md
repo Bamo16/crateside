@@ -112,9 +112,25 @@ open, no fold, drawn when the track has samples.
 - **Head line**: `WARP`, then `{n} stems · one warp · {markers} · {mode}`, or `{stem} warped on its
   own` at `--text` (the only loud thing; not colored). No zoom pills (handoff 22). At the right, the
   readout in mono at `--text` (`bars 17–24 · 1:11–1:40`, one bar `bar 24 · …`, the whole track
-  `whole track · 2:49` at `--text-75`) and `‹ ›`, disabled at the track's ends, which move the window
+  `whole track · 2:49` at `--text-75`), `−` `+` (zoom out and in about the window's centre) and
+  `‹ ›`, disabled at the track's ends, which move the window
   by half its width (whole bars, at least one); *Go to the playhead · bar 31* (`.outline` small)
-  sits left of the readout while the playhead is outside the window.
+  sits left of the readout while the playhead is outside the window. Left of the buttons, a **Grid**
+  pick: `Off · Wide · Medium · Narrow` (default Medium; kept in the browser with the player's settings).
+- **Zooming without the handles**: one step is ×1.5 of the window's width, on whole bars, never under
+  one bar (a view without a warp, 4 s) nor over the whole track. **Ctrl + wheel** over the view zooms
+  about the bar under the pointer (a pinch arrives as the same, and its small turns add up to steps);
+  **Shift + wheel** pans; a plain wheel scrolls the page. **`+` / `-`** zoom about the playhead when
+  it is in the window, else the centre (not with Ctrl, not in a text field). **Right-click** over the
+  rows opens a small menu (the grid's four choices, the current one checked, *Zoom in*, *Zoom out*)
+  that closes on an outside click or Esc. A wheel gesture ends 150 ms after the last turn, and only
+  then does the rows' server render, the loop and the remembered zoom follow, as after a handle drag.
+- **The beat grid**: 1px lines behind every lane and the tempo line, at the ruler's own bars and beats
+  (the time ticks without a warp), nothing without a beat position. The lines are the finest of 1/16,
+  1/8, beat and bar that stay at least 64 (Wide), 36 (Medium) or 20 (Narrow) px apart on an 832px
+  plot, and every 2nd, 4th, 8th… bar when even a bar is closer. Bar lines at 16% of `--text`'s ink, beats
+  8%, subdivisions 3.5%; they sit under the waveform, flags, marker lines and transient ticks.
+  Drawn by `WarpView.razor` (`GridLines`) and, while a window is dragged or wheeled, by playback.js.
 - **Rows**: **View** (the overview strip, below) · ruler (40px in every state; loop bar, bar ticks,
   clip-start
   notch labelled `clip start` in the bar-number row, which takes the place of any number it would

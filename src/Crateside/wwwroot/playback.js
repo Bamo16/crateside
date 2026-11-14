@@ -7,6 +7,12 @@ const SNAP = 1e-6;
 const LOOKAHEAD = 0.15;
 const START_DELAY = 0.06;
 const MIN_WINDOW_SECONDS = 4;
+// One zoom step, and how far the wheel must turn (in pixels of deltaY) for one.
+const ZOOM_STEP = 1.5;
+const WHEEL_PER_STEP = 100;
+const WHEEL_SETTLE_MS = 150;
+// The beat grid: the fewest pixels between two lines at each density (GridLines.MinPixels in C#).
+const GRID_MIN_PIXELS = { wide: 64, medium: 36, narrow: 20 };
 const DRAG_THRESHOLD = 3;
 const SETTINGS_KEY = "crateside.playback";
 // The music is leveled to this loudness (LUFS) and never raised, so the click, at full scale on top,
@@ -195,7 +201,7 @@ function noise(ctx, out, when, hertz, length, loudness, level, q = 1.2) {
 // ---- the engine -----------------------------------------------------------------------------
 
 class Playback {
-    settings = { volume: 0.8, clickLevel: 0.6, sound: "classic", ...readSettings() };
+    settings = { volume: 0.8, clickLevel: 0.6, sound: "classic", grid: "medium", ...readSettings() };
 
     trackKey = null;
     files = [];
@@ -228,6 +234,7 @@ class Playback {
     liveLayers = null;
     liveShown = null;
     liveTimer = 0;
+    wheel = null;
 
     player = null;
     view = null;
@@ -320,6 +327,15 @@ class Playback {
         root.addEventListener("dblclick", (event) => this.onOverviewDouble(event), { signal });
         root.addEventListener("keydown", (event) => this.onOverviewKey(event), { signal });
         root.addEventListener("keyup", (event) => this.onOverviewKeyUp(event), { signal });
+        // Not passive: ctrl + wheel is ours, and the browser's page zoom must not also fire.
+        root.addEventListener("wheel", (event) => this.onWheel(event), { signal, passive: false });
+        root.addEventListener("contextmenu", (event) => this.onViewMenu(event), { signal });
+        document.addEventListener("click", () => this.hideViewMenu(), { signal });
+        document.addEventListener("keydown", (event) => this.onZoomKey(event), { signal });
+
+        // The server draws the grid, and cannot read what the browser remembers.
+        if (this.settings.grid !== "medium")
+            dotnet.invokeMethodAsync("SetGridDensity", this.settings.grid).catch(() => {});
 
         this.observer = new ResizeObserver(() => this.layoutField());
         this.observer.observe(root);
@@ -331,6 +347,8 @@ class Playback {
             return;
 
         this.stopLive();
+        clearTimeout(this.wheel?.timer);
+        this.wheel = null;
         this.view.abort.abort();
         this.observer?.disconnect();
         this.view = null;
@@ -921,11 +939,11 @@ class Playback {
         this.paintWindow();
         this.paintPlayhead();
 
-        if (this.drag?.moved)
+        if (this.drag?.moved || this.wheel)
             this.paintLive();
 
-        // A handle or body drag moves only the browser's own parts; the rows are told when it ends.
-        if (moved && !silent && !this.drag?.moved)
+        // A handle or body drag, or a turn of the wheel, moves only the browser's own parts; the rows are told when it ends.
+        if (moved && !silent && !this.drag?.moved && !this.wheel)
             this.pushWindow();
     }
 
@@ -1513,6 +1531,51 @@ class Playback {
         return html.join("");
     }
 
+    // WarpView.razor's GridBox: lines behind the rows, bars over beats over subdivisions, as many as stay at the density's spacing.
+    gridHtml(view, scope) {
+        const minPixels = GRID_MIN_PIXELS[this.settings.grid];
+        const { live, grid } = this;
+        const { from, to } = view;
+        const lines = [];
+
+        if (!minPixels || !live)
+            return "";
+
+        if (live.timeRuler) {
+            for (const at of this.timeTicks(from, to))
+                lines.push([at, "bar"]);
+        } else if (grid) {
+            const [first, last] = [grid.beatAt(from), grid.beatAt(to)];
+            const middle = (first + last) / 2;
+            const apart = (step) => ((grid.secondsAt(middle + step) - grid.secondsAt(middle)) / (to - from)) * PLOT_PIXELS;
+            const multiple = (beat, unit) => Math.abs(beat / unit - Math.round(beat / unit)) < 1e-4;
+            let step = [grid.unit / 4, grid.unit / 2, grid.unit, grid.perBar].find((candidate) => apart(candidate) >= minPixels);
+
+            for (let bars = 2; !step && bars <= 1024; bars *= 2) {
+                if (apart(grid.perBar * bars) >= minPixels)
+                    step = grid.perBar * bars;
+            }
+
+            for (let n = step ? Math.ceil(first / step - 1e-6) : 0; step && n * step <= last + 1e-6; n++) {
+                const beat = n * step;
+                const kind = multiple(beat, grid.perBar) ? "bar" : multiple(beat, grid.unit) ? "beat" : "subdivision";
+
+                lines.push([grid.secondsAt(beat), kind]);
+            }
+        }
+
+        if (lines.length === 0)
+            return "";
+
+        return `<div ${scope} class="gl-box" aria-hidden="true">${lines.map(([at, kind]) => `<span ${scope} class="gl ${kind}" style="left:${pct(xOf(view, at))}%"></span>`).join("")}</div>`;
+    }
+
+    // The grid goes first in its row, behind everything else drawn there.
+    putGrid(layer, view) {
+        layer.layer.querySelectorAll(":scope > .gl-box").forEach((box) => box.remove());
+        layer.layer.insertAdjacentHTML("afterbegin", this.gridHtml(view, layer.scope));
+    }
+
     keysHtml(view, { scope }) {
         return (this.live.keys ?? [])
             .map((band) => {
@@ -1548,6 +1611,7 @@ class Playback {
             `<svg ${scope} viewBox="0 0 ${COLUMNS} 40" preserveAspectRatio="none"><line ${scope} class="dashed" x1="0" x2="${COLUMNS}" y1="${pct(tempo?.line ?? 0)}" y2="${pct(tempo?.line ?? 0)}"/><path ${scope} d="${path.join("")}"/></svg>`,
         );
         this.replaceBands(layer, bands);
+        this.putGrid(layer, view);
     }
 
     paintOff(layer, view, bands) {
@@ -1570,7 +1634,8 @@ class Playback {
     }
 
     // A lane: each channel's envelope, then its markers, transients, clip start and the bands.
-    paintLane({ lane, path, dyn, scope }, view, bands) {
+    paintLane(layer, view, bands) {
+        const { lane, path, dyn, scope } = layer;
         const { from, to } = view;
         const html = [];
 
@@ -1614,6 +1679,7 @@ class Playback {
             html.push(`<div ${scope} class="differs" style="left:${pct(Math.max(0, xOf(view, lane.parts)))}%"></div>`);
 
         dyn.innerHTML = html.join("") + bands;
+        this.putGrid(layer, view);
     }
 
     wavePath({ columns, channels, bytes }, from, to) {
@@ -1933,6 +1999,15 @@ class Playback {
         if (target.closest("[data-earlier]"))
             return this.pan(-1);
 
+        if (target.closest("[data-zoom-in]"))
+            return this.zoomBy(1 / ZOOM_STEP);
+
+        if (target.closest("[data-zoom-out]"))
+            return this.zoomBy(ZOOM_STEP);
+
+        if (target.closest("[data-grid]"))
+            return this.setGridDensity(target.closest("[data-grid]").dataset.grid);
+
         if (target.closest("[data-later]"))
             return this.pan(1);
 
@@ -2019,6 +2094,180 @@ class Playback {
             this.begin(start);
         else
             this.play();
+    }
+
+    // The grid's density, remembered like the player's settings; the server redraws its rows, a drag's live rows follow.
+    setGridDensity(density) {
+        this.settings.grid = density;
+        writeSettings(this.settings);
+        this.liveShown = null;
+
+        for (const button of this.view?.root.querySelectorAll("[data-grid]") ?? []) {
+            button.setAttribute("aria-pressed", String(button.dataset.grid === density));
+            button.setAttribute("aria-checked", String(button.dataset.grid === density));
+        }
+
+        this.view?.dotnet.invokeMethodAsync("SetGridDensity", density).catch(() => {});
+
+        if (this.liveLayers)
+            this.paintLive();
+    }
+
+    // The window a zoom of `factor` (above 1 widens it) gives from `base`, keeping `anchor` at the same place on screen,
+    // on whole bars and at least one wide. `force` makes a step that rounds back to where it began move a bar.
+    zoomed(base, factor, anchor, force) {
+        const snaps = this.snaps();
+        const last = snaps.length - 1;
+        const width = base.end - base.start;
+        const wanted = Math.min(width * factor, this.duration);
+        const start = clamp(anchor - ((anchor - base.start) / width) * wanted, 0, this.duration - wanted);
+        let first = clamp(this.indexOf(start), 0, last);
+        let end = clamp(this.indexOf(start + wanted), 0, last);
+
+        if (force && first === this.indexOf(base.start) && end === this.indexOf(base.end)) {
+            if (factor > 1) {
+                if (first > 0)
+                    first--;
+                else if (end < last)
+                    end++;
+            } else if (end - first > this.minWidth(first)) {
+                end--;
+            }
+        }
+
+        const least = this.minWidth(Math.min(first, last - 1));
+
+        if (end - first < least) {
+            end = Math.min(last, first + least);
+            first = Math.max(0, end - least);
+        }
+
+        return { start: snaps[first], end: snaps[end] };
+    }
+
+    // The right-click menu replaces the browser's over the warp rows, and stays inside the viewport.
+    onViewMenu(event) {
+        const menu = this.view?.root.querySelector("[data-warp-menu]");
+
+        if (!menu || !event.target.closest(".grid"))
+            return;
+
+        event.preventDefault();
+        menu.hidden = false;
+        menu.style.left = `${Math.max(8, Math.min(event.clientX, window.innerWidth - menu.offsetWidth - 8))}px`;
+        menu.style.top = `${Math.max(8, Math.min(event.clientY, window.innerHeight - menu.offsetHeight - 8))}px`;
+    }
+
+    hideViewMenu() {
+        const menu = this.view?.root.querySelector("[data-warp-menu]");
+
+        if (menu)
+            menu.hidden = true;
+    }
+
+    // + and - zoom about the playhead when it is in the window, else the centre; Ctrl keeps the browser's page zoom.
+    onZoomKey(event) {
+        if (event.key === "Escape")
+            return this.hideViewMenu();
+
+        const zoomIn = event.key === "+" || event.key === "=";
+
+        if ((!zoomIn && event.key !== "-") || event.ctrlKey || event.altKey || event.metaKey || !this.view || this.duration <= 0)
+            return;
+
+        if (event.target.closest?.("input:not([type=range]), textarea, select, [contenteditable]"))
+            return;
+
+        const at = this.playing ? this.position() : this.parked;
+        const { start, end } = this.window;
+
+        event.preventDefault();
+        this.zoomBy(zoomIn ? 1 / ZOOM_STEP : ZOOM_STEP, at >= start && at <= end ? at : undefined);
+    }
+
+    // − and +: one step about the window's centre, or about `anchor`.
+    zoomBy(factor, anchor) {
+        if (this.duration <= 0)
+            return;
+
+        const { start, end } = this.window;
+        const next = this.zoomed({ start, end }, factor, anchor ?? (start + end) / 2, true);
+
+        this.leftBehind = true;
+        this.setWindow(next.start, next.end, { final: true });
+    }
+
+    // Ctrl + wheel zooms about the bar under the pointer, shift + wheel pans; a plain wheel scrolls the page.
+    // A gesture is the turns until the wheel rests: the window is worked out from where it began, so a pinch's
+    // small deltas add up to steps instead of each rounding away, and the rows are told once, when it ends.
+    onWheel(event) {
+        if ((!event.ctrlKey && !event.shiftKey) || this.duration <= 0 || !this.view)
+            return;
+
+        event.preventDefault();
+        this.hideViewMenu();
+
+        const ruler = this.view.root.querySelector(".grid > .ruler");
+        const mode = event.ctrlKey ? "zoom" : "pan";
+        const raw = mode === "pan" && Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+        const delta = raw * (event.deltaMode === 1 ? 33 : event.deltaMode === 2 ? 400 : 1);
+
+        if (this.wheel && this.wheel.mode !== mode)
+            this.endWheel();
+
+        this.wheel ??= {
+            mode,
+            base: { ...this.window },
+            anchor: ruler ? this.plotTime(event, ruler) : (this.window.start + this.window.end) / 2,
+            total: 0,
+            timer: 0,
+        };
+
+        const gesture = this.wheel;
+
+        gesture.total += delta;
+        clearTimeout(gesture.timer);
+        gesture.timer = setTimeout(() => this.endWheel(), WHEEL_SETTLE_MS);
+
+        const { base } = gesture;
+        let next;
+
+        if (mode === "zoom") {
+            next = this.zoomed(base, ZOOM_STEP ** (gesture.total / WHEEL_PER_STEP), gesture.anchor, false);
+        } else {
+            const snaps = this.snaps();
+            const span = this.indexOf(base.end) - this.indexOf(base.start);
+            const shifted = base.start + (gesture.total / (ruler?.clientWidth || PLOT_PIXELS)) * (base.end - base.start);
+            const at = clamp(this.indexOf(clamp(shifted, 0, this.duration)), 0, snaps.length - 1 - span);
+
+            next = { start: snaps[at], end: snaps[at + span] };
+        }
+
+        if (next.start !== this.window.start || next.end !== this.window.end) {
+            this.leftBehind = true;
+            this.setWindow(next.start, next.end);
+        }
+    }
+
+    endWheel() {
+        const gesture = this.wheel;
+
+        if (!gesture)
+            return;
+
+        clearTimeout(gesture.timer);
+        this.wheel = null;
+
+        const { start, end } = this.window;
+
+        this.setWindow(start, end, { final: true });
+
+        if (start !== gesture.base.start || end !== gesture.base.end) {
+            this.pushWindow();
+            this.settleLive();
+        } else {
+            this.stopLive();
+        }
     }
 
     // ‹ ›: half the window's width, whole bars, at least one.
