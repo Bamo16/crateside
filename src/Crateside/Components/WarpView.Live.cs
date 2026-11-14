@@ -5,7 +5,7 @@ using Crateside.Core.Warps;
 
 namespace Crateside.Components;
 
-/// <summary>What the browser redraws the rows from while the view's window is dragged (ADR 0094); the drawing is mirrored in playback.js.</summary>
+/// <summary>What the browser redraws the rows from while the view's window is dragged (ADR 0094); the drawing is mirrored in playback/rows.js.</summary>
 public partial class WarpView
 {
     private const int PeakColumnsPerSecond = 150;

@@ -260,7 +260,7 @@ body.pb-locked-body * {
     cursor: grabbing !important;
 }
 
-/* The rows a window drag draws itself (playback.js) cover the server's until the rows come back drawn for the final window. */
+/* The rows a window drag draws itself (playback/rows.js) cover the server's until the rows come back drawn for the final window. */
 [data-covered] > * {
     visibility: hidden;
 }
