@@ -121,7 +121,9 @@ open, no fold, drawn when the track has samples.
   one bar (a view without a warp, 4 s) nor over the whole track. **Ctrl + wheel** over the view zooms
   about the bar under the pointer, or about the playhead while Follow holds it in view during
   playback (a pinch arrives as the same, and its small turns add up to steps); **Shift + wheel**
-  pans; a plain wheel scrolls the page. **`−` `+`, the `+` / `-` keys** (not with Ctrl, not in a
+  pans; a plain wheel scrolls the page. **The middle button, held and dragged** over the tempo
+  line or a lane (right of the labels) pans too: the rows follow the pointer on whole bars, as a
+  drag of the overview's window does, and the browser's own middle-button scrolling is refused there. **`−` `+`, the `+` / `-` keys** (not with Ctrl, not in a
   text field) **and the menu's zoom items** centre the new window on the playhead, wherever it
   was, as far as the track's ends allow. In Scroll every zoom leaves the playhead where it is on
   screen. **Right-click** over the
@@ -190,7 +192,8 @@ open, no fold, drawn when the track has samples.
   moves instead. The window is off the bars while it scrolls and goes to the nearest bars when
   playback stops; at the loop's jump the view centres on the loop's start. Both yield on the whole
   track and during a drag. **Moving the view by hand turns Follow off** and the control shows Off:
-  dragging the window or a handle, ‹ ›, Shift + wheel, the window's arrow keys. Zooming does not (it
+  dragging the window or a handle, ‹ ›, Shift + wheel (any turn of it, even one too small to move
+  the window a bar), a middle-button drag, the window's arrow keys. Zooming does not (it
   zooms about the playhead), nor does a seek. The choice kept in the browser is the last one
   picked, which *Go to the playhead* and a reload bring back.
 - **Scroll draws a strip, not frames**: the ruler, tempo line, *Off the grid*, lanes, key strip and
@@ -324,8 +327,10 @@ open list); **the position** in mono 14 (`bar 19.3.1` at 600 · `1:20.80` at 75%
 400px listbox of 34px rows, the file playing wearing the chosen-row style); **Metronome** (a pill toggle
 that is the chosen pill when on; while it ticks, its icon gives way to a **beat light**, two 5px
 dots of which the lit one swaps side on every beat and is larger on a bar's first, timed from the
-audio clock each click is scheduled at, less the output's latency), **Sound** (`Classic ▾`, a three-row list of Classic · Click ·
-Wood that plays the pick once, accent then beat) and the metronome level (60px, labelled `Metronome`); **Loop**
+audio clock each click is scheduled at, less the output's latency), **Sound** (`Classic ▾`, a two-row list of Classic ·
+Wood that plays the pick once, accent then beat; a kept sound no longer offered plays as Classic) and the metronome level
+(60px, labelled `Metronome`; it changes the clicks already queued). Clicks are queued 1.2 s ahead on the audio
+clock, so a redraw that holds the page up drops none; **Loop**
 after a divider (titled `Loop between the braces over the ruler`); **volume** (a
 speaker, `Main` and a 72px range). Ranges are native with `accent-color: var(--text)`; volume, metronome level and sound are kept in
 the browser, the metronome and loop start off on every load. Playing is `--text`, never teal; teal appears
