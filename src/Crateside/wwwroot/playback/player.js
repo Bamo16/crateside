@@ -53,6 +53,7 @@ export const PlayerStrip = (Base) =>
                 mark: root.querySelector("[data-mark]"),
                 canvas: root.querySelector("[data-wave-canvas]"),
                 menu: root.querySelector("[data-click-menu]"),
+                beat: root.querySelector("[data-beat]"),
             });
             this.lastPosition = null;
 
@@ -88,6 +89,34 @@ export const PlayerStrip = (Base) =>
             this.copyShape();
             this.drawWave();
             this.paintPosition(this.playing ? this.position() : this.parked);
+        }
+
+        // The beat light in the Metronome button: its two dots swap as each click is heard, the lit one larger on a
+        // bar's first beat. A click is heard its latency after the time it was scheduled for.
+        paintBeat() {
+            const { beat } = this.els;
+
+            if (!beat)
+                return;
+
+            const shown = this.playing && this.clickOn && Boolean(this.session);
+
+            if (beat.hidden === shown)
+                beat.hidden = !shown;
+
+            if (!shown)
+                return;
+
+            const heard = this.ctx.currentTime - (this.ctx.outputLatency || 0) - (this.ctx.baseLatency || 0);
+            const { beats } = this.session;
+
+            while (beats.length && beats[0].when <= heard) {
+                const { accent } = beats.shift();
+
+                this.beatSide = this.beatSide === "a" ? "b" : "a";
+                beat.dataset.side = this.beatSide;
+                beat.classList.toggle("down", accent);
+            }
         }
 
         // The slim waveform: the whole file that is playing, once it has been decoded.

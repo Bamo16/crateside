@@ -231,6 +231,8 @@ export const AudioEngine = (Base) =>
                 loop: source.loop ? { start: source.loopStart, end: source.loopEnd } : null,
                 scheduledTo: when,
                 clicks: new Set(),
+                // The clicks scheduled and not yet heard, for the beat light.
+                beats: [],
             };
             this.playing = true;
             this.wantPlay = false;
@@ -270,6 +272,9 @@ export const AudioEngine = (Base) =>
             }
 
             this.session?.clicks.clear();
+
+            if (this.session)
+                this.session.beats.length = 0;
         }
 
         // The restart a change to the loop, the file or the position needs: same place, new session.
@@ -387,8 +392,10 @@ export const AudioEngine = (Base) =>
                 this.clickBeats(mediaFrom, mediaTo, (media, accent) => {
                     const when = segment.ctx0 + (media - segment.a);
 
-                    if (when >= now)
+                    if (when >= now) {
                         this.sound(when, accent);
+                        session.beats.push({ when, accent });
+                    }
                 });
 
                 if (to <= from) {
