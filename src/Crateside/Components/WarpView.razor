@@ -42,21 +42,7 @@
             }
             @if (group.Stems.Count > 0)
             {
-                <span class="zoom">
-                    <button class="outline small" data-goto hidden></button>
-                    <span class="mono readout" data-readout></span>
-                    <span class="gridpick" role="group" aria-label="Beat grid" title="The beat grid behind the waveforms">
-                        <span class="faint">Grid</span>
-                        @foreach (var choice in Enum.GetValues<GridDensity>())
-                        {
-                            <button class="outline small" data-grid="@choice.ToString().ToLowerInvariant()" aria-pressed="@(choice == _gridDensity ? "true" : "false")">@choice</button>
-                        }
-                    </span>
-                    <button class="outline mono nav" data-zoom-out title="Zoom out (Ctrl + wheel)" aria-label="Zoom out">−</button>
-                    <button class="outline mono nav" data-zoom-in title="Zoom in (Ctrl + wheel)" aria-label="Zoom in">+</button>
-                    <button class="outline mono nav" data-earlier title="Earlier" aria-label="Earlier">‹</button>
-                    <button class="outline mono nav" data-later title="Later" aria-label="Later">›</button>
-                </span>
+                <WarpControls Grid="_gridDensity" />
             }
         </div>
 
@@ -445,10 +431,7 @@
                     }
                 </div>
 
-                <div class="field" data-field aria-hidden="true">
-                    <span class="seekline" data-seekline hidden></span>
-                    <span class="playhead" data-playhead></span>
-                </div>
+                <WarpField />
             </div>
 
             @if (OpenReading is { } open)
@@ -554,16 +537,7 @@
                 </div>
             }
 
-            <span class="menu ctx" data-warp-menu role="menu" aria-label="View" hidden>
-                <span class="ctx-head">Grid</span>
-                @foreach (var choice in Enum.GetValues<GridDensity>())
-                {
-                    <button class="item" role="menuitemradio" data-grid="@choice.ToString().ToLowerInvariant()" aria-checked="@(choice == _gridDensity ? "true" : "false")">@choice</button>
-                }
-                <span class="ctx-rule"></span>
-                <button class="item" role="menuitem" data-zoom-in>Zoom in <span class="ctx-key">+</span></button>
-                <button class="item" role="menuitem" data-zoom-out>Zoom out <span class="ctx-key">−</span></button>
-            </span>
+            <WarpMenu Grid="_gridDensity" />
         }
     </section>
 }
