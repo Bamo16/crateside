@@ -63,10 +63,33 @@ h3 {
     grid-row: 2;
 }
 
-.row > .control,
 .row > .path {
     grid-row: 1;
     grid-column: 2;
+}
+
+/* The control's first child shares line 1; the rest (status, inputs) stack under the gist. */
+.row > .control {
+    display: contents;
+}
+
+.control > * {
+    grid-column: 2;
+    min-width: 0;
+    justify-self: start;
+}
+
+.control > :first-child {
+    grid-row: 1;
+}
+
+/* A tall control (the access rows) goes under the gist as one stack, leaving line 1 to the name. */
+.row.stacked > .control {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    grid-column: 2;
+    grid-row: 3;
 }
 
 .row > .actions {
@@ -100,20 +123,12 @@ h3 {
     z-index: 4;
 }
 
-.control {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-    min-width: 0;
-}
-
 .control > .field,
 .control > .access,
 .control > .line,
 .control > .confirm,
 .control > .left {
-    align-self: stretch;
+    justify-self: stretch;
 }
 
 .field {
