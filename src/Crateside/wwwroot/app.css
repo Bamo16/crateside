@@ -264,3 +264,10 @@ body.pb-locked-body * {
 [data-covered] > * {
     visibility: hidden;
 }
+
+/* Under scroll follow's sliding strip a row's fixed labels stay where they are, over it. */
+[data-covered="strip"] > .range,
+[data-covered="strip"] > .off-label {
+    visibility: visible;
+    z-index: 4;
+}

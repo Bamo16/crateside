@@ -275,6 +275,7 @@ export const Window = (Base) =>
 
             event.preventDefault();
             this.hideViewMenu();
+            this.settleScroll();
 
             const ruler = this.view.root.querySelector(".grid > .ruler");
             const mode = event.ctrlKey ? "zoom" : "pan";
