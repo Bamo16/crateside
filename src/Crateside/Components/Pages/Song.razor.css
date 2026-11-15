@@ -14,7 +14,7 @@
 /* The header strip (handoff 22 §1): the cover, the title and four cells, in one box. */
 .hs {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: 216px minmax(0, 1fr);
     grid-template-areas:
         "cover title"
         "cover cells";
@@ -25,11 +25,10 @@
     border-radius: 10px;
 }
 
-/* As tall as the strip, and so as wide: the column takes its width from the cover's ratio. */
+/* As tall as the strip, at a set width: a width taken from the height would narrow the cells after their rows were sized. */
 .hs-cover {
     grid-area: cover;
     position: relative;
-    aspect-ratio: 1;
     min-height: 152px;
     background: #2b2820;
 }
@@ -123,8 +122,10 @@ h1 {
     border-top: 1px solid var(--line);
 }
 
+/* A cell with nothing more to say keeps its column whole: no rule, no second panel. */
 .cells.has-foot .cell-foot:empty {
     padding-block: 0;
+    border-top: none;
 }
 
 .label {
@@ -359,7 +360,6 @@ h1 {
         width: 96px;
         height: 96px;
         min-height: 0;
-        aspect-ratio: auto;
     }
 
     .hs-title {

@@ -311,8 +311,11 @@ one column below 56rem of panel (a container query).
 
 ### The header strip (handoff 22, #105)
 
-One `--surface` box, radius 10, replacing the heading and the band. The **cover** is as tall as the
-strip and square, at the left, flush to the top, left and bottom, an `<img>` and not a button. The **title block**
+One `--surface` box, radius 10, replacing the heading and the band. The **cover** is 216px wide and as tall as the
+strip (square on a strip with no foot row; the art is cropped to fill a taller one), at the left,
+flush to the top, left and bottom, an `<img>` and not a button. Its width is set, not taken from
+the strip's height: a width that follows the height narrows the cells after their rows are sized,
+and the foot is cut off. The **title block**
 (padding 15px 22px 12px) is the title 24/600 over the meta line 13.5 `--text-60`, which ends
 `· YouTube ↗` (underlined, a new tab) for the upload the files are cut from; an import has none
 and reads `House · imported file`. Under a `--line` rule, **four cells** on four equal columns with
@@ -324,7 +327,8 @@ the chip as its value, with its sentence and *Why B min ↓* as the caption.
 
 When a cell has more than a note (the sections list, the judging chip or the invitation with
 *Judge from these bars ↓*, the tempo strip or *Your warp is typed at…*, the running time), the strip
-grows a **foot row** under the cells on the same columns, behind a `--line` rule; the cover keeps the
+grows a **foot row** under the cells on the same columns; a cell with a foot draws a `--line` rule
+over it, and a cell without one stays a single panel with no rule. The cover keeps the
 strip's height. At 56rem and below the cover is 96px beside the title (21/600)
 and the cells go two by two under both. `← Tracks` stays above the strip; the player follows it, then
 the findings line, then the stage flow, drawn as its own `--surface` strip.
@@ -664,8 +668,8 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   switches. A click on the ruler or a key band keeps play or pause as it is.
 - **A seek brings the window to the bar** only when the spot is outside it, and the window then keeps
   its width in bars; the new window is reported as any other.
-- **The header strip's foot row is a subgrid**: each cell holds its head and its foot, so the rule
-  and the rows line up across the four whatever wraps, and at 56rem each foot stays under its own
+- **The header strip's foot row is a subgrid**: each cell holds its head and its foot, so the rows
+  line up across the four whatever wraps, and at 56rem each foot stays under its own
   cell. A cell whose note has two statements (the mode's reason, then where the tag follows)
   runs them together in its two lines.
 - **The upload count leaves the meta line** when there is one upload; with several it stays.
