@@ -28,18 +28,17 @@ else
     public Shapes Shape { get; set; }
 
     private IReadOnlyList<ChoiceStrip.Choice> Choices =>
-        [.. GenreVocabulary.All.Select(genre => new ChoiceStrip.Choice(genre, genre, GenreTone(Row.Genre, genre)))];
+        [
+            .. GenreVocabulary.All.Select(genre => new ChoiceStrip.Choice(
+                genre,
+                genre,
+                Row.Genre is { } record && record.Genres.Contains(genre) ? "settled" : null
+            )),
+        ];
 
-    private static string? GenreTone(GenreRecord? record, string genre) =>
-        record switch
-        {
-            { IsTheUsersAnswer: true } when record.Mine.Contains(genre) => "settled",
-            { IsTheUsersAnswer: false } when record.Assigned.Contains(genre) => "suggested",
-            _ => null,
-        };
-
+    // The song's genres as written, crateside's as much as the person's (ADR 0087).
     private static string? Chosen(GenreRecord? record) =>
-        record is { IsTheUsersAnswer: true } ? record.Mine.First(GenreVocabulary.IsGenre) : null;
+        record is { Genres: [_, ..] genres } ? string.Join(", ", genres) : null;
 
     private static bool IsQuiet(GenreRecord? record) =>
         record is null or { Genres.Count: 0, LookedUpAt: null };
@@ -51,7 +50,9 @@ else
             { IsTheUsersAnswer: true } => "your call",
             { FromSources.Count: 0, LearnedFrom: { } artist } => $"from your answers for {artist}",
             { Heard.Count: 0 } => "the sources know nothing of it",
-            _ => $"styles: {string.Join(", ", record.Styles.Take(4))}",
+            { Genres.Count: 0, Rejected.Count: > 0 } => "you removed it",
+            { Genres.Count: 0 } => $"no genre for: {string.Join(", ", record.Styles.Take(4))}",
+            _ => $"looked up · styles: {string.Join(", ", record.Styles.Take(4))}",
         };
 
     private async Task SettleGenre(string? genre)

@@ -69,6 +69,6 @@ else
         await OnChoose.InvokeAsync(value);
     }
 
-    /// <param name="Tone"><c>settled</c> (filled), <c>suggested</c> (dashed amber), or null.</param>
+    /// <param name="Tone"><c>settled</c> (filled), or null.</param>
     public sealed record Choice(string? Value, string Text, string? Tone);
 }

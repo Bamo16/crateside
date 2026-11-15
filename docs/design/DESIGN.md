@@ -466,9 +466,11 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
 
 ## Tracks table
 
-- A **Genre** column between BPM and State (150px). A suggestion is an amber dashed chip that
-  settles it in one click; a settled genre is plain text; no suggestion is a *choose* chip that
-  opens the row. `GenreStrip Shape="Cell"`.
+- A **Genre** column between BPM and State (150px): the song's genres as plain text, crateside's
+  as much as the person's; empty without one. `GenreStrip Shape="Cell"`. In the side stack the strip
+  folds to the same genres with **Change** and a line saying where they came from (*looked up*,
+  *from your answers for …*, *your call*); a genre crateside assigned is written, never drawn as a
+  suggestion (ADR 0087, crateside tags every song).
 - A **Tempo drifts** filter (#75): tracks not warped yet whose tempo beatdetect reads drifting.
 - An **Off its tempo** filter (handoff 16, #96) beside it: steady warps whose grid falls away from
   the audio, the furthest first. Columns Song · Key · BPM · **Runs** (`0.017 slow`, mono 13

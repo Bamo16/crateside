@@ -66,11 +66,6 @@
     border-color: var(--text-40);
 }
 
-.choice.suggested {
-    color: var(--amber);
-    border: 1px dashed var(--amber);
-}
-
 .choice.settled {
     color: var(--ink);
     background: var(--text);
