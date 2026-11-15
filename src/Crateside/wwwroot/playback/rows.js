@@ -38,11 +38,13 @@ export const Rows = (Base) =>
             const layers = [];
             const { strip } = this;
             const into = strip?.box ?? field;
+            const origin = ruler.getBoundingClientRect();
             const cover = (target, kind, lane) => {
                 if (!target)
                     return;
 
                 const layer = target.cloneNode(false);
+                const box = target.getBoundingClientRect();
 
                 layer.removeAttribute("id");
                 layer.removeAttribute("data-snaps");
@@ -50,10 +52,10 @@ export const Rows = (Base) =>
                 Object.assign(layer.style, {
                     position: "absolute",
                     margin: "0",
-                    left: `${target.offsetLeft - ruler.offsetLeft}px`,
-                    top: `${target.offsetTop - ruler.offsetTop}px`,
-                    width: `${target.offsetWidth * (strip?.wide ?? 1)}px`,
-                    height: `${target.offsetHeight}px`,
+                    left: `${box.left - origin.left}px`,
+                    top: `${box.top - origin.top}px`,
+                    width: `${box.width * (strip?.wide ?? 1)}px`,
+                    height: `${box.height}px`,
                 });
 
                 // A row's fixed labels: copied onto a still layer, left showing through over a sliding one.
@@ -174,7 +176,7 @@ export const Rows = (Base) =>
                 return;
 
             const ratio = window.devicePixelRatio || 1;
-            const offset = ((start - strip.from) / (strip.to - strip.from)) * strip.wide * field.offsetWidth;
+            const offset = ((start - strip.from) / (strip.to - strip.from)) * strip.wide * (this.fieldBox?.width ?? field.offsetWidth);
             const transform = `translate3d(${-Math.round(offset * ratio) / ratio}px,0,0)`;
 
             if (strip.transform === transform)

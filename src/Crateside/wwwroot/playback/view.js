@@ -26,8 +26,13 @@ export const View = (Base) =>
             const inside = at >= start - 1e-3 && at <= end + 1e-3;
 
             if (head) {
+                const ratio = window.devicePixelRatio || 1;
+                const across = this.fieldBox?.width ?? 0;
+                const x = Math.round((((at - start) / (end - start)) * across - 0.5) * ratio) / ratio;
+
+                // The line and its head ride one transform on whole device pixels, so they never round apart.
                 head.hidden = !inside;
-                head.style.left = `${((at - start) / (end - start)) * 100}%`;
+                head.style.transform = `translate3d(${x}px,0,0)`;
             }
 
             if (goto) {
@@ -87,13 +92,18 @@ export const View = (Base) =>
                 return;
 
             const bottoms = [...grid.querySelectorAll(".lane > .plot, .key-strip, .tempo-line, .off-line")];
-            const last = bottoms.reduce((best, element) => Math.max(best, element.offsetTop + element.offsetHeight), ruler.offsetTop + ruler.offsetHeight);
+            // Fractional boxes, not offsetTop and its kin: those round, and the live rows would sit a part-pixel off the rows they cover.
+            const parent = ruler.offsetParent ?? grid;
+            const origin = parent.getBoundingClientRect();
+            const box = ruler.getBoundingClientRect();
+            const last = bottoms.reduce((best, element) => Math.max(best, element.getBoundingClientRect().bottom), box.bottom);
+            const [left, top] = [box.left - origin.left - parent.clientLeft, box.top - origin.top - parent.clientTop];
 
-            field.style.left = `${ruler.offsetLeft}px`;
-            field.style.width = `${ruler.offsetWidth}px`;
-            field.style.top = `${ruler.offsetTop}px`;
-            field.style.height = `${last - ruler.offsetTop}px`;
-            this.fieldBox = { top: ruler.offsetTop, height: last - ruler.offsetTop };
+            field.style.left = `${left}px`;
+            field.style.width = `${box.width}px`;
+            field.style.top = `${top}px`;
+            field.style.height = `${last - box.top}px`;
+            this.fieldBox = { top, width: box.width, height: last - box.top };
 
             if (head)
                 head.hidden = false;
