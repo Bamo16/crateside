@@ -176,8 +176,9 @@ open, no fold, drawn when the track has samples.
 - **The loop's braces**: the loop is a range of its own, apart from the window. It is drawn over the
   ruler as a bar in the gap above it between two bracket ends, with a 1px line down the lanes at
   each end; dim while the loop is off, full strength while it is on, and an end outside the view is
-  left open. Turning **Loop** on with no braces sets them to the view; *Set the loop to the view*
-  in the right-click menu does it at any time. Either end drags (the `[` and `]` cursors) and so
+  left open. Turning **Loop** on with no braces sets them to the whole track; *Set the loop to the
+  view* in the right-click menu puts them on the window at any time. A change to the loop never
+  restarts the music: the playing source takes the new ends. Either end drags (the `[` and `]` cursors) and so
   does the bar between; they snap to the beat grid's lines as drawn, to bars with the grid off, and
   to whole seconds without a warp, and an end stops one step short of the other. Ends are
   `role="slider"` and the bar a button: ←/→ move a step, Shift four. Zooming and panning leave the

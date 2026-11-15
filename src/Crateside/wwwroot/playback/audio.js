@@ -281,28 +281,46 @@ export const AudioEngine = (Base) =>
                 this.session.beats.length = 0;
         }
 
-        // The restart a change to the loop, the file or the position needs: same place, new session.
-        restart() {
-            if (!this.playing || !this.buffer)
-                return;
-
-            const at = this.position();
-
-            this.begin(at);
-        }
-
         position() {
             if (!this.playing || !this.session)
                 return this.parked;
 
-            const { ctxStart, mediaStart, loop } = this.session;
-            const heard = this.ctx.currentTime - ctxStart - (this.ctx.outputLatency || 0);
-            const media = mediaStart + Math.max(0, heard);
+            return this.mediaAfter(this.ctx.currentTime - this.session.ctxStart - (this.ctx.outputLatency || 0));
+        }
+
+        // Where the file is, that long into the session.
+        mediaAfter(elapsed) {
+            const { mediaStart, loop } = this.session;
+            const media = mediaStart + Math.max(0, elapsed);
 
             if (!loop || media < loop.end)
                 return Math.min(media, this.buffer.duration);
 
             return loop.start + ((media - loop.end) % (loop.end - loop.start));
+        }
+
+        // A change to the loop while the music plays: the source keeps playing and takes the new ends, so nothing is heard of it.
+        retuneLoop() {
+            if (!this.playing || !this.session)
+                return;
+
+            const { session } = this;
+            const now = this.ctx.currentTime;
+            const latency = this.ctx.outputLatency || 0;
+
+            if (now > session.ctxStart) {
+                session.mediaStart = this.mediaAfter(now - session.ctxStart) - latency;
+                session.ctxStart = now - latency;
+            }
+
+            const loop = this.loopOn && this.loop ? { start: this.loop.start, end: Math.min(this.loop.end, this.buffer.duration) } : null;
+
+            if (loop)
+                [session.source.loopStart, session.source.loopEnd] = [loop.start, loop.end];
+
+            session.source.loop = Boolean(loop);
+            session.loop = loop;
+            this.requeueClicks();
         }
 
         seek(at, { play = false } = {}) {

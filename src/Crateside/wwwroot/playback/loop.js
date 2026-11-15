@@ -10,7 +10,7 @@ export const Loop = (Base) =>
 
         setLoop(on) {
             if (on && !this.loop && this.duration > 0)
-                this.loop = { ...this.window };
+                this.loop = { start: 0, end: this.duration };
 
             this.loopOn = on && Boolean(this.loop);
             this.applyLoop();
@@ -26,14 +26,14 @@ export const Loop = (Base) =>
             this.applyLoop();
         }
 
-        // A change to the loop reaches the audio: a playhead outside a loop that is on goes to its start.
+        // A change to the loop reaches the audio without a restart; only a playhead outside a loop that is on goes to its start.
         applyLoop() {
             const at = this.playing ? this.position() : this.parked;
 
             if (this.loopOn && this.loop && (at < this.loop.start || at >= this.loop.end))
                 this.seek(this.loop.start);
             else if (this.loopOn || this.session?.loop)
-                this.restart();
+                this.retuneLoop();
 
             this.paintLoop();
         }
