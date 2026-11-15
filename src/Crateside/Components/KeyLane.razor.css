@@ -72,6 +72,19 @@
     background: rgba(236, 231, 220, 0.07);
 }
 
+/* The band runs on past the view. */
+.key-band.open-left {
+    border-left-color: transparent;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.key-band.open-right {
+    border-right-color: transparent;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
 .key-label {
     position: absolute;
     top: 2px;

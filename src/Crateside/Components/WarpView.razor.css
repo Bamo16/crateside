@@ -1260,3 +1260,12 @@ button.jtag:hover {
     background: var(--text);
     border-color: var(--text);
 }
+
+/* The band runs on past the view: the edge keeps its width, so the tag stays put, but draws no line. */
+.jband.open-left {
+    border-left-color: transparent;
+}
+
+.jband.open-right {
+    border-right-color: transparent;
+}

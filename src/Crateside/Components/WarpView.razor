@@ -823,7 +823,7 @@
                 var (left, right) = (Math.Clamp(X(band.Start, from, to), 0, 100), Math.Clamp(X(band.End, from, to), 0, 100));
                 @if (right > left)
                 {
-                    <div class="jband @band.Style @(band.Window is { } window && window == _openWindow ? "open" : null)" style="left: @P(left)%; width: @P(right - left)%" data-line="@band.Line">
+                    <div class="jband @band.Style @(band.Window is { } window && window == _openWindow ? "open" : null) @(X(band.Start, from, to) < 0 ? "open-left" : null) @(X(band.End, from, to) > 100 ? "open-right" : null)" style="left: @P(left)%; width: @P(right - left)%" data-line="@band.Line">
                         @if (tags && band.Window is { } opens)
                         {
                             <button class="mono jtag" aria-expanded="@(opens == _openWindow ? "true" : "false")" title="@band.Tag · @(opens == _openWindow ? "close this window" : "what this window settled")" @onclick="() => ToggleWindow(opens)">@band.Tag</button>

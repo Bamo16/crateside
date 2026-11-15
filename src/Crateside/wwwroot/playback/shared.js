@@ -30,6 +30,8 @@ export const PLOT_PIXELS = 832;
 export const FLAG_ROOM = 9;
 export const xOf = (view, at) => ((at - view.from) / (view.to - view.from)) * 100;
 export const clampX = (view, at) => clamp(xOf(view, at), 0, 100);
+// The classes of a band that runs on past the view, where it has no edge to draw.
+export const openEnds = (view, { start, end }) => `${xOf(view, start) < 0 ? " open-left" : ""}${xOf(view, end) > 100 ? " open-right" : ""}`;
 export const pct = (value) => String(Math.round(value * 1000) / 1000);
 export const px = (pixels) => (pixels / PLOT_PIXELS) * 100;
 export const escapeHtml = (text) => String(text).replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]);

@@ -17,7 +17,7 @@
             var (left, right) = (Math.Clamp(X(band.Start), 0, 100), Math.Clamp(X(band.End), 0, 100));
             @if (right > left)
             {
-                <button type="button" class="key-band @(band.FromWindow ? "from-window" : null) @(band.StartUnbacked ? "unbacked" : null) @(band.Section is { Length: > 0 } ? "pickable" : null) @(IsPicked(band) ? "picked" : null)" style="left: @P(left)%; width: @P(right - left)%" title="@Title(band)" data-start="@P(band.Start)"
+                <button type="button" class="key-band @(band.FromWindow ? "from-window" : null) @(band.StartUnbacked ? "unbacked" : null) @(band.Section is { Length: > 0 } ? "pickable" : null) @(IsPicked(band) ? "picked" : null) @(X(band.Start) < 0 ? "open-left" : null) @(X(band.End) > 100 ? "open-right" : null)" style="left: @P(left)%; width: @P(right - left)%" title="@Title(band)" data-start="@P(band.Start)"
                      @onclick="() => PickAsync(band)">
                     @if ((right - left) / 100 * PlotPixels >= 56)
                     {

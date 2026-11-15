@@ -3,7 +3,7 @@
 // until the rows come back drawn for the final window. Scroll follow draws a strip several views wide and
 // slides it. The drawing mirrors WarpView.razor (ruler, lanes, tempo and off-grid rows, axis) and KeyLane.razor.
 
-import { GRID_MIN_PIXELS, COLUMNS, PLOT_PIXELS, FLAG_ROOM, xOf, clampX, clamp, pct, px as plotPx, escapeHtml, clock } from "./shared.js";
+import { GRID_MIN_PIXELS, COLUMNS, PLOT_PIXELS, FLAG_ROOM, xOf, clampX, openEnds, clamp, pct, px as plotPx, escapeHtml, clock } from "./shared.js";
 
 // KeyLane's label: the room a band needs to carry one, and its insets in the band (KeyLane.razor.css).
 const KEY_LABEL_ROOM = 56;
@@ -302,7 +302,7 @@ export const Rows = (Base) =>
 
                     const tag = tags ? `<span ${attribute} class="mono jtag">${escapeHtml(band.tag)}</span>` : "";
 
-                    return `<div ${attribute} class="jband ${band.style}${band.open ? " open" : ""}" style="left:${pct(left)}%;width:${pct(right - left)}%">${tag}</div>`;
+                    return `<div ${attribute} class="jband ${band.style}${band.open ? " open" : ""}${openEnds(view, band)}" style="left:${pct(left)}%;width:${pct(right - left)}%">${tag}</div>`;
                 })
                 .join("");
         }
@@ -452,7 +452,7 @@ export const Rows = (Base) =>
                     if (right <= left)
                         return "";
 
-                    const classes = `key-band${band.fromWindow ? " from-window" : ""}${band.unbacked ? " unbacked" : ""}${band.pickable ? " pickable" : ""}${band.picked ? " picked" : ""}`;
+                    const classes = `key-band${band.fromWindow ? " from-window" : ""}${band.unbacked ? " unbacked" : ""}${band.pickable ? " pickable" : ""}${band.picked ? " picked" : ""}${openEnds(view, band)}`;
                     const label = ((right - left) / 100) * PLOT_PIXELS * view.wide >= KEY_LABEL_ROOM ? `<span ${scope} class="mono key-label">${escapeHtml(band.label)}</span>` : "";
 
                     return `<button ${scope} type="button" tabindex="-1" class="${classes}" style="left:${pct(left)}%;width:${pct(right - left)}%">${label}</button>`;
