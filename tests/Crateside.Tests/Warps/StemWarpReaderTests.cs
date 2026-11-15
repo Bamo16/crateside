@@ -125,25 +125,6 @@ public sealed class StemWarpReaderTests : IDisposable
         Assert.Null(group.PartsFrom(group.Stems[0]));
     }
 
-    [Fact]
-    public void The_overview_is_drawn_from_Lives_bins_for_the_stretch_shown()
-    {
-        var quiet = Enumerable.Repeat(0.25f, Frames).ToArray();
-        quiet.AsSpan(Frames - 2_000).Fill(0.75f);
-        (
-            Analysis(saved: false, []) with
-            {
-                Audio = AudioAnalysis.FromSamples(quiet, 2, [], 3),
-            }
-        ).Write($"{Target}.asd");
-
-        var columns = Reader().Read(Target).Overview(0, 2, columns: 2);
-
-        Assert.Equal(2, columns.Count);
-        Assert.Equal(0.25f, columns[0][0].Max, 2);
-        Assert.Equal(0.75f, columns[0][1].Max, 2);
-    }
-
     private StemWarpReader Reader() => new(_written, new TransientOrigins(), _waiting);
 
     private WarpActions Actions()

@@ -207,16 +207,17 @@
 }
 
 /* Where the loop's braces stand on the whole track. */
+/* The same weight and tone as the braces' bar over the ruler (WarpField). */
 .ov-loop {
     position: absolute;
     top: -1px;
-    height: 3px;
-    background: var(--text-50);
+    height: 2px;
+    background: var(--text-35);
     pointer-events: none;
 }
 
 .ov-loop.on {
-    background: var(--text);
+    background: var(--text-75);
 }
 
 .ov-loop[hidden],
@@ -503,12 +504,21 @@
     background: rgba(236, 231, 220, 0.7);
 }
 
-.transient {
+/* Hundreds of ticks: one path rather than an element each, the same one playback/rows.js draws. */
+.transients {
     position: absolute;
-    bottom: 1px;
-    width: 1px;
-    height: 5px;
-    background: var(--text-30);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: translateX(0.5px);
+    pointer-events: none;
+}
+
+.transients path {
+    fill: none;
+    stroke: var(--text-30);
+    shape-rendering: crispEdges;
+    vector-effect: non-scaling-stroke;
 }
 
 /* The clip start, marked rather than dimmed. */

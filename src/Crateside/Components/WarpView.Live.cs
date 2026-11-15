@@ -8,8 +8,10 @@ namespace Crateside.Components;
 /// <summary>What the browser redraws the rows from while the view's window is dragged (ADR 0094); the drawing is mirrored in playback/rows.js.</summary>
 public partial class WarpView
 {
-    private const int PeakColumnsPerSecond = 150;
-    private const int PeakColumnsCap = 32768;
+    // One of Live's bins to a column up to about 6:20 of audio, two past that.
+    private const int PeakColumnsCap = 65_536;
+
+    private readonly ConditionalWeakTable<StemWarp, WavePeaks> _peaks = [];
 
     private WarpGroup? _liveGroup;
     private string? _liveKey;
@@ -96,14 +98,14 @@ public partial class WarpView
         };
     }
 
-    private static object LaneOf(WarpGroup group, StemWarp stem) =>
+    private object LaneOf(WarpGroup group, StemWarp stem) =>
         stem.Sidecar is null
             ? new { file = Path.GetFileName(stem.Path), covered = false }
             : new
             {
                 file = Path.GetFileName(stem.Path),
                 covered = true,
-                peaks = PeaksOf(stem, group.Seconds),
+                peaks = PeaksOf(stem),
                 markers = stem.Markers.Select(marker => marker.Seconds),
                 transients = stem.TransientTimes,
                 clip = stem.Clip.Start,
@@ -134,31 +136,23 @@ public partial class WarpView
         }
     }
 
-    /// <summary>Each channel's whole-track envelope as bytes, a column's lowest then highest sample as magnitudes out of 255, channels end to end.</summary>
-    private static object PeaksOf(StemWarp stem, double seconds)
+    /// <summary>The stem's envelope, read from its overview once.</summary>
+    private WavePeaks Peaks(StemWarp stem) =>
+        _peaks.GetValue(
+            stem,
+            read => WavePeaks.Of(read.Sidecar?.Audio.Overview, read.SampleRate, PeakColumnsCap)
+        );
+
+    private object PeaksOf(StemWarp stem)
     {
-        var columns = (int)
-            Math.Clamp(Math.Ceiling(seconds * PeakColumnsPerSecond), Columns, PeakColumnsCap);
-        var channels = stem.Overview(0, seconds, columns);
-        var bytes = new byte[channels.Count * columns * 2];
-
-        for (var channel = 0; channel < channels.Count; channel++)
-        {
-            for (var x = 0; x < columns; x++)
-            {
-                var (min, max) = channels[channel][x];
-                var at = (channel * columns + x) * 2;
-
-                bytes[at] = (byte)Math.Round(Math.Clamp(-min, 0, 1) * 255);
-                bytes[at + 1] = (byte)Math.Round(Math.Clamp(max, 0, 1) * 255);
-            }
-        }
+        var peaks = Peaks(stem);
 
         return new
         {
-            columns,
-            channels = channels.Count,
-            data = Convert.ToBase64String(bytes),
+            columns = peaks.Columns,
+            channels = peaks.Channels,
+            perColumn = peaks.SecondsPerColumn,
+            data = Convert.ToBase64String(peaks.Bytes),
         };
     }
 }

@@ -159,7 +159,7 @@ open, no fold, drawn when the track has samples.
   narrower than 28px (`OVERVIEW_MIN_PIXELS`), so the body between the handles can be grabbed: a
   narrower range gets a 28px box centred on it, kept inside the strip, and a drag still moves the
   true range. The loop, when there is
-  one, is a 3px bar along the strip's top over its range, `--text` 50%, full strength while it is on. Each **handle** is a 6px `--text` 70% bar centered on an edge, the
+  one, is a 2px bar along the strip's top over its range, the weight and tone of the braces' bar over the ruler (`--text` 35%, 75% while it is on). Each **handle** is a 6px `--text` 70% bar centered on an edge, the
   strip's full height, with a 1×10px `--ink` notch; its target is 16px (8 either side), narrower on
   the inside of a window under 32px. Edges snap to bar lines plus the file's first and last sample
   (whole seconds without a warp) and the window is at least one bar (4 seconds without a warp).
@@ -200,7 +200,12 @@ open, no fold, drawn when the track has samples.
   axis are drawn once in the browser across six views (from half a view before the window) and slid
   with a `transform` on whole device pixels, the braces with them; the strip is drawn again only
   when the window runs off it or its width changes. The field cuts the strip off with
-  `overflow-x: clip`, so it never widens the page. The rows' fixed labels stay put above it. The
+  `overflow-x: clip`, so it never widens the page, and the braces go back to the window's scale
+  before the clip comes off. The strip's box starts on a whole device pixel and has no
+  `will-change`, and its ruler, key strip and axis sit on their own ground, so lines and text are
+  drawn as the server's rows draw them. The rows' fixed labels stay put above it, and a band's
+  label (a window's tag on the ruler, a key band's name) keeps to the view's left edge while its
+  band runs off it, as on a still page. The
   overview's window is painted on the same frame as the playhead and the strip, its place and
   width in one write (a `transform` on whole device pixels); the readout follows ten times a
   second. The server is told the window when the scroll ends, zooms included, and its rows
@@ -212,6 +217,10 @@ open, no fold, drawn when the track has samples.
 - **The overlay and the redrawn rows are placed from fractional boxes** (`getBoundingClientRect`,
   never `offsetTop` and its kin, which round), so a redrawn row sits exactly on the row it covers
   and nothing shifts by a part-pixel when the two swap.
+- **The server's rows and the browser's are the same drawing**: a lane's waveform comes from one
+  table of the stem's envelope (`WavePeaks`: one of Live's bins to a column, more past 65,536),
+  sliced with the same arithmetic on both sides, and the transient ticks are one path with the
+  same markup. A still view is the same pixels whichever drew it.
 - **Seeking**: a click on the ruler plays from the start of the bar under the pointer (a faint 1px
   `--text` 30% line shows where), exactly where the pointer is without a warp; playing carries on,
   paused stays paused. A click on a lane seeks there, selects the lane and plays its stem. A key band

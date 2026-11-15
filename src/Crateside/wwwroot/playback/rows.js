@@ -3,7 +3,11 @@
 // until the rows come back drawn for the final window. Scroll follow draws a strip several views wide and
 // slides it. The drawing mirrors WarpView.razor (ruler, lanes, tempo and off-grid rows, axis) and KeyLane.razor.
 
-import { GRID_MIN_PIXELS, COLUMNS, PLOT_PIXELS, FLAG_ROOM, xOf, clampX, pct, px as plotPx, escapeHtml, clock } from "./shared.js";
+import { GRID_MIN_PIXELS, COLUMNS, PLOT_PIXELS, FLAG_ROOM, xOf, clampX, clamp, pct, px as plotPx, escapeHtml, clock } from "./shared.js";
+
+// KeyLane's label: the room a band needs to carry one, and its insets in the band (KeyLane.razor.css).
+const KEY_LABEL_ROOM = 56;
+const KEY_LABEL_INSET = { left: 5, right: 3 };
 
 export const Rows = (Base) =>
     class extends Base {
@@ -39,6 +43,17 @@ export const Rows = (Base) =>
             const { strip } = this;
             const into = strip?.box ?? field;
             const origin = ruler.getBoundingClientRect();
+            const nudge = strip?.nudge ?? { x: 0, y: 0 };
+            const groundOf = (element) => {
+                for (let behind = element; behind; behind = behind.parentElement) {
+                    const color = getComputedStyle(behind).backgroundColor;
+
+                    if (color !== "transparent" && color !== "rgba(0, 0, 0, 0)")
+                        return color;
+                }
+
+                return "Canvas";
+            };
             const cover = (target, kind, lane) => {
                 if (!target)
                     return;
@@ -52,11 +67,15 @@ export const Rows = (Base) =>
                 Object.assign(layer.style, {
                     position: "absolute",
                     margin: "0",
-                    left: `${box.left - origin.left}px`,
-                    top: `${box.top - origin.top}px`,
+                    left: `${box.left - origin.left - nudge.x}px`,
+                    top: `${box.top - origin.top - nudge.y}px`,
                     width: `${box.width * (strip?.wide ?? 1)}px`,
                     height: `${box.height}px`,
                 });
+
+                // Over a solid ground a sliding layer's text keeps the page's subpixel rendering, and a row's own border is not drawn twice.
+                if (kind === "ruler" || kind === "keys" || kind === "axis")
+                    layer.style.backgroundColor = groundOf(target);
 
                 // A row's fixed labels: copied onto a still layer, left showing through over a sliding one.
                 for (const kept of strip ? [] : target.querySelectorAll(".range, .off-label"))
@@ -110,6 +129,8 @@ export const Rows = (Base) =>
 
                 this.strip.box.remove();
                 this.strip = null;
+                // The braces go back to the window's scale before the field stops cutting them off.
+                this.paintLoop();
                 field?.style.removeProperty("overflow-x");
                 braces?.style.removeProperty("transform");
             }
@@ -149,12 +170,18 @@ export const Rows = (Base) =>
                 return;
 
             const box = document.createElement("div");
+            // The box is drawn on a layer of its own (its 3D transform; will-change would cost the text its subpixel
+            // rendering), which lands on whole device pixels: it starts on one, so its rows keep the places the server's have.
+            const ratio = window.devicePixelRatio || 1;
+            const at = field.getBoundingClientRect();
+            const toPixel = (value) => (Math.round(value * ratio) - value * ratio) / ratio;
+            const nudge = { x: toPixel(at.left), y: toPixel(at.top) };
 
-            Object.assign(box.style, { position: "absolute", left: "0", top: "0", width: "0", height: "0", willChange: "transform" });
+            Object.assign(box.style, { position: "absolute", left: `${nudge.x}px`, top: `${nudge.y}px`, width: "0", height: "0" });
             field.insertBefore(box, field.firstChild);
             // Cut off at the plot's sides only: the loop's braces sit above the field and the axis hangs under it.
             field.style.overflowX = "clip";
-            this.strip = { from, to, wide, box };
+            this.strip = { from, to, wide, box, nudge };
             this.startLive();
 
             if (!this.liveLayers) {
@@ -176,10 +203,11 @@ export const Rows = (Base) =>
                 return;
 
             const ratio = window.devicePixelRatio || 1;
-            const offset = ((start - strip.from) / (strip.to - strip.from)) * strip.wide * (this.fieldBox?.width ?? field.offsetWidth);
-            const transform = `translate3d(${-Math.round(offset * ratio) / ratio}px,0,0)`;
+            const across = this.fieldBox?.width ?? field.offsetWidth;
+            const offset = Math.round(((start - strip.from) / (strip.to - strip.from)) * strip.wide * across * ratio) / ratio;
+            const transform = `translate3d(${-offset}px,0,0)`;
 
-            if (strip.transform === transform)
+            if (strip.transform === transform && strip.labels)
                 return;
 
             strip.transform = transform;
@@ -187,6 +215,42 @@ export const Rows = (Base) =>
 
             if (braces)
                 braces.style.transform = transform;
+
+            this.slideLabels(offset, across);
+        }
+
+        // A band's label keeps to the view's left edge while its band runs off it, and is cut off at the view's right:
+        // where the server's rows put it, since they clamp a band to the view.
+        slideLabels(offset, across) {
+            const { strip } = this;
+
+            strip.labels ??= [...strip.box.querySelectorAll(".jtag, .key-label")].map((label) => {
+                const band = label.parentElement;
+                const wide = parseFloat(band.parentElement.style.width);
+
+                return { label, left: (parseFloat(band.style.left) / 100) * wide, width: (parseFloat(band.style.width) / 100) * wide };
+            });
+
+            for (const entry of strip.labels) {
+                const { label, left, width } = entry;
+                const shift = clamp(offset - left, 0, width);
+                const shown = Math.max(0, Math.min(left + width, offset + across) - Math.max(left, offset));
+                const placed = `${shift}|${shown}`;
+
+                if (entry.placed === placed)
+                    continue;
+
+                entry.placed = placed;
+
+                if (label.classList.contains("key-label")) {
+                    label.style.left = `${shift + KEY_LABEL_INSET.left}px`;
+                    label.style.right = `${width - shift - shown + KEY_LABEL_INSET.right}px`;
+                    label.style.visibility = shown >= KEY_LABEL_ROOM ? "" : "hidden";
+                } else {
+                    label.style.left = `${shift}px`;
+                    label.style.maxWidth = `${shown}px`;
+                }
+            }
         }
 
         // What the plot's percentages are of: the window, or the strip while one is drawn.
@@ -200,6 +264,9 @@ export const Rows = (Base) =>
             const { from, to, wide } = view;
 
             view.zoomed = (to - from) / wide < this.live.seconds - 0.001;
+
+            if (this.strip)
+                this.strip.labels = null;
 
             for (const layer of this.liveLayers) {
                 const bands = this.bandsHtml(view, layer, layer.kind === "ruler");
@@ -386,7 +453,7 @@ export const Rows = (Base) =>
                         return "";
 
                     const classes = `key-band${band.fromWindow ? " from-window" : ""}${band.unbacked ? " unbacked" : ""}${band.pickable ? " pickable" : ""}${band.picked ? " picked" : ""}`;
-                    const label = ((right - left) / 100) * PLOT_PIXELS * view.wide >= 56 ? `<span ${scope} class="mono key-label">${escapeHtml(band.label)}</span>` : "";
+                    const label = ((right - left) / 100) * PLOT_PIXELS * view.wide >= KEY_LABEL_ROOM ? `<span ${scope} class="mono key-label">${escapeHtml(band.label)}</span>` : "";
 
                     return `<button ${scope} type="button" tabindex="-1" class="${classes}" style="left:${pct(left)}%;width:${pct(right - left)}%">${label}</button>`;
                 })
@@ -457,7 +524,6 @@ export const Rows = (Base) =>
                 html.push(`<span ${scope} class="${flags ? "flag" : "flag-tick"}" style="left:${pct(at100)}%"></span>`);
             }
 
-            // Hundreds of them: one path rather than an element each.
             if (view.zoomed) {
                 const ticks = [];
 
@@ -469,7 +535,7 @@ export const Rows = (Base) =>
                 }
 
                 html.push(
-                    `<svg ${scope} viewBox="0 0 ${COLUMNS} 64" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%"><path ${scope} d="${ticks.join("")}" fill="none" stroke="var(--text-30)" style="vector-effect:non-scaling-stroke"/></svg>`,
+                    `<svg ${scope} class="transients" viewBox="0 0 ${COLUMNS} 64" preserveAspectRatio="none"><path ${scope} d="${ticks.join("")}"/></svg>`,
                 );
             }
 
@@ -485,9 +551,8 @@ export const Rows = (Base) =>
             this.putGrid(layer, view);
         }
 
-        // `across` columns of the plot, each the loudest of the track's columns it covers.
-        wavePath({ columns, channels, bytes }, from, to, across) {
-            const perColumn = this.live.seconds / columns;
+        // `across` columns of the plot, each the loudest of the table's columns it covers: WavePeaks.Envelope's arithmetic, so the server's lanes match.
+        wavePath({ columns, channels, bytes, perColumn }, from, to, across) {
             const gap = channels > 1 ? 2 : 0;
             const each = (45 - gap * (channels - 1)) / channels;
             const path = [];
@@ -516,8 +581,8 @@ export const Rows = (Base) =>
                     const max = high / 255;
                     const min = Math.min(-low / 255, max - 0.02);
 
-                    upper[x] = `${x + 0.5},${(center - (max * each) / 2).toFixed(2)}`;
-                    lower[across - 1 - x] = `${x + 0.5},${(center - (min * each) / 2).toFixed(2)}`;
+                    upper[x] = `${x + 0.5},${pct(center - (max * each) / 2)}`;
+                    lower[across - 1 - x] = `${x + 0.5},${pct(center - (min * each) / 2)}`;
                 }
 
                 path.push(`M${upper.join(" ")} ${lower.join(" ")}Z`);

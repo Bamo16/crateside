@@ -68,53 +68,6 @@ public sealed record StemWarp
             ? [.. transients.Select(transient => (double)transient.Position / SampleRate)]
             : [];
 
-    /// <summary>
-    /// Each channel's lowest and highest sample in each of <paramref name="columns"/> equal slices
-    /// between two times; empty without an overview.
-    /// </summary>
-    public IReadOnlyList<(float Min, float Max)[]> Overview(double from, double to, int columns)
-    {
-        if (Sidecar?.Audio.Overview is not { BinCount: > 0 } overview || to <= from)
-            return [];
-
-        var finest = overview.Levels[0].Span;
-        var channels = overview.ChannelCount;
-        var secondsPerBin = (double)overview.SamplesPerBin / SampleRate;
-        var drawn = new (float Min, float Max)[channels][];
-
-        for (var channel = 0; channel < channels; channel++)
-        {
-            drawn[channel] = new (float, float)[columns];
-
-            for (var x = 0; x < columns; x++)
-            {
-                var first = (int)((from + (to - from) * x / columns) / secondsPerBin);
-                var last = Math.Max(
-                    first,
-                    (int)((from + (to - from) * (x + 1) / columns) / secondsPerBin) - 1
-                );
-                var (min, max) = (0f, 0f);
-
-                for (
-                    var bin = Math.Max(first, 0);
-                    bin <= Math.Min(last, overview.BinCount - 1);
-                    bin++
-                )
-                {
-                    var at = (bin * channels + channel) * 2;
-                    (min, max) = (
-                        Math.Min(min, (float)finest[at]),
-                        Math.Max(max, (float)finest[at + 1])
-                    );
-                }
-
-                drawn[channel][x] = (min, max);
-            }
-        }
-
-        return drawn;
-    }
-
     /// <summary>The first time this stem's markers part from <paramref name="shared"/>, or null when they match.</summary>
     public double? PartsFrom(IReadOnlyList<WarpMarker> shared)
     {

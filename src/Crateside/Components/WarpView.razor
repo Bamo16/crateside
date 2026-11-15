@@ -393,13 +393,9 @@
 
                                 @if (IsZoomed(group))
                                 {
-                                    @foreach (var at in stem.TransientTimes)
-                                    {
-                                        var x = X(at, from, to);
-                                        if (x is < 0 or > 100)
-                                            continue;
-                                        <span class="transient" style="left: @P(x)%"></span>
-                                    }
+                                    <svg class="transients" viewBox="0 0 @Columns 64" preserveAspectRatio="none">
+                                        <path d="@TransientTicks(stem, from, to)" />
+                                    </svg>
                                 }
 
                                 @if (X(stem.Clip.Start, from, to) is >= 0 and <= 100 and var stemClipX)
@@ -1364,14 +1360,14 @@
     }
 
     /// <summary>Each channel's envelope as one filled shape per channel, Left above Right.</summary>
-    private static string Wave(StemWarp stem, double from, double to, double height, bool mono)
+    private string Wave(StemWarp stem, double from, double to, double height, bool mono)
     {
-        var channels = stem.Overview(from, to, Columns);
+        var channels = Peaks(stem).Envelope(from, to, Columns);
 
         if (channels is [])
             return string.Empty;
 
-        IReadOnlyList<(float Min, float Max)[]> drawn = mono ? [Merged(channels)] : channels;
+        IReadOnlyList<(double Min, double Max)[]> drawn = mono ? [Merged(channels)] : channels;
         var gap = drawn.Count > 1 ? 2.0 : 0;
         var each = (height - gap * (drawn.Count - 1)) / drawn.Count;
         var path = new StringBuilder();
@@ -1385,14 +1381,14 @@
             for (var x = 0; x < column.Length; x++)
                 path.Append(P(x + 0.5)).Append(',').Append(P(center - column[x].Max * each / 2)).Append(' ');
             for (var x = column.Length - 1; x >= 0; x--)
-                path.Append(P(x + 0.5)).Append(',').Append(P(center - Math.Min(column[x].Min, column[x].Max - 0.02f) * each / 2)).Append(' ');
+                path.Append(P(x + 0.5)).Append(',').Append(P(center - Math.Min(column[x].Min, column[x].Max - 0.02) * each / 2)).Append(' ');
             path.Append('Z');
         }
 
         return path.ToString();
     }
 
-    private static (float Min, float Max)[] Merged(IReadOnlyList<(float Min, float Max)[]> channels) =>
+    private static (double Min, double Max)[] Merged(IReadOnlyList<(double Min, double Max)[]> channels) =>
         [
             .. Enumerable
                 .Range(0, channels[0].Length)
@@ -1490,6 +1486,13 @@
 
     private static string LoopTitle((double Start, double End, bool On) loop) =>
         $"Loop {WarpWording.Time(loop.Start)}–{WarpWording.Time(loop.End)}{(loop.On ? null : " · off")}";
+
+    private static string TransientTicks(StemWarp stem, double from, double to) =>
+        string.Concat(
+            stem.TransientTimes.Select(at => X(at, from, to))
+                .Where(x => x is >= 0 and <= 100)
+                .Select(x => $"M{P(x * Columns / 100)},58v5")
+        );
 
     private static double X(double seconds, double from, double to) => (seconds - from) / (to - from) * 100;
 
