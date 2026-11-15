@@ -260,7 +260,7 @@
 /* Ruler. */
 .ruler {
     position: relative;
-    height: 40px;
+    height: 44px;
     overflow: hidden;
     cursor: url("/cursors/speaker.svg") 4 12, default;
 }
@@ -269,9 +269,10 @@
     min-width: 0;
 }
 
+/* Along the ruler's top edge, with the window tags in a row of their own below it. */
 .loop {
     position: absolute;
-    top: 3px;
+    top: 0;
     height: 5px;
     border: 1px solid var(--text-50);
     border-radius: 1px;
@@ -1203,7 +1204,7 @@
     text-overflow: ellipsis;
     box-sizing: border-box;
     position: absolute;
-    top: 2px;
+    top: 6px;
     left: 0;
     z-index: 1;
     height: 16px;
