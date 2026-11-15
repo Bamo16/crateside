@@ -120,7 +120,16 @@ export const Follow = (Base) =>
             const { strip } = this;
 
             if (!strip || Math.abs((strip.to - strip.from) / strip.wide - span) > 1e-6 || start < strip.from - 1e-6 || start + span > strip.to + 1e-6) {
-                const from = Math.max(0, Math.min(start - span * STRIP_LEAD, this.duration - span * STRIP_VIEWS));
+                // The strip starts a whole number of pixels, CSS and device both, before the window, so every line lands where the page drew it.
+                const ratio = window.devicePixelRatio || 1;
+                let step = 1;
+
+                while (step < 100 && Math.abs(step * ratio - Math.round(step * ratio)) > 1e-6)
+                    step++;
+
+                const perStep = (this.fieldBox?.width ?? this.els.field?.offsetWidth ?? 0) / span / step;
+                const lead = start - Math.max(0, Math.min(start - span * STRIP_LEAD, this.duration - span * STRIP_VIEWS));
+                const from = start - (perStep > 0 ? Math.floor(lead * perStep + 1e-6) / perStep : lead);
                 const to = Math.min(this.duration, from + span * STRIP_VIEWS);
 
                 this.paintStrip(from, to, (to - from) / span);
