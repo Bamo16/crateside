@@ -206,8 +206,12 @@ open, no fold, drawn when the track has samples.
   second. The server is told the window when the scroll ends, zooms included, and its rows
   replace the strip.
 - **The playhead** is 1px `--text` from the ruler's top to the key strip's foot with a 10×7 head on the
-  ruler, above the bands; not drawn in the plot while outside the window. The overview strip and the
-  player's slim waveform always show it.
+  ruler, above the bands; not drawn in the plot while outside the window. Line and head are one
+  element moved by one `transform` on whole device pixels, so they never part. The overview strip
+  and the player's slim waveform always show it.
+- **The overlay and the redrawn rows are placed from fractional boxes** (`getBoundingClientRect`,
+  never `offsetTop` and its kin, which round), so a redrawn row sits exactly on the row it covers
+  and nothing shifts by a part-pixel when the two swap.
 - **Seeking**: a click on the ruler plays from the start of the bar under the pointer (a faint 1px
   `--text` 30% line shows where), exactly where the pointer is without a warp; playing carries on,
   paused stays paused. A click on a lane seeks there, selects the lane and plays its stem. A key band
