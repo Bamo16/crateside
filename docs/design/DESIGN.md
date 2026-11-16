@@ -174,7 +174,8 @@ open, no fold, drawn when the track has samples.
   (`pull a handle to zoom · double-click for 8 bars`, `drag to move · double-click for the whole
   track`).
 - **The loop's braces**: the loop is a range of its own, apart from the window. It is drawn over the
-  ruler as a bar in the gap above it between two bracket ends, with a 1px line down the lanes at
+  ruler as a filled bar (5px, as in Live) in the gap above it, with a bracket end at each end as
+  the drag handles, with a 1px line down the lanes at
   each end; dim while the loop is off, full strength while it is on, and an end outside the view is
   left open. Turning **Loop** on with no braces sets them to the whole track; *Set the loop to the
   view* in the right-click menu puts them on the window at any time. A change to the loop never
@@ -268,12 +269,13 @@ open, no fold, drawn when the track has samples.
   label, span (`bars 28–36 · 1:53–2:20`), the window's why (`Given by you.` for yours) and what it
   became; the readings, in the evidence panel's detector row with its heads; × and `‹ 2 of 3 ›`.
   Clicking the tag again, ×, or Esc closes it. `WindowDrawer`.
-- **The key strip** (handoff 20): the last lane before the time axis, 52px, on the zoomed axis, with
+- **The key strip** (handoff 20): the last lane before the time axis, one text line (30px), on the zoomed axis, with
   a stronger top rule (`--text` 10%). The gutter says `Key` and a gist (`A Dorian, 3 centers, placed
   from your windows`), then each section with no time in
   mono: `bridge · C Lyd: no time given`. **Bands** are the verdict's centers, outlined (1px `--text`
-  55%, radius 3, 44px), the short key in mono 11.5 where the band is 56px or wider (`verse · A
-  Dor`), the title always carrying it; fill 3%, 7% where a window placed it. **Placement**
+  55%, radius 3, 22px), the short key in mono 11.5 where the band is 56px or wider (`verse · A
+  Dor`), or only the key (`A Dor`) where a ruler tag over the same window already names the
+  section, the title always carrying both; fill 3%, 7% where a window placed it. **Placement**
   (`KeyStrip.Plan`): one center is one band across the track; a section from a window takes the
   window's span; a section with a `Start` runs from it to the next boundary; the primary center
   fills everything else; a section with none of these is named in the gutter and never drawn. **A
