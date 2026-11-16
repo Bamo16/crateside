@@ -114,8 +114,8 @@ track, the same state the API's tests stand on. Each row is the whole `TrackRow`
         "OddBars"
       ],
       "artistAndTitle": {
-        "item1": "The Examples",
-        "item2": "Synthetic Song"
+        "artist": "The Examples",
+        "title": "Synthetic Song"
       },
       "key": "F# minor",
       "confidence": "High",
