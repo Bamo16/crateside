@@ -98,15 +98,17 @@
     width: 8px;
     height: 5px;
     pointer-events: auto;
-    cursor: ew-resize;
 }
 
+/* The overview window's bracket cursors, so every resize in the warp view looks the same. */
 .brace-end.start {
     left: -4px;
+    cursor: url("/cursors/bracket-start.svg") 10 12, ew-resize;
 }
 
 .brace-end.end {
     right: -4px;
+    cursor: url("/cursors/bracket-end.svg") 14 12, ew-resize;
 }
 
 .brace-end:hover,

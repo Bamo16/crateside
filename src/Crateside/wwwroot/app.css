@@ -255,11 +255,6 @@ body.pb-locked-end * {
     cursor: url("/cursors/bracket-end.svg") 14 12, ew-resize !important;
 }
 
-body.pb-locked-resize,
-body.pb-locked-resize * {
-    cursor: ew-resize !important;
-}
-
 body.pb-locked-body,
 body.pb-locked-body * {
     cursor: grabbing !important;
