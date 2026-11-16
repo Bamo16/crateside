@@ -14,7 +14,7 @@
 /* The header strip (handoff 22 §1): the cover, the title and four cells, in one box. */
 .hs {
     display: grid;
-    grid-template-columns: 216px minmax(0, 1fr);
+    grid-template-columns: var(--cover, 152px) minmax(0, 1fr);
     grid-template-areas:
         "cover title"
         "cover cells";
@@ -25,7 +25,7 @@
     border-radius: 10px;
 }
 
-/* As tall as the strip, at a set width: a width taken from the height would narrow the cells after their rows were sized. */
+/* Square at the strip's height, never cropped: wwwroot/header-cover.js sets --cover to that height, since CSS cannot take a column's width from the row it sizes. */
 .hs-cover {
     grid-area: cover;
     position: relative;
@@ -39,7 +39,7 @@
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 0;
 }
 
@@ -79,7 +79,8 @@ h1 {
 .cells {
     grid-area: cells;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    /* Key, confidence and where take what their text needs, up to a cap; the BPM cell, with the tempo strip, takes the rest. */
+    grid-template-columns: fit-content(min(22rem, 30%)) fit-content(min(14rem, 20%)) minmax(0, 1fr) fit-content(min(14rem, 20%));
     grid-template-rows: auto auto 1fr;
     border-top: 1px solid var(--line);
 }
