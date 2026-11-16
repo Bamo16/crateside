@@ -174,15 +174,16 @@ open, no fold, drawn when the track has samples.
   (`pull a handle to zoom · double-click for 8 bars`, `drag to move · double-click for the whole
   track`).
 - **The loop's braces**: the loop is a range of its own, apart from the window. It is drawn over the
-  ruler as a filled bar (5px, as in Live) in the gap above it, with a bracket end at each end as
-  the drag handles, with a 1px line down the lanes at
+  ruler as a filled bar (5px, as in Live) in the gap above it with no separate handles: the bar's two
+  ends are the resize zones (8px, centered on the end, `ew-resize`, lit `--text` 50% on hover or
+  focus) and the middle moves the loop, with a 1px line down the lanes at
   each end; dim while the loop is off, full strength while it is on, and an end outside the view is
   left open. Turning **Loop** on with no braces sets them to the whole track; *Set the loop to the
   view* in the right-click menu puts them on the window at any time. A change to the loop never
-  restarts the music: the playing source takes the new ends. Either end drags (the `[` and `]` cursors) and so
-  does the bar between; they snap to the beat grid's lines as drawn, to bars with the grid off, and
-  to whole seconds without a warp, and an end stops one step short of the other. Ends are
-  `role="slider"` and the bar a button: ←/→ move a step, Shift four. Zooming and panning leave the
+  restarts the music: the playing source takes the new ends. Either end drags (`ew-resize`) and so
+  does the bar between (`grab`); they snap to the beat grid's lines as drawn, to bars with the grid off, and
+  to whole seconds without a warp, and an end stops one step short of the other. The ends' zones are
+  `role="slider"`, focusable with no glyph, and the bar a button: ←/→ move a step, Shift four. Zooming and panning leave the
   braces where they are. The audio loops between them to the sample (`loopStart`/`loopEnd`), with
   the click in time; a playhead outside a loop being turned on or moved goes to its start, and a
   seek past its end plays on. The braces last as long as the page stays on the track.

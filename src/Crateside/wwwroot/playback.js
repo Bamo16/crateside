@@ -155,7 +155,7 @@ class Playback extends View(Rows(Overview(Follow(Loop(Window(PlayerStrip(AudioEn
         this.drag = null;
         this.braceDrag = null;
         this.scrolling = null;
-        document.body.classList.remove("pb-locked", "pb-locked-start", "pb-locked-end", "pb-locked-body");
+        document.body.classList.remove("pb-locked", "pb-locked-start", "pb-locked-end", "pb-locked-body", "pb-locked-resize");
     }
 
     setTrack(trackKey, files, defaultId) {

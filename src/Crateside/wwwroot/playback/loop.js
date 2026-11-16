@@ -138,7 +138,7 @@ export const Loop = (Base) =>
                 scale: this.loopScale(),
                 listeners,
             };
-            document.body.classList.add("pb-locked", `pb-locked-${region}`);
+            document.body.classList.add("pb-locked", region === "body" ? "pb-locked-body" : "pb-locked-resize");
             this.hideSeekLine();
 
             for (const [name, handler] of Object.entries(listeners))
@@ -203,7 +203,7 @@ export const Loop = (Base) =>
                 // Already released.
             }
 
-            document.body.classList.remove("pb-locked", "pb-locked-start", "pb-locked-end", "pb-locked-body");
+            document.body.classList.remove("pb-locked", "pb-locked-start", "pb-locked-end", "pb-locked-body", "pb-locked-resize");
             this.braceDrag = null;
 
             return drag;

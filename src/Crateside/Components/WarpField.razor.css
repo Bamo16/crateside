@@ -36,7 +36,7 @@
     background: var(--text-30);
 }
 
-/* The loop's braces: a filled bar, as in Live, over the loop's range just over the ruler, with a bracket at each end as its handle, and a line from each end down through the lanes. */
+/* The loop's braces: a filled bar, as in Live, over the loop's range just over the ruler, its ends the resize zones, and a line from each end down through the lanes. */
 .braces {
     position: absolute;
     top: -11px;
@@ -91,45 +91,30 @@
     background: currentColor;
 }
 
+/* No glyph: the filled bar's two ends are the resize zones, a few pixels each side of the line, as in Live. */
 .brace-end {
     position: absolute;
-    top: 0;
-    width: 9px;
-    height: 9px;
+    top: 2px;
+    width: 8px;
+    height: 5px;
     pointer-events: auto;
-}
-
-.brace-end::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    border: 2px solid currentColor;
+    cursor: ew-resize;
 }
 
 .brace-end.start {
-    left: -5px;
-    cursor: url("/cursors/bracket-start.svg") 10 12, ew-resize;
-}
-
-.brace-end.start::before {
-    left: 4px;
-    border-right: 0;
+    left: -4px;
 }
 
 .brace-end.end {
-    right: -5px;
-    cursor: url("/cursors/bracket-end.svg") 14 12, ew-resize;
+    right: -4px;
 }
 
-.brace-end.end::before {
-    right: 4px;
-    border-left: 0;
+.brace-end:hover,
+.brace-end:focus-visible {
+    background: var(--text-50);
 }
 
-.brace-bar:hover,
-.brace-end:hover {
+.brace-bar:hover {
     color: var(--text);
 }
 
