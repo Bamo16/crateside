@@ -21,7 +21,7 @@
                      @onclick="() => PickAsync(band)">
                     @if ((right - left) / 100 * PlotPixels >= 56)
                     {
-                        <span class="mono key-label">@band.Label</span>
+                        <span class="mono key-label">@LabelOf(band)</span>
                     }
                 </button>
             }
@@ -67,6 +67,17 @@
         band.Section is { Length: > 0 } label
             ? SelectedSectionChanged.InvokeAsync(IsPicked(band) ? null : label)
             : Task.CompletedTask;
+
+    /// <summary>A ruler tag over the same span already says the section, so the band says only the key.</summary>
+    private string LabelOf(KeyBand band) =>
+        band.Section is { Length: > 0 } label
+        && Run.Readings.Any(reading =>
+            reading is { Window: { AskedBy: WindowAsker.User, Start: var start }, Section.Label: var tagged }
+            && tagged == label
+            && start == band.Start
+        )
+            ? band.Key
+            : band.Label;
 
     private KeyStripPlan Plan => KeyStrip.Plan(Run, Seconds);
 
