@@ -25,6 +25,15 @@ public interface ISourcePages
         CancellationToken ct = default
     ) => FetchAsync(artist, title, ct);
 
+    /// <summary>As above, also accepting a song the sites file with the album's game in its name (<c>Hot-Head Bop - Donkey Kong Country 2</c>).</summary>
+    Task<IReadOnlyList<SiteLookup>> FetchAsync(
+        string artist,
+        string title,
+        IReadOnlyList<string> alsoCredited,
+        string? album,
+        CancellationToken ct = default
+    ) => FetchAsync(artist, title, alsoCredited, ct);
+
     /// <summary>One page by its address, read as a found page is; a refusal says why it is not one the rules can count (ADR 0078).</summary>
     Task<PageFetch> FetchPageAsync(string address, CancellationToken ct = default) =>
         Task.FromResult<PageFetch>(
@@ -56,10 +65,18 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
     ) => FetchAsync(artist, title, [], ct);
 
     /// <summary>A bracketed tail on the title (<c>(feat. …)</c>, <c>(Remaster)</c>) or a <c> - Act 1</c> is left out, since the sites file the song without it.</summary>
+    public Task<IReadOnlyList<SiteLookup>> FetchAsync(
+        string artist,
+        string title,
+        IReadOnlyList<string> alsoCredited,
+        CancellationToken ct = default
+    ) => FetchAsync(artist, title, alsoCredited, null, ct);
+
     public async Task<IReadOnlyList<SiteLookup>> FetchAsync(
         string artist,
         string title,
         IReadOnlyList<string> alsoCredited,
+        string? album,
         CancellationToken ct = default
     )
     {
@@ -67,7 +84,10 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
 
         return
         [
-            await LookUpAsync("Hooktheory", () => HooktheoryAsync(artist, bare, alsoCredited, ct)),
+            await LookUpAsync(
+                "Hooktheory",
+                () => HooktheoryAsync(artist, bare, alsoCredited, album, ct)
+            ),
             await LookUpAsync(
                 "Musicnotes",
                 async () => new FoundPages(await MusicnotesAsync(artist, bare, ct), [])
@@ -139,11 +159,12 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
         string artist,
         string title,
         IReadOnlyList<string> alsoCredited,
+        string? album,
         CancellationToken ct
     )
     {
         List<FetchedPage> pages = [];
-        var hits = await HooktheorySearchAsync(artist, title, alsoCredited, ct);
+        var hits = await HooktheorySearchAsync(artist, title, alsoCredited, album, ct);
 
         foreach (var url in HooktheoryUrls(artist, title, hits.Confirmed))
         {
@@ -209,6 +230,7 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
         string artist,
         string title,
         IReadOnlyList<string> alsoCredited,
+        string? album,
         CancellationToken ct
     )
     {
@@ -242,7 +264,9 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
             }
 
             return HooktheoryHits.Merge(
-                bodies.Select(body => HooktheoryTabUrls(body, [artist, .. alsoCredited], title))
+                bodies.Select(body =>
+                    HooktheoryTabUrls(body, [artist, .. alsoCredited], title, album)
+                )
             );
         }
         catch (Exception ex)
@@ -272,7 +296,8 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
     internal static HooktheoryHits HooktheoryTabUrls(
         string search,
         IReadOnlyList<string> artists,
-        string title
+        string title,
+        string? album = null
     )
     {
         try
@@ -291,7 +316,7 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
                             ArtistSlug.Length: > 0,
                             SongSlug.Length: > 0,
                         }
-                    && Slug(hit.Song) == Slug(title)
+                    && IsSong(hit.Song, title, album)
                 )
                 .Select(hit =>
                     (
@@ -320,6 +345,23 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
             return HooktheoryHits.None;
         }
     }
+
+    /// <summary>
+    /// Whether a page's song is this title, spelled loosely, or this title with the album's game
+    /// named on one side of a <c> - </c> (<c>Hot-Head Bop - Donkey Kong Country 2</c> on
+    /// <c>Donkey Kong Country 2: Diddy's Kong Quest</c>).
+    /// </summary>
+    internal static bool IsSong(string pageSong, string title, string? album) =>
+        Slug(pageSong) == Slug(title)
+        || (
+            album?.Split([": ", " - "], 2, StringSplitOptions.None)[0] is { } game
+            && Slug(game) is { Length: > 0 } gameSlug
+            && pageSong.Split(" - ", StringSplitOptions.TrimEntries) is [var first, var second]
+            && (
+                (Slug(first) == Slug(title) && Slug(second) == gameSlug)
+                || (Slug(second) == Slug(title) && Slug(first) == gameSlug)
+            )
+        );
 
     /// <summary>Whether a page's artist is any of the credited names, spelled loosely.</summary>
     internal static bool IsCredited(string pageArtist, IEnumerable<string> credited) =>

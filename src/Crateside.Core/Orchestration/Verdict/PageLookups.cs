@@ -28,7 +28,13 @@ public sealed class PageLookups(
         if (NamesOf(order) is not var (artist, title))
             return [];
 
-        var lookups = await pages.FetchAsync(artist, title, AlsoCreditedOf(order), ct);
+        var lookups = await pages.FetchAsync(
+            artist,
+            title,
+            AlsoCreditedOf(order),
+            IntakeOf(order)?.Release?.Album,
+            ct
+        );
 
         if (!lookups.Any(VerdictRules.MayHoldAnotherKey))
             SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.WriteFile(

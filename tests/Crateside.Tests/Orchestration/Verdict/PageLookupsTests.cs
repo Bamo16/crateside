@@ -82,6 +82,7 @@ public sealed class PageLookupsTests : IDisposable
                 SongTitle = "Stickerbush Symphony",
                 Release = new Core.Imports.Release
                 {
+                    Album = "Donkey Kong Country 2: Diddy's Kong Quest",
                     AlbumArtist = "Rare",
                     Composer = "David Wise",
                     Organization = "Rare, Nintendo",
@@ -103,6 +104,7 @@ public sealed class PageLookupsTests : IDisposable
 
         Assert.Equal([("Dave Wise", "Stickerbush Symphony")], _pages.Asked);
         Assert.Equal(["Rare", "David Wise", "Rare, Nintendo"], _pages.AlsoCredited.Single());
+        Assert.Equal(["Donkey Kong Country 2: Diddy's Kong Quest"], _pages.Albums);
     }
 
     [Fact]
@@ -134,6 +136,21 @@ public sealed class PageLookupsTests : IDisposable
         public List<(string Artist, string Title)> Asked { get; } = [];
 
         public List<IReadOnlyList<string>> AlsoCredited { get; } = [];
+
+        public List<string?> Albums { get; } = [];
+
+        public Task<IReadOnlyList<SiteLookup>> FetchAsync(
+            string artist,
+            string title,
+            IReadOnlyList<string> alsoCredited,
+            string? album,
+            CancellationToken ct = default
+        )
+        {
+            Albums.Add(album);
+
+            return FetchAsync(artist, title, alsoCredited, ct);
+        }
 
         public Task<IReadOnlyList<SiteLookup>> FetchAsync(
             string artist,

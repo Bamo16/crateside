@@ -539,6 +539,75 @@ public sealed class SourcePagesTests
         Assert.Equal("Someone Else", Assert.Single(merged.Candidates).Artist);
     }
 
+    private const string GameSearch = """
+        {"hits":[
+          {"artist":"David Wise","song":"Hot-Head Bop - Donkey Kong Country 2","artistSlug":"david-wise","songSlug":"hot-head-bop-donkey-kong-country-2"},
+          {"artist":"Nintendo","song":"Donkey Kong Country 2 - Forest Interlude","artistSlug":"nintendo","songSlug":"donkey-kong-country-2-forest-interlude"},
+          {"artist":"Koji Hayama","song":"Ape Escape 2 - Snowball Ski Slope","artistSlug":"koji-hayama","songSlug":"ape-escape-2-snowball-ski-slope"},
+          {"artist":"Yoko Shimomura","song":"Super Mario RPG - Sad Song","artistSlug":"yoko-shimomura","songSlug":"super-mario-rpg-sad-song"}
+        ]}
+        """;
+
+    private const string DiddysKongQuest = "Donkey Kong Country 2: Diddy's Kong Quest";
+
+    [Fact]
+    public void A_song_filed_with_the_albums_game_in_its_name_is_confirmed_under_a_credited_artist()
+    {
+        var hot = SourcePages.HooktheoryTabUrls(
+            GameSearch,
+            ["Dave Wise"],
+            "Hot-Head Bop",
+            DiddysKongQuest
+        );
+        var forest = SourcePages.HooktheoryTabUrls(
+            GameSearch,
+            ["Dave Wise", "Rare, Nintendo"],
+            "Forest Interlude",
+            DiddysKongQuest
+        );
+
+        Assert.Equal(
+            [
+                "https://www.hooktheory.com/theorytab/view/david-wise/hot-head-bop-donkey-kong-country-2",
+            ],
+            hot.Confirmed
+        );
+        Assert.Equal(
+            [
+                "https://www.hooktheory.com/theorytab/view/nintendo/donkey-kong-country-2-forest-interlude",
+            ],
+            forest.Confirmed
+        );
+    }
+
+    [Theory]
+    [InlineData("Hot-Head Bop", null)]
+    [InlineData("Hot-Head Bop", "Donkey Kong Country: Diddy's Kong Quest")]
+    [InlineData("Slope", "Super Mario RPG: Legend of the Seven Stars Original Soundtrack")]
+    public void A_game_in_a_pages_song_name_counts_only_when_it_is_the_albums_game(
+        string title,
+        string? album
+    ) =>
+        Assert.Empty(
+            SourcePages
+                .HooktheoryTabUrls(GameSearch, ["Dave Wise", "Koji Hayama"], title, album)
+                .Confirmed
+        );
+
+    [Fact]
+    public void A_title_beside_the_albums_game_under_nobody_credited_is_only_a_candidate()
+    {
+        var hits = SourcePages.HooktheoryTabUrls(
+            GameSearch,
+            ["Someone"],
+            "Sad Song",
+            "Super Mario RPG: Legend of the Seven Stars Original Soundtrack"
+        );
+
+        Assert.Empty(hits.Confirmed);
+        Assert.Equal("Yoko Shimomura", Assert.Single(hits.Candidates).Artist);
+    }
+
     [Fact]
     public void A_lookup_with_no_candidates_is_stored_exactly_as_before()
     {
