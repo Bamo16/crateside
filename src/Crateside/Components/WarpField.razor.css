@@ -36,7 +36,7 @@
     background: var(--text-30);
 }
 
-/* The loop's braces: a thin bar just over the ruler with a mark at each end, and a line from each end down through the lanes. */
+/* The loop's braces: a filled bar, as in Live, over the loop's range just over the ruler, with a bracket at each end as its handle, and a line from each end down through the lanes. */
 .braces {
     position: absolute;
     top: -11px;
@@ -84,10 +84,10 @@
 .brace-bar::before {
     content: "";
     position: absolute;
-    top: 3px;
+    top: 2px;
     right: -1px;
     left: -1px;
-    height: 2px;
+    height: 5px;
     background: currentColor;
 }
 
