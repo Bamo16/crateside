@@ -22,7 +22,7 @@ public sealed class WarpLending(
 {
     private readonly WarpOptions _options = options.Value;
 
-    private readonly Dictionary<string, string> _tried = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> _tried = [with(StringComparer.OrdinalIgnoreCase)];
 
     /// <summary>Tries each staged stem whose own files or siblings' sidecars changed since its last try.</summary>
     public async Task<IReadOnlyList<WarpLoan>> LendAsync(CancellationToken ct = default)

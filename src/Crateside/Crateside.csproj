@@ -12,6 +12,13 @@
 
         <!-- The API's summaries come from doc comments (#167); most members rightly have none. -->
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+        <!-- BL0016 (new in .NET 11) wants every JS interop call in try/catch for a circuit that has
+             gone. The calls that can run after one has (disposal, a timer tick) already catch
+             JSDisconnectedException; the rest sit in a handler for the user's own click, on a
+             local single-user app, where the circuit is alive by construction. It is a Razor
+             compiler diagnostic, so .editorconfig cannot set its severity; NoWarn does. -->
+        <NoWarn>$(NoWarn);BL0016</NoWarn>
     </PropertyGroup>
 
     <!-- The build writes the OpenAPI document to docs/openapi.json, so an API change shows in the

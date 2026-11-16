@@ -28,7 +28,7 @@
             // stemforge-cli when crateside exits (ADR 0042). What `dotnet run` would run, from
             // where, with the launch profile's environment.
             "type": "process",
-            "command": "${workspaceFolder}/src/Crateside/bin/Debug/net10.0/Crateside.exe",
+            "command": "${workspaceFolder}/src/Crateside/bin/Debug/net11.0/Crateside.exe",
             "options": {
                 "cwd": "${workspaceFolder}/src/Crateside",
                 "env": {

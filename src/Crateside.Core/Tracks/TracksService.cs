@@ -20,7 +20,7 @@ public sealed class TracksService : IDisposable
     private static readonly TimeSpan Heartbeat = TimeSpan.FromMinutes(1);
 
     /// <summary>Tracks already announced as ready to warp, so each is announced once.</summary>
-    private readonly HashSet<string> _announced = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _announced = [with(StringComparer.Ordinal)];
 
     private readonly Lock _gate = new();
     private readonly ITracksReader _reader;

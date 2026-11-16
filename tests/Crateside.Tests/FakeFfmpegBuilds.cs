@@ -6,9 +6,10 @@ namespace Crateside.Tests;
 /// <summary>Stands in for ffmpeg builds made as files under a folder: each answers for its own filter, and a run prints nothing.</summary>
 internal sealed class FakeFfmpegBuilds(string folder) : IProcessRunner
 {
-    private readonly Dictionary<string, (string Filter, string Version)> _builds = new(
-        StringComparer.OrdinalIgnoreCase
-    );
+    private readonly Dictionary<string, (string Filter, string Version)> _builds =
+    [
+        with(StringComparer.OrdinalIgnoreCase),
+    ];
 
     /// <summary>A new executable in a folder of its own, carrying the filter at that version, its bytes unlike any other's.</summary>
     public string Add(FfmpegFilter filter, string version)

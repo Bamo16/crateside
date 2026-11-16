@@ -29,7 +29,7 @@ public sealed class HandoffSidecars(
         var cuts = stems.Select(WarpSiblings.Read).OfType<SiblingFile>().ToList();
         StarterGrid? grid = null;
         var measured = false;
-        Dictionary<string, PreparedSidecar> prepared = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, PreparedSidecar> prepared = [with(StringComparer.OrdinalIgnoreCase)];
 
         foreach (var cut in cuts)
         {

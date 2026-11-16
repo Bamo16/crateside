@@ -1,5 +1,5 @@
 {
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "crateside",
     "description": "JSON over what crateside's pages show and a few named actions, on localhost only. See docs/api.md.",
@@ -128,7 +128,7 @@
           "404": {
             "description": "Not Found",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -180,7 +180,7 @@
           "404": {
             "description": "Not Found",
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
                 }
@@ -298,10 +298,7 @@
             "description": "The dangerous outcome: relative keys share every note, so only the cadence or a human\r\nsource can break it."
           },
           "detectors": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "The pair's detectors by the names on screen: `madmom and keydetect`."
           }
         },
@@ -317,10 +314,7 @@
             "type": "string"
           },
           "label": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "The name on screen: keydetect, madmom, Essentia. string AlgorithmResult.Name goes in the row's tooltip."
           },
           "key": {
@@ -380,7 +374,14 @@
             "description": "ffmpeg's banding on its correlation: below 0.70 distrust, above 0.75 usually right."
           },
           "flagChip": {
-            "$ref": "#/components/schemas/FlagChip"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/FlagChip"
+              }
+            ]
           },
           "error": {
             "type": [
@@ -525,10 +526,7 @@
             "format": "int32"
           },
           "text": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": "string"
           }
         },
         "description": "Bars int BarSpan.First to int BarSpan.Last, both included; shown as Live's selection, to the start of int BarSpan.End (ADR 0085)."
@@ -1236,20 +1234,14 @@
             "description": "Each removal already acted on, per stem file, so a choice made since is not undone by the same removal."
           },
           "styles": {
-            "type": [
-              "null",
-              "array"
-            ],
+            "type": "array",
             "items": {
               "type": "string"
             },
             "description": "The sources' labels, kept as the song's styles and never written as tags."
           },
           "genres": {
-            "type": [
-              "null",
-              "array"
-            ],
+            "type": "array",
             "items": {
               "type": "string"
             },
@@ -1380,6 +1372,7 @@
           "moved",
           "cleared"
         ],
+        "type": "object",
         "properties": {
           "kind": {
             "enum": [
@@ -1417,6 +1410,7 @@
           "cachedTokens",
           "outputTokens"
         ],
+        "type": "object",
         "properties": {
           "kind": {
             "enum": [
@@ -1493,6 +1487,7 @@
           "applied",
           "key"
         ],
+        "type": "object",
         "properties": {
           "kind": {
             "enum": [
@@ -1762,10 +1757,7 @@
             ]
           },
           "displayName": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "What to call this song on screen — not string LedgerRun.Song, which is a lowercase slug.\r\nFalls back to the identity when a run recorded neither artist nor title."
           },
           "sourceUrl": {
@@ -1810,7 +1802,14 @@
             "description": "The tagged key in ASCII spelling (`G# major`): the collapse of TonalCenter? LedgerRun.Center."
           },
           "mode": {
-            "$ref": "#/components/schemas/DiatonicMode"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DiatonicMode"
+              }
+            ]
           },
           "isCollapsed": {
             "type": "boolean",
@@ -2437,10 +2436,7 @@
             ]
           },
           "displayName": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "What to call this song on screen — see string LedgerRun.DisplayName."
           },
           "key": {
@@ -2461,7 +2457,14 @@
             ]
           },
           "mode": {
-            "$ref": "#/components/schemas/DiatonicMode"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DiatonicMode"
+              }
+            ]
           },
           "mixed": {
             "type": "boolean"
@@ -2673,10 +2676,7 @@
             "description": "What the judge wanted the window to settle, in one sentence."
           },
           "name": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "What the window's section is called: its label, else its span."
           }
         },
@@ -3153,10 +3153,7 @@
             "description": "Read against a catalog that could say which preset each file is. When false, the whole plan\r\nlooks missing and must not be believed."
           },
           "presets": {
-            "type": [
-              "null",
-              "array"
-            ],
+            "type": "array",
             "items": {
               "type": "string"
             },
@@ -3175,10 +3172,7 @@
             "description": "A warp guide is on disk, so a re-cut need not make another (ADR 0018)."
           },
           "unrecognized": {
-            "type": [
-              "null",
-              "array"
-            ],
+            "type": "array",
             "items": {
               "$ref": "#/components/schemas/ClassifiedStem"
             },
@@ -3678,10 +3672,7 @@
             "$ref": "#/components/schemas/DiatonicMode"
           },
           "collapsed": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "The 24-key form Ableton is tagged with, keeping the tonic: `A minor` for A Dorian."
           },
           "isModal": {
@@ -3689,10 +3680,7 @@
             "description": "Whether the collapse loses anything: a mode other than Ionian or Aeolian."
           },
           "name": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "`A Dorian`, or `A minor` where the mode is plain."
           }
         },
@@ -3933,10 +3921,7 @@
             "type": "string"
           },
           "detailsHref": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "The page-relative link to Track details."
           },
           "playlistItemId": {
@@ -3980,10 +3965,7 @@
             "format": "int32"
           },
           "uploads": {
-            "type": [
-              "null",
-              "array"
-            ],
+            "type": "array",
             "items": {
               "$ref": "#/components/schemas/TrackUpload"
             },
@@ -4021,17 +4003,11 @@
             "format": "int32"
           },
           "renameScope": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "What renaming would touch, for the button that offers it."
           },
           "renameDetail": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "The sentence beside the button, saying what string TrackRow.RenameScope means."
           },
           "verdict": {
@@ -4057,10 +4033,7 @@
             ]
           },
           "song": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "What the genre store knows this song by: the ledger's identity, or the upload for a song it\r\nnever judged (ADR 0030)."
           },
           "genre": {
@@ -4093,8 +4066,15 @@
             "description": "What the maintainer has marked this track as."
           },
           "artistAndTitle": {
-            "description": "The ledger's artist and title, else the row's own name split at its dash. Null while the row\r\nhas only the upload's title, whose artist is a guess.",
-            "$ref": "#/components/schemas/ValueTupleOfstringAndstring"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The ledger's artist and title, else the row's own name split at its dash. Null while the row\r\nhas only the upload's title, whose artist is a guess.",
+                "$ref": "#/components/schemas/ValueTupleOfstringAndstring"
+              }
+            ]
           },
           "key": {
             "type": [
@@ -4107,12 +4087,26 @@
             "$ref": "#/components/schemas/KeyConfidence"
           },
           "decidedBy": {
-            "description": "Who made the current verdict; null when there is none (ADR 0076).",
-            "$ref": "#/components/schemas/DecidedBy"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Who made the current verdict; null when there is none (ADR 0076).",
+                "$ref": "#/components/schemas/DecidedBy"
+              }
+            ]
           },
           "bpm": {
-            "description": "The headline tempo: the finished warp's, else crateside's reading, else the ledger's estimate (ADR 0049).",
-            "$ref": "#/components/schemas/TrackTempo"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The headline tempo: the finished warp's, else crateside's reading, else the ledger's estimate (ADR 0049).",
+                "$ref": "#/components/schemas/TrackTempo"
+              }
+            ]
           },
           "fullMixBeats": {
             "oneOf": [
@@ -4126,12 +4120,26 @@
             ]
           },
           "tempo": {
-            "description": "The tempo of a finished warp, the instrumental's where there is one.",
-            "$ref": "#/components/schemas/WarpTempo"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The tempo of a finished warp, the instrumental's where there is one.",
+                "$ref": "#/components/schemas/WarpTempo"
+              }
+            ]
           },
           "beats": {
-            "description": "beatdetect's reading of the upload's source, else of its instrumental, once the worker has read it.",
-            "$ref": "#/components/schemas/BeatReading"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "beatdetect's reading of the upload's source, else of its instrumental, once the worker has read it.",
+                "$ref": "#/components/schemas/BeatReading"
+              }
+            ]
           },
           "tempoDrifts": {
             "type": "boolean",
@@ -4357,10 +4365,7 @@
             "description": "Headed for judging with nothing in its way: unjudged, and queued, downloading or detecting —\r\nthe same count whichever of those it is in."
           },
           "chipLabel": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "What the state chip reads."
           },
           "chipStyle": {
@@ -4372,17 +4377,11 @@
             "description": "Whether the chip carries a dot — the mark of work happening right now."
           },
           "next": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "What happens next, in plain English — or what is waiting on the user."
           },
           "detail": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "description": "The expanded row's sentence: what the verdict was, whether Ableton still agrees with it,\r\nand how long the track has been sitting in staging."
           },
           "retryNote": {
@@ -4442,10 +4441,7 @@
             "type": "boolean"
           },
           "labels": {
-            "type": [
-              "null",
-              "array"
-            ],
+            "type": "array",
             "items": {
               "type": "string"
             },
@@ -4662,12 +4658,26 @@
             "description": "Known to the hundredth: a steady warp whose grid holds against the audio, any other warp that holds, a typed figure, or a reading whose windows agree tightly."
           },
           "off": {
-            "description": "A steady warp that sits off the tempo the audio holds, and the tempo it should be at (#96).",
-            "$ref": "#/components/schemas/TempoOff"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "A steady warp that sits off the tempo the audio holds, and the tempo it should be at (#96).",
+                "$ref": "#/components/schemas/TempoOff"
+              }
+            ]
           },
           "unconfirmed": {
-            "description": "A steady warp the audio gives no verdict on: a step in its grid, too few transients, or no tempo that holds.",
-            "$ref": "#/components/schemas/WarpGrid"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "A steady warp the audio gives no verdict on: a step in its grid, too few transients, or no tempo that holds.",
+                "$ref": "#/components/schemas/WarpGrid"
+              }
+            ]
           },
           "changesTempo": {
             "type": "boolean",
@@ -4678,18 +4688,22 @@
             "description": "A warp with one stable tempo and a ramp or drifting stretch besides."
           },
           "windows": {
-            "type": [
-              "null",
-              "array"
-            ],
+            "type": "array",
             "items": {
               "$ref": "#/components/schemas/TempoWindow"
             },
             "description": "The source's windows in the octave of double TrackTempo.Value: a warp's four bars, a reading's 30 s, less its off-tempo ones."
           },
           "range": {
-            "description": "The slowest and fastest window of a drifting tempo.",
-            "$ref": "#/components/schemas/ValueTupleOfdoubleAnddouble"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The slowest and fastest window of a drifting tempo.",
+                "$ref": "#/components/schemas/ValueTupleOfdoubleAnddouble"
+              }
+            ]
           }
         },
         "description": "A BPM as crateside shows it: the value, where it came from, and the figures behind it (ADR 0049, 0050)."
@@ -4900,6 +4914,7 @@
           "from",
           "written"
         ],
+        "type": "object",
         "properties": {
           "kind": {
             "enum": [
@@ -4918,6 +4933,7 @@
         "description": "A sibling's warp crateside copied onto this stem (ADR 0043)."
       },
       "WarpOwnerLiveAnalysis": {
+        "type": "object",
         "properties": {
           "kind": {
             "enum": [
@@ -4929,6 +4945,7 @@
         "description": "Live analyzed the file but no warp was saved, so Live ignores its markers."
       },
       "WarpOwnerNone": {
+        "type": "object",
         "properties": {
           "kind": {
             "enum": [
@@ -4943,6 +4960,7 @@
         "required": [
           "awaited"
         ],
+        "type": "object",
         "properties": {
           "kind": {
             "enum": [
@@ -4960,6 +4978,7 @@
         "required": [
           "written"
         ],
+        "type": "object",
         "properties": {
           "kind": {
             "enum": [
@@ -4978,6 +4997,7 @@
         "required": [
           "written"
         ],
+        "type": "object",
         "properties": {
           "kind": {
             "enum": [
@@ -4996,6 +5016,7 @@
         "required": [
           "awaited"
         ],
+        "type": "object",
         "properties": {
           "kind": {
             "enum": [
@@ -5015,6 +5036,7 @@
           "lentTo",
           "savedOver"
         ],
+        "type": "object",
         "properties": {
           "kind": {
             "enum": [

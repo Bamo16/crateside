@@ -291,7 +291,7 @@ public sealed class LedgerStoreTests : IDisposable
         store.Restate(Judged, Other);
 
         var lines = File.ReadAllLines(store.ExportPath!)
-            .Select(line => JsonDocument.Parse(line).RootElement)
+            .Select(line => JsonElement.Parse(line))
             .ToList();
 
         Assert.Equal(2, lines.Count);
@@ -324,7 +324,7 @@ public sealed class LedgerStoreTests : IDisposable
 
         store.Record(Run() with { DecidedBy = DecidedBy.Rules });
 
-        var line = JsonDocument.Parse(File.ReadAllLines(store.ExportPath!).Single()).RootElement;
+        var line = JsonElement.Parse(File.ReadAllLines(store.ExportPath!).Single());
 
         Assert.Equal("Rules", line.GetProperty("run").GetProperty("decidedBy").GetString());
     }

@@ -39,7 +39,7 @@ public sealed class StemEditor(
     /// Plans ticked here that the rows have not caught up with yet, so a tick shows at once and the
     /// next one builds on it rather than on a plan a rescan has still to bring back.
     /// </summary>
-    private readonly Dictionary<string, StemPlan> _ticked = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, StemPlan> _ticked = [with(StringComparer.Ordinal)];
 
     private StemPlan _wanted = StemPlan.Default;
 

@@ -287,7 +287,7 @@ public sealed class TrackRename(
     /// <summary>What each file's entry held before it moved, by its old path.</summary>
     private Dictionary<string, FileTags> Hold(IReadOnlyList<string> files)
     {
-        Dictionary<string, FileTags> held = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, FileTags> held = [with(StringComparer.OrdinalIgnoreCase)];
 
         foreach (var root in files.GroupBy(RootOf, StringComparer.OrdinalIgnoreCase))
         {

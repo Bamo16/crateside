@@ -291,7 +291,7 @@ public sealed class KnownBuilds(
             {
                 [FfmpegBuild.NameOf(FfmpegFilter.Beatdetect)] = new(builds, pinned),
             },
-            _ => new(StringComparer.Ordinal),
+            _ => [with(StringComparer.Ordinal)],
         };
 }
 

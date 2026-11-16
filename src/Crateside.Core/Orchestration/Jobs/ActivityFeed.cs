@@ -39,8 +39,8 @@ public sealed record ActivityFeed(IReadOnlyList<ActivityAction> Actions)
     public static ActivityFeed From(IReadOnlyList<JobUpdate> updates)
     {
         List<ActivityAction> actions = [];
-        Dictionary<string, (int Sequence, JobUpdate Start)> open = new(StringComparer.Ordinal);
-        Dictionary<string, ActivityAction> last = new(StringComparer.Ordinal);
+        Dictionary<string, (int Sequence, JobUpdate Start)> open = [with(StringComparer.Ordinal)];
+        Dictionary<string, ActivityAction> last = [with(StringComparer.Ordinal)];
 
         for (var i = 0; i < updates.Count; i++)
         {

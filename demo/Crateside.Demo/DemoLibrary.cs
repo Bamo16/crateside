@@ -22,10 +22,14 @@ internal sealed class DemoLibrary
     private readonly DateTimeOffset _now;
     private readonly SettableTimeProvider _clock;
     private readonly List<StemTagRecord> _tags = [];
-    private readonly Dictionary<string, LoudnessEntry> _loudness = new(
-        StringComparer.OrdinalIgnoreCase
-    );
-    private readonly Dictionary<string, BeatEntry> _beats = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, LoudnessEntry> _loudness =
+    [
+        with(StringComparer.OrdinalIgnoreCase),
+    ];
+    private readonly Dictionary<string, BeatEntry> _beats =
+    [
+        with(StringComparer.OrdinalIgnoreCase),
+    ];
 
     public DemoLibrary(string root, DateTimeOffset now)
     {

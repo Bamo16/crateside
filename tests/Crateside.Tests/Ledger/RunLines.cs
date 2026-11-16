@@ -14,7 +14,7 @@ internal static class RunLines
         if (!File.Exists(path))
             return;
 
-        Dictionary<string, string> trackKeys = new(StringComparer.Ordinal);
+        Dictionary<string, string> trackKeys = [with(StringComparer.Ordinal)];
 
         foreach (var line in Read(path))
         {

@@ -15,7 +15,7 @@ internal sealed class LiveIndex : IDisposable
     private static readonly long UserKeyword = FourCc("UKey");
 
     private readonly SqliteConnection _db;
-    private readonly Dictionary<string, long> _places = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, long> _places = [with(StringComparer.OrdinalIgnoreCase)];
 
     public LiveIndex(string folder)
     {

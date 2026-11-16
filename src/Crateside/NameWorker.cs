@@ -26,7 +26,7 @@ public sealed class NameWorker(
     /// Uploads that would not resolve, so a removed or private video is not asked about every
     /// tick for ever. Held in memory only, so a restart retries them.
     /// </summary>
-    private readonly HashSet<string> _unresolvable = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _unresolvable = [with(StringComparer.Ordinal)];
 
     private readonly NewWork _newWork = new(
         tracks,

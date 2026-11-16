@@ -10,7 +10,7 @@ public sealed class NewWork : IDisposable
 {
     private readonly TracksService _tracks;
     private readonly Func<IReadOnlyList<TrackRow>, IEnumerable<string>> _pending;
-    private readonly HashSet<string> _seen = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _seen = [with(StringComparer.Ordinal)];
     private readonly Lock _gate = new();
     private TaskCompletionSource _wake = new(TaskCreationOptions.RunContinuationsAsynchronously);
 

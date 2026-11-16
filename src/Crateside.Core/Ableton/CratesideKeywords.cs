@@ -9,12 +9,13 @@ namespace Crateside.Core.Ableton;
 /// <summary>The keywords crateside will write: Live's own key and type, and the groups it settles itself.</summary>
 public static partial class CratesideKeywords
 {
-    private static readonly HashSet<string> Types = new(StringComparer.Ordinal)
-    {
+    private static readonly HashSet<string> Types =
+    [
+        with(StringComparer.Ordinal),
         "Vocal",
         "Instrumental",
         "Loop",
-    };
+    ];
 
     [GeneratedRegex(@"^[1-9][0-9]*/[1-9][0-9]*$")]
     private static partial Regex Meter { get; }

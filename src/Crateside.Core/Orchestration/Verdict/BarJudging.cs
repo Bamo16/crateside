@@ -16,7 +16,7 @@ public sealed class BarJudging(
     TimeProvider time
 ) : IBarRuns, IDisposable
 {
-    private readonly Dictionary<string, BarRun> _runs = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, BarRun> _runs = [with(StringComparer.Ordinal)];
     private readonly Lock _gate = new();
     private readonly CancellationTokenSource _stopping = new();
 

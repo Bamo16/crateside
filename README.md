@@ -159,7 +159,7 @@ subscription each track costs about 37k tokens of session start-up, and backgrou
 
 - **Windows.** Paths, the folder chooser, the token encryption and process handling assume it.
   Nothing else is planned.
-- **.NET 10 SDK** (`global.json` pins 10.0.202 or a later 10.0 feature band).
+- **.NET 11 SDK** (`global.json` pins 11.0.100 or a later 11.0 feature band).
 - **Ableton Live**, with a Staging folder and a library folder, both chosen in Settings.
 - **[StemForge](https://github.com/Bamo16/StemForge)'s `stemforge-cli` on `PATH`**, set up for
   separation, and a GPU for it to use.

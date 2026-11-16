@@ -25,13 +25,13 @@ public sealed class DetectorSet(
 ) : IDetectorSet
 {
     /// <summary>Without the escaping meant for HTML, so a title's own script and a pair's <c>+</c> stay readable.</summary>
-    private static readonly JsonTypeInfo<MachineDto> Written =
-        (JsonTypeInfo<MachineDto>)
-            new JsonSerializerOptions(RunEvidenceJsonContext.Default.Options)
-            {
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            }.GetTypeInfo(typeof(MachineDto));
+    private static readonly JsonTypeInfo<MachineDto> Written = new JsonSerializerOptions(
+        RunEvidenceJsonContext.Default.Options
+    )
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    }.GetTypeInfo<MachineDto>();
 
     /// <summary>keydetect through its pinned build, once the builds are seeded, decoding through the configured ffmpeg (ADR 0066).</summary>
     public DetectorSet(IProcessRunner runner, CratesidePaths paths, KnownBuilds builds)

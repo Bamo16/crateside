@@ -5,14 +5,15 @@ namespace Crateside.Core.Ableton;
 /// <summary>The mode tag crateside adds in Live's Key group beside the collapse (#127).</summary>
 public static class ModeTags
 {
-    private static readonly HashSet<string> Modal = new(StringComparer.Ordinal)
-    {
+    private static readonly HashSet<string> Modal =
+    [
+        with(StringComparer.Ordinal),
         nameof(DiatonicMode.Dorian),
         nameof(DiatonicMode.Phrygian),
         nameof(DiatonicMode.Lydian),
         nameof(DiatonicMode.Mixolydian),
         nameof(DiatonicMode.Locrian),
-    };
+    ];
 
     public static bool IsModal(string value) => Modal.Contains(value);
 

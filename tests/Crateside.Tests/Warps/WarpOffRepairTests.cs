@@ -190,7 +190,7 @@ public sealed class WarpOffRepairTests : IDisposable
 
     private sealed class SetsUsing : ISetLinks
     {
-        public Dictionary<string, string> Uses { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> Uses { get; } = [with(StringComparer.OrdinalIgnoreCase)];
 
         public OpenSet Open { get; set; } = OpenSet.NotRunning;
 
