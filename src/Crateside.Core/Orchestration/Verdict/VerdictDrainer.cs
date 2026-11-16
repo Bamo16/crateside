@@ -121,12 +121,22 @@ public sealed class VerdictDrainer(
             jobs.Record(order.TrackKey, JobStage.Verdict, JobStatus.Running);
             control.ReportJudging(order.TrackKey, $"Judging {order.Title} from bars");
 
-            var result =
-                workingSet.HasEvidence(order.TrackKey)
-                && await completer.CompleteAsync(order.TrackKey, direction.Audio, ct)
-                    is { } incomplete
-                    ? VerdictResult.Failed($"not judged: {incomplete}")
-                    : await judge.JudgeAsync(order, direction, onStep, ct);
+            VerdictResult result;
+
+            try
+            {
+                result =
+                    workingSet.HasEvidence(order.TrackKey)
+                    && await completer.CompleteAsync(order.TrackKey, direction.Audio, ct)
+                        is { } incomplete
+                        ? VerdictResult.Failed($"not judged: {incomplete}")
+                        : await judge.JudgeAsync(order, direction, onStep, ct);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Left Running, the job would hold the track out of the queue until a restart.
+                result = VerdictResult.Failed(ex.Message);
+            }
 
             jobs.Record(
                 order.TrackKey,
@@ -443,6 +453,13 @@ public sealed class VerdictDrainer(
             );
 
             return StageTick.Ran(order, result.IsSuccess, result.Error);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Left Running, the job would hold the track out of the queue until a restart.
+            jobs.Record(item.TrackKey, JobStage.Verdict, JobStatus.Failed, error: ex.Message);
+
+            return StageTick.Ran(order, false, ex.Message);
         }
         finally
         {

@@ -50,6 +50,7 @@ public sealed class VerdictDrainerTests : IDisposable
     private readonly VerdictControl _control;
     private readonly PauseStore _paused;
     private readonly SourceIndex _sources;
+    private bool _detectorsFail;
 
     private readonly FakeTimeProvider _time = new(
         DateTimeOffset.Parse("2026-10-30T15:36:00+00:00")
@@ -109,7 +110,7 @@ public sealed class VerdictDrainerTests : IDisposable
             new QuotaGuard(new UnknownQuota(), new FakeTimeProvider(), judge),
             _rejudges,
             _set,
-            new EvidenceCompleter(_set, _sources, new FakeDetectors()),
+            new EvidenceCompleter(_set, _sources, new FakeDetectors(() => _detectorsFail)),
             new DownloadRunner(_downloads),
             _paused,
             Options.Create(new CratesidePaths()),
@@ -191,6 +192,20 @@ public sealed class VerdictDrainerTests : IDisposable
         Assert.True(_jobs.TryGet(TrackKey, JobStage.Verdict, out var job));
         Assert.Equal(JobStatus.Failed, job.Status);
         Assert.Equal(1, job.Strikes);
+    }
+
+    [Fact]
+    public async Task A_backfill_whose_evidence_cannot_be_read_fails_the_job_rather_than_leaving_it_running()
+    {
+        Hold(OldEvidence, withSource: true);
+        _detectorsFail = true;
+
+        var tick = await JudgeBackfillAsync();
+
+        Assert.False(tick.IsSuccess);
+        Assert.True(_jobs.TryGet(TrackKey, JobStage.Verdict, out var job));
+        Assert.Equal(JobStatus.Failed, job.Status);
+        Assert.Contains("the disk went away", job.Error);
     }
 
     [Fact]
@@ -656,7 +671,7 @@ public sealed class VerdictDrainerTests : IDisposable
         ) => Task.FromResult<IReadOnlyList<SiteLookup>>([]);
     }
 
-    private sealed class FakeDetectors : IDetectorSet
+    private sealed class FakeDetectors(Func<bool> fails) : IDetectorSet
     {
         public Task<string?> KeydetectSha256Async(CancellationToken ct = default) =>
             Task.FromResult<string?>(PinnedSha);
@@ -664,7 +679,10 @@ public sealed class VerdictDrainerTests : IDisposable
         public Task<EvidenceReading> ReadEvidenceAsync(
             string audioPath,
             CancellationToken ct = default
-        ) => Task.FromResult<EvidenceReading>(new EvidenceReading.Read(FullEvidence));
+        ) =>
+            fails()
+                ? throw new IOException("the disk went away")
+                : Task.FromResult<EvidenceReading>(new EvidenceReading.Read(FullEvidence));
 
         public Task<DetectionOutcome> DetectAsync(
             string audioPath,

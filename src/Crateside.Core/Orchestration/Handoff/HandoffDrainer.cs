@@ -43,17 +43,27 @@ public sealed class HandoffDrainer(
 
         jobs.Record(trackKey, JobStage.Handoff, JobStatus.Running);
 
-        // Worked out before the move, so each stem lands in staging with its sidecar (#77).
-        var prepared = sidecars is null
-            ? new Dictionary<string, PreparedSidecar>()
-            : await sidecars.PrepareAsync(stems, ct);
+        HandoffResult result;
 
-        var result = runner.Run(
-            stems,
-            NameFor(trackKey),
-            SupersededStems.In(_paths.StagingFolder, trackKey, ledger, Kept()),
-            (from, to) => sidecars?.Moved(prepared, from, to)
-        );
+        try
+        {
+            // Worked out before the move, so each stem lands in staging with its sidecar (#77).
+            var prepared = sidecars is null
+                ? new Dictionary<string, PreparedSidecar>()
+                : await sidecars.PrepareAsync(stems, ct);
+
+            result = runner.Run(
+                stems,
+                NameFor(trackKey),
+                SupersededStems.In(_paths.StagingFolder, trackKey, ledger, Kept()),
+                (from, to) => sidecars?.Moved(prepared, from, to)
+            );
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Left Running, the job would hold the track out of the queue until a restart.
+            result = HandoffResult.Failed(ex.Message);
+        }
 
         jobs.Record(
             trackKey,
