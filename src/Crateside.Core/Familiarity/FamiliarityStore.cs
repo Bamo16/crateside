@@ -103,18 +103,22 @@ public sealed class FamiliarityStore(LedgerStore ledger)
         }
     }
 
+    /// <summary>The records as <see cref="FollowSongs"/> would leave them, without saving.</summary>
+    public IReadOnlyDictionary<string, FamiliarityRecord> ReadFollowed(
+        Func<string, string?> songFor
+    )
+    {
+        lock (_gate)
+            return Followed(_cached ??= Load(), songFor, out _);
+    }
+
     /// <summary>Moves each record kept under a video ID onto the song the ledger has since judged it as; returns how many moved.</summary>
     public int FollowSongs(Func<string, string?> songFor)
     {
         lock (_gate)
         {
             var before = _cached ??= Load();
-            var records = new Dictionary<string, FamiliarityRecord>(
-                before,
-                StringComparer.OrdinalIgnoreCase
-            );
-
-            var moved = SongKeys.Follow(records, songFor, Merged);
+            var records = Followed(before, songFor, out var moved);
 
             if (moved is 0)
                 return 0;
@@ -141,6 +145,21 @@ public sealed class FamiliarityStore(LedgerStore ledger)
 
             return moved;
         }
+    }
+
+    private static Dictionary<string, FamiliarityRecord> Followed(
+        Dictionary<string, FamiliarityRecord> before,
+        Func<string, string?> songFor,
+        out int moved
+    )
+    {
+        var records = new Dictionary<string, FamiliarityRecord>(
+            before,
+            StringComparer.OrdinalIgnoreCase
+        );
+        moved = SongKeys.Follow(records, songFor, Merged);
+
+        return records;
     }
 
     /// <summary>The song's measurement where it has one, and the user's answer wherever it was given.</summary>

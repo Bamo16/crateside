@@ -61,27 +61,20 @@ public sealed class TrackMarkStore
         Changed?.Invoke(song);
     }
 
+    /// <summary>The records as <see cref="FollowSongs"/> would leave them, without saving.</summary>
+    public IReadOnlyDictionary<string, TrackMarkRecord> ReadFollowed(Func<string, string?> songFor)
+    {
+        lock (_gate)
+            return Followed(_cached ??= Load(), songFor, out _);
+    }
+
     /// <summary>Moves each record kept under a video ID onto the song the ledger has since judged it as; returns how many moved.</summary>
     public int FollowSongs(Func<string, string?> songFor)
     {
         lock (_gate)
         {
             var before = _cached ??= Load();
-            var records = new Dictionary<string, TrackMarkRecord>(
-                before,
-                StringComparer.OrdinalIgnoreCase
-            );
-
-            var moved = SongKeys.Follow(
-                records,
-                songFor,
-                (song, record, held) =>
-                    new TrackMarkRecord
-                    {
-                        Song = song,
-                        Marks = [.. (held?.Marks ?? []).Union(record.Marks).Order()],
-                    }
-            );
+            var records = Followed(before, songFor, out var moved);
 
             if (moved is 0)
                 return 0;
@@ -96,6 +89,30 @@ public sealed class TrackMarkStore
 
             return moved;
         }
+    }
+
+    private static Dictionary<string, TrackMarkRecord> Followed(
+        Dictionary<string, TrackMarkRecord> before,
+        Func<string, string?> songFor,
+        out int moved
+    )
+    {
+        var records = new Dictionary<string, TrackMarkRecord>(
+            before,
+            StringComparer.OrdinalIgnoreCase
+        );
+        moved = SongKeys.Follow(
+            records,
+            songFor,
+            (song, record, held) =>
+                new TrackMarkRecord
+                {
+                    Song = song,
+                    Marks = [.. (held?.Marks ?? []).Union(record.Marks).Order()],
+                }
+        );
+
+        return records;
     }
 
     private void Persist(IEnumerable<string> songs, Dictionary<string, TrackMarkRecord> records) =>

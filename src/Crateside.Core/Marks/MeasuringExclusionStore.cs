@@ -65,33 +65,22 @@ public sealed class MeasuringExclusionStore
 
     public void Clear(string song) => Change(song, _ => null);
 
+    /// <summary>The records as <see cref="FollowSongs"/> would leave them, without saving.</summary>
+    public IReadOnlyDictionary<string, MeasuringExclusion> ReadFollowed(
+        Func<string, string?> songFor
+    )
+    {
+        lock (_gate)
+            return Followed(_cached ??= Load(), songFor, out _);
+    }
+
     /// <summary>Moves each record kept under a video ID onto the song the ledger has since judged it as; returns how many moved.</summary>
     public int FollowSongs(Func<string, string?> songFor)
     {
         lock (_gate)
         {
             var before = _cached ??= Load();
-            var records = new Dictionary<string, MeasuringExclusion>(
-                before,
-                StringComparer.OrdinalIgnoreCase
-            );
-
-            var moved = SongKeys.Follow(
-                records,
-                songFor,
-                (song, record, held) =>
-                    record.WholeTrack || held?.WholeTrack is true
-                        ? new MeasuringExclusion
-                        {
-                            Song = song,
-                            Reason = held?.Reason ?? record.Reason,
-                        }
-                        : new MeasuringExclusion
-                        {
-                            Song = song,
-                            Stretches = Ordered((held?.Stretches ?? []).Union(record.Stretches)),
-                        }
-            );
+            var records = Followed(before, songFor, out var moved);
 
             if (moved is 0)
                 return 0;
@@ -106,6 +95,32 @@ public sealed class MeasuringExclusionStore
 
             return moved;
         }
+    }
+
+    private static Dictionary<string, MeasuringExclusion> Followed(
+        Dictionary<string, MeasuringExclusion> before,
+        Func<string, string?> songFor,
+        out int moved
+    )
+    {
+        var records = new Dictionary<string, MeasuringExclusion>(
+            before,
+            StringComparer.OrdinalIgnoreCase
+        );
+        moved = SongKeys.Follow(
+            records,
+            songFor,
+            (song, record, held) =>
+                record.WholeTrack || held?.WholeTrack is true
+                    ? new MeasuringExclusion { Song = song, Reason = held?.Reason ?? record.Reason }
+                    : new MeasuringExclusion
+                    {
+                        Song = song,
+                        Stretches = Ordered((held?.Stretches ?? []).Union(record.Stretches)),
+                    }
+        );
+
+        return records;
     }
 
     private static MeasuringStretch[] Ordered(IEnumerable<MeasuringStretch> stretches) =>

@@ -327,6 +327,7 @@ public static class ServiceRegistration
         services.AddHttpClient(SourceAvailability.ClientName);
         services.AddSingleton<WorkingSetJanitor>();
         services.AddHostedService<JanitorWorker>();
+        services.AddHostedService<SongKeyWorker>();
 
         services.AddSingleton<JobStore>();
         services.AddSingleton<JobStatusSpelling>();

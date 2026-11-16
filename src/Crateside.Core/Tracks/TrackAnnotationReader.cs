@@ -20,19 +20,16 @@ public sealed class TrackAnnotationReader(
     MeasuringExclusionStore? exclusions = null
 )
 {
-    /// <summary>Everything recorded about the tracks, once what was kept under a judged upload has moved to its song.</summary>
-    public TrackAnnotations Read(KeyLedger ledger)
-    {
-        FollowSongs(ledger);
-
-        return new()
+    /// <summary>Everything recorded about the tracks, as if what was kept under a judged upload had moved to its song; reading saves nothing.</summary>
+    public TrackAnnotations Read(KeyLedger ledger) =>
+        new()
         {
             ResolvedNames = names.Read(),
             Acquisitions = workingSet.Acquisitions(),
             Deletions = deletions.All(),
-            Genres = genres.Read(),
-            Familiarity = familiarity.Read(),
-            Marks = marks.Read(),
+            Genres = genres.ReadFollowed(ledger.SongFor),
+            Familiarity = familiarity.ReadFollowed(ledger.SongFor),
+            Marks = marks.ReadFollowed(ledger.SongFor),
             Releases =
                 intake
                     ?.Read()
@@ -40,7 +37,6 @@ public sealed class TrackAnnotationReader(
                     .ToDictionary(record => record.TrackKey, record => record.Release!)
                 ?? [],
         };
-    }
 
     /// <summary>
     /// Moves every genre, familiarity, mark and measuring-exclusion record kept under a video ID onto the song the

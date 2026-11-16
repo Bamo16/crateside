@@ -40,9 +40,21 @@ public sealed class TrackAnnotationReaderTests : IDisposable
         var ledger = _fixture.Judged();
 
         genres.Choose(Row(ledger, _fixture.Reader(genres)).Song, "Pop");
+        _fixture.Reader(genres).FollowSongs(ledger);
 
         Assert.Equal(["Pop"], Row(ledger, _fixture.Reader()).Genre?.Mine);
         Assert.Equal([Song], new GenreStore(_fixture.Decisions).Read().Keys);
+    }
+
+    [Fact]
+    public void Reading_the_annotations_of_a_judged_upload_saves_nothing()
+    {
+        new GenreStore(_fixture.Decisions).Choose(Video, "Rock");
+
+        var annotations = _fixture.Reader().Read(_fixture.Judged());
+
+        Assert.Equal(["Rock"], annotations.Genres[Song].Mine);
+        Assert.Equal([Video], new GenreStore(_fixture.Decisions).Read().Keys);
     }
 
     [Fact]
