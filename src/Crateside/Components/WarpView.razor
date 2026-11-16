@@ -804,8 +804,8 @@
             .. Run?.Readings.Select((reading, index) =>
                 reading switch
                 {
-                    { Window.AskedBy: WindowAsker.User, Section: { } section } =>
-                        new Band(reading.Window.Start, reading.Window.End, $"{section.Label} · {ModeText.Tag(section.Center)}", "yours", Window: index),
+                    { Section: { } section } =>
+                        new Band(reading.Window.Start, reading.Window.End, $"{section.Label} · {ModeText.Tag(section.Center)}", reading.Window.AskedBy is WindowAsker.User ? "yours" : "judge", Window: index),
                     { Window: { AskedBy: WindowAsker.User, Label: { Length: > 0 } label } } =>
                         new Band(reading.Window.Start, reading.Window.End, label, "yours", Window: index),
                     { Window.AskedBy: WindowAsker.User } =>

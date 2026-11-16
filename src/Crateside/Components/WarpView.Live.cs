@@ -75,7 +75,7 @@ public partial class WarpView
                     {
                         start = band.Start,
                         end = band.End,
-                        label = band.Label,
+                        label = KeyStrip.Text(Run, band),
                         title = KeyLane.Title(band),
                         fromWindow = band.FromWindow,
                         unbacked = band.StartUnbacked,

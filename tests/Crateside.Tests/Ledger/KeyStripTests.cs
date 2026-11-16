@@ -174,4 +174,41 @@ public sealed class KeyStripTests
             Drawn(KeyStrip.Plan(run, Seconds))
         );
     }
+
+    [Theory]
+    [InlineData(WindowAsker.User)]
+    [InlineData(WindowAsker.Judge)]
+    public void A_band_whose_section_a_window_tags_says_only_the_key_whoever_asked(
+        WindowAsker asker
+    )
+    {
+        Section chorus = new("chorus", EMinor, 60);
+        RunWindow window = new(60, 90, "chorus", asker);
+        var run = Run(
+            ADorian,
+            [new("verse", ADorian, 0), chorus],
+            [window],
+            [new(window, [], null, chorus)]
+        );
+
+        var texts = KeyStrip
+            .Plan(run, Seconds)
+            .Bands.Select(band => KeyStrip.Text(run, band))
+            .ToList();
+
+        Assert.Equal(["verse · A Dor", "E min", "verse · A Dor"], texts);
+    }
+
+    [Fact]
+    public void A_band_with_no_window_tag_keeps_its_section_name()
+    {
+        var run = Run(ADorian, [new("verse", ADorian, 0), new("coda", EMinor, 150)]);
+
+        var texts = KeyStrip
+            .Plan(run, Seconds)
+            .Bands.Select(band => KeyStrip.Text(run, band))
+            .ToList();
+
+        Assert.Equal(["verse · A Dor", "coda · E min"], texts);
+    }
 }

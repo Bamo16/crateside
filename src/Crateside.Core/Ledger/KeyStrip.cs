@@ -33,6 +33,20 @@ public static class KeyStrip
             : ModeText.Tag(center);
 
     /// <summary>
+    /// What a band says: the key alone where the ruler already draws a tag naming the band's section (a
+    /// window whose section it is, whoever asked for it), otherwise the section and the key.
+    /// </summary>
+    public static string Text(RunEvidence run, KeyBand band) =>
+        band.Section is { Length: > 0 } label
+        && run.Readings.Any(reading =>
+            reading is { Section.Label: var tagged, Window.Start: var start }
+            && tagged.Equals(label, StringComparison.OrdinalIgnoreCase)
+            && Math.Abs(start - band.Start) < 0.01
+        )
+            ? band.Key
+            : band.Label;
+
+    /// <summary>
     /// A section that came from a window takes the window's span, one with a start runs to the next
     /// start of any section (the primary's included) or window, the primary center fills everything
     /// else under the label of the primary section starting there, and a section with neither is
