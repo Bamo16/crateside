@@ -77,7 +77,7 @@
                                 </ul>
                             }
                         </div>
-                        <span class="note">
+                        <span class="note" title="@NoteTitle">
                             @if (Center is { } reasoned && ModeText.Reason(reasoned, Mixed) is { } reason)
                             {
                                 <text>@reason&#32;</text>
@@ -380,6 +380,11 @@
         || Bpm?.Explanation is not null
         || Tempo is { Drifts: true }
         || _row?.RunningSince is not null;
+
+    private string NoteTitle =>
+        Center is { } reasoned && ModeText.Reason(reasoned, Mixed) is { } reason
+            ? $"{reason} {KeyNote}"
+            : KeyNote;
 
     private string KeyNote =>
         _row switch

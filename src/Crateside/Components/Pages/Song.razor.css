@@ -196,7 +196,8 @@ h1 {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     min-width: 0;
-    padding: 1px 22px 11px;
+    margin-bottom: 11px;
+    padding: 1px 22px 0;
     overflow: hidden;
     font-size: 12.5px;
     line-height: 1.3;
