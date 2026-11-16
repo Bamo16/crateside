@@ -260,7 +260,7 @@
 /* Ruler. */
 .ruler {
     position: relative;
-    height: 44px;
+    height: 49px;
     overflow: hidden;
     cursor: url("/cursors/speaker.svg") 4 12, default;
 }
@@ -1204,7 +1204,7 @@
     text-overflow: ellipsis;
     box-sizing: border-box;
     position: absolute;
-    top: 2px;
+    top: 7px;
     left: 0;
     z-index: 1;
     height: 16px;

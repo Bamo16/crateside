@@ -193,10 +193,10 @@ internal static class DemoAudio
             },
             Clip = new Clip
             {
-                LoopStart = 0,
-                LoopEnd = loopBeats,
+                LoopStart = DemoShowcase.LoopStartBeats,
+                LoopEnd = DemoShowcase.LoopEndBeats,
                 OutMarker = loopBeats,
-                LoopOn = false,
+                LoopOn = true,
                 SampleVolume = (float)gain,
             },
             IsDefaultClipSaved = true,

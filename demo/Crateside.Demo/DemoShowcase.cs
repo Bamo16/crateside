@@ -49,6 +49,11 @@ internal static class DemoShowcase
         ];
     }
 
+    /// <summary>The loop Live has switched on, bars 3 to 13, under the Verse and Bridge tags.</summary>
+    public const double LoopStartBeats = 14;
+
+    public const double LoopEndBeats = 84;
+
     /// <summary>The whole bars the track holds, in beats.</summary>
     public static double LoopBeats(DemoTrack track) =>
         (BeatSeconds(track).Count(beat => beat <= track.Seconds) - 1)

@@ -138,7 +138,7 @@ open, no fold, drawn when the track has samples.
   8%, subdivisions 3.5%; they sit under the waveform, flags, marker lines and transient ticks.
   Drawn by `WarpView.razor` (`GridLines`) and, while a window is dragged, wheeled or scrolls with
   the playhead, by `playback/rows.js`.
-- **Rows**: **View** (the overview strip, below) · ruler (40px in every state; loop bar, bar ticks,
+- **Rows**: **View** (the overview strip, below) · ruler (49px in every state: the loop bar on its top edge, the window tags in a row of their own under it; loop bar, bar ticks,
   clip-start
   notch labelled `clip start` in the bar-number row, which takes the place of any number it would
   run into; bars numbered as Live's ruler numbers them, from the shared warp's beat 0 as bar 1, with
