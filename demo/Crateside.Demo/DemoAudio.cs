@@ -114,6 +114,9 @@ internal static class DemoAudio
         var first = track.Fate is StarterFate.LeftAtBeatZero ? 1 : 0;
         List<Transient> transients = [];
 
+        if (track.IsShowcase)
+            return Showcase(track, samples, gain, fileSize);
+
         for (var step = 0; Lead + step * secondsPerBeat / 4 < track.Seconds - 0.1; step++)
             transients.Add(
                 new Transient(
@@ -141,6 +144,58 @@ internal static class DemoAudio
                 LoopStart = first * 4,
                 LoopEnd = Bars(track) * 4 + first * 4,
                 OutMarker = Bars(track) * 4 + first * 4,
+                LoopOn = false,
+                SampleVolume = (float)gain,
+            },
+            IsDefaultClipSaved = true,
+        };
+    }
+
+    private static AnalysisFile Showcase(
+        DemoTrack track,
+        float[] samples,
+        double gain,
+        long fileSize
+    )
+    {
+        var beats = DemoShowcase.BeatSeconds(track);
+        var loopBeats = DemoShowcase.LoopBeats(track);
+        var transients = beats
+            .Take(beats.Count - 1)
+            .SelectMany(
+                (beat, index) =>
+                    Enumerable
+                        .Range(0, 4)
+                        .Select(quarter =>
+                            (
+                                Seconds: beat + (beats[index + 1] - beat) * quarter / 4,
+                                Index: index,
+                                Quarter: quarter
+                            )
+                        )
+            )
+            .Where(point => point.Seconds < track.Seconds - 0.1)
+            .Select(point => new Transient(
+                (int)(point.Seconds * SampleRate),
+                point is { Quarter: 0, Index: var index } && index % 7 is 0 ? 0.9f
+                    : point.Quarter is 0 ? 0.6f
+                    : 0.3f
+            ))
+            .ToList();
+
+        return new AnalysisFile
+        {
+            Audio = AudioAnalysis.FromSamples(samples, 1, transients, fileSize),
+            Warp = new Warp
+            {
+                Markers = DemoShowcase.Markers(track),
+                TimeSignature = DemoShowcase.Signature,
+            },
+            Clip = new Clip
+            {
+                LoopStart = 0,
+                LoopEnd = loopBeats,
+                OutMarker = loopBeats,
                 LoopOn = false,
                 SampleVolume = (float)gain,
             },

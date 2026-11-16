@@ -604,6 +604,18 @@
     "start": 0.0
    },
    {
+    "label": "Bridge",
+    "tonic": "D",
+    "mode": "Ionian",
+    "start": 120.0
+   },
+   {
+    "label": "Breakdown",
+    "tonic": "F#",
+    "mode": "Aeolian",
+    "start": 250.0
+   },
+   {
     "label": "Pre-Chorus and Chorus",
     "tonic": "B",
     "mode": "Dorian",

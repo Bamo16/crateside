@@ -18,6 +18,7 @@ internal static class DemoRuns
             Confidence = verdict.Confidence,
             Center = verdict.Center,
             Mixed = verdict.Mixed,
+            Windows = track.IsShowcase ? [.. DemoShowcase.Windows] : [],
             Sections =
             [
                 .. verdict.Sections.Select(section => new Section(

@@ -49,6 +49,8 @@ internal sealed record DemoTrack(
     /// <summary>What the lookups called the genre, before it was settled.</summary>
     public IReadOnlyList<string> Heard { get; init; } = [];
 
+    public bool IsShowcase => VideoId == DemoShowcase.VideoId;
+
     public string Name => $"{Artist} - {Title}";
 
     public string Song => Name.ToLowerInvariant();
