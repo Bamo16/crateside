@@ -39,6 +39,9 @@ public sealed record WarpTempo(
     /// <summary>Where the default clip starts on Live's ruler (ADR 0072).</summary>
     public ClipStartPosition? ClipStart { get; init; }
 
+    /// <summary>The time signature the sidecar holds, as <c>n/d</c>; null when it is 4/4 or unread.</summary>
+    public string? Meter { get; init; }
+
     /// <summary>Where a steady warp's grid sits against the audio's transients; null for any other shape (ADR 0050).</summary>
     public WarpGrid? Grid { get; init; }
 
@@ -55,6 +58,11 @@ public sealed record WarpTempo(
                     : tempo
             ) with
             {
+                Meter = analysis.Warp.TimeSignature switch
+                {
+                    { Numerator: 4, Denominator: 4 } => null,
+                    var signature => $"{signature.Numerator}/{signature.Denominator}",
+                },
                 ClipStart = ClipStartPosition.Of(
                     clip.Start,
                     BarRuler.Of(analysis.Warp.TimeSignature)

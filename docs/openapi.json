@@ -5148,6 +5148,13 @@
               }
             ]
           },
+          "meter": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The time signature the sidecar holds, as `n/d`; null when it is 4/4 or unread."
+          },
           "grid": {
             "oneOf": [
               {

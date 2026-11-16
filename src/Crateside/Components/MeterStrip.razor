@@ -20,6 +20,14 @@
         }
     </div>
 }
+else if (Row.Tempo is { Meter: { } meter })
+{
+    <div class="tag-line">
+        <span class="tag-label">Meter</span>
+        <span class="tag-value">@meter</span>
+        <span class="tag-note">Read from the Live warp</span>
+    </div>
+}
 else
 {
     <TrackMarkStrip Row="Row" Mark="TrackMark.OddBars" />

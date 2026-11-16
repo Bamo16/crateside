@@ -71,7 +71,7 @@ public sealed class WarpTempoTests
     }
 
     [Fact]
-    public void A_warp_with_no_saved_default_clip_has_no_tempo()
+    public void A_warp_with_no_analysisdefault_clip_has_no_tempo()
     {
         var saved = Warp(1, (100, 120));
         var unsaved = new AnalysisFile
@@ -82,6 +82,37 @@ public sealed class WarpTempoTests
         };
 
         Assert.Null(WarpTempo.Of(unsaved, SampleRate));
+    }
+
+    [Theory]
+    [InlineData(7, 4, "7/4")]
+    [InlineData(6, 8, "6/8")]
+    [InlineData(4, 4, null)]
+    public void A_sidecar_time_signature_other_than_four_four_is_the_meter(
+        int numerator,
+        int denominator,
+        string? expected
+    )
+    {
+        var saved = Warp(1, (100, 120));
+        var analysis = new AnalysisFile
+        {
+            Warp = saved.Warp with { TimeSignature = new(numerator, denominator) },
+            Audio = new AudioAnalysis
+            {
+                Overview = saved.Overview ?? Overview([0.5f]),
+                HeadTable = [],
+            },
+            Clip = new Clip
+            {
+                LoopStart = saved.Clip.Start,
+                LoopEnd = saved.Clip.End,
+                LoopOn = false,
+            },
+            IsDefaultClipSaved = true,
+        };
+
+        Assert.Equal(expected, WarpTempo.Of(analysis, SampleRate)?.Meter);
     }
 
     [Fact]
