@@ -112,8 +112,8 @@ export const Overview = (Base) =>
 
             this.drag.listeners = listeners;
 
-            // The layers are made now, empty, so the first step of the drag only has to fill them.
-            this.startLive();
+            // The layers are made now and drawn for the window as it stands, so a press alone leaves the rows as they were.
+            this.paintLive();
 
             for (const [name, handler] of Object.entries(listeners))
                 overview.addEventListener(name, handler);
@@ -171,7 +171,7 @@ export const Overview = (Base) =>
             };
 
             this.drag.listeners = listeners;
-            this.startLive();
+            this.paintLive();
 
             for (const [name, handler] of Object.entries(listeners))
                 overview.addEventListener(name, handler);
