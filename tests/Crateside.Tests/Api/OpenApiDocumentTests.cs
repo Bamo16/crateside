@@ -33,6 +33,19 @@ public sealed class OpenApiDocumentTests
     }
 
     [Fact]
+    public async Task No_response_exposes_a_tuple_as_item1_and_item2()
+    {
+        await using var crateside = await SyntheticCrateside.StartAsync();
+
+        var served = await crateside.Client.GetStringAsync(
+            "/openapi/v1.json",
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.DoesNotContain("\"item1\"", served);
+    }
+
+    [Fact]
     public async Task Scalar_is_served_at_its_page()
     {
         await using var crateside = await SyntheticCrateside.StartAsync();

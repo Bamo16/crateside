@@ -392,6 +392,17 @@
         },
         "description": "One detector's answer."
       },
+      "ArtistTitle": {
+        "type": "object",
+        "properties": {
+          "artist": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
       "AudioLoop": {
         "required": [
           "start",
@@ -3578,6 +3589,27 @@
         },
         "description": "A warp that is off its tempo, and by how much."
       },
+      "TempoRange": {
+        "type": "object",
+        "properties": {
+          "low": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "high": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
       "TempoSegment": {
         "required": [
           "startMs",
@@ -4072,7 +4104,7 @@
               },
               {
                 "description": "The ledger's artist and title, else the row's own name split at its dash. Null while the row\r\nhas only the upload's title, whose artist is a guess.",
-                "$ref": "#/components/schemas/ValueTupleOfstringAndstring"
+                "$ref": "#/components/schemas/ArtistTitle"
               }
             ]
           },
@@ -4701,7 +4733,7 @@
               },
               {
                 "description": "The slowest and fastest window of a drifting tempo.",
-                "$ref": "#/components/schemas/ValueTupleOfdoubleAnddouble"
+                "$ref": "#/components/schemas/TempoRange"
               }
             ]
           }
@@ -4763,44 +4795,6 @@
           "DoesNotHold",
           null
         ]
-      },
-      "ValueTupleOfdoubleAnddouble": {
-        "type": "object",
-        "properties": {
-          "item1": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-            "type": [
-              "number",
-              "string"
-            ],
-            "format": "double"
-          },
-          "item2": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-            "type": [
-              "number",
-              "string"
-            ],
-            "format": "double"
-          }
-        }
-      },
-      "ValueTupleOfstringAndstring": {
-        "type": "object",
-        "properties": {
-          "item1": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "item2": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
       },
       "WarpGrid": {
         "required": [

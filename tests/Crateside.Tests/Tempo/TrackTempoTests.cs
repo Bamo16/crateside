@@ -120,7 +120,7 @@ public sealed class TrackTempoTests
         var tempo = TrackTempo.Of(null, reading, null)!;
 
         Assert.True(tempo.Drifts);
-        Assert.Equal((91.3, 93.5), tempo.Range);
+        Assert.Equal(new TempoRange(91.3, 93.5), tempo.Range);
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public sealed class TrackTempoTests
             Windows = Timed(121.2, 128.4, 131.9),
         };
 
-        Assert.Equal((121.2, 131.9), TrackTempo.Of(warp, null, null)!.Range);
+        Assert.Equal(new TempoRange(121.2, 131.9), TrackTempo.Of(warp, null, null)!.Range);
     }
 
     [Fact]

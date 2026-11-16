@@ -43,6 +43,15 @@ public sealed class CratesideApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_row_s_artist_and_title_are_named_in_the_JSON()
+    {
+        var track = await GetAsync($"/api/tracks/{SyntheticCrateside.Judged}");
+
+        Assert.False(string.IsNullOrEmpty((string?)track["row"]!["artistAndTitle"]!["artist"]));
+        Assert.False(string.IsNullOrEmpty((string?)track["row"]!["artistAndTitle"]!["title"]));
+    }
+
+    [Fact]
     public async Task The_job_history_holds_the_track_s_lines_and_no_other_track_s()
     {
         var jobs = (await GetAsync($"/api/tracks/{SyntheticCrateside.Judged}"))["jobs"]!.AsArray();

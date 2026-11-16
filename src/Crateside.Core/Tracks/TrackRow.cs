@@ -165,11 +165,11 @@ public sealed record TrackRow
     /// The ledger's artist and title, else the row's own name split at its dash. Null while the row
     /// has only the upload's title, whose artist is a guess.
     /// </summary>
-    public (string Artist, string Title)? ArtistAndTitle =>
+    public ArtistTitle? ArtistAndTitle =>
         Verdict is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title }
-            ? (artist, title)
+            ? new ArtistTitle(artist, title)
         : NameSource is TrackNameSource.Playlist or TrackNameSource.VideoId ? null
-        : Title.Split(" - ", 2) is [{ Length: > 0 } a, { Length: > 0 } t] ? (a, t)
+        : Title.Split(" - ", 2) is [{ Length: > 0 } a, { Length: > 0 } t] ? new ArtistTitle(a, t)
         : null;
 
     /// <summary>The key to tag with, or null when withheld, weak, or unknown.</summary>
@@ -684,3 +684,5 @@ public sealed record TrackSample
     [JsonPropertyName("sourceVideoId")]
     public string? SourceTrackKey { get; init; }
 }
+
+public readonly record struct ArtistTitle(string Artist, string Title);

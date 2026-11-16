@@ -107,18 +107,16 @@ public sealed record TrackTempo
         };
 
     /// <summary>The slowest and fastest window of a drifting tempo.</summary>
-    public (double Low, double High)? Range =>
+    public TempoRange? Range =>
         (Drifts, Windows, Warp) switch
         {
             (false, _, _) => null,
-            (true, { Count: > 0 } windows, _) => (
+            (true, { Count: > 0 } windows, _) => new TempoRange(
                 windows.Min(window => window.Bpm),
                 windows.Max(window => window.Bpm)
             ),
-            (true, _, { Low: var low, High: var high }) when Source is TempoSource.Warp => (
-                low,
-                high
-            ),
+            (true, _, { Low: var low, High: var high }) when Source is TempoSource.Warp =>
+                new TempoRange(low, high),
             _ => null,
         };
 
@@ -217,3 +215,5 @@ public enum TempoSource
     /// <summary>A figure the user typed into Tools.</summary>
     Typed,
 }
+
+public readonly record struct TempoRange(double Low, double High);

@@ -42,7 +42,7 @@ public sealed class StandInNameTests
 
         Assert.Null(row.ArtistAndTitle);
         Assert.Equal(
-            ("Radiohead", "Creep"),
+            new ArtistTitle("Radiohead", "Creep"),
             (row with { NameSource = TrackNameSource.Resolved }).ArtistAndTitle
         );
     }
