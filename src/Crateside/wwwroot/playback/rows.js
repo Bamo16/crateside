@@ -76,6 +76,9 @@ export const Rows = (Base) =>
                 // Over a solid ground a sliding layer's text keeps the page's subpixel rendering, and a row's own border is not drawn twice.
                 if (kind === "ruler" || kind === "keys" || kind === "axis")
                     layer.style.backgroundColor = groundOf(target);
+                // The covered row keeps its own tint under the layer, so the clone's copy of it would be drawn on top of it.
+                else
+                    layer.style.backgroundColor = "transparent";
 
                 // A row's fixed labels: copied onto a still layer, left showing through over a sliding one.
                 for (const kept of strip ? [] : target.querySelectorAll(".range, .off-label"))
