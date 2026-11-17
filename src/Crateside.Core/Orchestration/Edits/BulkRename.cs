@@ -17,10 +17,32 @@ public sealed partial class BulkRename(TrackRename rename, ActionLog actions)
     [GeneratedRegex(@"\{(?<Token>[^{}]*)\}")]
     private static partial Regex Placeholder { get; }
 
+    /// <summary>What each row's files and sets are now, read once so every pattern is previewed from it.</summary>
+    public IReadOnlyDictionary<string, RenameBasis> Prepare(IEnumerable<TrackRow> rows)
+    {
+        ExistingFiles existing = new();
+        var keys = rows.Select(row => row.TrackKey).Distinct().ToList();
+        var anySet = rename.AnySetUses(keys);
+
+        return keys.ToDictionary(key => key, key => rename.BasisOf(key, existing, !anySet));
+    }
+
     /// <summary>The new name of every row, or why it gets none; nothing is changed.</summary>
     public IReadOnlyList<BulkRenameLine> Preview(IEnumerable<TrackRow> rows, string pattern)
     {
-        var lines = rows.Select(row => LineFor(row, pattern)).ToList();
+        var shown = rows.ToList();
+
+        return Preview(shown, pattern, Prepare(shown));
+    }
+
+    /// <summary>The new name of every row from a basis read earlier; a row without one is read now.</summary>
+    public IReadOnlyList<BulkRenameLine> Preview(
+        IEnumerable<TrackRow> rows,
+        string pattern,
+        IReadOnlyDictionary<string, RenameBasis> bases
+    )
+    {
+        var lines = rows.Select(row => LineFor(row, pattern, bases)).ToList();
 
         // Two tracks under one name would end up with files that clash.
         var taken = lines
@@ -70,7 +92,11 @@ public sealed partial class BulkRename(TrackRename rename, ActionLog actions)
     public static string? GameOf(string? album) =>
         album?.Split(':', 2)[0].Trim() is { Length: > 0 } game ? game : null;
 
-    private BulkRenameLine LineFor(TrackRow row, string pattern)
+    private BulkRenameLine LineFor(
+        TrackRow row,
+        string pattern,
+        IReadOnlyDictionary<string, RenameBasis> bases
+    )
     {
         var missing = new List<string>();
         var unknown = new List<string>();
@@ -102,7 +128,9 @@ public sealed partial class BulkRename(TrackRename rename, ActionLog actions)
         if (name.Equals(row.Title, StringComparison.Ordinal))
             return line with { Problem = null, Unchanged = true };
 
-        var plan = rename.PlanFor(row.TrackKey, name);
+        var plan = bases.TryGetValue(row.TrackKey, out var basis)
+            ? rename.PlanFor(basis, name)
+            : rename.PlanFor(row.TrackKey, name);
 
         return plan.Refusal is { } refusal
             ? line with

@@ -34,22 +34,59 @@ public sealed class TrackRename(
         "is open in Ableton and uses these files. Open another set, then rename.";
 
     /// <summary>What renaming this track to <paramref name="name"/> would do, or why it cannot.</summary>
-    public RenamePlan PlanFor(string trackKey, string? name)
+    public RenamePlan PlanFor(string trackKey, string? name) => PlanFor(BasisOf(trackKey), name);
+
+    /// <summary>
+    /// What a track's files and the sets using them are now, read once so many names can be tried
+    /// against it without reading again.
+    /// </summary>
+    public RenameBasis BasisOf(
+        string trackKey,
+        ExistingFiles? existing = null,
+        bool noSetUsesAny = false
+    )
+    {
+        var files = Files(trackKey).ToArray();
+
+        return new RenameBasis(
+            files,
+            noSetUsesAny ? new SetCheck([], null) : Check([.. files.Select(file => file.Path)]),
+            existing
+        );
+    }
+
+    /// <summary>Whether any set uses a file of any of these tracks: one walk of the sets, not one per track.</summary>
+    public bool AnySetUses(IEnumerable<string> trackKeys) =>
+        sets is { } links
+        && links.Using([.. trackKeys.SelectMany(Files).Select(file => file.Path)]).Count > 0;
+
+    private static bool Exists(RenameBasis basis, string path) =>
+        basis.Existing?.Contains(path) ?? File.Exists(path);
+
+    /// <summary>
+    /// <see cref="PlanFor(string, string?)"/> against a basis already read: only the files a name
+    /// would collide with are looked at. The sets are those using any of the track's files.
+    /// </summary>
+    public RenamePlan PlanFor(RenameBasis basis, string? name)
     {
         var wanted = name?.Trim() ?? string.Empty;
 
         if (!StemFileName.IsUsable(wanted))
             return Impossible(wanted, @"A name cannot be blank or contain \ / : * ? "" < > |.");
 
-        var moves = Files(trackKey)
-            .Select(file => new Move(file.Path, StemFileName.Renamed(file.Path, wanted), file.Root))
+        var moves = basis
+            .Files.Select(file => new Move(
+                file.Path,
+                StemFileName.Renamed(file.Path, wanted),
+                file.Root
+            ))
             .Where(move => !PathsMatch(move.From, move.To))
             .ToArray();
 
         // The analysis file counts — overwriting one would replace somebody's warp markers.
         if (
             moves.FirstOrDefault(move =>
-                File.Exists(move.To) || File.Exists(StemFileName.AnalysisFor(move.To))
+                Exists(basis, move.To) || Exists(basis, StemFileName.AnalysisFor(move.To))
             ) is
             { } clash
         )
@@ -66,7 +103,7 @@ public sealed class TrackRename(
                 "Two of these files would end up with the same name. They have no presets to tell them apart."
             );
 
-        var check = Check([.. moves.Select(move => move.From)]);
+        var check = moves.Length is 0 ? new SetCheck([], null) : basis.Check;
 
         return new RenamePlan
         {
@@ -353,6 +390,46 @@ public sealed class TrackRename(
         left.Equals(right, StringComparison.OrdinalIgnoreCase);
 
     private sealed record Move(string From, string To, string Root);
+}
+
+/// <summary>A track's files and the sets using them, as <see cref="TrackRename.BasisOf"/> read them.</summary>
+/// <param name="Existing">What is on disk, listed once; null looks at the disk each time.</param>
+public sealed record RenameBasis(
+    IReadOnlyList<(string Path, string Root)> Files,
+    SetCheck Check,
+    ExistingFiles? Existing = null
+);
+
+/// <summary>Which files are in a set of folders, each folder listed once, on first use.</summary>
+public sealed class ExistingFiles
+{
+    private readonly Dictionary<string, HashSet<string>> _folders = new(
+        StringComparer.OrdinalIgnoreCase
+    );
+
+    public bool Contains(string path)
+    {
+        if (Path.GetDirectoryName(path) is not { } folder)
+            return File.Exists(path);
+
+        if (!_folders.TryGetValue(folder, out var names))
+        {
+            try
+            {
+                names = Directory.Exists(folder)
+                    ? [.. Directory.EnumerateFiles(folder).Select(file => Path.GetFileName(file))]
+                    : [];
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return File.Exists(path);
+            }
+
+            _folders[folder] = names;
+        }
+
+        return names.Contains(Path.GetFileName(path));
+    }
 }
 
 /// <summary>The sets a rename would update, and why it must wait, or null when it need not.</summary>

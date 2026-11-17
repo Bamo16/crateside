@@ -1,9 +1,11 @@
 using AbleKit.Tags;
 using Crateside.Core;
+using Crateside.Core.Ableton;
 using Crateside.Core.Imports;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
 using Crateside.Core.WorkLists;
 
@@ -166,6 +168,121 @@ public sealed class BulkRenameTests : IDisposable
         );
 
         Assert.True(Assert.Single(lines).Unchanged);
+    }
+
+    private (BulkRename Bulk, FakeSets Sets, Func<int> StagedReads) Counting()
+    {
+        var sets = new FakeSets();
+        var reads = 0;
+        var paths = new CratesidePaths
+        {
+            StagingFolder = Path.Combine(_root, "Staging"),
+            LibraryFolder = Path.Combine(_root, "Library"),
+        };
+        var bulk = new BulkRename(
+            new TrackRename(
+                _settings,
+                new ListedStagedFiles(() =>
+                {
+                    reads++;
+
+                    return [];
+                }),
+                new FolderInfoWriter(),
+                paths,
+                sets: sets
+            ),
+            new ActionLog(Path.Combine(_root, "actions.jsonl"))
+        );
+
+        return (bulk, sets, () => reads);
+    }
+
+    [Fact]
+    public void Previewing_another_pattern_reads_no_files_and_no_sets_again()
+    {
+        var (bulk, sets, stagedReads) = Counting();
+        var rows = Enumerable
+            .Range(0, 700)
+            .Select(i => Row($"track{i:D6}", "Album", "Artist", $"Song {i}"))
+            .ToList();
+
+        var bases = bulk.Prepare(rows);
+        var readsToPrepare = stagedReads();
+        var lookupsToPrepare = sets.Lookups.Count;
+
+        var first = bulk.Preview(rows, "{album} - {title}", bases);
+        var second = bulk.Preview(rows, "{artist} - {title}", bases);
+
+        Assert.Equal(1, lookupsToPrepare);
+        Assert.Equal(readsToPrepare, stagedReads());
+        Assert.Equal(lookupsToPrepare, sets.Lookups.Count);
+        Assert.Equal("Album - Song 5", first[5].NewName);
+        Assert.Equal("Artist - Song 5", second[5].NewName);
+    }
+
+    [Fact]
+    public void An_open_set_found_when_the_tracks_were_read_still_holds_the_track_back_in_the_preview()
+    {
+        var (bulk, sets, _) = Counting();
+        sets.Users = ["Set"];
+        sets.Open = new OpenSet(true, "Set");
+        var rows = new[] { Row("aaaaaaaaaaa", "A", "X", "One") };
+        var file = Path.Combine(_root, "Staging", "ripped name.flac");
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        File.WriteAllBytes(file, []);
+        var withFile = new BulkRename(
+            new TrackRename(
+                _settings,
+                new ListedStagedFiles(() =>
+                    [new StagedFile { Path = file, FileName = "ripped name.flac" }]
+                ),
+                new FolderInfoWriter(),
+                new CratesidePaths
+                {
+                    StagingFolder = Path.Combine(_root, "Staging"),
+                    LibraryFolder = Path.Combine(_root, "Library"),
+                },
+                sets: sets
+            ),
+            new ActionLog(Path.Combine(_root, "actions2.jsonl"))
+        );
+
+        var bases = withFile.Prepare(rows);
+        sets.Open = OpenSet.NotRunning;
+
+        var line = Assert.Single(withFile.Preview(rows, "{artist} - {title}", bases));
+
+        Assert.Contains("open in Ableton", line.Problem);
+    }
+
+    [Fact]
+    public void A_file_already_called_the_new_name_is_found_in_the_preview_from_the_listing_taken_earlier()
+    {
+        var staging = Path.Combine(_root, "Staging");
+        var file = Path.Combine(staging, "ripped name.flac");
+        File.WriteAllBytes(file, []);
+        File.WriteAllBytes(Path.Combine(staging, "X - One.flac"), []);
+        var bulk = new BulkRename(
+            new TrackRename(
+                _settings,
+                new ListedStagedFiles(() =>
+                    [new StagedFile { Path = file, FileName = "ripped name.flac" }]
+                ),
+                new FolderInfoWriter(),
+                new CratesidePaths
+                {
+                    StagingFolder = staging,
+                    LibraryFolder = Path.Combine(_root, "Library"),
+                }
+            ),
+            new ActionLog(Path.Combine(_root, "actions3.jsonl"))
+        );
+        var rows = new[] { Row("aaaaaaaaaaa", "A", "X", "One") };
+
+        var line = Assert.Single(bulk.Preview(rows, "{artist} - {title}", bulk.Prepare(rows)));
+
+        Assert.Contains("already in", line.Problem);
     }
 
     [Fact]

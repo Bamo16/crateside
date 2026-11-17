@@ -172,7 +172,7 @@
         <button class="pill off" @onclick="ToggleAddTrack" disabled="@_working">
             + Add track
         </button>
-        <button class="pill @(_bulkOpen ? "on" : "off")" @onclick="ToggleBulk" disabled="@_working">
+        <button class="pill @(_bulkOpen ? "on" : "off")" @onclick="ToggleBulk" disabled="@(_working || _bulkLoading)">
             Rename from tags
         </button>
         <span class="status">
@@ -295,14 +295,20 @@
             </label>
             <label>
                 <span>Pattern: {album} {artist} {title} {game}</span>
-                <input class="mono" value="@_bulkPattern" @oninput="e => PatternTyped(e.Value?.ToString())" />
+                @* Its value is only the starting text, changed along with the key, so a render never overwrites what is being typed. *@
+                <input class="mono" @key="_patternBox" value="@_patternStart" @oninput="e => PatternTyped(e.Value?.ToString())" />
             </label>
             <div class="actions">
                 @foreach (var preset in BulkRename.Presets)
                 {
-                    <button class="outline small" @onclick="() => PatternTyped(preset)">@preset</button>
+                    <button class="outline small" @onclick="() => PresetPicked(preset)">@preset</button>
                 }
             </div>
+
+            @if (_bulkLoading)
+            {
+                <p class="add-note">Reading the tracks' files…</p>
+            }
 
             @if (_bulkResult is { } done)
             {
@@ -335,11 +341,11 @@
             }
 
             <div class="actions">
-                <button class="primary" disabled="@(_working || _bulkLines is not { } ready || !ready.Any(line => line.WillRename))"
+                <button class="primary" disabled="@(_working || _bulkLoading || _bulkLines is not { } ready || !ready.Any(line => line.WillRename))"
                         @onclick="ApplyBulk">
                     @(_working ? "Renaming…" : "Apply")
                 </button>
-                <button class="outline" @onclick="ToggleBulk" disabled="@_working">Close</button>
+                <button class="outline" @onclick="ToggleBulk" disabled="@(_working || _bulkLoading)">Close</button>
             </div>
         </div>
     }
@@ -658,20 +664,54 @@
 
     private string? _bulkAlbum;
     private string _bulkPattern = BulkRename.Presets[0];
+    private string _patternStart = BulkRename.Presets[0];
+    private int _patternBox;
+    private bool _bulkLoading;
+    private IReadOnlyDictionary<string, RenameBasis> _bulkBases = new Dictionary<string, RenameBasis>();
     private IReadOnlyList<BulkRenameLine>? _bulkLines;
     private BulkRenameResult? _bulkResult;
 
     private IEnumerable<TrackRow> BulkScope(string? album) =>
         Shown.Where(row => album is null || row.Release?.Album == album);
 
-    private void ToggleBulk()
+    private async Task ToggleBulk()
     {
+        if (_bulkLoading)
+            return;
+
         _bulkOpen = !_bulkOpen;
         _bulkResult = null;
         _bulkLines = null;
 
         if (_bulkOpen)
-            PreviewBulk();
+            await LoadBulkAsync();
+    }
+
+    /// <summary>Reads each shown track's files once, off the render path; every preview after is from memory.</summary>
+    private async Task LoadBulkAsync()
+    {
+        var rows = Shown.ToList();
+
+        _bulkLoading = true;
+
+        try
+        {
+            _bulkBases = await Task.Run(() => BulkRenaming.Prepare(rows), _circuit.Token);
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _bulkLoading = false;
+        }
+
+        PreviewBulk();
+    }
+
+    private void PresetPicked(string preset)
+    {
+        _patternStart = preset;
+        _patternBox++;
+        PatternTyped(preset);
     }
 
     private void PickAlbum(string? album)
@@ -689,9 +729,9 @@
     }
 
     private void PreviewBulk() =>
-        _bulkLines = string.IsNullOrWhiteSpace(_bulkPattern)
+        _bulkLines = string.IsNullOrWhiteSpace(_bulkPattern) || _bulkLoading
             ? null
-            : BulkRenaming.Preview(BulkScope(_bulkAlbum), _bulkPattern);
+            : BulkRenaming.Preview(BulkScope(_bulkAlbum), _bulkPattern, _bulkBases);
 
     private async Task ApplyBulk()
     {
@@ -704,7 +744,7 @@
         {
             _bulkResult = await Task.Run(() => BulkRenaming.Apply(lines));
             await Source.RefreshAsync(_circuit.Token);
-            PreviewBulk();
+            await LoadBulkAsync();
         }
         catch (OperationCanceledException) { }
         finally
