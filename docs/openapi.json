@@ -882,6 +882,13 @@
               }
             ]
           },
+          "foundBy": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Who found the page: `lookup`, `judge` or `person`; worked out from the lookup, not stored."
+          },
           "id": {
             "type": [
               "null",
@@ -1868,7 +1875,8 @@
         "enum": [
           "Found",
           "NotFound",
-          "Unreachable"
+          "Unreachable",
+          "NotLookedUp"
         ]
       },
       "MeasuringExclusion": {
@@ -1993,6 +2001,36 @@
           "PremiumShortfall",
           null
         ]
+      },
+      "PassedPage": {
+        "required": [
+          "url",
+          "artist",
+          "title",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "artist": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "description": "A hit a search listed and the lookup passed over, with why."
       },
       "PremiumStatus": {
         "enum": [
@@ -2481,7 +2519,22 @@
             "type": "boolean"
           },
           "decidedBy": {
-            "$ref": "#/components/schemas/DecidedBy"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Who decided the run; null for evidence read before any run exists (ADR 0096).",
+                "$ref": "#/components/schemas/DecidedBy"
+              }
+            ]
+          },
+          "rulesOpen": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Why the rules leave the track open, for evidence with no run yet; null once there is a run\r\nor when the rules would rule."
           },
           "sections": {
             "type": "array",
@@ -2845,6 +2898,16 @@
               "$ref": "#/components/schemas/FetchedPage"
             },
             "description": "Pages with the exact title under no artist the track credits: shown to the judge and the person, and never a source for a rule (ADR 0077)."
+          },
+          "passed": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/PassedPage"
+            },
+            "description": "The search's other hits, never fetched, never sent to the judge and never counted by a rule\r\n(ADR 0096)."
           }
         },
         "description": "What one site gave for a song."

@@ -41,10 +41,11 @@ public sealed class TrackDetailsReader(
     StageNotes stageNotes,
     StemDetailsReader stems,
     FiledRecordsReader records,
-    PageChoiceStore choices
+    PageChoiceStore choices,
+    EvidenceBeforeRun? beforeRun = null
 )
 {
-    /// <summary>The row from the rows as last built, and the evidence of its song, else of the video ID's.</summary>
+    /// <summary>The row from the rows as last built, and the evidence of its song, else of the video ID's, else what the Evidence stage left before any run.</summary>
     public TrackPage Find(string trackKey)
     {
         var row = tracks.Current?.Rows.FirstOrDefault(row =>
@@ -60,7 +61,7 @@ public sealed class TrackDetailsReader(
             )
                 is { } evidence
                 ? choices.Marked(trackKey, evidence)
-                : null
+                : beforeRun?.Read(trackKey, row?.Song ?? trackKey, row?.Title)
         );
     }
 

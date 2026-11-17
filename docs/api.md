@@ -255,7 +255,14 @@ nor a verdict for the video ID:
   `lookups` holds every page the lookup handed the judge, site by site, cited or not, so what the
   judge passed over can be read beside what it used. A lookup's `candidates`, when it has any, are
   pages with the exact title under no artist the track credits: unconfirmed, shown to the judge, and
-  never a source for a rule. Runs recorded before 2026-11-01 have neither.
+  never a source for a rule. Runs recorded before 2026-11-01 have neither. A lookup's `passed`, when
+  it has any, is the search's other hits (up to 20 a site, never fetched, never sent to the judge):
+  `url`, `artist`, `title` and a one-line `reason`. A site's `status` is `Found`, `NotFound`,
+  `Unreachable` (with its `error`) or `NotLookedUp` (the track names no artist and title). Each
+  source says who found its page in `foundBy`: `lookup`, `judge` or `person`.
+  A track the Evidence stage has read and no run has judged returns the same object with
+  `decidedBy` null, `center` null and no sections: the detectors' readings, the lookup, and
+  `rulesOpen`, the line saying why the rules leave it open (null when they would rule).
 - **`jobs`**: every line of `jobs.jsonl` for any of the track's uploads, oldest first. A stage that
   finished well says what it did in `summary` ("D major, HIGH, 2 sections; 3 turns on sonnet, 150 s,
   30k in (27k cached) · 1.6k out"); lines written before summaries existed, and every line that is

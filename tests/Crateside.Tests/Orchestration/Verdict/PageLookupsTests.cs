@@ -131,9 +131,41 @@ public sealed class PageLookupsTests : IDisposable
         Assert.Equal([(string.Empty, "Chemical Plant Zone - Act 1")], _pages.Asked);
     }
 
+    [Fact]
+    public async Task A_track_naming_no_artist_keeps_a_lookup_saying_it_was_not_looked_up()
+    {
+        var kept = await Lookups(new ResolvedNameStore(Path.Combine(_directory, "names.json")))
+            .LookUpForEvidenceAsync(Order("sync"), TestContext.Current.CancellationToken);
+
+        Assert.All(kept, lookup => Assert.Equal(LookupStatus.NotLookedUp, lookup.Status));
+        Assert.True(File.Exists(Path.Combine(_directory, "working", TrackKey, "sources.json")));
+    }
+
+    [Fact]
+    public async Task An_unreachable_site_is_tried_again_once_by_the_rule_pass_and_never_by_the_evidence_run()
+    {
+        _pages.Status = LookupStatus.Unreachable;
+        var lookups = Lookups();
+        var order = Order("TaQ - sync");
+        var ct = TestContext.Current.CancellationToken;
+
+        await lookups.LookUpForEvidenceAsync(order, ct);
+        await lookups.LookUpForEvidenceAsync(order, ct);
+        Assert.Single(_pages.Asked);
+
+        _pages.Status = LookupStatus.Found;
+        var retried = await lookups.LookUpAsync(order, ct);
+        await lookups.LookUpAsync(order, ct);
+
+        Assert.Equal(2, _pages.Asked.Count);
+        Assert.Equal(LookupStatus.Found, Assert.Single(retried).Status);
+    }
+
     private sealed class AskedPages : ISourcePages
     {
         public List<(string Artist, string Title)> Asked { get; } = [];
+
+        public LookupStatus Status { get; set; } = LookupStatus.NotFound;
 
         public List<IReadOnlyList<string>> AlsoCredited { get; } = [];
 
@@ -172,7 +204,9 @@ public sealed class PageLookupsTests : IDisposable
         {
             Asked.Add((artist, title));
 
-            return Task.FromResult<IReadOnlyList<SiteLookup>>([]);
+            return Task.FromResult<IReadOnlyList<SiteLookup>>([
+                new SiteLookup("Hooktheory", Status, []),
+            ]);
         }
     }
 }

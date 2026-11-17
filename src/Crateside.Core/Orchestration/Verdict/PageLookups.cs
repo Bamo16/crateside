@@ -16,33 +16,99 @@ public sealed class PageLookups(
 {
     public const string SourcesFileName = "sources.json";
 
-    /// <summary>The track's pages from the working set's copy, else fetched and kept there unless Hooktheory or Musicnotes could not be reached.</summary>
+    private static readonly string[] SiteNames = ["Hooktheory", "Musicnotes", "Ultimate Guitar"];
+
+    private readonly HashSet<string> _retried = [];
+
+    /// <summary>The track's pages from the working set's copy, else fetched and kept there with whatever could not be reached; the rule pass retries those once a start (ADR 0096).</summary>
     public async Task<IReadOnlyList<SiteLookup>> LookUpAsync(
         WorkOrder order,
         CancellationToken ct = default
+    ) => await LookUpAsync(order, Asker.Rules, ct);
+
+    /// <summary>The same, for the judge's session: a site the rule pass still could not reach is tried once more (ADR 0096).</summary>
+    public Task<IReadOnlyList<SiteLookup>> LookUpForJudgeAsync(
+        WorkOrder order,
+        CancellationToken ct = default
+    ) => LookUpAsync(order, Asker.Judge, ct);
+
+    /// <summary>The lookup that ends the evidence run: made when none is kept, never a retry.</summary>
+    public Task<IReadOnlyList<SiteLookup>> LookUpForEvidenceAsync(
+        WorkOrder order,
+        CancellationToken ct = default
+    ) => LookUpAsync(order, Asker.Evidence, ct);
+
+    private async Task<IReadOnlyList<SiteLookup>> LookUpAsync(
+        WorkOrder order,
+        Asker asker,
+        CancellationToken ct
     )
     {
-        if (CachedFor(order) is { } cached)
+        var cached = CachedFor(order);
+
+        if (cached is not null && !Retries(order, asker, cached))
             return cached;
 
-        if (NamesOf(order) is not var (artist, title))
-            return [];
+        var fresh = await FetchAllAsync(order, ct);
+        var lookups = cached is null
+            ? fresh
+            :
+            [
+                .. cached.Select(old =>
+                    MayBeRetried(old)
+                        ? fresh.FirstOrDefault(found => found.Site == old.Site) ?? old
+                        : old
+                ),
+            ];
 
-        var lookups = await pages.FetchAsync(
-            artist,
-            title,
-            AlsoCreditedOf(order),
-            IntakeOf(order)?.Release?.Album,
-            ct
+        SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.WriteFile(
+            Path.Combine(workingSet.Prepare(order.TrackKey), SourcesFileName),
+            lookups
         );
 
-        if (!lookups.Any(VerdictRules.MayHoldAnotherKey))
-            SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.WriteFile(
-                Path.Combine(workingSet.Prepare(order.TrackKey), SourcesFileName),
-                lookups
-            );
-
         return lookups;
+    }
+
+    /// <summary>Whether a kept lookup has a site to try again, which each track gets once per start for the rule pass and once for the judge.</summary>
+    private bool Retries(WorkOrder order, Asker asker, IReadOnlyList<SiteLookup> cached) =>
+        asker is not Asker.Evidence
+        && cached.Any(MayBeRetried)
+        && TakeRetry($"{order.TrackKey}/{asker}");
+
+    private bool TakeRetry(string key)
+    {
+        lock (_retried)
+            return _retried.Add(key);
+    }
+
+    private static bool MayBeRetried(SiteLookup lookup) =>
+        lookup.Status is LookupStatus.Unreachable or LookupStatus.NotLookedUp;
+
+    private async Task<IReadOnlyList<SiteLookup>> FetchAllAsync(
+        WorkOrder order,
+        CancellationToken ct
+    ) =>
+        NamesOf(order) is var (artist, title)
+            ? await pages.FetchAsync(
+                artist,
+                title,
+                AlsoCreditedOf(order),
+                IntakeOf(order)?.Release?.Album,
+                ct
+            )
+            :
+            [
+                .. SiteNames.Select(site => new SiteLookup(site, LookupStatus.NotLookedUp, [])
+                {
+                    Error = "the track names no artist and title to look up",
+                }),
+            ];
+
+    private enum Asker
+    {
+        Evidence,
+        Rules,
+        Judge,
     }
 
     /// <summary>The pages as the rules and the judge are to read them: the lookup's, with the person's choices applied (ADR 0078).</summary>
@@ -50,10 +116,12 @@ public sealed class PageLookups(
         choices is null ? found : PageChoiceEffect.Apply(found, choices.ActiveFor(trackKey));
 
     /// <summary>What an earlier lookup kept for this track, or null when there is none.</summary>
-    public IReadOnlyList<SiteLookup>? CachedFor(WorkOrder order) =>
+    public IReadOnlyList<SiteLookup>? CachedFor(WorkOrder order) => CachedFor(order.TrackKey);
+
+    public IReadOnlyList<SiteLookup>? CachedFor(string trackKey) =>
         SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.ReadFileOrDefault(
             Path.Combine(
-                Path.GetDirectoryName(workingSet.EvidencePathFor(order.TrackKey))!,
+                Path.GetDirectoryName(workingSet.EvidencePathFor(trackKey))!,
                 SourcesFileName
             )
         );

@@ -580,7 +580,10 @@ public sealed class VerdictRunnerTests : IDisposable
         );
 
         Assert.Empty(Pages.Asked);
-        Assert.Empty(Ledger.EvidenceFor("yes - owner of a lonely heart")!.Lookups);
+        Assert.All(
+            Ledger.EvidenceFor("yes - owner of a lonely heart")!.Lookups,
+            lookup => Assert.Equal(LookupStatus.NotLookedUp, lookup.Status)
+        );
     }
 
     /// <summary>A real TheoryTab, read from the pages recorded on 2026-10-16.</summary>
@@ -1177,7 +1180,7 @@ public sealed class VerdictRunnerTests : IDisposable
     }
 
     [Fact]
-    public async Task Pages_are_fetched_once_per_track_and_then_read_from_beside_the_evidence()
+    public async Task Pages_are_read_from_beside_the_evidence_and_an_unreached_site_is_tried_once_more_by_the_judge()
     {
         GiveEvidence();
         Session(writes: null);
@@ -1187,7 +1190,7 @@ public sealed class VerdictRunnerTests : IDisposable
 
         await RunAsync();
 
-        Assert.Single(Pages.Asked);
+        Assert.Equal(2, Pages.Asked.Count);
         Assert.Contains("Chorus: A minor", Sessions.Requests[2].StandardInput);
     }
 

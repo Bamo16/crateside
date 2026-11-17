@@ -491,6 +491,7 @@ public static class ServiceRegistration
         services.AddSingleton<SongKeyMigration>();
         services.AddSingleton<SampleReadingsReader>();
         services.AddSingleton<CacheKeeper>();
+        services.AddSingleton<EvidenceBeforeRun>();
         services.AddSingleton<TrackDetailsReader>();
         services.AddSingleton<IStagesReader, StagesReader>();
         services.AddSingleton<IRejudgeRequests, RejudgeRequests>();

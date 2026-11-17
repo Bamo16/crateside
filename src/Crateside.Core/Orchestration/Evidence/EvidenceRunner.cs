@@ -1,6 +1,8 @@
 using System.Diagnostics;
+using System.Globalization;
 using Crateside.Core.KeyDetection;
 using Crateside.Core.Ledger;
+using Crateside.Core.Orchestration.Verdict;
 
 namespace Crateside.Core.Orchestration.Evidence;
 
@@ -26,26 +28,77 @@ public interface IWindowDetector
 /// Produces the evidence for one track: runs the detectors over audio crateside already holds
 /// (ADR 0019).
 /// </summary>
-public sealed class EvidenceRunner(WorkingSet workingSet, IDetectorSet detectors) : IWindowDetector
+public sealed class EvidenceRunner(
+    WorkingSet workingSet,
+    IDetectorSet detectors,
+    PageLookups? pages = null
+) : IWindowDetector
 {
+    /// <summary>Detects, then looks the song up on the sites; a detection already on file is not made again, and its lookup is made if none is kept (ADR 0096).</summary>
     public async Task<EvidenceResult> RunAsync(WorkOrder order, CancellationToken ct = default)
     {
         if (workingSet.HasEvidence(order.TrackKey))
-            return EvidenceResult.Succeeded(
-                workingSet.EvidencePathFor(order.TrackKey),
-                "evidence was already on file"
+            return await WithPagesAsync(
+                EvidenceResult.Succeeded(
+                    workingSet.EvidencePathFor(order.TrackKey),
+                    "evidence was already on file"
+                ),
+                order,
+                ct
             );
 
         if (!workingSet.TryGetSource(order.TrackKey, out var audio))
             return EvidenceResult.Failed("no audio in the working set to detect over");
 
-        return await DetectAsync(
-            audio,
-            window: null,
-            workingSet.EvidencePathFor(order.TrackKey),
+        return await WithPagesAsync(
+            await DetectAsync(audio, window: null, workingSet.EvidencePathFor(order.TrackKey), ct),
+            order,
             ct
         );
     }
+
+    private async Task<EvidenceResult> WithPagesAsync(
+        EvidenceResult detected,
+        WorkOrder order,
+        CancellationToken ct
+    )
+    {
+        if (pages is null || !detected.IsSuccess)
+            return detected;
+
+        var lookups = await pages.LookUpForEvidenceAsync(order, ct);
+
+        return detected with
+        {
+            Summary = string.Join(
+                "; ",
+                new[] { detected.Summary, PagesSummary(lookups) }.Where(part =>
+                    part is { Length: > 0 }
+                )
+            ),
+        };
+    }
+
+    /// <summary>What the sites gave, in a line for the activity feed: <c>pages: Hooktheory 1, Musicnotes none, Ultimate Guitar not reached</c>.</summary>
+    internal static string PagesSummary(IReadOnlyList<SiteLookup> lookups) =>
+        lookups is []
+            ? string.Empty
+            : "pages: "
+                + string.Join(
+                    ", ",
+                    lookups.Select(lookup =>
+                        $"{lookup.Site} "
+                        + lookup.Status switch
+                        {
+                            LookupStatus.Found => lookup.Pages.Count.ToString(
+                                CultureInfo.InvariantCulture
+                            ),
+                            LookupStatus.NotFound => "none",
+                            LookupStatus.Unreachable => "not reached",
+                            _ => "not looked up",
+                        }
+                    )
+                );
 
     public Task<EvidenceResult> DetectWindowAsync(
         string audioPath,

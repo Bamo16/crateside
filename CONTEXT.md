@@ -484,8 +484,10 @@ it. The two run types below are named after which of **evidence** and **verdict*
   kept source, or an added one. Contends for nothing scarce
   ([ADR 0019](docs/adr/0019-a-track-has-many-sources-and-one-of-them-is-the-separation-source.md)).
 - **Evidence run** — the stage that produces the **evidence** for a track: running
-  the detectors over the audio the download acquired. Deterministic, needs no
-  judgment, and contends for nothing scarce.
+  the detectors over the audio the download acquired, then looking the song up on the
+  sites, so the song page shows both before any judging
+  ([ADR 0096](docs/adr/0096-the-page-lookup-is-part-of-the-evidence-run-and-keeps-what-it-passed-over.md)).
+  Deterministic, needs no judgment, and contends for nothing scarce.
 - **Verdict run** — the stage that turns evidence into a **verdict**. The only
   stage that requires an agent, because weighing evidence and going to look for
   human corroboration is the only part of the workflow that genuinely needs one.

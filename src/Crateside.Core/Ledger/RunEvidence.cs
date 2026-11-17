@@ -31,7 +31,14 @@ public sealed record RunEvidence
 
     public bool Mixed { get; init; }
 
-    public DecidedBy DecidedBy { get; init; } = DecidedBy.Judge;
+    /// <summary>Who decided the run; null for evidence read before any run exists (ADR 0096).</summary>
+    public DecidedBy? DecidedBy { get; init; } = Ledger.DecidedBy.Judge;
+
+    /// <summary>
+    /// Why the rules leave the track open, for evidence with no run yet; null once there is a run
+    /// or when the rules would rule.
+    /// </summary>
+    public string? RulesOpen { get; init; }
 
     public IReadOnlyList<Section> Sections { get; init; } = [];
 
@@ -170,6 +177,7 @@ public sealed record RunEvidence
                         Relation = coverage.Relation,
                         VerdictKey = coverage.JudgedAgainst,
                         Tab = TabAt(lookups, source.Url),
+                        FoundBy = FoundByOf(lookups, source.Url),
                     };
                 }),
             ],
@@ -219,6 +227,20 @@ public sealed record RunEvidence
             return [];
         }
     }
+
+    /// <summary>
+    /// <c>lookup</c> for a page the sites' search gave, <c>person</c> for one added by address, and
+    /// <c>judge</c> for a source the lookup never held (ADR 0096); null for a source with no address.
+    /// </summary>
+    private static string? FoundByOf(IReadOnlyList<SiteLookup> lookups, string? url) =>
+        url is null ? null
+        : lookups
+            .SelectMany(lookup => lookup.Pages.Concat(lookup.Candidates ?? []))
+            .FirstOrDefault(page => SamePage(page.Url, url))
+            is { } found
+            ? found.Chosen is PageChoiceKind.Added ? "person"
+                : "lookup"
+        : "judge";
 
     /// <summary>The TheoryTab the lookup parsed at this page, or null when it parsed none there.</summary>
     private static HooktheoryTab? TabAt(IReadOnlyList<SiteLookup> lookups, string? url) =>
@@ -319,6 +341,9 @@ public sealed partial record EvidenceSource
 
     /// <summary>The TheoryTab as the lookup parsed it, where the source is one; null on runs recorded before #176.</summary>
     public HooktheoryTab? Tab { get; init; }
+
+    /// <summary>Who found the page: <c>lookup</c>, <c>judge</c> or <c>person</c>; worked out from the lookup, not stored.</summary>
+    public string? FoundBy { get; init; }
 
     /// <summary>What the person removes a source by: its address, else what it was found by; null when it has neither.</summary>
     public string? Id =>

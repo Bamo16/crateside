@@ -4,6 +4,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Loop;
+using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
 
@@ -267,5 +268,21 @@ public sealed class EvidenceRunnerTests : IDisposable
 
             return MemoryMarshal.AsBytes(samples.AsSpan()).ToArray();
         }
+    }
+
+    [Fact]
+    public void The_pages_line_says_what_each_site_gave()
+    {
+        var line = EvidenceRunner.PagesSummary([
+            new(
+                "Hooktheory",
+                LookupStatus.Found,
+                [new FetchedPage { Site = "Hooktheory", Url = "https://example.test/a" }]
+            ),
+            new("Musicnotes", LookupStatus.NotFound, []),
+            new("Ultimate Guitar", LookupStatus.Unreachable, []),
+        ]);
+
+        Assert.Equal("pages: Hooktheory 1, Musicnotes none, Ultimate Guitar not reached", line);
     }
 }

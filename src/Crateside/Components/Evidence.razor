@@ -234,6 +234,47 @@
                 </ul>
             }
 
+            @if (Run.Lookups.Count > 0)
+            {
+                <h4>Pages looked up</h4>
+                <ul class="lookups">
+                    @foreach (var lookup in Run.Lookups)
+                    {
+                        <li>
+                            <strong>@lookup.Site</strong>
+                            <span class="muted">
+                                @(lookup.Status switch
+                                {
+                                    LookupStatus.Found => $"{lookup.Pages.Count} read",
+                                    LookupStatus.NotFound => "nothing found",
+                                    LookupStatus.Unreachable => "not reached" + (lookup.Error is { Length: > 0 } why ? $": {why}" : null),
+                                    _ => "not looked up" + (lookup.Error is { Length: > 0 } reason ? $": {reason}" : null),
+                                })
+                            </span>
+                            @if (lookup.Passed is { Count: > 0 } passed)
+                            {
+                                <details class="passed">
+                                    <summary>Passed over (@passed.Count)</summary>
+                                    <ul>
+                                        @foreach (var skipped in passed)
+                                        {
+                                            <li>
+                                                <a href="@skipped.Url" target="_blank" rel="noopener noreferrer">@(skipped.Title ?? skipped.Url)</a>
+                                                @if (skipped.Artist is { Length: > 0 } artist)
+                                                {
+                                                    <span class="muted"> · @artist</span>
+                                                }
+                                                <span class="muted"> · @skipped.Reason</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                </details>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+
             @if (Row is not null)
             {
                 <PageCorrections Row="Row" Run="Run" />

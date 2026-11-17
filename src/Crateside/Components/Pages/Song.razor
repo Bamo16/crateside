@@ -445,6 +445,11 @@
     {
         (_row, _run) = Details.Find(TrackKey);
 
+        // Evidence kept before any run is the pending view's, not a verdict's.
+        var beforeRun = _run is { DecidedBy: null };
+        if (beforeRun)
+            _run = null;
+
         // Pausing judging does not rebuild the rows, so the standing is read live.
         _row = _row is null ? null : _row with { Judge = Judge.Value.Standing(Verdicts.IsPaused) };
         _pending = _run is null && _row is { Verdict: null, HasUpload: true }

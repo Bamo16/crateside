@@ -49,6 +49,7 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
 {
     public const string ClientName = "source-pages";
 
+    private const int MaxPassed = 20;
     private const int UltimateGuitarTabs = 3;
     private const int HooktheoryPagesPerSong = 4;
     private const int HooktheoryCandidatesPerSong = 2;
@@ -88,14 +89,8 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
                 "Hooktheory",
                 () => HooktheoryAsync(artist, bare, alsoCredited, album, ct)
             ),
-            await LookUpAsync(
-                "Musicnotes",
-                async () => new FoundPages(await MusicnotesAsync(artist, bare, ct), [])
-            ),
-            await LookUpAsync(
-                "Ultimate Guitar",
-                async () => new FoundPages(await UltimateGuitarAsync(artist, bare, ct), [])
-            ),
+            await LookUpAsync("Musicnotes", () => MusicnotesAsync(artist, bare, ct)),
+            await LookUpAsync("Ultimate Guitar", () => UltimateGuitarAsync(artist, bare, ct)),
         ];
     }
 
@@ -140,6 +135,7 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
             ) with
             {
                 Candidates = found.Candidates is { Count: > 0 } ? found.Candidates : null,
+                Passed = found.Passed is { Count: > 0 } passed ? [.. passed.Take(MaxPassed)] : null,
             };
         }
         catch (Exception ex)
@@ -172,6 +168,27 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
                 pages.Add(tab);
         }
 
+        var read = HooktheoryUrls(artist, title, hits.Confirmed);
+        List<PassedPage> passed =
+        [
+            .. hits
+                .Confirmed.Where(url => !read.Contains(url, StringComparer.OrdinalIgnoreCase))
+                .Select(url => new PassedPage(
+                    url,
+                    artist,
+                    title,
+                    $"also filed under this song, past the {HooktheoryPagesPerSong} pages read"
+                )),
+            .. hits
+                .Candidates.Skip(HooktheoryCandidatesPerSong)
+                .Select(candidate => new PassedPage(
+                    candidate.Url,
+                    candidate.Artist,
+                    title,
+                    $"the exact title under {candidate.Artist}, past the {HooktheoryCandidatesPerSong} candidates read"
+                )),
+            .. hits.Passed,
+        ];
         List<FetchedPage> candidates = [];
 
         foreach (var candidate in hits.Candidates.Take(HooktheoryCandidatesPerSong))
@@ -186,7 +203,7 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
                 );
         }
 
-        return new(pages, candidates);
+        return new(pages, candidates) { Passed = passed };
     }
 
     private async Task<FetchedPage?> HooktheoryTabAsync(string url, CancellationToken ct)
@@ -302,7 +319,7 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
     {
         try
         {
-            var titled = (
+            var listed = (
                 JsonSerializer
                     .Deserialize(search, HooktheoryJsonContext.Default.HooktheorySearchResponse)
                     ?.Hits
@@ -316,7 +333,6 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
                             ArtistSlug.Length: > 0,
                             SongSlug.Length: > 0,
                         }
-                    && IsSong(hit.Song, title, album)
                 )
                 .Select(hit =>
                     (
@@ -326,6 +342,7 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
                 )
                 .DistinctBy(found => found.Url, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+            var titled = listed.Where(found => IsSong(found.Hit.Song!, title, album)).ToList();
 
             return new(
                 [
@@ -338,7 +355,20 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
                         .Where(found => !IsCredited(found.Hit.Artist!, artists))
                         .Select(found => new HooktheoryCandidate(found.Url, found.Hit.Artist!)),
                 ]
-            );
+            )
+            {
+                Passed =
+                [
+                    .. listed
+                        .Except(titled)
+                        .Select(found => new PassedPage(
+                            found.Url,
+                            found.Hit.Artist,
+                            found.Hit.Song,
+                            "a different title"
+                        )),
+                ],
+            };
         }
         catch (JsonException)
         {
@@ -437,7 +467,7 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
         }
     }
 
-    private async Task<IReadOnlyList<FetchedPage>> MusicnotesAsync(
+    private async Task<FoundPages> MusicnotesAsync(
         string artist,
         string title,
         CancellationToken ct
@@ -446,15 +476,34 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
         var search =
             $"https://www.musicnotes.com/search/go?w={Uri.EscapeDataString($"{artist} {title}")}";
 
-        if (
-            await GetAsync(search, ct) is not { } results
-            || MusicnotesProduct(results, artist, title) is not { } product
-            || await GetAsync(product, ct) is not { } page
-        )
-            return [];
+        if (await GetAsync(search, ct) is not { } results)
+            return new([], []);
 
-        return [MusicnotesPage(product, page)];
+        var product = MusicnotesProduct(results, artist, title);
+        var read =
+            product is not null && await GetAsync(product, ct) is { } page
+                ? MusicnotesPage(product, page)
+                : null;
+
+        return new(read is null ? [] : [read], [])
+        {
+            Passed = [.. MusicnotesPassed(results, product)],
+        };
     }
+
+    /// <summary>The products the search listed other than the one read, each filed under another artist or title.</summary>
+    internal static IEnumerable<PassedPage> MusicnotesPassed(string results, string? read) =>
+        MusicnotesLink
+            .Matches(results)
+            .Select(link => (Url: $"https://www.musicnotes.com{link.Value}", Link: link))
+            .Where(found => !found.Url.Equals(read, StringComparison.OrdinalIgnoreCase))
+            .DistinctBy(found => found.Url, StringComparer.OrdinalIgnoreCase)
+            .Select(found => new PassedPage(
+                found.Url,
+                found.Link.Groups["Artist"].Value,
+                found.Link.Groups["Title"].Value,
+                "filed under another artist or title"
+            ));
 
     /// <summary>The first product filed under the artist and title themselves: the original artist's, not a cover's.</summary>
     internal static string? MusicnotesProduct(string results, string artist, string title) =>
@@ -487,7 +536,7 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
                 : [],
         };
 
-    private async Task<IReadOnlyList<FetchedPage>> UltimateGuitarAsync(
+    private async Task<FoundPages> UltimateGuitarAsync(
         string artist,
         string title,
         CancellationToken ct
@@ -497,8 +546,8 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
             $"https://www.ultimate-guitar.com/search.php?search_type=title&value={Uri.EscapeDataString($"{artist} {title}")}";
 
         return await GetAsync(search, ct) is { } page
-            ? UltimateGuitarPages(page, artist, title)
-            : [];
+            ? UltimateGuitarFound(page, artist, title)
+            : new([], []);
     }
 
     /// <summary>The song's most-voted chord charts, and every tab of it that states a key.</summary>
@@ -506,12 +555,14 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
         string page,
         string artist,
         string title
-    )
+    ) => UltimateGuitarFound(page, artist, title).Pages;
+
+    internal static FoundPages UltimateGuitarFound(string page, string artist, string title)
     {
         if (
             UltimateGuitarStore.Match(page).Groups["Json"] is not { Success: true, Value: var json }
         )
-            return [];
+            return new([], []);
 
         UltimateGuitarStoreDto? store;
 
@@ -524,22 +575,29 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
         }
         catch (JsonException)
         {
-            return [];
+            return new([], []);
         }
 
-        return
-        [
-            .. (store?.Store?.Page?.Data?.Results ?? [])
-                .Where(tab =>
-                    tab is { TabUrl.Length: > 0, ArtistName: { } tabArtist, SongName: { } song }
-                    && Slug(tabArtist) == Slug(artist)
-                    && Slug(song) == Slug(title)
-                    && (tab.Type is "Chords" || tab is { TonalityName.Length: > 0 })
-                )
-                .OrderByDescending(tab => tab.TonalityName is { Length: > 0 })
-                .ThenByDescending(tab => tab.Votes ?? 0)
-                .Take(UltimateGuitarTabs)
-                .Select(tab => new FetchedPage
+        var results = (store?.Store?.Page?.Data?.Results ?? [])
+            .Where(tab => tab is { TabUrl.Length: > 0 })
+            .ToList();
+        var thisSong = results
+            .Where(tab =>
+                tab is { ArtistName: { } tabArtist, SongName: { } song }
+                && Slug(tabArtist) == Slug(artist)
+                && Slug(song) == Slug(title)
+            )
+            .ToList();
+        var usable = thisSong
+            .Where(tab => tab.Type is "Chords" || tab is { TonalityName.Length: > 0 })
+            .OrderByDescending(tab => tab.TonalityName is { Length: > 0 })
+            .ThenByDescending(tab => tab.Votes ?? 0)
+            .ToList();
+        var taken = usable.Take(UltimateGuitarTabs).ToList();
+
+        return new(
+            [
+                .. taken.Select(tab => new FetchedPage
                 {
                     Site = "Ultimate Guitar",
                     Url = tab.TabUrl!,
@@ -555,7 +613,24 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
                         )
                         : null,
                 }),
-        ];
+            ],
+            []
+        )
+        {
+            Passed =
+            [
+                .. results
+                    .Except(taken)
+                    .Select(tab => new PassedPage(
+                        tab.TabUrl!,
+                        tab.ArtistName,
+                        tab.SongName,
+                        !thisSong.Contains(tab) ? "another artist or title"
+                            : usable.Contains(tab) ? $"past the {UltimateGuitarTabs} tabs read"
+                            : "no chords and no key stated"
+                    )),
+            ],
+        };
     }
 
     public async Task<PageFetch> FetchPageAsync(string address, CancellationToken ct = default)
@@ -723,12 +798,25 @@ public sealed record SiteLookup(string Site, LookupStatus Status, IReadOnlyList<
     /// <summary>Pages with the exact title under no artist the track credits: shown to the judge and the person, and never a source for a rule (ADR 0077).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<FetchedPage>? Candidates { get; init; }
+
+    /// <summary>
+    /// The search's other hits, never fetched, never sent to the judge and never counted by a rule
+    /// (ADR 0096).
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<PassedPage>? Passed { get; init; }
 }
+
+/// <summary>A hit a search listed and the lookup passed over, with why.</summary>
+public sealed record PassedPage(string Url, string? Artist, string? Title, string Reason);
 
 internal sealed record FoundPages(
     IReadOnlyList<FetchedPage> Pages,
     IReadOnlyList<FetchedPage> Candidates
-);
+)
+{
+    public IReadOnlyList<PassedPage> Passed { get; init; } = [];
+}
 
 internal sealed record HooktheoryCandidate(string Url, string Artist);
 
@@ -738,6 +826,9 @@ internal sealed record HooktheoryHits(
 )
 {
     public static HooktheoryHits None { get; } = new([], []);
+
+    /// <summary>What the search listed that is neither a page of this song nor a candidate.</summary>
+    public IReadOnlyList<PassedPage> Passed { get; init; } = [];
 
     /// <summary>Every search's hits in order, a page once, and a page one search confirmed never a candidate of another.</summary>
     public static HooktheoryHits Merge(IEnumerable<HooktheoryHits> searches)
@@ -756,7 +847,22 @@ internal sealed record HooktheoryHits(
                     )
                     .DistinctBy(candidate => candidate.Url, StringComparer.OrdinalIgnoreCase),
             ]
-        );
+        )
+        {
+            Passed =
+            [
+                .. all.SelectMany(hits => hits.Passed)
+                    .Where(page =>
+                        !confirmed.Contains(page.Url, StringComparer.OrdinalIgnoreCase)
+                        && !all.Any(hits =>
+                            hits.Candidates.Any(candidate =>
+                                candidate.Url.Equals(page.Url, StringComparison.OrdinalIgnoreCase)
+                            )
+                        )
+                    )
+                    .DistinctBy(page => page.Url, StringComparer.OrdinalIgnoreCase),
+            ],
+        };
     }
 }
 
@@ -765,6 +871,9 @@ public enum LookupStatus
     Found,
     NotFound,
     Unreachable,
+
+    /// <summary>No lookup was made, for want of an artist and title; <c>Error</c> says why.</summary>
+    NotLookedUp,
 }
 
 /// <summary>A page found by artist and title; whether it is this recording is the judge's call.</summary>

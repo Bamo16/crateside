@@ -97,7 +97,7 @@ public sealed class VerdictRunner(
 
         File.Delete(verdictPath);
 
-        var found = await pages.LookUpAsync(order, ct);
+        var found = await pages.LookUpForJudgeAsync(order, ct);
         var lookups = pages.Effective(order.TrackKey, found);
 
         step(new JudgeStep.Judging());
