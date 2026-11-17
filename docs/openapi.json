@@ -2673,6 +2673,18 @@
             },
             "description": "The committed chord progression — the cheap check for a relative-key swap."
           },
+          "chordStarts": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "double"
+            },
+            "description": "Where each chord in the progression starts, in seconds; empty on runs recorded before #198."
+          },
           "keyEvents": {
             "type": "array",
             "items": {

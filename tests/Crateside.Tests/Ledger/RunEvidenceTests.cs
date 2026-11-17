@@ -50,7 +50,35 @@ public sealed class RunEvidenceTests : IDisposable
         Assert.Equal("the newer argument", TestLedger.EvidenceFor(_path, Song)?.Reasoning);
     }
 
-    private static string Run(string timestamp, string reasoning = "the argument") =>
+    [Fact]
+    public void A_runs_chord_starts_are_read_beside_its_chords()
+    {
+        File.WriteAllLines(_path, [Run("2026-09-01T00:00:00+00:00", chordStarts: [0.0, 2.5])]);
+
+        var run = TestLedger.EvidenceFor(_path, Song);
+
+        Assert.Equal(["Cm", "Ab"], run?.Chords);
+        Assert.Equal([0.0, 2.5], run?.ChordStarts);
+    }
+
+    [Fact]
+    public void A_run_recorded_before_chord_starts_were_kept_has_none() =>
+        Assert.Empty(
+            TestLedger.EvidenceFor(WriteRun("2026-09-01T00:00:00+00:00"), Song)?.ChordStarts ?? [1]
+        );
+
+    private string WriteRun(string timestamp)
+    {
+        File.WriteAllLines(_path, [Run(timestamp)]);
+
+        return _path;
+    }
+
+    private static string Run(
+        string timestamp,
+        string reasoning = "the argument",
+        double[]? chordStarts = null
+    ) =>
         JsonSerializer.Serialize(
             new
             {
@@ -64,6 +92,7 @@ public sealed class RunEvidenceTests : IDisposable
                 machine = new
                 {
                     chords = new[] { "Cm", "Ab" },
+                    chord_starts = chordStarts,
                     key_events = new[] { new { t = 0.0, key = "C minor" } },
                 },
             }

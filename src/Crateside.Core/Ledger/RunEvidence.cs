@@ -121,6 +121,9 @@ public sealed record RunEvidence
     /// <summary>The committed chord progression — the cheap check for a relative-key swap.</summary>
     public IReadOnlyList<string> Chords { get; init; } = [];
 
+    /// <summary>Where each chord in the progression starts, in seconds; empty on runs recorded before #198.</summary>
+    public IReadOnlyList<double> ChordStarts { get; init; } = [];
+
     /// <summary>Every time the running key estimate changed. Early instability is often just a sparse intro.</summary>
     public IReadOnlyList<KeyEvent> KeyEvents { get; init; } = [];
 
@@ -198,6 +201,11 @@ public sealed record RunEvidence
             ],
             Backers = machine?.Backers,
             Chords = machine?.Chords ?? [],
+            ChordStarts =
+                machine is { Chords: { } named, ChordStarts: { } starts }
+                && starts.Count == named.Count
+                    ? starts
+                    : [],
             KeyEvents =
             [
                 .. (machine?.KeyEvents ?? []).Select(change => new KeyEvent
@@ -661,6 +669,8 @@ internal sealed record MachineDto
     public IReadOnlyList<PairDto>? PairwiseAgreement { get; init; }
 
     public IReadOnlyList<string>? Chords { get; init; }
+
+    public IReadOnlyList<double>? ChordStarts { get; init; }
 
     public IReadOnlyList<KeyEventDto>? KeyEvents { get; init; }
 

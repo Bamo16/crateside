@@ -6,7 +6,8 @@
 }
 
 /* The key strip: the verdict's centers as bands. */
-.key-gutter {
+.key-gutter,
+.chord-gutter {
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
@@ -32,7 +33,8 @@
     color: var(--text-60);
 }
 
-.key-strip {
+.key-strip,
+.chord-strip {
     position: relative;
     height: 30px;
     overflow: hidden;
@@ -95,5 +97,36 @@
     white-space: nowrap;
     font-size: 11.5px;
     font-weight: 500;
+    color: var(--text);
+}
+
+/* The chord lane (#198): a block per chord, under the key strip. */
+.chord-gutter {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 10px 6px 0;
+}
+
+.chord-strip {
+    height: 26px;
+}
+
+.chord-band {
+    top: 3px;
+    height: 20px;
+    border-color: rgba(236, 231, 220, 0.3);
+}
+
+.chord-label {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    right: 2px;
+    overflow: hidden;
+    text-overflow: clip;
+    white-space: nowrap;
+    font-size: 11px;
     color: var(--text);
 }

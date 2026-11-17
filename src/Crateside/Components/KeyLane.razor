@@ -30,9 +30,44 @@
     </div>
 }
 
+@if (!Plan.IsEmpty || Run.Chords is not [])
+{
+    <span class="gutter chord-gutter">
+        <span class="key-name">Chords</span>
+        @if (Run.Chords is [])
+        {
+            <span class="gist">none read</span>
+        }
+        else if (ChordBands is [])
+        {
+            <span class="gist">no times kept for this run</span>
+        }
+    </span>
+    <div class="chord-strip">
+        @foreach (var band in ChordBands)
+        {
+            var (left, right) = (Math.Clamp(X(band.Start), 0, 100), Math.Clamp(X(band.End), 0, 100));
+            @if (right > left)
+            {
+                <button type="button" class="key-band chord-band @(X(band.Start) < 0 ? "open-left" : null) @(X(band.End) > 100 ? "open-right" : null)" style="left: @P(left)%; width: @P(right - left)%" title="@ChordTitle(band)" data-start="@P(band.Start)">
+                    @if ((right - left) / 100 * PlotPixels >= band.Label.Length * ChordCharacterPixels + ChordLabelPadding)
+                    {
+                        <span class="mono chord-label">@band.Label</span>
+                    }
+                </button>
+            }
+        }
+        @Bands
+    </div>
+}
+
 @code {
     /// <summary>The pixels a plot is at the page's width cap, for deciding whether a label has room.</summary>
     private const double PlotPixels = 832;
+
+    /// <summary>The pixels a chord's name takes per character, and what its block needs besides.</summary>
+    private const double ChordCharacterPixels = 7;
+    private const double ChordLabelPadding = 6;
 
     [Parameter, EditorRequired]
     public required RunEvidence Run { get; set; }
@@ -70,6 +105,8 @@
 
     private KeyStripPlan Plan => KeyStrip.Plan(Run, Seconds);
 
+    private IReadOnlyList<ChordBand> ChordBands => ChordStrip.Plan(Run, Seconds);
+
     private string Gist =>
         Run.Center is { } center
             ? Run.Sections.Select(section => section.Center).Distinct().Count() switch
@@ -83,6 +120,8 @@
 
     internal static string Title(KeyBand band) =>
         $"{(band.Section is { Length: > 0 } named ? named + " · " : null)}{ModeText.Named(band.Center)} · ▶ from {WarpWording.Time(band.Start)}{(band.FromWindow ? " · from a window" : null)}{(band.StartUnbacked ? " · start not placed by a window or source" : null)}";
+
+    internal static string ChordTitle(ChordBand band) => $"{band.Label} · ▶ from {WarpWording.Time(band.Start)}";
 
     private double X(double seconds) => (seconds - From) / (To - From) * 100;
 

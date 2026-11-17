@@ -114,6 +114,17 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, Func<string> 
             ? Collapsed(chordLine.Groups["Chords"].Value.Split('-'))
             : [];
 
+        // The filter prints one start per committed chord, so the two lists only line up when none was missed.
+        var starts =
+            ChordEvent.Matches(stderr) is { Count: > 0 } events && events.Count == chords.Count
+                ?
+                [
+                    .. events.Select(match =>
+                        double.Parse(match.Groups["Start"].Value, CultureInfo.InvariantCulture)
+                    ),
+                ]
+                : (IReadOnlyList<double>)[];
+
         return new KeydetectReading.Read(
             key,
             r,
@@ -135,7 +146,8 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, Func<string> 
                 : null,
             Reranks.Matches(stderr) is [.., var reranked]
                 ? reranked.Groups["Flag"].Value is "1"
-                : null
+                : null,
+            starts
         );
     }
 
@@ -178,6 +190,9 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, Func<string> 
     [GeneratedRegex(@"lavfi\.keydetect\.chords=(?<Chords>[A-Gb#mN-]+)")]
     private static partial Regex FinalChords { get; }
 
+    [GeneratedRegex(@"chord=(?<Chord>[A-Gb#mN]+) start=(?<Start>[0-9.]+)")]
+    private static partial Regex ChordEvent { get; }
+
     [GeneratedRegex(@"t=(?<Seconds>[0-9.]+) key=(?<Key>[A-G][#b]?m?) \(r=(?<R>-?[0-9.]+)\)")]
     private static partial Regex KeyEvent { get; }
 }
@@ -192,6 +207,7 @@ public abstract record KeydetectReading
     /// <param name="KeyEvents">Every change of the running estimate as the stream played.</param>
     /// <param name="RunnerUp">The second-ranked key (<c>key_alt</c>), where the build prints one.</param>
     /// <param name="Reranked">Whether the chord rerank changed the answer (<c>key_reranked</c>).</param>
+    /// <param name="ChordStarts">Where each of <paramref name="Chords"/> starts, in seconds (<c>start=</c>, v1.1.0 on); empty when the build prints none.</param>
     public sealed record Read(
         MusicKey Key,
         double R,
@@ -199,7 +215,8 @@ public abstract record KeydetectReading
         IReadOnlyList<KeydetectEvent> KeyEvents,
         MusicKey? RunnerUp = null,
         double? RunnerUpR = null,
-        bool? Reranked = null
+        bool? Reranked = null,
+        IReadOnlyList<double>? ChordStarts = null
     ) : KeydetectReading;
 
     public sealed record Failed(string Error) : KeydetectReading;

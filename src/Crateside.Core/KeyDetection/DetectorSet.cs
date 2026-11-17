@@ -137,6 +137,10 @@ public sealed class DetectorSet(
                     EssentiaEdma = edma is null ? null : Simple(edma),
                 },
                 Chords = keydetect is KeydetectReading.Read { Chords: var chords } ? chords : null,
+                ChordStarts = keydetect
+                    is KeydetectReading.Read { ChordStarts: { Count: > 0 } starts }
+                    ? starts
+                    : null,
                 KeyEvents = keydetect is KeydetectReading.Read ? KeyEventsOf(keydetect) : null,
             },
             Written
@@ -272,6 +276,9 @@ public sealed class DetectorSet(
                 Pair("madmom+edma", KeyOf(madmom), KeyOf(edma)),
             ],
             Chords = keydetect is KeydetectReading.Read { Chords: var chords } ? chords : [],
+            ChordStarts = keydetect is KeydetectReading.Read { ChordStarts: { Count: > 0 } starts }
+                ? starts
+                : null,
             KeyEvents = KeyEventsOf(keydetect),
         };
     }

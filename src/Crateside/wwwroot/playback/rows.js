@@ -7,6 +7,9 @@ import { GRID_MIN_PIXELS, COLUMNS, PLOT_PIXELS, FLAG_ROOM, xOf, clampX, openEnds
 
 // KeyLane's label: the room a band needs to carry one, and its insets in the band (KeyLane.razor.css).
 const KEY_LABEL_ROOM = 56;
+// A chord's name takes this per character, plus its block's padding.
+const CHORD_CHARACTER_PIXELS = 7;
+const CHORD_LABEL_PADDING = 6;
 const KEY_LABEL_INSET = { left: 5, right: 3 };
 
 export const Rows = (Base) =>
@@ -74,7 +77,7 @@ export const Rows = (Base) =>
                 });
 
                 // Over a solid ground a sliding layer's text keeps the page's subpixel rendering, and a row's own border is not drawn twice.
-                if (kind === "ruler" || kind === "keys" || kind === "axis")
+                if (kind === "ruler" || kind === "keys" || kind === "chords" || kind === "axis")
                     layer.style.backgroundColor = groundOf(target);
                 // The covered row keeps its own tint under the layer, so the clone's copy of it would be drawn on top of it.
                 else
@@ -86,7 +89,7 @@ export const Rows = (Base) =>
 
                 into.insertBefore(layer, into.firstChild);
 
-                const entry = { kind, target, layer, lane, scope: kind === "keys" ? scopeOf(target) : own, viewScope: own };
+                const entry = { kind, target, layer, lane, scope: kind === "keys" || kind === "chords" ? scopeOf(target) : own, viewScope: own };
 
                 if (kind === "lane") {
                     layer.insertAdjacentHTML(
@@ -102,6 +105,7 @@ export const Rows = (Base) =>
 
             cover(grid.querySelector(":scope > .ruler"), "ruler");
             cover(grid.querySelector(":scope > .key-strip"), "keys");
+            cover(grid.querySelector(":scope > .chord-strip"), "chords");
             cover(grid.querySelector(":scope > .axis"), "axis");
             cover(grid.querySelector(":scope > .tempo-line"), "tempo");
             cover(grid.querySelector(":scope > .off-line"), "off");
@@ -285,6 +289,8 @@ export const Rows = (Base) =>
                         .join("");
                 else if (layer.kind === "keys")
                     layer.layer.innerHTML = this.keysHtml(view, layer) + bands;
+                else if (layer.kind === "chords")
+                    layer.layer.innerHTML = this.chordsHtml(view, layer) + bands;
                 else if (layer.kind === "tempo")
                     this.paintTempo(layer, view, bands);
                 else if (layer.kind === "off")
@@ -462,6 +468,21 @@ export const Rows = (Base) =>
                     const label = ((right - left) / 100) * PLOT_PIXELS * view.wide >= KEY_LABEL_ROOM ? `<span ${scope} class="mono key-label">${escapeHtml(band.label)}</span>` : "";
 
                     return `<button ${scope} type="button" tabindex="-1" class="${classes}" style="left:${pct(left)}%;width:${pct(right - left)}%">${label}</button>`;
+                })
+                .join("");
+        }
+
+        chordsHtml(view, { scope }) {
+            return (this.live.chords ?? [])
+                .map((band) => {
+                    const [left, right] = [clampX(view, band.start), clampX(view, band.end)];
+
+                    if (right <= left)
+                        return "";
+
+                    const label = ((right - left) / 100) * PLOT_PIXELS * view.wide >= band.label.length * CHORD_CHARACTER_PIXELS + CHORD_LABEL_PADDING ? `<span ${scope} class="mono chord-label">${escapeHtml(band.label)}</span>` : "";
+
+                    return `<button ${scope} type="button" tabindex="-1" class="key-band chord-band${openEnds(view, band)}" style="left:${pct(left)}%;width:${pct(right - left)}%">${label}</button>`;
                 })
                 .join("");
         }

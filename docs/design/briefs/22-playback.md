@@ -156,8 +156,7 @@ a track with several uploads still lists them all.
 
 - **Editing the warp** (moving the marker, setting the clip start and end, saving the default clip):
   the rest of #105, briefed once playback has proven its timing.
-- **The chord lane** under the key strip: chord times are not stored yet (#198). Keep handoff 20's
-  placeholder, its label now `Chords · #198`.
+- **The chord lane** under the key strip: built in #198 (DESIGN.md, the warp view).
 - **Playing from the Tracks page**: only Track details plays; leaving the page stops it.
 - **Several stems at once** (mute and solo).
 

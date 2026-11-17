@@ -99,7 +99,7 @@ export const View = (Base) =>
             if (!field || !grid || !ruler)
                 return;
 
-            const bottoms = [...grid.querySelectorAll(".lane > .plot, .key-strip, .tempo-line, .off-line")];
+            const bottoms = [...grid.querySelectorAll(".lane > .plot, .key-strip, .chord-strip, .tempo-line, .off-line")];
             // Fractional boxes, not offsetTop and its kin: those round, and the live rows would sit a part-pixel off the rows they cover.
             const parent = ruler.offsetParent ?? grid;
             const origin = parent.getBoundingClientRect();
@@ -225,12 +225,12 @@ export const View = (Base) =>
             if (target.closest("[data-overview]"))
                 return;
 
-            const keys = target.closest(".key-strip");
+            const keys = target.closest(".key-strip, .chord-strip");
 
             // Under the sliding strip the key's bands are not the server's to click.
             if (keys && this.strip) {
                 const at = this.plotTime(event, keys);
-                const under = this.live?.keys?.find((key) => at >= key.start && at < key.end);
+                const under = (keys.classList.contains("chord-strip") ? this.live?.chords : this.live?.keys)?.find((key) => at >= key.start && at < key.end);
 
                 if (under)
                     this.seek(under.start);

@@ -87,6 +87,17 @@ public partial class WarpView
                                 StringComparison.OrdinalIgnoreCase
                             ),
                     }),
+            chords = Run is null
+                ? null
+                : ChordStrip
+                    .Plan(Run, group.Seconds)
+                    .Select(band => new
+                    {
+                        start = band.Start,
+                        end = band.End,
+                        label = band.Label,
+                        title = KeyLane.ChordTitle(band),
+                    }),
             tempo = markers is { Count: > 1 }
                 ? new { line = Y(figure, low, high), segments = TempoSegments(markers, low, high) }
                 : null,

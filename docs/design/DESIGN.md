@@ -288,6 +288,12 @@ band whose start only the judge gave** (no window) has a dashed outline and the 
 not placed by a window or source`. The running estimate is not drawn: keydetect's key values are
 running totals, so a change is where the whole-song estimate flipped, not where the key does (#174).
 `KeyLane`.
+- **The chord lane** (#198): the row under the key strip, 26px, same axis, same outlined blocks (1px at 30%,
+  20px tall) with the chord in mono 11 where the block has 7px per character plus 6 (`D` from 13px, `G♯m` from 27px). Each block runs from its chord's
+  start to the next one's, the last to the track's end; `N` (no chord) is a gap. A block seeks like a key band
+  (`▶ from 0:05`). The starts are keydetect's `start=` on its chord lines, kept with the run as
+  `chord_starts` beside `chords` (`ChordStrip.Plan`). A run recorded before they were kept has the gutter
+  note `no times kept for this run` and no blocks; they are not filled by re-running detection.
 - **The band invites it** only where the verdict is WITHHELD, or LOW with the whole-file detectors
   split: the Confidence cell adds the reason and an `.outline` *Judge from these bars ↓* that scrolls
   here and opens the form. Running, the cell holds the teal chip `● judging from bars` and

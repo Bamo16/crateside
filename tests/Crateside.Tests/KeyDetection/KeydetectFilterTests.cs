@@ -49,8 +49,40 @@ public sealed class KeydetectFilterTests : IDisposable
         Assert.Equal(MusicKey.FromString("A minor"), read.Key);
         Assert.InRange(read.R, 0.1, 1);
         Assert.True(read.Chords.Count > 8);
+        Assert.Equal(read.Chords.Count, read.ChordStarts!.Count);
+        Assert.Equal(read.ChordStarts.Order(), read.ChordStarts);
         Assert.NotNull(read.RunnerUp);
         Assert.NotNull(read.Reranked);
+    }
+
+    [Fact]
+    public void Each_chord_keeps_the_start_the_filter_printed_for_it()
+    {
+        const string Stderr = """
+            [Parsed_keydetect_0 @ 0] t=0.89 chord=F start=0.00
+            [Parsed_keydetect_0 @ 0] t=3.14 chord=A# start=1.50
+            [Parsed_keydetect_0 @ 0] t=4.19 chord=Gm start=3.10
+            [Parsed_keydetect_0 @ 0] lavfi.keydetect.key=F
+            [Parsed_keydetect_0 @ 0] lavfi.keydetect.chords=F-A#-Gm
+            """;
+
+        var read = Assert.IsType<KeydetectReading.Read>(KeydetectFilter.Parse(Stderr));
+
+        Assert.Equal(["F", "A#", "Gm"], read.Chords);
+        Assert.Equal([0.0, 1.5, 3.1], read.ChordStarts);
+    }
+
+    [Fact]
+    public void A_build_that_prints_no_starts_leaves_them_empty()
+    {
+        const string Stderr = """
+            [Parsed_keydetect_0 @ 0] lavfi.keydetect.key=F
+            [Parsed_keydetect_0 @ 0] lavfi.keydetect.chords=F-A#-Gm
+            """;
+
+        var read = Assert.IsType<KeydetectReading.Read>(KeydetectFilter.Parse(Stderr));
+
+        Assert.Empty(read.ChordStarts!);
     }
 
     /// <summary>Each chord for two seconds: a triad over its root an octave down, each tone with two overtones.</summary>
