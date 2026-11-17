@@ -542,6 +542,49 @@ public sealed class VerdictDrainerTests : IDisposable
     }
 
     [Fact]
+    public async Task Setting_up_a_judge_later_does_not_judge_a_track_the_rules_ruled_on()
+    {
+        Hold(AgreedEvidence, withSource: false);
+
+        await JudgeBackfillAsync(DrainerFor(JudgeKind.None));
+
+        Assert.Equal(DecidedBy.Rules, Assert.Single(_store.Read().Runs).DecidedBy);
+
+        var later = await JudgeBackfillAsync(DrainerFor(JudgeKind.ClaudeCode));
+
+        Assert.Equal(StageOutcome.Idle, later.Outcome);
+        Assert.Empty(_sessions.Prompts);
+        Assert.Single(_store.Read().Runs);
+    }
+
+    [Fact]
+    public async Task Setting_up_a_judge_later_does_not_judge_a_track_the_person_decided()
+    {
+        Hold(FullEvidence, withSource: false);
+        _jobs.Record(TrackKey, JobStage.Verdict, JobStatus.AwaitingPerson);
+        _store.Record(
+            new RunRecord
+            {
+                RecordedAt = DateTimeOffset.Parse("2026-10-01T00:00:00+00:00"),
+                Song = "artist - song",
+                Artist = "Artist",
+                Title = "Song",
+                SourceUrl = $"https://music.youtube.com/watch?v={TrackKey}",
+                Confidence = KeyConfidence.High,
+                Center = new TonalCenter("A", DiatonicMode.Aeolian),
+                DecidedBy = DecidedBy.Person,
+                Evidence = FullEvidence,
+            }
+        );
+
+        var later = await JudgeBackfillAsync(DrainerFor(JudgeKind.ClaudeCode));
+
+        Assert.Equal(StageOutcome.Idle, later.Outcome);
+        Assert.Empty(_sessions.Prompts);
+        Assert.Single(_store.Read().Runs);
+    }
+
+    [Fact]
     public async Task With_no_judge_a_song_owed_a_re_judge_is_left_alone()
     {
         Hold(FullEvidence, withSource: true);
