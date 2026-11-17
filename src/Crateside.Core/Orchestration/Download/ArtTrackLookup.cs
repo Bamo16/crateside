@@ -6,7 +6,7 @@ namespace Crateside.Core.Orchestration.Download;
 
 /// <summary>
 /// Asks <c>stemforge-cli art-track</c> for the song upload that matches a video, and remembers the
-/// answer so a page view never reaches YouTube twice (ADR 0104).
+/// answer so a page view never reaches YouTube twice (ADR 0105).
 /// </summary>
 public sealed class ArtTrackLookup(
     IProcessRunner processes,
