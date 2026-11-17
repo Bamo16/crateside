@@ -1,0 +1,9 @@
+<span class="info" tabindex="0" role="note" aria-label="@Text">
+    <span class="mark" aria-hidden="true">i</span>
+    <span class="tip" aria-hidden="true">@Text</span>
+</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Text { get; set; } = string.Empty;
+}
