@@ -20,6 +20,9 @@ public sealed class DetectorBackfill(
     TimeProvider clock
 )
 {
+    /// <summary>The chord times (<c>chord_starts</c>) of a run recorded before #198, read again from keydetect's pinned build.</summary>
+    public const string ChordTimes = "chord times";
+
     private const string Reread = "re-read";
 
     private static readonly string[] Current =
@@ -59,10 +62,10 @@ public sealed class DetectorBackfill(
         var lacking = held.Select(run => (Song: run.Key, Lacks: Lacking(run.Value)))
             .Where(run => run.Lacks.Count > 0)
             .ToDictionary(run => run.Song, run => run.Lacks, StringComparer.OrdinalIgnoreCase);
-        var wanted = held.Select(run => (Song: run.Key, Wants: Wanted(run.Value)))
+        var current = await detectors.KeydetectSha256Async(ct);
+        var wanted = held.Select(run => (Song: run.Key, Wants: Wanted(run.Value, current)))
             .Where(run => run.Wants.Count > 0)
             .ToDictionary(run => run.Song, run => run.Wants, StringComparer.OrdinalIgnoreCase);
-        var current = await detectors.KeydetectSha256Async(ct);
 
         if (current is not null && !_legacyStamped)
         {
@@ -146,7 +149,10 @@ public sealed class DetectorBackfill(
             )
                 (madmom, edma) = await detectors.ReadBackersAsync(target.AudioPath, null, ct);
 
-            if (target.Detectors.Contains(KeydetectFilter.Name))
+            if (
+                target.Detectors.Contains(KeydetectFilter.Name)
+                || target.Detectors.Contains(ChordTimes)
+            )
                 keydetect = await detectors.ReadKeydetectAsync(target.AudioPath, null, ct);
 
             if (target.Detectors.Contains(KeyLifts.Name))
@@ -159,11 +165,32 @@ public sealed class DetectorBackfill(
             KeydetectFilter.Name,
             keydetect is KeydetectReading.Failed(var kError) ? kError : null
         );
+        Settle(
+            ChordTimes,
+            keydetect switch
+            {
+                KeydetectReading.Failed(var cError) => cError,
+                KeydetectReading.Read { ChordStarts: { Count: > 0 } } => null,
+                _ => "this build prints no chord times",
+            }
+        );
         Settle(MadmomKeyCnn.Name, (madmom as KeyReading.Failed)?.Error);
         Settle(EdmaKeyEstimator.Name, (edma as KeyReading.Failed)?.Error);
         Settle(KeyLifts.Name, (lifts as KeyLiftReading.Failed)?.Error);
 
-        if (added.Count > 0)
+        if (
+            added.Contains(ChordTimes)
+            && keydetect is KeydetectReading.Read { ChordStarts: { } starts }
+            && !store.EditLatestEvidence(target.Song, json => WithChordTimes(json, starts))
+        )
+        {
+            added.Remove(ChordTimes);
+            failures[ChordTimes] = "the run's chords and the times read do not match";
+        }
+        else if (added.Contains(ChordTimes))
+            store.Export();
+
+        if (added.Any(detector => detector is not ChordTimes))
         {
             var part = DetectorSet.Part(
                 added.Contains(KeydetectFilter.Name) ? keydetect : null,
@@ -235,6 +262,28 @@ public sealed class DetectorBackfill(
 
         return evidence.ToJsonString(Relaxed);
     }
+
+    /// <summary>The evidence with <c>chord_starts</c> set, when the run has chords and as many times; null otherwise. Nothing else changes, so no verdict does.</summary>
+    internal static string? WithChordTimes(string json, IReadOnlyList<double> starts)
+    {
+        if (
+            JsonNode.Parse(json) is not JsonObject { Count: > 0 } evidence
+            || evidence["chords"] is not JsonArray { Count: > 0 } chords
+            || chords.Count != starts.Count
+        )
+            return null;
+
+        evidence["chord_starts"] = new JsonArray([
+            .. starts.Select(start => JsonValue.Create(start)),
+        ]);
+
+        return evidence.ToJsonString(Relaxed);
+    }
+
+    private static bool LacksChordTimes(string json) =>
+        JsonNode.Parse(json) is JsonObject { } evidence
+        && evidence["chords"] is JsonArray { Count: > 0 }
+        && evidence["chord_starts"] is not JsonArray { Count: > 0 };
 
     /// <summary>The evidence with each field <paramref name="fresh"/> holds replaced, each detector on its own; every other field is kept.</summary>
     internal static string? Refreshed(string json, string fresh)
@@ -341,9 +390,17 @@ public sealed class DetectorBackfill(
             : [];
 
     /// <summary>What <see cref="Lacking"/> names, and the key lifts where the whole track was never scanned for them (ADR 0100); lifts never hold up judging.</summary>
-    private static List<string> Wanted(string json)
+    private static List<string> Wanted(string json, string? currentSha256)
     {
         var wanted = Lacking(json);
+
+        // A run another build read is re-read whole, which brings its chord times with it.
+        if (
+            !wanted.Contains(KeydetectFilter.Name)
+            && (currentSha256 is null || !IsStale(json, currentSha256))
+            && LacksChordTimes(json)
+        )
+            wanted.Add(ChordTimes);
 
         if (
             JsonNode.Parse(json) is JsonObject { } evidence

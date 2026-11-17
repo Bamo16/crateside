@@ -293,7 +293,8 @@ running totals, so a change is where the whole-song estimate flipped, not where 
   start to the next one's, the last to the track's end; `N` (no chord) is a gap. A block seeks like a key band
   (`▶ from 0:05`). The starts are keydetect's `start=` on its chord lines, kept with the run as
   `chord_starts` beside `chords` (`ChordStrip.Plan`). A run recorded before they were kept has the gutter
-  note `no times kept for this run` and no blocks; they are not filled by re-running detection.
+  note `chord times pending: reading the track again` and no blocks until the evidence backfill reads
+  keydetect again and attaches them (`DetectorBackfill`, wanted as `chord times`; no verdict changes, no re-judging).
 - **The band invites it** only where the verdict is WITHHELD, or LOW with the whole-file detectors
   split: the Confidence cell adds the reason and an `.outline` *Judge from these bars ↓* that scrolls
   here and opens the form. Running, the cell holds the teal chip `● judging from bars` and

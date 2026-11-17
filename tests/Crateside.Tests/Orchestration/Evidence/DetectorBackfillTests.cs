@@ -456,12 +456,77 @@ public sealed class DetectorBackfillTests : IDisposable
         );
     }
 
+    [Fact]
+    public async Task A_run_with_chords_but_no_chord_times_gets_the_times_and_nothing_else()
+    {
+        Judge(ReadBy("new", chords: """["Am","G"]""", starts: null));
+        _detectors.Sha256 = "new";
+        _detectors.ChordStarts = [0, 4.5];
+
+        var backfill = Backfill();
+        var target = (await backfill.NextAsync(TestContext.Current.CancellationToken))!;
+        var before = _store.LatestEvidenceJson()[Song];
+        var result = await backfill.ReadAsync(target, TestContext.Current.CancellationToken);
+
+        Assert.Equal([DetectorBackfill.ChordTimes], target.Detectors);
+        Assert.False(target.Rereads);
+        Assert.Equal([DetectorBackfill.ChordTimes], result.Added);
+
+        var after = _store.LatestEvidenceJson()[Song];
+
+        Assert.Equal(before[..^1] + ",\"chord_starts\":[0,4.5]}", after);
+        Assert.Equal(Song, Assert.Single(_store.Read().Runs).Song);
+        Assert.Null(await backfill.NextAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task A_run_another_build_read_is_re_read_rather_than_given_chord_times()
+    {
+        Judge(ReadBy("old", chords: """["Am","G"]""", starts: null));
+        _detectors.Sha256 = "new";
+
+        Assert.True((await Backfill().NextAsync(TestContext.Current.CancellationToken))!.Rereads);
+    }
+
+    [Fact]
+    public async Task A_build_that_prints_no_chord_times_is_tried_once_and_leaves_the_evidence_alone()
+    {
+        Judge(ReadBy("new", chords: """["Am","G"]""", starts: null));
+        _detectors.Sha256 = "new";
+
+        var backfill = Backfill();
+        var target = (await backfill.NextAsync(TestContext.Current.CancellationToken))!;
+        var before = _store.LatestEvidenceJson()[Song];
+        var result = await backfill.ReadAsync(target, TestContext.Current.CancellationToken);
+
+        Assert.Contains(DetectorBackfill.ChordTimes, result.Failed.Keys);
+        Assert.Equal(before, _store.LatestEvidenceJson()[Song]);
+        Assert.Null(await backfill.NextAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task Times_for_a_different_number_of_chords_are_not_attached()
+    {
+        Judge(ReadBy("new", chords: """["Am","G","C"]""", starts: null));
+        _detectors.Sha256 = "new";
+        _detectors.ChordStarts = [0, 4.5];
+
+        var backfill = Backfill();
+        var target = (await backfill.NextAsync(TestContext.Current.CancellationToken))!;
+        var before = _store.LatestEvidenceJson()[Song];
+        var result = await backfill.ReadAsync(target, TestContext.Current.CancellationToken);
+
+        Assert.Contains(DetectorBackfill.ChordTimes, result.Failed.Keys);
+        Assert.Equal(before, _store.LatestEvidenceJson()[Song]);
+    }
+
     private static string ReadBy(
         string sha256,
         string key = "A minor",
-        string chords = """["Am"]"""
+        string chords = """["Am"]""",
+        string? starts = "[0]"
     ) =>
-        $$$"""{"algorithms":{"ffmpeg_keydetect":{"key":"{{{key}}}"},"madmom":{"key":"A minor"},"essentia_edma":{"key":"A minor"}},"chords":{{{chords}}},"key_lifts":[],"versions":{"ffmpeg_sha256":"{{{sha256}}}"}}""";
+        $$$"""{"algorithms":{"ffmpeg_keydetect":{"key":"{{{key}}}"},"madmom":{"key":"A minor"},"essentia_edma":{"key":"A minor"}},"chords":{{{chords}}}{{{(starts is null ? string.Empty : $",\"chord_starts\":{starts}")}}},"key_lifts":[],"versions":{"ffmpeg_sha256":"{{{sha256}}}"}}""";
 
     private sealed class FakeDetectors : IDetectorSet
     {
@@ -470,6 +535,8 @@ public sealed class DetectorBackfillTests : IDisposable
         public string? Sha256 { get; set; }
 
         public string? Fresh { get; set; }
+
+        public IReadOnlyList<double> ChordStarts { get; set; } = [];
 
         public Task<string?> KeydetectSha256Async(CancellationToken ct = default) =>
             Task.FromResult(Sha256);
@@ -518,7 +585,8 @@ public sealed class DetectorBackfillTests : IDisposable
                         MusicKey.FromString("A minor")!,
                         0.8,
                         ["Am", "G"],
-                        []
+                        [],
+                        ChordStarts: ChordStarts
                     )
             );
 
