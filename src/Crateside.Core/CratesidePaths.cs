@@ -119,6 +119,13 @@ public sealed class CratesidePaths
         set;
     }
 
+    /// <summary>Where a re-cut keeps the saved warps of the stems it removes until the new stems are handed off (ADR 0103).</summary>
+    public string KeptWarpsFolder
+    {
+        get => field ?? Roaming("kept-warps");
+        set;
+    }
+
     /// <summary>The file the marks were kept in, read once by the import (ADR 0082).</summary>
     public string TrackMarksFile
     {

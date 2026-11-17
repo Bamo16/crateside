@@ -11,7 +11,8 @@ public sealed class HandoffSidecars(
     CratesidePaths paths,
     SidecarWriter writer,
     BeatReader beats,
-    IOptions<WarpOptions> options
+    IOptions<WarpOptions> options,
+    KeptWarps? keptWarps = null
 )
 {
     private readonly WarpOptions _options = options.Value;
@@ -35,6 +36,17 @@ public sealed class HandoffSidecars(
         {
             var authorities = siblings.AuthoritiesFor(cut);
             var sameKind = siblings.SameKindAs(cut);
+
+            // Only when no sibling on disk holds a warp: a re-cut took the ones it had away (ADR 0103).
+            if (
+                !writer.HasWarpToLend(authorities, sameKind)
+                && keptWarps?.Of(cut.SourceTrackKey) is { } kept
+            )
+            {
+                authorities = kept.AuthoritiesFor(cut);
+                sameKind = kept.SameKindAs(cut);
+            }
+
             SidecarPlan? plan = null;
 
             if (writer.HasWarpToLend(authorities, sameKind))

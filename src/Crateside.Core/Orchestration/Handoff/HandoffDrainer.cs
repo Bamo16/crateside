@@ -23,7 +23,8 @@ public sealed class HandoffDrainer(
     TrackInstructionStore instructions,
     ResolvedNameStore names,
     DeletionLog? deletions = null,
-    HandoffSidecars? sidecars = null
+    HandoffSidecars? sidecars = null,
+    KeptWarps? keptWarps = null
 ) : IStageDrainer
 {
     private readonly CratesidePaths _paths = paths.Value;
@@ -64,6 +65,9 @@ public sealed class HandoffDrainer(
             // Left Running, the job would hold the track out of the queue until a restart.
             result = HandoffResult.Failed(ex.Message);
         }
+
+        if (result.IsSuccess)
+            keptWarps?.Clear(trackKey);
 
         jobs.Record(
             trackKey,

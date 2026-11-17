@@ -14,6 +14,12 @@ public sealed class WarpSiblings
     private WarpSiblings(IEnumerable<SiblingFile> files) =>
         _byTrackKey = files.ToLookup(file => file.SourceTrackKey, StringComparer.Ordinal);
 
+    public static WarpSiblings From(IEnumerable<SiblingFile> files) => new(files);
+
+    /// <summary>The cut a file of this preset is, a kept source for none.</summary>
+    public static SiblingFile Describe(string path, string trackKey, string? preset) =>
+        new(path, trackKey, IsAuthority(preset), preset?.Split(' ')[0]);
+
     public static WarpSiblings Scan(IEnumerable<string> roots) =>
         Of(
             roots

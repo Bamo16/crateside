@@ -2,6 +2,7 @@ using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Plans;
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
+using Crateside.Core.Warps;
 using Crateside.Core.WorkLists;
 
 namespace Crateside.Core.Orchestration.Edits;
@@ -14,7 +15,8 @@ public sealed class StemRecut(
     WorkingSet workingSet,
     IStagedFiles staged,
     TimeProvider time,
-    DeletionLog? deletions = null
+    DeletionLog? deletions = null,
+    KeptWarps? keptWarps = null
 )
 {
     private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
@@ -80,6 +82,10 @@ public sealed class StemRecut(
             return new RecutOutcome { Problem = refusal };
 
         var removed = 0;
+
+        // Kept before anything is recycled, so a restart during the cut cannot lose the warp.
+        foreach (var stem in plan.Removing)
+            keptWarps?.Keep(stem.File.Path);
 
         foreach (var stem in plan.Removing)
         {
