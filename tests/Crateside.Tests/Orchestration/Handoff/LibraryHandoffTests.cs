@@ -37,7 +37,11 @@ public sealed class LibraryHandoffTests : IDisposable
     [Fact]
     public void New_stems_go_to_the_folder_of_the_library_stems_when_all_are_warped_and_one_is_lent()
     {
-        var library = Stage(Path.Combine(_paths.LibraryFolder, "Song"), "Vocal - Full", warped: true);
+        var library = Stage(
+            Path.Combine(_paths.LibraryFolder, "Song"),
+            "Vocal - Full",
+            warped: true
+        );
 
         var folder = _handoff.FolderFor(Video, Lent(), isOwnSource: true);
 
@@ -131,12 +135,7 @@ public sealed class LibraryHandoffTests : IDisposable
         if (warped)
             new AnalysisFile
             {
-                Audio = AudioAnalysis.FromSamples(
-                    new float[4],
-                    2,
-                    [],
-                    new FileInfo(path).Length
-                ),
+                Audio = AudioAnalysis.FromSamples(new float[4], 2, [], new FileInfo(path).Length),
                 Warp = new Warp { Markers = [new(0.1, 0), new(0.4, 1)] },
                 Clip = new Clip
                 {

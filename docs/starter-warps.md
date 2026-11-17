@@ -36,6 +36,9 @@ The Collections below are written only for a meaning mapped to a number in Setti
 
 ## When it runs
 
+- **A re-cut keeps the saved warp** (ADR 0103): a removed stem's sidecar is copied to `KeptWarps`
+  first, and lent at handoff when no sibling on disk holds a warp, so a re-cut never falls back
+  to a starter.
 - **At handoff**, while the stems are still in the working set (`HandoffSidecars`). Each sidecar is
   written as its stem lands in staging, so a stem never sits there unanalyzed.
 - **Over staging when Staging or the library changes, and every ten minutes besides**

@@ -1,5 +1,9 @@
 # crateside: which operations stay staging-only, and bringing a track back
 
+Status: decided by Bamo 2026-11-17 and built; see ADR 0103. "Bring back to Staging" and the
+guide-returns-to-Staging rule were dropped; library deletes go to the Recycle Bin instead. The
+sections below are the original proposal.
+
 Issue: #157 (review where crateside allows an operation only in staging, and decide which belong in
 the library too)
 

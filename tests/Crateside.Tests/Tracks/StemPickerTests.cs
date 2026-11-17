@@ -258,11 +258,7 @@ public sealed class StemPickerTests
     [Fact]
     public void A_file_in_the_library_starts_kept_and_goes_only_when_unticked()
     {
-        var row = Row(
-            StemPlan.Default,
-            false,
-            Made("vocal_full", "Vocal - Full", inLibrary: true)
-        );
+        var row = Row(StemPlan.Default, false, Made("vocal_full", "Vocal - Full", inLibrary: true));
 
         var untouched = StemPicker.For(row, Catalog);
         var unticked = StemPicker.For(

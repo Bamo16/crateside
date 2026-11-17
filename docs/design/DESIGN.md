@@ -515,6 +515,11 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
 - **The expanded panel has no heading**: the file list starts with its column heads. *Re-cut
   pending* leads the side column's note while picking, and before separation the *changes apply
   now* hint ends the `.detail` line. Track details keeps its heading (`StemList Headed`).
+- **A library file can be unticked** (ADR 0103, #157): it starts ticked and goes to the Recycle
+  Bin when dropped, and the confirmation says how many library files go and names the sets that use
+  them. A re-cut or swap keeps the saved warp, and new stems of a fully warped library track go
+  straight back to the library; otherwise they go to Staging. A swapped source cuts a fresh drums
+  guide.
 - **The picker is the same list** (handoff 13b): one column of `.stem` lines under the same
   column heads, in bands Vocal · Instrumental · Whole track · Other sources (then *No longer
   offered*). Lines on disk stay the same elements and only move down; band labels, unmade

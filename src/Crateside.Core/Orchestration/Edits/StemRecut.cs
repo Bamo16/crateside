@@ -135,13 +135,9 @@ public sealed class StemRecut(
     ) =>
         setLinks is null
             ? []
-            : setLinks.Using(
-                [
-                    .. removing
-                        .Select(stem => stem.File.Path)
-                        .Where(path => !staging.Contains(path)),
-                ]
-            );
+            : setLinks.Using([
+                .. removing.Select(stem => stem.File.Path).Where(path => !staging.Contains(path)),
+            ]);
 
     /// <summary>The plan this track currently has, which says which of its files were added.</summary>
     private StemPlan Stored(string trackKey) =>
