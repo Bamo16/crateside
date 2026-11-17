@@ -16,13 +16,17 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
     /// the move to make room for same-named replacements (ADR 0014).
     /// </param>
     /// <param name="moved">Called with each stem's old and new path the moment it lands.</param>
+    /// <param name="into">Where the stems go in place of Staging, which is the library for a re-cut that needs no warping (ADR 0103).</param>
     public HandoffResult Run(
         IReadOnlyList<string> stems,
         string? name = null,
         IReadOnlyList<string>? superseded = null,
-        Action<string, string>? moved = null
+        Action<string, string>? moved = null,
+        string? into = null
     )
     {
+        var folder = into ?? paths.StagingFolder;
+
         if (stems.Count is 0)
             return HandoffResult.Failed("no stems to hand off");
 
@@ -31,16 +35,16 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
 
         var cleared = Clear(superseded ?? []);
 
-        var moves = stems.Select(s => (From: s, To: Destination(s, name))).ToList();
+        var moves = stems.Select(s => (From: s, To: Destination(s, name, folder))).ToList();
 
         if (moves.FirstOrDefault(m => File.Exists(m.To)) is { From: not null } clash)
             return HandoffResult.Failed(
-                $"{Path.GetFileName(clash.To)} is already in staging; nothing was moved"
+                $"{Path.GetFileName(clash.To)} is already in {(into is null ? "staging" : "the library")}; nothing was moved"
             );
 
         try
         {
-            Directory.CreateDirectory(paths.StagingFolder);
+            Directory.CreateDirectory(folder);
 
             foreach (var (from, to) in moves)
             {
@@ -80,12 +84,12 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
         return cleared;
     }
 
-    private string Destination(string stem, string? name) =>
+    private static string Destination(string stem, string? name, string folder) =>
         Path.Combine(
-            paths.StagingFolder,
+            folder,
             Path.GetFileName(
                 StemFileName.IsUsable(name)
-                    ? StemFileName.Renamed(stem, name, paths.StagingFolder)
+                    ? StemFileName.Renamed(stem, name, folder)
                     : stem
             )
         );

@@ -526,6 +526,7 @@ public static class ServiceRegistration
         services.AddSingleton<TrueUpAll>();
         services.AddSingleton<StemWarpReader>();
         services.AddSingleton<KeptWarps>();
+        services.AddSingleton<LibraryHandoff>();
         services.AddSingleton<HandoffSidecars>();
         // Unattended: writing a sidecar decodes on the CPU (ADR 0043, 0047).
         services.AddHostedService<WarpWorker>();

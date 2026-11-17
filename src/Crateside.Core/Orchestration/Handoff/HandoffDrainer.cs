@@ -24,7 +24,8 @@ public sealed class HandoffDrainer(
     ResolvedNameStore names,
     DeletionLog? deletions = null,
     HandoffSidecars? sidecars = null,
-    KeptWarps? keptWarps = null
+    KeptWarps? keptWarps = null,
+    LibraryHandoff? libraryHandoff = null
 ) : IStageDrainer
 {
     private readonly CratesidePaths _paths = paths.Value;
@@ -57,7 +58,8 @@ public sealed class HandoffDrainer(
                 stems,
                 NameFor(trackKey),
                 SupersededStems.In(_paths.StagingFolder, trackKey, ledger, Kept()),
-                (from, to) => sidecars?.Moved(prepared, from, to)
+                (from, to) => sidecars?.Moved(prepared, from, to),
+                libraryHandoff?.FolderFor(trackKey, prepared, IsOwnSource(trackKey))
             );
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -120,6 +122,10 @@ public sealed class HandoffDrainer(
                 : null,
             _ => null,
         };
+
+    /// <summary>The upload is the track's own, not a source added to a track.</summary>
+    private bool IsOwnSource(string trackKey) =>
+        Owner(trackKey)?.TrackKey.Equals(trackKey, StringComparison.Ordinal) is true;
 
     private TrackInstruction? Owner(string trackKey) =>
         instructions
