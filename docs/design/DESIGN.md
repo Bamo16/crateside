@@ -277,15 +277,13 @@ open, no fold, drawn when the track has samples.
 - **The key strip** (handoff 20): the last lane before the time axis, one text line (30px), on the zoomed axis, with
   a stronger top rule (`--text` 10%). The gutter says `Key` and a gist (`A Dorian, 3 centers, placed
   from your windows`), then each section with no time in
-  mono: `bridge · C Lyd: no time given`. **Bands** are the verdict's centers, outlined (1px `--text`
+  mono: `bridge · C Lyd: no window placed it`. **Bands** are the verdict's centers, outlined (1px `--text`
   55%, radius 3, 22px), the short key in mono 11.5 where the band is 56px or wider (`verse · A
   Dor`), or only the key (`A Dor`) where a ruler tag over the same window already names the
   section, the title always carrying both; fill 3%, 7% where a window placed it. **Placement**
   (`KeyStrip.Plan`): one center is one band across the track; a section from a window takes the
-  window's span; a section with a `Start` runs from it to the next boundary; the primary center
-  fills everything else; a section with none of these is named in the gutter and never drawn. **A
-band whose start only the judge gave** (no window) has a dashed outline and the title says `start
-not placed by a window or source`. The running estimate is not drawn: keydetect's key values are
+  window's span; the primary center fills everything else; any other section, whatever start the
+  judge gave it, is named in the gutter and never drawn (ADR 0106). The running estimate is not drawn: keydetect's key values are
 running totals, so a change is where the whole-song estimate flipped, not where the key does (#174).
 `KeyLane`.
 - **The chord lane** (#198): the row under the key strip, 26px, same axis, same outlined blocks (1px at 30%,
@@ -768,9 +766,8 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   86px, not 70, for `r 0.70–0.75`.
 - **First pass: withheld has no date.** The ledger keeps the first pass's reasoning but not when it
   ran, so the tail says only `asked for 3 windows`.
-- **A section with a `Start` runs to the next boundary** (the ledger has starts, not ends). Sections
-  with neither a start nor a window are named in the key strip's gutter, as designed; runs judged
-  before section times have only the windows' placements.
+- **A section with a `Start` and no window is not drawn** (ADR 0106; the ledger has starts, not
+  ends). Sections no window placed are named in the key strip's gutter, as designed.
 - **A detector table read after the verdict says so**: one muted 13px line under it, *Read on
   keydetect 1.2.1, after this verdict.* (*Read after this verdict.* where the build is not one
   crateside knows). The re-read (ADR 0066) and the backfill (#139) write readings into a finished run,

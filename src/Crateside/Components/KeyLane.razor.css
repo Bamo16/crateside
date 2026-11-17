@@ -65,11 +65,6 @@
     background: rgba(236, 231, 220, 0.14);
 }
 
-/* A start only the judge gave: dashed, since nothing places it. */
-.key-band.unbacked {
-    border-style: dashed;
-}
-
 .key-band.from-window {
     background: rgba(236, 231, 220, 0.07);
 }

@@ -8,7 +8,7 @@
         <span class="gist">@Gist</span>
         @foreach (var unplaced in Plan.Unplaced)
         {
-            <span class="mono unplaced"><ProseText Text="@unplaced.Label" Inline="true" /> · @KeyStrip.Short(unplaced.Center): no time given</span>
+            <span class="mono unplaced"><ProseText Text="@unplaced.Label" Inline="true" /> · @KeyStrip.Short(unplaced.Center): no window placed it</span>
         }
     </span>
     <div class="key-strip">
@@ -17,7 +17,7 @@
             var (left, right) = (Math.Clamp(X(band.Start), 0, 100), Math.Clamp(X(band.End), 0, 100));
             @if (right > left)
             {
-                <button type="button" class="key-band @(band.FromWindow ? "from-window" : null) @(band.StartUnbacked ? "unbacked" : null) @(band.Section is { Length: > 0 } ? "pickable" : null) @(IsPicked(band) ? "picked" : null) @(X(band.Start) < 0 ? "open-left" : null) @(X(band.End) > 100 ? "open-right" : null)" style="left: @P(left)%; width: @P(right - left)%" title="@Title(band)" data-start="@P(band.Start)"
+                <button type="button" class="key-band @(band.FromWindow ? "from-window" : null) @(band.Section is { Length: > 0 } ? "pickable" : null) @(IsPicked(band) ? "picked" : null) @(X(band.Start) < 0 ? "open-left" : null) @(X(band.End) > 100 ? "open-right" : null)" style="left: @P(left)%; width: @P(right - left)%" title="@Title(band)" data-start="@P(band.Start)"
                      @onclick="() => PickAsync(band)">
                     @if ((right - left) / 100 * PlotPixels >= 56)
                     {
@@ -119,7 +119,7 @@
             : "no key";
 
     internal static string Title(KeyBand band) =>
-        $"{(band.Section is { Length: > 0 } named ? named + " · " : null)}{ModeText.Named(band.Center)} · ▶ from {WarpWording.Time(band.Start)}{(band.FromWindow ? " · from a window" : null)}{(band.StartUnbacked ? " · start not placed by a window or source" : null)}";
+        $"{(band.Section is { Length: > 0 } named ? named + " · " : null)}{ModeText.Named(band.Center)} · ▶ from {WarpWording.Time(band.Start)}{(band.FromWindow ? " · from a window" : null)}";
 
     internal static string ChordTitle(ChordBand band) => $"{band.Label} · ▶ from {WarpWording.Time(band.Start)}";
 

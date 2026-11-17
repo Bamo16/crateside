@@ -79,17 +79,15 @@ public sealed class KeyStripTests
     }
 
     [Fact]
-    public void A_section_with_a_start_runs_to_the_next_boundary()
+    public void A_section_with_a_start_but_no_window_is_named_and_not_drawn()
     {
-        var run = Run(
-            ADorian,
-            [new("verse", ADorian), new("bridge", CLydian, 150), new("coda", EMinor, 180)]
-        );
+        Section bridge = new("bridge", CLydian, 150);
+        Section coda = new("coda", EMinor, 180);
 
-        Assert.Equal(
-            "0-150 verse · A Dor | 150-180 bridge · C Lyd | 180-200 coda · E min",
-            Drawn(KeyStrip.Plan(run, Seconds))
-        );
+        var plan = KeyStrip.Plan(Run(ADorian, [new("verse", ADorian), bridge, coda]), Seconds);
+
+        Assert.Equal("0-200 A Dor", Drawn(plan));
+        Assert.Equal([bridge, coda], plan.Unplaced);
     }
 
     [Fact]
@@ -127,34 +125,36 @@ public sealed class KeyStripTests
     }
 
     [Fact]
-    public void A_section_with_a_start_ends_where_a_primary_section_starts()
+    public void Sections_the_judge_gave_starts_are_named_and_the_primary_fills_the_track()
     {
-        var run = Run(DMajor, [new("Verse", BMinor, 0), new("Chorus", DMajor, 71.55)]);
+        Section verse = new("Verse", BMinor, 0);
+        var run = Run(DMajor, [verse, new("Chorus", DMajor, 71.55)]);
 
-        Assert.Equal(
-            "0-72 Verse · B min | 72-200 Chorus · D maj",
-            Drawn(KeyStrip.Plan(run, Seconds))
-        );
+        var plan = KeyStrip.Plan(run, Seconds);
+
+        Assert.Equal("0-200 D maj", Drawn(plan));
+        Assert.Equal([verse], plan.Unplaced);
     }
 
     [Fact]
-    public void The_primary_fill_after_a_boundary_takes_the_label_of_the_primary_section_there()
+    public void The_primary_fill_after_a_window_takes_the_label_of_the_primary_section_there()
     {
+        Section verse = new("Verse", BMinor);
+        RunWindow window = new(10, 70, "Verse", WindowAsker.User);
         var run = Run(
             DMajor,
-            [
-                new("Intro", DMajor),
-                new("Verse", BMinor, 10),
-                new("Chorus", DMajor, 70),
-                new("Bridge", CLydian, 120),
-                new("Outro", DMajor, 150),
-            ]
+            [new("Intro", DMajor), verse, new("Chorus", DMajor, 70), new("Bridge", CLydian, 120)],
+            [window],
+            [new(window, [], null, verse)]
         );
 
+        var plan = KeyStrip.Plan(run, Seconds);
+
         Assert.Equal(
-            "0-10 Intro · D maj | 10-70 Verse · B min | 70-120 Chorus · D maj | 120-150 Bridge · C Lyd | 150-200 Outro · D maj",
-            Drawn(KeyStrip.Plan(run, Seconds))
+            "0-10 Intro · D maj | 10-70 Verse · B min | 70-200 Chorus · D maj",
+            Drawn(plan)
         );
+        Assert.Equal(["Bridge"], plan.Unplaced.Select(section => section.Label));
     }
 
     [Fact]
@@ -197,18 +197,5 @@ public sealed class KeyStripTests
             .ToList();
 
         Assert.Equal(["verse · A Dor", "E min", "verse · A Dor"], texts);
-    }
-
-    [Fact]
-    public void A_band_with_no_window_tag_keeps_its_section_name()
-    {
-        var run = Run(ADorian, [new("verse", ADorian, 0), new("coda", EMinor, 150)]);
-
-        var texts = KeyStrip
-            .Plan(run, Seconds)
-            .Bands.Select(band => KeyStrip.Text(run, band))
-            .ToList();
-
-        Assert.Equal(["verse · A Dor", "coda · E min"], texts);
     }
 }

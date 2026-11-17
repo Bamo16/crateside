@@ -6,8 +6,7 @@ public sealed record KeyBand(
     double End,
     TonalCenter Center,
     string? Section,
-    bool FromWindow,
-    bool StartUnbacked = false
+    bool FromWindow
 )
 {
     /// <summary><c>B min</c>, or <c>A Dor</c> for a modal center.</summary>
@@ -47,10 +46,9 @@ public static class KeyStrip
             : band.Label;
 
     /// <summary>
-    /// A section that came from a window takes the window's span, one with a start runs to the next
-    /// start of any section (the primary's included) or window, the primary center fills everything
-    /// else under the label of the primary section starting there, and a section with neither is
-    /// named, never drawn.
+    /// A section that came from a window takes the window's span, the primary center fills everything
+    /// else under the label of the primary section starting there, and a section no window placed
+    /// is named with its key, never drawn, whatever start the judge gave it (ADR 0104).
     /// </summary>
     public static KeyStripPlan Plan(RunEvidence run, double seconds)
     {
@@ -69,7 +67,7 @@ public static class KeyStrip
         if (others is [])
             return new([new(0, seconds, primary, null, false)], []);
 
-        List<(double Start, double? End, Section Section, bool FromWindow)> found = [];
+        List<(double Start, double End, Section Section)> found = [];
         List<Section> unplaced = [];
 
         foreach (var section in others)
@@ -80,11 +78,7 @@ public static class KeyStrip
                 .ToList();
 
             if (windows is not [])
-                found.AddRange(
-                    windows.Select(window => (window.Start, (double?)window.End, section, true))
-                );
-            else if (section.Start is { } start && start < seconds)
-                found.Add((Math.Max(start, 0), null, section, false));
+                found.AddRange(windows.Select(window => (window.Start, window.End, section)));
             else
                 unplaced.Add(section);
         }
@@ -95,24 +89,10 @@ public static class KeyStrip
         var drawn = found
             .Select(placed => new KeyBand(
                 placed.Start,
-                Math.Min(
-                    placed.End
-                        ?? found
-                            .Where(other => other.Start > placed.Start)
-                            .Select(other => other.Start)
-                            .Concat(
-                                primaryStarts
-                                    .Where(primaryStart => primaryStart.Start > placed.Start)
-                                    .Select(primaryStart => primaryStart.Start!.Value)
-                            )
-                            .DefaultIfEmpty(seconds)
-                            .Min(),
-                    seconds
-                ),
+                Math.Min(placed.End, seconds),
                 placed.Section.Center,
                 placed.Section.Label,
-                placed.FromWindow,
-                StartUnbacked: !placed.FromWindow
+                FromWindow: true
             ))
             .Where(band => band.End > band.Start)
             .OrderBy(band => band.Start)

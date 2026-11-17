@@ -464,7 +464,7 @@ export const Rows = (Base) =>
                     if (right <= left)
                         return "";
 
-                    const classes = `key-band${band.fromWindow ? " from-window" : ""}${band.unbacked ? " unbacked" : ""}${band.pickable ? " pickable" : ""}${band.picked ? " picked" : ""}${openEnds(view, band)}`;
+                    const classes = `key-band${band.fromWindow ? " from-window" : ""}${band.pickable ? " pickable" : ""}${band.picked ? " picked" : ""}${openEnds(view, band)}`;
                     const label = ((right - left) / 100) * PLOT_PIXELS * view.wide >= KEY_LABEL_ROOM ? `<span ${scope} class="mono key-label">${escapeHtml(band.label)}</span>` : "";
 
                     return `<button ${scope} type="button" tabindex="-1" class="${classes}" style="left:${pct(left)}%;width:${pct(right - left)}%">${label}</button>`;

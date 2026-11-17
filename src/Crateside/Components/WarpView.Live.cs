@@ -78,7 +78,6 @@ public partial class WarpView
                         label = KeyStrip.Text(Run, band),
                         title = KeyLane.Title(band),
                         fromWindow = band.FromWindow,
-                        unbacked = band.StartUnbacked,
                         pickable = band.Section is { Length: > 0 },
                         picked = band.Section is { Length: > 0 } section
                             && string.Equals(
