@@ -86,7 +86,6 @@ export const Overview = (Base) =>
                 moved: false,
                 before: { ...this.window },
                 grab: region === "start" ? at - this.window.start : region === "end" ? at - this.window.end : at - this.window.start,
-                width: this.indexOf(this.window.end) - this.indexOf(this.window.start),
             };
 
             document.body.classList.add("pb-locked", `pb-locked-${region === "outside" ? "body" : region}`);
@@ -158,7 +157,6 @@ export const Overview = (Base) =>
                 moved: false,
                 before: { ...this.window },
                 across: this.els.field.getBoundingClientRect().width,
-                width: this.indexOf(this.window.end) - this.indexOf(this.window.start),
             };
 
             document.body.classList.add("pb-locked", "pb-locked-body");
@@ -193,7 +191,7 @@ export const Overview = (Base) =>
         }
 
         dragTo(event) {
-            const { overview, region, grab, width } = this.drag;
+            const { overview, region, grab } = this.drag;
             const box = overview.getBoundingClientRect();
             const at = clamp(((event.clientX - box.left) / box.width) * this.duration, 0, this.duration);
             const snaps = this.snaps();
@@ -202,18 +200,23 @@ export const Overview = (Base) =>
 
             if (region === "pan") {
                 const { before, x0, across } = this.drag;
-                const wanted = this.indexOf(clamp(before.start - ((event.clientX - x0) / across) * (before.end - before.start), 0, this.duration));
+                const span = before.end - before.start;
+                const from = clamp(before.start - ((event.clientX - x0) / across) * span, 0, this.duration - span);
 
-                start = clamp(wanted, 0, snaps.length - 1 - width);
-                end = start + width;
-                tag = { at: (snaps[start] + snaps[end]) / 2, text: this.barsLabel(snaps[start], snaps[end]) };
+                this.setWindow(from, from + span);
+                this.showTag({ at: from + span / 2, text: this.barsLabel(from, from + span) });
+
+                return;
             } else if (region === "body") {
-                const wanted = this.indexOf(clamp(at - grab, 0, this.duration));
+                const span = this.window.end - this.window.start;
+                const from = clamp(at - grab, 0, this.duration - span);
 
-                start = clamp(wanted, 0, snaps.length - 1 - width);
-                end = start + width;
-                tag = { at: (snaps[start] + snaps[end]) / 2, text: this.barsLabel(snaps[start], snaps[end]) };
                 this.drag.stopped = false;
+                this.drag.overview.querySelector(".hd.r")?.classList.remove("stop");
+                this.setWindow(from, from + span);
+                this.showTag({ at: from + span / 2, text: this.barsLabel(from, from + span) });
+
+                return;
             } else if (region === "start") {
                 const wanted = this.indexOf(clamp(at - grab, 0, this.duration));
 

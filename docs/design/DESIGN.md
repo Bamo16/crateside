@@ -121,9 +121,12 @@ open, no fold, drawn when the track has samples.
   one bar (a view without a warp, 4 s) nor over the whole track. **Ctrl + wheel** over the view zooms
   about the bar under the pointer, or about the playhead while Follow holds it in view during
   playback (a pinch arrives as the same, and its small turns add up to steps); **Shift + wheel**
-  pans; a plain wheel scrolls the page. **The middle button, held and dragged** over the tempo
-  line or a lane (right of the labels) pans too: the rows follow the pointer on whole bars, as a
-  drag of the overview's window does, and the browser's own middle-button scrolling is refused there. **`−` `+`, the `+` / `-` keys** (not with Ctrl, not in a
+  pans, an eighth of the view's width per notch of 100, so a touchpad glides; a plain wheel scrolls
+  the page. **The middle button, held and dragged** over the tempo
+  line or a lane (right of the labels) pans too: the rows follow the pointer exactly, as a
+  drag of the overview's window does, and the browser's own middle-button scrolling is refused there.
+  A pan moves the view to any time within the track, off the bar lines; zoom, the handles and the
+  keys still land on whole bars. **`−` `+`, the `+` / `-` keys** (not with Ctrl, not in a
   text field) **and the menu's zoom items** centre the new window on the playhead, wherever it
   was, as far as the track's ends allow. In Scroll every zoom leaves the playhead where it is on
   screen. **Right-click** over the
@@ -161,8 +164,9 @@ open, no fold, drawn when the track has samples.
   true range. The loop, when there is
   one, is a 2px bar along the strip's top over its range, the weight and tone of the braces' bar over the ruler (`--text` 35%, 75% while it is on). Each **handle** is a 6px `--text` 70% bar centered on an edge, the
   strip's full height, with a 1×10px `--ink` notch; its target is 16px (8 either side), narrower on
-  the inside of a window under 32px. Edges snap to bar lines plus the file's first and last sample
-  (whole seconds without a warp) and the window is at least one bar (4 seconds without a warp).
+  the inside of a window under 32px. Handle edges snap to bar lines plus the file's first and last sample
+  (whole seconds without a warp) and the window is at least one bar (4 seconds without a warp); dragging
+  the window's body does not snap, it follows the pointer.
   Pressing a handle or the body locks the cursor on the page; nothing moves for 3px; a release
   inside it is a click. The body steps bar by bar with a tag above it (`21–28`), a handle with a tag
   over its edge (`from bar 13`, `to bar 28`); a handle pulled into the other stops one bar short and

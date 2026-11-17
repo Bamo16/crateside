@@ -118,8 +118,8 @@ The picker lists only files that are on disk:
 
 - **The overview strip is always drawn**, with **the window always on it**. Zoomed out, the window
   spans the whole track.
-- **Drag the window's body to move it; drag a handle on either side to zoom.** Edges snap to bar
-  lines when there is a warp (whole seconds without one). The window is at least 1 bar wide.
+- **Drag the window's body to move it; drag a handle on either side to zoom.** Handle edges snap to bar
+  lines when there is a warp (whole seconds without one); moving the body does not snap. The window is at least 1 bar wide.
 - **Discoverable without the pills**: visible grip handles, resize and move cursors, and the head
   line keeps its readout (`bars 61–68 · 2:10–2:27`). **Double-click the window** to switch between
   the whole track and the last zoom.

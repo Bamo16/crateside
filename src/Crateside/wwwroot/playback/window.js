@@ -1,6 +1,6 @@
 // The view's window: what moves it (zoom, pan), the bars it snaps to, and telling the warp view.
 
-import { SNAP, MIN_WINDOW_SECONDS, OVERVIEW_MIN_PIXELS, ZOOM_STEP, WHEEL_PER_STEP, WHEEL_SETTLE_MS, clamp, PLOT_PIXELS, clock } from "./shared.js";
+import { SNAP, MIN_WINDOW_SECONDS, OVERVIEW_MIN_PIXELS, ZOOM_STEP, WHEEL_PER_STEP, WHEEL_PER_PAN, WHEEL_SETTLE_MS, clamp, clock } from "./shared.js";
 
 export const Window = (Base) =>
     class extends Base {
@@ -370,12 +370,10 @@ export const Window = (Base) =>
             if (mode === "zoom") {
                 next = this.zoomed(base, ZOOM_STEP ** (gesture.total / WHEEL_PER_STEP), gesture.anchor, false);
             } else {
-                const snaps = this.snaps();
-                const span = this.indexOf(base.end) - this.indexOf(base.start);
-                const shifted = base.start + (gesture.total / (ruler?.clientWidth || PLOT_PIXELS)) * (base.end - base.start);
-                const at = clamp(this.indexOf(clamp(shifted, 0, this.duration)), 0, snaps.length - 1 - span);
+                const span = base.end - base.start;
+                const start = clamp(base.start + (gesture.total / WHEEL_PER_PAN) * span, 0, this.duration - span);
 
-                next = { start: snaps[at], end: snaps[at + span] };
+                next = { start, end: start + span };
             }
 
             if (next.start !== this.window.start || next.end !== this.window.end)

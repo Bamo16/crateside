@@ -10,6 +10,8 @@ export const MIN_WINDOW_SECONDS = 4;
 // One zoom step, and how far the wheel must turn (in pixels of deltaY) for one.
 export const ZOOM_STEP = 1.5;
 export const WHEEL_PER_STEP = 100;
+// A pan notch of 100 moves the view by 1/8 of its width.
+export const WHEEL_PER_PAN = 800;
 export const WHEEL_SETTLE_MS = 150;
 // The beat grid: the fewest pixels between two lines at each density (GridLines.MinPixels in C#).
 export const GRID_MIN_PIXELS = { wide: 64, medium: 36, narrow: 20 };
