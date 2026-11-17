@@ -11,6 +11,7 @@ namespace Crateside.Core.Orchestration;
 [JsonSerializable(typeof(List<DownloadOutput>))]
 [JsonSerializable(typeof(List<ProbeOutput>))]
 [JsonSerializable(typeof(List<FormatListOutput>))]
+[JsonSerializable(typeof(ArtTrackOutput))]
 [JsonSerializable(typeof(List<SeparationOutput>))]
 [JsonSerializable(typeof(List<SeparatorPreset>))]
 internal sealed partial class StemForgeJsonContext : JsonSerializerContext { }

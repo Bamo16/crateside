@@ -13,6 +13,7 @@
 @inject VerdictControl Judging
 @inject TracksService Tracks
 @inject ActionLog Actions
+@inject ArtTrackLookup ArtTracks
 
 @if (Row.Lookalike is { } like)
 {
@@ -41,6 +42,16 @@
             @Row.Acquisition?.Advisory
         </div>
 
+        @if (_artTrack is { } song)
+        {
+            <p class="finding-maybe">
+                Maybe this one is better: YouTube Music's song upload
+                <a href="@song.Url" target="_blank" rel="noopener">@song.Title</a>
+                by @song.Artist, @LengthNote(song). It may not be the same recording, so
+                crateside does not swap to it; open it, and add it as the source if it is.
+            </p>
+        }
+
         <button class="outline" @onclick="UseAnyway" disabled="@_working">
             Use it anyway
         </button>
@@ -56,9 +67,38 @@
 
     private bool _working;
     private string? _problem;
+    private string? _lookedUp;
+    private ArtTrackSuggestion? _artTrack;
 
     [Parameter, EditorRequired]
     public required TrackRow Row { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (
+            Row.ParkedFor is not ParkReason.PremiumShortfall
+            || !YouTubeUrl.TryGetVideoId(Row.StatedSourceUrl ?? Row.TrackKey, out var upload)
+            || upload == _lookedUp
+        )
+            return;
+
+        _lookedUp = upload;
+
+        try
+        {
+            _artTrack = await ArtTracks.FindAsync(upload, _circuit.Token);
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private static string LengthNote(ArtTrackSuggestion song) =>
+        $"{TimeSpan.FromSeconds(song.LengthSeconds):m\\:ss}"
+        + song.LengthDifferenceSeconds switch
+        {
+            0 => ", the same length",
+            > 0 => $", {song.LengthDifferenceSeconds} s longer than this upload",
+            _ => $", {-song.LengthDifferenceSeconds} s shorter than this upload",
+        };
 
     public void Dispose()
     {

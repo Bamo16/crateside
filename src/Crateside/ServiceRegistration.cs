@@ -348,6 +348,7 @@ public static class ServiceRegistration
         services.AddHostedService<DrainWorker>();
 
         services.AddSingleton<SourceProbe>();
+        services.AddSingleton<ArtTrackLookup>();
         services.AddSingleton<DownloadRunner>();
         services.AddSingleton<DownloadSelector>();
         services.AddSingleton<DownloadDrainer>();

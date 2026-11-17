@@ -252,6 +252,13 @@ public sealed class CratesidePaths
         set;
     }
 
+    /// <summary>What <c>stemforge-cli art-track</c> found, by video.</summary>
+    public string ArtTracksFile
+    {
+        get => field ?? Roaming("art-tracks.json");
+        set;
+    }
+
     /// <summary>Everything the user did to a track.</summary>
     public string ActionsFile
     {
