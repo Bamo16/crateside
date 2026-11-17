@@ -184,7 +184,10 @@ internal static class VerdictRules
             Kind = IsUserArrangement(keys[0].Page)
                 ? SourceKind.Corroborating
                 : SourceKind.Authoritative,
-            States = PageStatements.Of(keys[0].Page, keys.Select(stated => stated.Raw)),
+            States = PageStatements.Of(
+                keys[0].Page,
+                keys.Where(stated => !stated.InSection).Select(stated => stated.Raw)
+            ),
             StatesKey = key.LedgerName,
             StatesMode = ModeOf(keys[0].Raw),
             Note = keys[0].Page.Note,
@@ -241,12 +244,22 @@ internal static class VerdictRules
                 .SelectMany(lookup => lookup.Pages)
                 .SelectMany(page =>
                     page.Keys.Select(pageKey => new Stated(
-                        page,
-                        pageKey.Key,
-                        RecordTimeCheck.KeyOf(pageKey.Key)
-                    ))
+                            page,
+                            pageKey.Key,
+                            RecordTimeCheck.KeyOf(pageKey.Key)
+                        ))
+                        .Concat(InSectionKeys(page))
                 ),
         ];
+
+    /// <summary>The keys a TheoryTab's sections move to after their first, each the same claim as a section's key (ADR 0104).</summary>
+    private static IEnumerable<Stated> InSectionKeys(FetchedPage page) =>
+        (page.Tab?.Sections ?? [])
+            .SelectMany(section => section.Keys.OrderBy(key => key.Beat).Skip(1))
+            .Select(key => new Stated(page, key.Key, RecordTimeCheck.KeyOf(key.Key))
+            {
+                InSection = true,
+            });
 
     /// <summary>A counted site that could not be reached may hold the page that disagrees.</summary>
     internal static bool MayHoldAnotherKey(SiteLookup lookup) =>
@@ -276,7 +289,10 @@ internal static class VerdictRules
 
     private sealed record Reading(string Detector, MusicKey Key);
 
-    private sealed record Stated(FetchedPage Page, string Raw, MusicKey? Key);
+    private sealed record Stated(FetchedPage Page, string Raw, MusicKey? Key)
+    {
+        public bool InSection { get; init; }
+    }
 }
 
 /// <summary>What the rules made of a track: a ruling, or the reason they left it open.</summary>

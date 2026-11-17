@@ -12,7 +12,8 @@ up, `VerdictRules` rules on it if it can (ADR 0076), recording a run with `Decid
 running no session:
 
 - **HIGH**: at least two of keydetect, madmom and Essentia name one key, every key the Hooktheory
-  and Musicnotes pages state is that key, and at least one page states it.
+  and Musicnotes pages state is that key, and at least one page states it. A key a TheoryTab's
+  section changes to inside itself counts as one the page states ([ADR 0104](adr/0104-a-key-change-inside-a-hooktheory-section-is-a-key-the-page-states.md)).
 - **MEDIUM**: no Hooktheory or Musicnotes page states a key, and either all three detectors agree
   or keydetect and one of madmom and Essentia agree with keydetect's `r` at least 0.80.
 - **No ruling** otherwise, and also when Hooktheory or Musicnotes could not be reached.

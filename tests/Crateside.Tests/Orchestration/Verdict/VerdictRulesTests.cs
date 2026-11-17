@@ -161,6 +161,61 @@ public sealed class VerdictRulesTests
         );
     }
 
+    private static SiteLookup HooktheoryWithKeyChange(params string[] keysInSection) =>
+        new(
+            "Hooktheory",
+            LookupStatus.Found,
+            [
+                new FetchedPage
+                {
+                    Site = "Hooktheory",
+                    Url = "https://www.hooktheory.com/theorytab/view/a/b",
+                    Keys = [new PageKey(keysInSection[0], "Outro", null)],
+                    Tab = new HooktheoryTab
+                    {
+                        Sections =
+                        [
+                            new TabSection("Outro", null, null, null)
+                            {
+                                Keys =
+                                [
+                                    .. keysInSection.Select(
+                                        (key, index) => new TabKey(index * 16, key)
+                                    ),
+                                ],
+                            },
+                        ],
+                    },
+                },
+            ]
+        );
+
+    [Fact]
+    public void A_key_change_inside_a_section_counts_as_naming_that_key()
+    {
+        Assert.Null(
+            Rule(
+                Evidence("A minor", "A minor", "A minor"),
+                HooktheoryWithKeyChange("A minor", "C major")
+            )
+        );
+    }
+
+    [Fact]
+    public void A_mode_shift_on_the_same_tonic_inside_a_section_still_agrees_with_the_detectors()
+    {
+        var ruling = Rule(
+            Evidence("B minor", "B minor", "D major"),
+            HooktheoryWithKeyChange("B minor", "B dorian")
+        );
+
+        Assert.NotNull(ruling);
+
+        var source = Assert.Single(ruling.Sources);
+
+        Assert.Equal("Outro: B minor → B dorian", source.States);
+    }
+
     [Fact]
     public void A_modal_page_key_is_compared_as_the_major_or_minor_it_collapses_to()
     {
