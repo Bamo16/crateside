@@ -52,7 +52,10 @@ public sealed class PresetCatalogReader(
         try
         {
             outcome = await processes.RunAsync(
-                new ProcessRequest(stemforge, ["presets", "--json"]),
+                new ProcessRequest(stemforge, ["presets", "--json"])
+                {
+                    Timeout = ProcessRequest.QueryTimeout,
+                },
                 ct
             );
         }

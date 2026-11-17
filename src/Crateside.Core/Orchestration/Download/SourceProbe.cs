@@ -19,7 +19,10 @@ public sealed class SourceProbe(IProcessRunner processes, string stemforge = "st
         try
         {
             outcome = await processes.RunAsync(
-                new ProcessRequest(stemforge, ["download", url, "--list-formats", "--json"]),
+                new ProcessRequest(stemforge, ["download", url, "--list-formats", "--json"])
+                {
+                    Timeout = ProcessRequest.QueryTimeout,
+                },
                 ct
             );
         }

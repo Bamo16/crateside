@@ -21,7 +21,10 @@ public sealed class NameResolver(IProcessRunner processes, string stemforge = "s
         try
         {
             outcome = await processes.RunAsync(
-                new ProcessRequest(stemforge, ["download", sourceUrl, "--list-formats", "--json"]),
+                new ProcessRequest(stemforge, ["download", sourceUrl, "--list-formats", "--json"])
+                {
+                    Timeout = ProcessRequest.QueryTimeout,
+                },
                 ct
             );
         }

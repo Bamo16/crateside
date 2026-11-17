@@ -70,7 +70,10 @@ public sealed class PlaylistExpander(IProcessRunner processes, string stemforge 
         try
         {
             outcome = await processes.RunAsync(
-                new ProcessRequest(stemforge, ["tools", "--json"]),
+                new ProcessRequest(stemforge, ["tools", "--json"])
+                {
+                    Timeout = ProcessRequest.QueryTimeout,
+                },
                 ct
             );
         }

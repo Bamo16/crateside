@@ -1,6 +1,7 @@
 using System.Text;
 using CliWrap;
 using CliWrap.Buffered;
+using Microsoft.Extensions.Logging;
 
 namespace Crateside.Core.Orchestration.Loop;
 
@@ -20,10 +21,20 @@ public sealed record ProcessRequest(string FileName, IReadOnlyList<string> Argum
         new Dictionary<string, string>();
 
     public string? StandardInput { get; init; }
+
+    /// <summary>Null waits as long as the command runs; a command that outlives it is killed with its children.</summary>
+    public TimeSpan? Timeout { get; init; }
+
+    /// <summary>How long a short <c>stemforge-cli</c> query may run (#204).</summary>
+    public static TimeSpan QueryTimeout { get; } = TimeSpan.FromSeconds(60);
+
+    internal string CommandLine => string.Join(' ', [FileName, .. Arguments]);
 }
 
-public sealed class ProcessRunner : IProcessRunner
+public sealed class ProcessRunner(ILogger<ProcessRunner>? log = null) : IProcessRunner
 {
+    private const int TimedOutExitCode = -1;
+
     public async Task<ProcessOutcome> RunAsync(
         ProcessRequest request,
         CancellationToken ct = default
@@ -40,14 +51,38 @@ public sealed class ProcessRunner : IProcessRunner
         if (request.StandardInput is { } input)
             command = command.WithStandardInputPipe(PipeSource.FromString(input, Encoding.UTF8));
 
-        var result = await command.ExecuteBufferedAsync(Encoding.UTF8, ct);
+        using var timeout = new CancellationTokenSource(
+            request.Timeout ?? System.Threading.Timeout.InfiniteTimeSpan
+        );
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, timeout.Token);
 
-        return new ProcessOutcome
+        try
         {
-            ExitCode = result.ExitCode,
-            StandardOutput = result.StandardOutput,
-            StandardError = result.StandardError,
-        };
+            var result = await command.ExecuteBufferedAsync(Encoding.UTF8, linked.Token);
+
+            return new ProcessOutcome
+            {
+                ExitCode = result.ExitCode,
+                StandardOutput = result.StandardOutput,
+                StandardError = result.StandardError,
+            };
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            log?.LogWarning(
+                "{CommandLine} did not finish in {Timeout}; it was killed",
+                request.CommandLine,
+                request.Timeout
+            );
+
+            return new ProcessOutcome
+            {
+                ExitCode = TimedOutExitCode,
+                StandardOutput = string.Empty,
+                StandardError = $"did not finish in {request.Timeout?.TotalSeconds:0} s",
+                TimedOut = true,
+            };
+        }
     }
 }
 
@@ -57,6 +92,9 @@ public sealed record ProcessOutcome
     public required int ExitCode { get; init; }
     public required string StandardOutput { get; init; }
     public required string StandardError { get; init; }
+
+    /// <summary>The command outlived its <see cref="ProcessRequest.Timeout"/> and was killed.</summary>
+    public bool TimedOut { get; init; }
 
     public bool Succeeded => ExitCode is 0;
 
