@@ -146,6 +146,9 @@ export const Rows = (Base) =>
             if (!live || this.duration <= 0)
                 return;
 
+            // A settle's timer from an earlier gesture must not take the rows down under this one.
+            clearTimeout(this.liveTimer);
+
             if (this.strip)
                 this.stopLive();
 

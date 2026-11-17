@@ -5,7 +5,10 @@ import { ZOOM_STEP, clamp, clock, writeSettings } from "./shared.js";
 export const View = (Base) =>
     class extends Base {
         // The warp view has drawn: put back everything that lives on the elements it drew.
+        // While the window is still moving, or a newer one is waiting to be sent, the server's rows are for an older window: the drawn ones stay.
         viewRendered() {
+            const moving = Boolean(this.wheel || this.drag?.moved || this.view?.pending);
+
             this.stopLive();
             this.findViewElements();
             this.layoutField();
@@ -13,6 +16,11 @@ export const View = (Base) =>
             this.paintFollow();
             this.paintLanes();
             this.copyShape();
+
+            if (moving) {
+                this.liveShown = null;
+                this.paintLive();
+            }
         }
 
         paintPlayhead(given) {
