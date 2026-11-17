@@ -1,4 +1,5 @@
 using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.Orchestration.Jobs;
 
@@ -28,6 +29,38 @@ public sealed class CutRequestsTests
     {
         Assert.False(CutRequests.OwesCut(requestedAt: null, separation: null));
         Assert.True(CutRequests.IsSettled(requestedAt: null, handoff: null));
+    }
+
+    [Fact]
+    public void A_swapped_track_owes_detection_until_evidence_is_taken_since_the_swap()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "crateside-tests", $"{Guid.NewGuid():n}.jsonl");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+        try
+        {
+            var jobs = new JobStore(path);
+            var item = new WorkItem
+            {
+                TrackKey = "aaaaaaaaaaa",
+                Title = "t",
+                StatedSourceUrl = "https://music.youtube.com/watch?v=bbbbbbbbbbb",
+                CutRequestedAt = Asked,
+            };
+
+            Assert.True(CutRequests.OwesDetection(item, jobs));
+
+            jobs.Record("aaaaaaaaaaa", JobStage.Evidence, JobStatus.Succeeded);
+
+            Assert.False(
+                CutRequests.OwesDetection(item with { CutRequestedAt = Asked.AddYears(-1) }, jobs)
+            );
+            Assert.False(CutRequests.OwesDetection(item with { StatedSourceUrl = null }, jobs));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]

@@ -33,6 +33,20 @@ public static class CutRequests
     public static bool OwesCut(WorkItem item, JobStore jobs) =>
         OwesCut(item.CutRequestedAt, Latest(jobs, item.TrackKey, JobStage.Separation));
 
+    /// <summary>
+    /// A swapped source has not been detected on since the swap: the verdict the old upload earned
+    /// stays, and the evidence beside it is read from the audio now in use.
+    /// </summary>
+    public static bool OwesDetection(WorkItem item, JobStore jobs) =>
+        item is { CutRequestedAt: { } asked, StatedSourceUrl: { } stated }
+        && YouTubeUrl.TryGetVideoId(stated, out var source)
+        && !source.Equals(item.TrackKey, StringComparison.Ordinal)
+        && !IsSettled(asked, Latest(jobs, item.TrackKey, JobStage.Handoff))
+        && (
+            !jobs.TryGet(item.TrackKey, JobStage.Evidence, out var evidence)
+            || evidence.UpdatedAt < asked
+        );
+
     public static bool IsSettled(WorkItem item, JobStore jobs) =>
         IsSettled(item.CutRequestedAt, Latest(jobs, item.TrackKey, JobStage.Handoff));
 

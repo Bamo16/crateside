@@ -16,6 +16,9 @@ public sealed class PageLookups(
 {
     public const string SourcesFileName = "sources.json";
 
+    /// <summary>What the judge writes for an artist it was not given; never a name to look up.</summary>
+    private const string UnnamedArtist = "Unknown artist";
+
     private static readonly string[] SiteNames = ["Hooktheory", "Musicnotes", "Ultimate Guitar"];
 
     private readonly HashSet<string> _retried = [];
@@ -129,6 +132,7 @@ public sealed class PageLookups(
     /// <summary>The ledger's names for a song judged before, else the row's <c>Artist - Title</c>, else StemForge's name for a title that names no artist (a <c>Topic</c> upload's).</summary>
     public (string Artist, string Title)? NamesOf(WorkOrder order) =>
         HeldRun(order) is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title }
+        && !artist.Equals(UnnamedArtist, StringComparison.OrdinalIgnoreCase)
             ? (artist, title)
             : TaggedNamesOf(order)
                 ?? Split(order.Title)

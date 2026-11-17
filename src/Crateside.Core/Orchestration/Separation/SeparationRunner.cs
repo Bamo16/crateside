@@ -72,6 +72,14 @@ public sealed class SeparationRunner(
             error = ShortfallFrom(order.Recipe, outputs);
         }
 
+        // A swap throws away the retained download this run was reading, so its failure is the swap's doing (#205).
+        if (error is not null && retained is { } read && !File.Exists(read))
+        {
+            interlock.Cancel(order.TrackKey, SourceSwapped);
+
+            return SeparationResult.Canceled(SourceSwapped);
+        }
+
         interlock.Release(
             order.TrackKey,
             error,
@@ -80,6 +88,8 @@ public sealed class SeparationRunner(
 
         return error is null ? SeparationResult.Succeeded(outputs) : SeparationResult.Failed(error);
     }
+
+    public const string SourceSwapped = "source swapped";
 
     /// <summary>The message when the installed stemforge-cli cannot be told which track a file is.</summary>
     public const string StemForgeTooOld =
@@ -249,6 +259,9 @@ public sealed record SeparationResult
 
     public static SeparationResult Refused(string reason) =>
         new() { Outcome = SeparationOutcome.Refused, Error = reason };
+
+    public static SeparationResult Canceled(string reason) =>
+        new() { Outcome = SeparationOutcome.Canceled, Error = reason };
 }
 
 public enum SeparationOutcome
@@ -258,6 +271,9 @@ public enum SeparationOutcome
 
     /// <summary>Not attempted, because the GPU was already busy. Not a failure of the track.</summary>
     Refused,
+
+    /// <summary>Stopped by an edit to the track, a source swap; the track is owed a run, nothing failed.</summary>
+    Canceled,
 }
 
 /// <summary>One element of <c>stemforge-cli</c>'s <c>--json</c> array.</summary>

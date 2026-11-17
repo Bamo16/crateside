@@ -1792,6 +1792,19 @@
             ],
             "description": "The work key from string? LedgerRun.SourceUrl — the join onto a stem on disk."
           },
+          "judgedOnUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The upload a restated verdict was judged from, while string? LedgerRun.SourceUrl names the one now in use."
+          },
+          "judgedOnVideoId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "center": {
             "oneOf": [
               {

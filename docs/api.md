@@ -79,6 +79,7 @@ track, the same state the API's tests stand on. Each row is the whole `TrackRow`
         "displayName": "The Examples - Synthetic Song",
         "sourceUrl": "https://music.youtube.com/watch?v=Zx3TrackA01",
         "sourceVideoId": "Zx3TrackA01",
+        "judgedOnVideoId": null,
         "center": {
           "tonic": "F#",
           "mode": "Aeolian",

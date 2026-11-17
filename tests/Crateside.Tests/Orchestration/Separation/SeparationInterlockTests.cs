@@ -186,6 +186,19 @@ public sealed class SeparationInterlockTests : IDisposable
     }
 
     [Fact]
+    public void A_canceled_run_frees_the_gpu_and_neither_fails_nor_strikes()
+    {
+        var interlock = Interlock();
+        interlock.Claim(TrackKey, processId: 4242, Launched);
+
+        var job = interlock.Cancel(TrackKey, "source swapped");
+
+        Assert.Equal(JobStatus.Canceled, job.Status);
+        Assert.Equal(0, job.Strikes);
+        Assert.False(job.IsOpen);
+    }
+
+    [Fact]
     public void A_reported_failure_strikes_but_a_finished_run_does_not()
     {
         var interlock = Interlock();

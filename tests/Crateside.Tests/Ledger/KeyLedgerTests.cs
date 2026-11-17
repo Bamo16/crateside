@@ -219,6 +219,37 @@ public sealed class KeyLedgerTests : IDisposable
     }
 
     [Fact]
+    public void A_restated_verdict_says_which_upload_it_was_judged_on()
+    {
+        var ledger = ReadLines(
+            Line("2026-09-01T00:00:00+00:00", "a - b", Watch("OLDoldOLDol"), "C# minor", "MEDIUM"),
+            Restatement(
+                "2026-09-09T00:00:00+00:00",
+                "a - b",
+                Watch("NEWnewNEWne"),
+                "C# minor",
+                "2026-09-01T00:00:00+00:00",
+                "MEDIUM"
+            )
+        );
+
+        Assert.True(ledger.TryGetLatestByTrackKey("NEWnewNEWne", out var restated));
+        Assert.Equal("NEWnewNEWne", restated.SourceTrackKey);
+        Assert.Equal("OLDoldOLDol", restated.JudgedOnTrackKey);
+    }
+
+    [Fact]
+    public void A_verdict_that_was_never_restated_names_no_earlier_upload()
+    {
+        var ledger = ReadLines(
+            Line("2026-09-01T00:00:00+00:00", "a - b", Watch("OLDoldOLDol"), "C# minor", "MEDIUM")
+        );
+
+        Assert.True(ledger.TryGetLatestByTrackKey("OLDoldOLDol", out var run));
+        Assert.Null(run.JudgedOnTrackKey);
+    }
+
+    [Fact]
     public void A_re_judgment_after_a_restatement_still_wins_through_both_ids()
     {
         var ledger = ReadLines(

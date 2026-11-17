@@ -126,6 +126,10 @@ public sealed class SeparationInterlock(
             summary: error is null ? summary : null
         );
 
+    /// <summary>Records a separation as canceled, which leaves the track owed a run rather than failed.</summary>
+    public TrackJob Cancel(string trackKey, string reason) =>
+        jobs.Record(trackKey, JobStage.Separation, JobStatus.Canceled, error: reason);
+
     /// <summary>The separation, recorded as succeeded, or null once it is recorded as failed.</summary>
     private SettledSeparation? Settle(TrackJob job)
     {

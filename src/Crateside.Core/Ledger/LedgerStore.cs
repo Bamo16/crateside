@@ -520,6 +520,7 @@ public sealed class LedgerStore : IDisposable
                 {
                     Timestamp = restatement.RecordedAt,
                     SourceUrl = restatement.SourceUrl,
+                    JudgedOnUrl = runs[restatement.RunId].SourceUrl,
                     Restates = runs[restatement.RunId].Timestamp,
                 }
             );

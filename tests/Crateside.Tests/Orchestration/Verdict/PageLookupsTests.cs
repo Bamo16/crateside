@@ -59,6 +59,39 @@ public sealed class PageLookupsTests : IDisposable
     }
 
     [Fact]
+    public async Task An_artist_the_judge_made_up_is_not_looked_up_in_place_of_the_resolved_name()
+    {
+        var names = new ResolvedNameStore(Path.Combine(_directory, "names.json"));
+        names.Save(
+            TrackKey,
+            new ResolvedName { DisplayTitle = "Wave - STREETPOP", BaseName = "Wave - STREETPOP" }
+        );
+        using var store = TestLedger.Store(
+            System.Text.Json.JsonSerializer.Serialize(
+                new
+                {
+                    timestamp = "2026-09-01T00:00:00+00:00",
+                    song = "unknown artist - streetpop",
+                    artist = "Unknown artist",
+                    title = "streetpop",
+                    source_url = $"https://www.youtube.com/watch?v={TrackKey}",
+                    verdict = new { key = "C minor", confidence = "HIGH" },
+                }
+            )
+        );
+        var lookups = new PageLookups(
+            _pages,
+            new WorkingSet(Path.Combine(_directory, "working")),
+            store,
+            names
+        );
+
+        await lookups.LookUpAsync(Order("STREETPOP"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(("Wave", "STREETPOP"), Assert.Single(_pages.Asked));
+    }
+
+    [Fact]
     public async Task A_title_without_an_artist_and_no_resolved_name_is_not_looked_up()
     {
         var names = new ResolvedNameStore(Path.Combine(_directory, "names.json"));

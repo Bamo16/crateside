@@ -42,6 +42,20 @@ public sealed record LedgerRun
     [JsonPropertyName("sourceVideoId")]
     public string? SourceTrackKey { get; private init; }
 
+    /// <summary>The upload a restated verdict was judged from, while <see cref="SourceUrl"/> names the one now in use.</summary>
+    public string? JudgedOnUrl
+    {
+        get;
+        init
+        {
+            field = value;
+            JudgedOnTrackKey = TrackKeys.TryParse(value, out var trackKey) ? trackKey : null;
+        }
+    }
+
+    [JsonPropertyName("judgedOnVideoId")]
+    public string? JudgedOnTrackKey { get; private init; }
+
     /// <summary>The verdict's primary tonal center, or null when withheld.</summary>
     public TonalCenter? Center { get; init; }
 

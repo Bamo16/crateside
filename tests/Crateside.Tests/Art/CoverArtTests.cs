@@ -80,6 +80,21 @@ public sealed class CoverArtTests : IDisposable
     }
 
     [Fact]
+    public async Task A_forgotten_cover_is_taken_again_from_the_audio_now_in_use()
+    {
+        var file = Audio("a.flac");
+        await FfmpegAudio.MakeAsync(file, 200, 200);
+        await _art.FindAsync("abc123", [file], CoverSize.Small, Ct);
+        var runs = _runner.Runs;
+
+        _art.Forget("abc123");
+        var again = await _art.FindAsync("abc123", [file], CoverSize.Small, Ct);
+
+        Assert.NotNull(again);
+        Assert.True(_runner.Runs > runs);
+    }
+
+    [Fact]
     public async Task A_file_with_no_picture_has_no_cover_and_is_not_probed_again()
     {
         var file = Audio("plain.flac");

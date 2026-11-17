@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
+using Crateside.Core.Art;
 using Crateside.Core.Ledger;
+using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
@@ -16,7 +18,9 @@ public sealed class TrackSwap(
     WorkingSet workingSet,
     IStagedFiles staged,
     TimeProvider time,
-    DeletionLog? deletions = null
+    DeletionLog? deletions = null,
+    CoverArt? covers = null,
+    ResolvedNameStore? names = null
 )
 {
     private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
@@ -87,6 +91,10 @@ public sealed class TrackSwap(
 
         // The retained download is the old upload, and separation prefers it over the URL.
         workingSet.Discard(trackKey);
+
+        // The cover and the resolved name belong to the old upload; both are fetched again from the new one.
+        covers?.Forget(trackKey);
+        names?.Forget(trackKey);
 
         instructions.RequestCut(trackKey, time.GetUtcNow());
 

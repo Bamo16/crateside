@@ -40,6 +40,26 @@ public sealed class ResolvedNameStore(CratesidePaths paths)
         }
     }
 
+    public void Forget(string trackKey)
+    {
+        lock (_gate)
+        {
+            var names = _cached ??= TryReadFile();
+
+            if (!names.Remove(trackKey))
+                return;
+
+            try
+            {
+                NamingJsonContext.Default.DictionaryStringResolvedName.WriteFile(_path, names);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Gone from memory; a restart reads the old name back, which the next resolve replaces.
+            }
+        }
+    }
+
     private Dictionary<string, ResolvedName> TryReadFile() =>
         NamingJsonContext.Default.DictionaryStringResolvedName.ReadFileOrDefault(_path) ?? [];
 }

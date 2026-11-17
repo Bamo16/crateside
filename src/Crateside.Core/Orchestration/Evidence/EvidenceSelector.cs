@@ -22,7 +22,7 @@ public sealed class EvidenceSelector(
     /// </summary>
     public bool TryPickNext(WorkListsView view, out WorkItem next)
     {
-        next = view.Outstanding.FirstOrDefault(i => WhyNot(i) is null)!;
+        next = Candidates(view).FirstOrDefault(i => WhyNot(i) is null)!;
 
         return next is not null;
     }
@@ -30,12 +30,18 @@ public sealed class EvidenceSelector(
     /// <summary>Every outstanding track, with why detection will or will not take it.</summary>
     public IReadOnlyList<Decision> Decisions(WorkListsView view) =>
         [
-            .. view.Outstanding.Select(i => new Decision(
-                i.TrackKey,
-                i.Title,
-                Selection.From(WhyNot(i))
-            )),
+            .. Candidates(view)
+                .Select(i => new Decision(i.TrackKey, i.Title, Selection.From(WhyNot(i)))),
         ];
+
+    /// <summary>The outstanding tracks, then those whose swapped source has not been detected on yet.</summary>
+    private IEnumerable<WorkItem> Candidates(WorkListsView view) =>
+        view.Outstanding.Concat(
+            view.Items.Where(i =>
+                CutRequests.OwesDetection(i, jobs)
+                && !view.Outstanding.Any(o => o.TrackKey == i.TrackKey)
+            )
+        );
 
     private SkipCause? WhyNot(WorkItem i) =>
         i.IsUnavailable ? SkipCause.Unavailable

@@ -69,6 +69,22 @@ public sealed class CoverArt(IProcessRunner runner, CratesidePaths paths)
         }
     }
 
+    /// <summary>Drops the kept cover, so the next look extracts it from the audio then in use.</summary>
+    public void Forget(string trackKey)
+    {
+        var name = FileNameOf(trackKey);
+
+        foreach (var kind in new[] { "small.jpg", "full", "stamp" })
+            try
+            {
+                File.Delete(Kept(name, kind));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Still being read; the stamp no longer matches the new audio, which re-extracts.
+            }
+    }
+
     private bool IsKept(string name, List<FileInfo> files) =>
         ReadStamp(name) switch
         {

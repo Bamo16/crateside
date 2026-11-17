@@ -241,13 +241,30 @@ public sealed class TrackSwapTests : IDisposable
         Assert.Null(workingSet.AcquisitionFor("neverJudged"));
     }
 
-    private TrackSwap Swap(TrackInstructionStore? settings = null, WorkingSet? workingSet = null) =>
+    [Fact]
+    public void Applying_forgets_the_old_uploads_resolved_name()
+    {
+        var names = new Core.Naming.ResolvedNameStore(Path.Combine(_root, "names.json"));
+        names.Save(Video, new Core.Naming.ResolvedName { DisplayTitle = "Old", BaseName = "Old" });
+
+        var outcome = Swap(names: names).Apply(Video, Replacement);
+
+        Assert.True(outcome.Succeeded, outcome.Problem);
+        Assert.DoesNotContain(Video, names.Read().Keys);
+    }
+
+    private TrackSwap Swap(
+        TrackInstructionStore? settings = null,
+        WorkingSet? workingSet = null,
+        Core.Naming.ResolvedNameStore? names = null
+    ) =>
         new(
             Ledger,
             settings ?? Settings(),
             workingSet ?? new WorkingSet(WorkingRoot),
             Staged(),
-            TimeProvider.System
+            TimeProvider.System,
+            names: names
         );
 
     private TrackInstructionStore Settings() => new(Ledger);
