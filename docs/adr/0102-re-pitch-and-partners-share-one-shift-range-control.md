@@ -1,4 +1,4 @@
-# 0101 - Re-Pitch and Partners share one shift-range control
+# 0102 - Re-Pitch and Partners share one shift-range control
 
 - Status: Accepted
 - Date: 2026-11-17

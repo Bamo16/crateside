@@ -424,7 +424,7 @@ with AM/PM here. Never a hard-coded `HH:mm`.
 The sample list and picker are `StemList` and `StemConfirm`, both driven by one `StemEditor`, and
 are mounted by the Tracks row and by Track details.
 
-**A range of shifts is one `ShiftRange` control** (#169, ADR 0101), used by Re-Pitch (±12) and
+**A range of shifts is one `ShiftRange` control** (#169, ADR 0102), used by Re-Pitch (±12) and
 Partners (±2): two handles on one track with a tick per semitone, the bar teal between them, and
 **0 fixed where the halves meet**. The low handle lives on −Max to 0 and the high on 0 to +Max, so
 neither crosses 0. Each handle is a native range input (`aria-valuetext` "Lowest shift −1

@@ -1,6 +1,6 @@
 namespace Crateside.Core.Pairing;
 
-/// <summary>The semitone shifts in play, from <see cref="Lowest"/> up to <see cref="Highest"/>, always holding 0 (ADR 0101).</summary>
+/// <summary>The semitone shifts in play, from <see cref="Lowest"/> up to <see cref="Highest"/>, always holding 0 (ADR 0102).</summary>
 public sealed record ShiftRange
 {
     public ShiftRange(int lowest, int highest, int max)
