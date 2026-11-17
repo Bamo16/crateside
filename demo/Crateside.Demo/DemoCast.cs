@@ -226,7 +226,28 @@ internal static class DemoCast
 
     /// <summary>The first track is the one the Song page shots show.</summary>
     public static IReadOnlyList<DemoTrack> All { get; } =
-    [.. Library(DateTimeOffset.Now), .. InFlight];
+    [.. Library(DateTimeOffset.Now), .. InFlight, .. Seeded()];
+
+    /// <summary>Waiting tracks added for a test of a long list: <c>CRATESIDE_DEMO_EXTRA_TRACKS=5000</c>, and none otherwise.</summary>
+    private static IEnumerable<DemoTrack> Seeded() =>
+        int.TryParse(
+            Environment.GetEnvironmentVariable("CRATESIDE_DEMO_EXTRA_TRACKS"),
+            out var count
+        )
+            ? Enumerable
+                .Range(1, count)
+                .Select(i => new DemoTrack(
+                    $"DemoSeed{i:D5}",
+                    $"Artist {i}",
+                    i % 3 is 0 ? $"The Song {i}" : $"Song {i}",
+                    DemoStage.Waiting,
+                    120,
+                    200,
+                    null,
+                    null,
+                    1 + i % 48
+                ))
+            : [];
 
     /// <summary>Hours back to the start of a track that finishes at its seed's place in its week; tagging ends about 40 minutes after the start.</summary>
     private static double HoursSince(

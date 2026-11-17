@@ -326,10 +326,11 @@
     }
     else
     {
-        @foreach (var row in shown)
-        {
-            var open = _expanded == row.TrackKey;
-            var bpm = row.Bpm is { } tempo ? TempoFormat.Format(tempo) : null;
+        <Virtualize Items="shown" Context="row" ItemSize="RowHeight" OverscanCount="12">
+            @{
+                var open = _expanded == row.TrackKey;
+                var bpm = row.Bpm is { } tempo ? TempoFormat.Format(tempo) : null;
+            }
 
             @if (Viewing is TrackFilter.OffItsTempo && row.Bpm is { } off)
             {
@@ -445,7 +446,7 @@
                     </div>
                 </div>
             }
-        }
+        </Virtualize>
     }
 
     <div class="spacer" @ref="_spacer"></div>
@@ -528,6 +529,8 @@
 
     /// <summary>The panel's closing animation, in Tracks.razor.css.</summary>
     private static readonly TimeSpan Closing = TimeSpan.FromMilliseconds(220);
+    private const float RowHeight = 46;
+    private static readonly TimeSpan SearchDelay = TimeSpan.FromMilliseconds(150);
 
     /// <summary>
     /// How often the lapsed-access toast comes back. Nothing automatic renews the token, so it
@@ -554,6 +557,7 @@
     private readonly List<(UserAction Action, TrackRow? Row)> _filed = [];
 
     private readonly CancellationTokenSource _circuit = new();
+    private CancellationTokenSource? _typing;
 
     private System.Threading.Timer? _clock;
     private bool _syncing;
@@ -808,6 +812,7 @@
     private (string Title, string Note)? _removed;
 
     private bool _focusTrack;
+    private string? _revealRow;
     private ElementReference _trackBox;
     private ElementReference _spacer;
     private IJSObjectReference? _module;
@@ -1003,13 +1008,30 @@
 
     private async Task OnSearch(ChangeEventArgs e)
     {
-        _search = e.Value?.ToString() ?? string.Empty;
+        var typed = e.Value?.ToString() ?? string.Empty;
+
+        _typing?.Cancel();
+        _typing?.Dispose();
+
+        var typing = _typing = CancellationTokenSource.CreateLinkedTokenSource(_circuit.Token);
+
+        try
+        {
+            await Task.Delay(SearchDelay, typing.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        _search = typed;
 
         await ResetSpacerAsync();
     }
 
     private void EmptySearch()
     {
+        _typing?.Cancel();
         _search = string.Empty;
         _searchBox++;
     }
@@ -1036,11 +1058,14 @@
         _familiarity = null;
         _expanded = row.TrackKey;
         _problem = null;
+        _revealRow = row.TrackKey;
 
         _toasts.Remove(row);
     }
 
-    private static string Anchor(TrackRow row) => $"track-{row.TrackKey}";
+    private static string Anchor(TrackRow row) => Anchor(row.TrackKey);
+
+    private static string Anchor(string trackKey) => $"track-{trackKey}";
 
     private static string Figure(TrackRow row) =>
         string.Join(
@@ -1121,6 +1146,15 @@
         {
             _module = await Js.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/Tracks.razor.js");
             _placeKeeper = await _module.InvokeAsync<IJSObjectReference>("keepPlace", _spacer);
+        }
+
+        if (_revealRow is { } reveal && _module is not null)
+        {
+            _revealRow = null;
+
+            var index = Shown.Select(row => row.TrackKey).ToList().IndexOf(reveal);
+
+            await _module.InvokeVoidAsync("revealRow", Anchor(reveal), index, RowHeight);
         }
 
         if (_focusTrack)

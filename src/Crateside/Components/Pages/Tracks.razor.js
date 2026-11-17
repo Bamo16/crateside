@@ -4,6 +4,29 @@ const Motion = 220;
 const Settle = 80;
 const Patience = 1000;
 
+// A virtualized list renders only what is near the viewport, so a row far down is scrolled to by its
+// place in the list first, then by its element once the list has drawn it.
+export function revealRow(id, index, rowHeight) {
+    const scroller = document.scrollingElement;
+    const heads = document.querySelector(".heads");
+
+    if (index >= 0 && heads && !document.getElementById(id))
+        scroller.scrollTop = heads.getBoundingClientRect().bottom + scroller.scrollTop + index * rowHeight - 200;
+
+    const started = performance.now();
+
+    const look = () => {
+        const row = document.getElementById(id);
+
+        if (row)
+            row.scrollIntoView({ block: "start" });
+        else if (performance.now() - started < Patience)
+            requestAnimationFrame(look);
+    };
+
+    requestAnimationFrame(look);
+}
+
 export function keepPlace(spacer) {
     const scroller = document.scrollingElement;
     const list = spacer.parentElement;
