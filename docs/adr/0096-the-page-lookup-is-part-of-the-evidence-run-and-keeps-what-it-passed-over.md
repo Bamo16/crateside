@@ -44,8 +44,12 @@ evidence run kept; none of them fetches pages, except to retry an unreachable si
 Evidence job's summary names the pages: `keydetect C major (r 0.71), madmom C major, edma C major ·
 Hooktheory 1 page, Musicnotes none, Ultimate Guitar 2`.
 
-A track whose evidence was produced before this lands has no `sources.json`; the rule pass looks it
-up as today, the one remaining path into `LookUpAsync`'s fetch.
+A track whose evidence was produced before this lands has no `sources.json`. Amended 2026-11-16:
+the evidence stage picks it for the lookup alone (`EvidenceSelector`, the decision the workers, the
+Tracks GPU line and `/api/stages` share), with no re-detection and without needing its audio. The
+lookup writes `sources.json` whatever the sites answer, so the track is picked once; a lookup that
+throws is a strike, and the stage's five strikes end it. The rule pass's own lookup stays as a
+backstop.
 
 ### `sources.json` is always written
 

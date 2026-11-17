@@ -1,8 +1,13 @@
+using System.Diagnostics;
+using Crateside.Core.KeyDetection;
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
+using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Evidence;
 
@@ -87,6 +92,140 @@ public sealed class EvidenceSelectorTests : IDisposable
         );
 
         Assert.Equal("bbbbbbbbbbb", next.TrackKey);
+    }
+
+    [Fact]
+    public void A_track_with_evidence_and_no_kept_lookup_is_picked_for_the_lookup()
+    {
+        GiveEvidence("aaaaaaaaaaa");
+
+        var picked = new EvidenceSelector(Jobs, Set, pages: Lookups()).TryPickNext(
+            View(Item("aaaaaaaaaaa")),
+            out var next
+        );
+
+        Assert.True(picked);
+        Assert.Equal("aaaaaaaaaaa", next.TrackKey);
+    }
+
+    [Fact]
+    public void A_track_with_evidence_and_a_kept_lookup_is_left_alone()
+    {
+        GiveEvidence("aaaaaaaaaaa");
+        File.WriteAllText(
+            Path.Combine(Set.Prepare("aaaaaaaaaaa"), PageLookups.SourcesFileName),
+            "[]"
+        );
+
+        Assert.False(
+            new EvidenceSelector(Jobs, Set, pages: Lookups()).TryPickNext(
+                View(Item("aaaaaaaaaaa")),
+                out _
+            )
+        );
+    }
+
+    [Fact]
+    public void A_track_whose_audio_has_gone_is_still_picked_for_a_missing_lookup()
+    {
+        GiveEvidence("aaaaaaaaaaa");
+        File.Delete(Path.Combine(Set.Prepare("aaaaaaaaaaa"), "track.flac"));
+
+        var view = new WorkListsView
+        {
+            Items = [Item("aaaaaaaaaaa")],
+            Outstanding = [Item("aaaaaaaaaaa")],
+            FullyProcessed = [],
+            AwaitingKey = [],
+            AwaitingSeparation = [],
+        };
+
+        Assert.True(new EvidenceSelector(Jobs, Set, pages: Lookups()).TryPickNext(view, out _));
+    }
+
+    [Fact]
+    public async Task A_lookup_that_reached_no_site_is_kept_so_the_track_is_not_picked_again()
+    {
+        GiveEvidence("aaaaaaaaaaa");
+
+        var lookups = Lookups(LookupStatus.Unreachable);
+        var selector = new EvidenceSelector(Jobs, Set, pages: lookups);
+        var view = View(Item("aaaaaaaaaaa"));
+        var order = WorkOrder.Compose(
+            new WorkItem { TrackKey = "aaaaaaaaaaa", Title = "Pink Floyd - Money" },
+            _store.Read()
+        );
+
+        Assert.True(selector.TryPickNext(view, out _));
+
+        var result = await new EvidenceRunner(Set, new NoDetectors(), lookups).RunAsync(
+            order,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.True(result.IsSuccess);
+        Assert.Contains("not reached", result.Summary);
+        Assert.False(selector.TryPickNext(view, out _));
+    }
+
+    [Fact]
+    public void A_track_that_keeps_failing_its_lookup_is_given_up_on_after_the_strikes()
+    {
+        GiveEvidence("aaaaaaaaaaa");
+
+        for (var strike = 0; strike < EvidenceSelector.DefaultMaxStrikes; strike++)
+            Jobs.Record("aaaaaaaaaaa", JobStage.Evidence, JobStatus.Failed, error: "no lookup");
+
+        Assert.False(
+            new EvidenceSelector(Jobs, Set, pages: Lookups()).TryPickNext(
+                View(Item("aaaaaaaaaaa")),
+                out _
+            )
+        );
+    }
+
+    private readonly LedgerStore _store = TestLedger.Store();
+
+    private PageLookups Lookups(LookupStatus status = LookupStatus.NotFound) =>
+        new(new FixedPages(status), Set, _store);
+
+    private sealed class FixedPages(LookupStatus status) : ISourcePages
+    {
+        public Task<IReadOnlyList<SiteLookup>> FetchAsync(
+            string artist,
+            string title,
+            CancellationToken ct = default
+        ) => Task.FromResult<IReadOnlyList<SiteLookup>>([new SiteLookup("Hooktheory", status, [])]);
+    }
+
+    private sealed class NoDetectors : IDetectorSet
+    {
+        public Task<DetectionOutcome> DetectAsync(
+            string audioPath,
+            RunWindow? window,
+            string evidencePath,
+            CancellationToken ct = default
+        ) => throw new UnreachableException();
+
+        public Task<EvidenceReading> ReadEvidenceAsync(
+            string audioPath,
+            CancellationToken ct = default
+        ) => throw new UnreachableException();
+
+        public Task<string?> KeydetectSha256Async(CancellationToken ct = default) =>
+            throw new UnreachableException();
+
+        public Task<(KeyReading Madmom, KeyReading Edma)> ReadBackersAsync(
+            string audioPath,
+            RunWindow? window,
+            CancellationToken ct = default
+        ) => throw new UnreachableException();
+
+        public Task<KeydetectReading> ReadKeydetectAsync(
+            string audioPath,
+            RunWindow? window,
+            CancellationToken ct = default
+        ) => throw new UnreachableException();
     }
 
     [Theory]

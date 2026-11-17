@@ -118,13 +118,13 @@ public sealed class PageLookups(
     /// <summary>What an earlier lookup kept for this track, or null when there is none.</summary>
     public IReadOnlyList<SiteLookup>? CachedFor(WorkOrder order) => CachedFor(order.TrackKey);
 
+    public bool HasKept(string trackKey) => File.Exists(KeptPath(trackKey));
+
     public IReadOnlyList<SiteLookup>? CachedFor(string trackKey) =>
-        SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.ReadFileOrDefault(
-            Path.Combine(
-                Path.GetDirectoryName(workingSet.EvidencePathFor(trackKey))!,
-                SourcesFileName
-            )
-        );
+        SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.ReadFileOrDefault(KeptPath(trackKey));
+
+    private string KeptPath(string trackKey) =>
+        Path.Combine(Path.GetDirectoryName(workingSet.EvidencePathFor(trackKey))!, SourcesFileName);
 
     /// <summary>The ledger's names for a song judged before, else the row's <c>Artist - Title</c>, else StemForge's name for a title that names no artist (a <c>Topic</c> upload's).</summary>
     public (string Artist, string Title)? NamesOf(WorkOrder order) =>
