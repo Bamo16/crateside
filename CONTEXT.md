@@ -129,6 +129,11 @@ the views, and running the workflow.
   identity**, the latest run wins, so each run's prose stands on its own.
 - **Restatement** — the ledger's record that another upload is a song already judged. It
   carries the song's verdict to the new upload and never changes it.
+- **Detune** — the cents a clip is shifted so a track sits at A = 440, written into the saved
+  clip as the negated **tuning**; only at 10 cents or more, from a steady reading (3 or more
+  stretches within 6 cents). Tracks 30 cents or more off, or unsteady, wait on the **review list**
+  unwritten. See [ADR 0101](docs/adr/0101-a-detune-brings-a-track-to-a-440-in-its-clip.md).
+- **Tuning** — how far a recording sits from A = 440, in cents, as keydetect reads it.
 
 ## Places
 

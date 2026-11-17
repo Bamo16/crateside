@@ -24,6 +24,8 @@ public sealed class SidecarWriter(
 
     private const int MinTransientsToRefine = 32;
 
+    private const double MaxDetune = 50;
+
     /// <summary>How far apart any two 30 s of the track may sit on a starter's grid, in ms; more and the stem gets Warp off.</summary>
     public const double StarterHoldsWithinMs = 10;
 
@@ -348,6 +350,29 @@ public sealed class SidecarWriter(
                         SampleVolume = gain,
                     }
         );
+
+    /// <summary>
+    /// Sets a saved clip's detune in cents (±50), unless Live's user set one: only a detune of 0 or
+    /// <paramref name="writtenBefore"/>, crateside's own, is replaced. True when rewritten (ADR 0101).
+    /// </summary>
+    public bool Detune(string audioPath, double cents, double? writtenBefore = null) =>
+        Rewrite(
+            audioPath,
+            clip =>
+                (float)Math.Clamp(cents, -MaxDetune, MaxDetune) is var detune
+                && !IsDetune(clip.PitchFine, detune)
+                && (
+                    clip.PitchFine is 0
+                    || writtenBefore is { } ours && IsDetune(clip.PitchFine, ours)
+                )
+                    ? clip with
+                    {
+                        PitchFine = detune,
+                    }
+                    : null
+        );
+
+    private static bool IsDetune(double a, double b) => Math.Abs(a - b) < 0.005;
 
     /// <summary>
     /// Gives a saved clip with Warp off and fewer than 2 markers the pair Live writes, changing

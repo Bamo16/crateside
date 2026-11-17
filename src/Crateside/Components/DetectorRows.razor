@@ -22,7 +22,7 @@
             else
             {
                 <span class="key">@if (algorithm.Key is { } key) { <ProseText Text="@key" Inline="true" Mono="true" /> } else { <text>—</text> }</span>
-                <span class="score">@algorithm.Confidence?.ToString("F3")</span>
+                <span class="score" title="@(algorithm.TuningCents is { } cents ? $"Tuning {cents:+0.#;−0.#;0} ¢ from A = 440" : null)">@algorithm.Confidence?.ToString("F3")</span>
                 <span>
                     @if (algorithm.FlagChip is { } chip)
                     {

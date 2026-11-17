@@ -347,6 +347,13 @@ strip's height. At 56rem and below the cover is 96px beside the title (21/600)
 and the cells go two by two under both. `← Tracks` stays above the strip; the player follows it, then
 the findings line, then the stage flow, drawn as its own `--surface` strip.
 
+### The tuning line (#187, ADR 0101)
+
+A one-line `p.tuning` above *Why …*, shown only when keydetect has read a tuning: the median in
+cents (mono), the stretch count and spread, what was done, then *Put back* once crateside has
+written a detune, or *Detune −n* for a track waiting on the review list. The review list is the
+tracks whose entry is in the Review state in `tuning.json`; a page for it is not built yet.
+
 ### The player (handoff 22, #105, ADR 0094)
 
 `Player`, one `<section aria-label="Player">` 10px under the header strip: `--raised`, 1px `--text`

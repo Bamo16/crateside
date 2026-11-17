@@ -1,0 +1,46 @@
+@using System.Globalization
+@using Crateside.Core.Tuning
+@inject TuningStore Store
+@inject TuningPass Pass
+
+@if (Store.Of(TrackKey) is { Median: not null } entry)
+{
+    <p class="tuning">
+        <span class="mono">tuning @Cents(entry.Median) ¢</span>
+        @if (entry.Readings.Count > 0)
+        {
+            <span class="muted"> · @entry.Readings.Count stretches, spread @((entry.Readings.Max() - entry.Readings.Min()).ToString("0.#", CultureInfo.InvariantCulture))</span>
+        }
+        <span class="muted"> · @Say(entry)</span>
+        @if (entry.State is TuningState.Review)
+        {
+            <button class="pill plain" @onclick="Accept">Detune @Cents(-entry.Median)</button>
+        }
+        @if (entry.Written.Count > 0)
+        {
+            <button class="pill plain" @onclick="PutBack">Put back</button>
+        }
+    </p>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required string TrackKey { get; set; }
+
+    private static string Cents(double? cents) =>
+        cents is { } value ? value.ToString("+0.#;−0.#;0", CultureInfo.InvariantCulture) : "?";
+
+    private static string Say(TuningEntry entry) =>
+        entry.State switch
+        {
+            TuningState.Written when entry.Written.Count is 0 => $"detune {Cents(entry.Correction)} ¢ waits for a saved clip",
+            TuningState.Written => $"detuned {Cents(entry.Correction)} ¢ in {entry.Written.Count} {(entry.Written.Count is 1 ? "clip" : "clips")}",
+            TuningState.Review => $"not written ({entry.Why})",
+            TuningState.LeftAlone => "put back; left alone",
+            _ => "in tune",
+        };
+
+    private void Accept() => Pass.Accept(TrackKey);
+
+    private void PutBack() => Pass.PutBack(TrackKey);
+}

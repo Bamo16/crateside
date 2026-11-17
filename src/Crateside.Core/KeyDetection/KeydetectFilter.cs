@@ -195,7 +195,10 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, Func<string> 
             Reranks.Matches(stderr) is [.., var reranked]
                 ? reranked.Groups["Flag"].Value is "1"
                 : null,
-            starts
+            starts,
+            Tuning.Matches(stderr) is [.., var tuned]
+                ? double.Parse(tuned.Groups["Cents"].Value, CultureInfo.InvariantCulture)
+                : null
         );
     }
 
@@ -232,6 +235,9 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, Func<string> 
     [GeneratedRegex(@"lavfi\.keydetect\.key_alt_confidence=(?<R>[0-9.+-]+)")]
     private static partial Regex RunnerUpCorrelation { get; }
 
+    [GeneratedRegex(@"lavfi\.keydetect\.tuning_cents=(?<Cents>[0-9.+-]+)")]
+    private static partial Regex Tuning { get; }
+
     [GeneratedRegex(@"lavfi\.keydetect\.key_reranked=(?<Flag>[01])")]
     private static partial Regex Reranks { get; }
 
@@ -255,6 +261,7 @@ public abstract record KeydetectReading
     /// <param name="KeyEvents">Every change of the running estimate as the stream played.</param>
     /// <param name="RunnerUp">The second-ranked key (<c>key_alt</c>), where the build prints one.</param>
     /// <param name="Reranked">Whether the chord rerank changed the answer (<c>key_reranked</c>).</param>
+    /// <param name="TuningCents">How far the audio sits from A = 440, in cents within ±50 (<c>tuning_cents</c>); null when the build prints none.</param>
     /// <param name="ChordStarts">Where each of <paramref name="Chords"/> starts, in seconds (<c>start=</c>, v1.1.0 on); empty when the build prints none.</param>
     public sealed record Read(
         MusicKey Key,
@@ -264,7 +271,8 @@ public abstract record KeydetectReading
         MusicKey? RunnerUp = null,
         double? RunnerUpR = null,
         bool? Reranked = null,
-        IReadOnlyList<double>? ChordStarts = null
+        IReadOnlyList<double>? ChordStarts = null,
+        double? TuningCents = null
     ) : KeydetectReading;
 
     public sealed record Failed(string Error) : KeydetectReading;

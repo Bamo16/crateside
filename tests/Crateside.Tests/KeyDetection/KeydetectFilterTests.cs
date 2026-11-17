@@ -85,6 +85,29 @@ public sealed class KeydetectFilterTests : IDisposable
         Assert.Empty(read.ChordStarts!);
     }
 
+    [Fact]
+    public void The_tuning_the_filter_prints_is_read_with_its_sign()
+    {
+        const string Stderr = """
+            [Parsed_keydetect_0 @ 0] lavfi.keydetect.key=F
+            [Parsed_keydetect_0 @ 0] lavfi.keydetect.tuning_cents=-17.5
+            """;
+
+        var read = Assert.IsType<KeydetectReading.Read>(KeydetectFilter.Parse(Stderr));
+
+        Assert.Equal(-17.5, read.TuningCents);
+    }
+
+    [Fact]
+    public void A_build_that_prints_no_tuning_leaves_it_null()
+    {
+        const string Stderr = "[Parsed_keydetect_0 @ 0] lavfi.keydetect.key=F";
+
+        var read = Assert.IsType<KeydetectReading.Read>(KeydetectFilter.Parse(Stderr));
+
+        Assert.Null(read.TuningCents);
+    }
+
     /// <summary>Each chord for two seconds: a triad over its root an octave down, each tone with two overtones.</summary>
     private static double Chords(double seconds)
     {

@@ -383,6 +383,16 @@
               }
             ]
           },
+          "tuningCents": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "How far keydetect heard this window from A = 440, in cents.",
+            "format": "double"
+          },
           "error": {
             "type": [
               "null",

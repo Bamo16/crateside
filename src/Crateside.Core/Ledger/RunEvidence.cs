@@ -552,6 +552,9 @@ public sealed record AlgorithmResult
 
     public FlagChip? FlagChip => FlagChip.Of(Flag);
 
+    /// <summary>How far keydetect heard this window from A = 440, in cents.</summary>
+    public double? TuningCents { get; init; }
+
     public string? Error { get; init; }
 
     /// <summary>The detectors a run recorded: keydetect, CREMA and librosa before the port (#113), keydetect, madmom and edma after.</summary>
@@ -591,6 +594,7 @@ public sealed record AlgorithmResult
                             RunnerUpKey = keydetect.KeyAlt,
                             RunnerUpConfidence = keydetect.KeyAltConfidence,
                             Reranked = keydetect.KeyReranked,
+                            TuningCents = keydetect.TuningCents,
                             Error = keydetect.Error,
                         }
                         : null,
@@ -784,6 +788,9 @@ internal sealed record AlgorithmsDto
         public double? KeyAltConfidence { get; init; }
 
         public bool? KeyReranked { get; init; }
+
+        /// <summary>Cents from A = 440; absent on a run made before the reading was kept.</summary>
+        public double? TuningCents { get; init; }
 
         public string? Error { get; init; }
     }

@@ -161,6 +161,13 @@ public sealed class CratesidePaths
         set;
     }
 
+    /// <summary>What was decided about each track's tuning.</summary>
+    public string TuningFile
+    {
+        get => field ?? Roaming("tuning.json");
+        set;
+    }
+
     /// <summary>The sidecars crateside retyped, so it knows which retypes still stand.</summary>
     public string RetypedWarpsFile
     {

@@ -28,6 +28,7 @@ using Crateside.Core.Playlist;
 using Crateside.Core.Quota;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
+using Crateside.Core.Tuning;
 using Crateside.Core.Vocals;
 using Crateside.Core.Warps;
 using Crateside.Core.Watching;
@@ -287,6 +288,10 @@ public static class ServiceRegistration
         services.AddSingleton<Leveling>();
         // Unattended: reading loudness is ffmpeg on the CPU (ADR 0059).
         services.AddHostedService<LoudnessWorker>();
+        services.AddSingleton<TuningStore>();
+        services.AddSingleton<TuningTracks>();
+        services.AddSingleton<TuningPass>();
+        services.AddHostedService<TuningWorker>();
 
         return services;
     }

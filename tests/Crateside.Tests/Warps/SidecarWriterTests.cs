@@ -825,6 +825,70 @@ public sealed class SidecarWriterTests : IDisposable
         Assert.True(AnalysisFile.Read($"{Target}.asd").Warp.IsWarped);
     }
 
+    [Fact]
+    public void A_detune_is_written_on_a_saved_default_clip_and_nothing_else_changes()
+    {
+        Audio(Target);
+        Analysis(saved: true).Write($"{Target}.asd");
+
+        Assert.True(Borrower().Detune(Target, -17.5));
+
+        var written = AnalysisFile.Read($"{Target}.asd");
+        Assert.Equal(-17.5f, written.Clip.PitchFine);
+        Assert.Equal(1, written.Clip.LoopStart);
+        Assert.Equal(Markers, written.Warp.Markers);
+    }
+
+    [Fact]
+    public void A_detune_the_user_set_is_left_alone()
+    {
+        Audio(Target);
+        (
+            Analysis(saved: true) with
+            {
+                Clip = new Clip { LoopEnd = 5, PitchFine = 12 },
+            }
+        ).Write($"{Target}.asd");
+
+        Assert.False(Borrower().Detune(Target, -17.5));
+        Assert.Equal(12f, AnalysisFile.Read($"{Target}.asd").Clip.PitchFine);
+    }
+
+    [Fact]
+    public void A_detune_crateside_wrote_is_replaced_when_told_it_was_crateside_who_wrote_it()
+    {
+        Audio(Target);
+        (
+            Analysis(saved: true) with
+            {
+                Clip = new Clip { LoopEnd = 5, PitchFine = -17.5f },
+            }
+        ).Write($"{Target}.asd");
+
+        Assert.True(Borrower().Detune(Target, 0, writtenBefore: -17.5));
+        Assert.Equal(0f, AnalysisFile.Read($"{Target}.asd").Clip.PitchFine);
+    }
+
+    [Fact]
+    public void A_detune_is_not_written_on_a_clip_that_was_never_saved()
+    {
+        Audio(Target);
+        Analysis(saved: false).Write($"{Target}.asd");
+
+        Assert.False(Borrower().Detune(Target, -17.5));
+        Assert.Equal(0f, AnalysisFile.Read($"{Target}.asd").Clip.PitchFine);
+    }
+
+    [Fact]
+    public void A_detune_past_fifty_cents_is_clamped()
+    {
+        Audio(Target);
+        Analysis(saved: true).Write($"{Target}.asd");
+
+        Assert.True(Borrower().Detune(Target, -63));
+        Assert.Equal(-50f, AnalysisFile.Read($"{Target}.asd").Clip.PitchFine);
+    }
+
     private const float PlusSixDb = 1.9952623f;
 
     private SidecarWriter Borrower(float level = 0.5f, int frames = Frames) =>

@@ -233,6 +233,7 @@ public sealed class DetectorSet(
                 KeyAlt = read.RunnerUp?.LedgerName,
                 KeyAltConfidence = read.RunnerUpR,
                 KeyReranked = read.Reranked,
+                TuningCents = read.TuningCents,
             },
             KeydetectReading.Failed(var error) => new() { Error = error },
             _ => throw new UnreachableException(),
