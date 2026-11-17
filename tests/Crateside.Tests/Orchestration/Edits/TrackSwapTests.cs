@@ -218,6 +218,36 @@ public sealed class TrackSwapTests : IDisposable
     }
 
     [Fact]
+    public void A_swap_removes_the_old_guide_and_asks_for_a_fresh_one()
+    {
+        Stage("Rob Dougan - Furious Angels (Vocal - Full).flac");
+        Stage("Rob Dougan - Furious Angels (Drums).flac");
+        WriteLedger(
+            Line("2026-09-01T00:00:00+00:00", Song, Video),
+            Line("2026-09-09T00:00:00+00:00", Song, "NSLYAT7sjAA")
+        );
+
+        var settings = Settings();
+
+        Swap(settings).Apply(Video, Replacement);
+
+        Assert.Empty(Directory.EnumerateFiles(StagingRoot));
+
+        var item = WorkListsView
+            .Compose(
+                [],
+                new HashSet<string>(),
+                new HashSet<string>(),
+                new HashSet<string>(),
+                settings.Read().ToDictionary(t => t.TrackKey, StringComparer.Ordinal),
+                [new WorkItem { TrackKey = Video, Title = "Rob Dougan - Furious Angels" }]
+            )
+            .AwaitingSeparation.Single();
+
+        Assert.True(WorkOrder.Compose(item, Ledger.Read()).Recipe.ExtractDrums);
+    }
+
+    [Fact]
     public void A_bare_video_id_is_accepted_and_canonicalized()
     {
         // A run needs an http(s) URL.

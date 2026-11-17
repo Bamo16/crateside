@@ -1,6 +1,6 @@
 # 0046 — a filed track's warp guide is kept outside Ableton
 
-- Status: Accepted
+- Status: Accepted; refined by [ADR 0103](0103-a-library-file-can-be-deleted-and-a-recut-keeps-the-saved-warp.md) (2026-11-17)
 - Date: 2026-10-02
 - Builds [#87](https://github.com/Bamo16/crateside/issues/87).
 
@@ -46,3 +46,12 @@ The track's next step no longer mentions the guide: *warped — move to Mashup S
 - **On 2026-10-02 the first pass moves 10 guides** left in staging after their tracks were filed.
   The other 26 belong to tracks still in staging.
 - **A set that used a guide from staging loses it**, just as it did when the guide was deleted.
+
+## Since ADR 0103
+
+Keeping stands: a guide still moves to `Paths:KeptWarpGuides` once its track is filed, and the kept
+folder is an archive only. What changed is what the guide is for afterwards. Nothing brings a kept
+guide back to Staging when its track returns there. A swapped source replaces every stem, so its
+recipe asks for a fresh guide cut from the new audio (`TrackSwapTests`), and a re-cut that finds a
+guide already on disk asks for none. An added source gets no guide of its own yet: separation is
+per playlist track, and ADR 0103's "Not built" says why.
