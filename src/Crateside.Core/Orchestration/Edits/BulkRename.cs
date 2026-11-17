@@ -18,28 +18,33 @@ public sealed partial class BulkRename(TrackRename rename, ActionLog actions)
     private static partial Regex Placeholder { get; }
 
     /// <summary>What each row's files and sets are now, read once so every pattern is previewed from it.</summary>
-    public IReadOnlyDictionary<string, RenameBasis> Prepare(IEnumerable<TrackRow> rows)
-    {
-        ExistingFiles existing = new();
-        var keys = rows.Select(row => row.TrackKey).Distinct().ToList();
-        var anySet = rename.AnySetUses(keys);
+    public IReadOnlyDictionary<string, RenameBasis> Prepare(IEnumerable<TrackRow> rows) =>
+        Prepare([.. rows.Select(row => row.TrackKey).Distinct()]);
 
-        return keys.ToDictionary(key => key, key => rename.BasisOf(key, existing, !anySet));
-    }
+    /// <summary>What each track's files and sets are now, read once so every pattern is previewed from it.</summary>
+    public IReadOnlyDictionary<string, RenameBasis> Prepare(IReadOnlyList<string> keys) =>
+        rename.BasesOf(keys);
 
-    /// <summary>The new name of every row, or why it gets none; nothing is changed.</summary>
-    public IReadOnlyList<BulkRenameLine> Preview(IEnumerable<TrackRow> rows, string pattern)
+    /// <summary>The new name of every row, or why it gets none, with the files read now; nothing is changed.</summary>
+    public IReadOnlyList<BulkRenameLine> PreviewChecked(IEnumerable<TrackRow> rows, string pattern)
     {
         var shown = rows.ToList();
 
         return Preview(shown, pattern, Prepare(shown));
     }
 
+    /// <summary>
+    /// The names the pattern gives from the tags alone, at once: no file is looked at, so each line is
+    /// <see cref="BulkRenameLine.Pending"/> until the files have been read.
+    /// </summary>
+    public IReadOnlyList<BulkRenameLine> Preview(IEnumerable<TrackRow> rows, string pattern) =>
+        Preview(rows, pattern, null);
+
     /// <summary>The new name of every row from a basis read earlier; a row without one is read now.</summary>
     public IReadOnlyList<BulkRenameLine> Preview(
         IEnumerable<TrackRow> rows,
         string pattern,
-        IReadOnlyDictionary<string, RenameBasis> bases
+        IReadOnlyDictionary<string, RenameBasis>? bases
     )
     {
         var lines = rows.Select(row => LineFor(row, pattern, bases)).ToList();
@@ -95,7 +100,7 @@ public sealed partial class BulkRename(TrackRename rename, ActionLog actions)
     private BulkRenameLine LineFor(
         TrackRow row,
         string pattern,
-        IReadOnlyDictionary<string, RenameBasis> bases
+        IReadOnlyDictionary<string, RenameBasis>? bases
     )
     {
         var missing = new List<string>();
@@ -127,6 +132,9 @@ public sealed partial class BulkRename(TrackRename rename, ActionLog actions)
 
         if (name.Equals(row.Title, StringComparison.Ordinal))
             return line with { Problem = null, Unchanged = true };
+
+        if (bases is null)
+            return line with { NewName = name, Pending = true };
 
         var plan = bases.TryGetValue(row.TrackKey, out var basis)
             ? rename.PlanFor(basis, name)
@@ -169,6 +177,9 @@ public sealed record BulkRenameLine(
 {
     /// <summary>The track already has the name the pattern gives it.</summary>
     public bool Unchanged { get; init; }
+
+    /// <summary>The name comes from the tags alone; the files are not read yet, so a refusal may still come.</summary>
+    public bool Pending { get; init; }
 
     public bool WillRename => NewName is not null;
 }

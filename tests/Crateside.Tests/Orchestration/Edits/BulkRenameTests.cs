@@ -88,7 +88,7 @@ public sealed class BulkRenameTests : IDisposable
     [Fact]
     public void The_preview_names_each_track_from_its_tags_without_changing_anything()
     {
-        var lines = _bulk.Preview(
+        var lines = _bulk.PreviewChecked(
             [Row("aaaaaaaaaaa", "Diddy's Kong Quest", "David Wise", "Stickerbush Symphony")],
             "{album} - {title}"
         );
@@ -101,7 +101,7 @@ public sealed class BulkRenameTests : IDisposable
     [Fact]
     public void A_game_pattern_drops_the_subtitle()
     {
-        var lines = _bulk.Preview(
+        var lines = _bulk.PreviewChecked(
             [
                 Row(
                     "aaaaaaaaaaa",
@@ -119,7 +119,7 @@ public sealed class BulkRenameTests : IDisposable
     [Fact]
     public void A_colon_in_a_tag_becomes_an_underscore_rather_than_a_refusal()
     {
-        var lines = _bulk.Preview(
+        var lines = _bulk.PreviewChecked(
             [Row("aaaaaaaaaaa", "Game: Part 2", "Wise", "Theme")],
             "{album} - {title}"
         );
@@ -130,7 +130,7 @@ public sealed class BulkRenameTests : IDisposable
     [Fact]
     public void A_track_missing_a_tag_in_the_pattern_is_skipped_with_the_reason()
     {
-        var lines = _bulk.Preview(
+        var lines = _bulk.PreviewChecked(
             [new TrackRow { TrackKey = "aaaaaaaaaaa", Title = "From the playlist" }],
             "{album} - {title}"
         );
@@ -143,7 +143,7 @@ public sealed class BulkRenameTests : IDisposable
     [Fact]
     public void A_token_it_does_not_know_is_refused()
     {
-        var lines = _bulk.Preview([Row("aaaaaaaaaaa", "A", "B", "C")], "{year} - {title}");
+        var lines = _bulk.PreviewChecked([Row("aaaaaaaaaaa", "A", "B", "C")], "{year} - {title}");
 
         Assert.Contains("{year}", Assert.Single(lines).Problem);
     }
@@ -151,7 +151,7 @@ public sealed class BulkRenameTests : IDisposable
     [Fact]
     public void Two_tracks_that_would_share_a_name_are_both_held_back()
     {
-        var lines = _bulk.Preview(
+        var lines = _bulk.PreviewChecked(
             [Row("aaaaaaaaaaa", "A", "X", "Same"), Row("bbbbbbbbbbb", "A", "Y", "Same")],
             "{album} - {title}"
         );
@@ -162,7 +162,7 @@ public sealed class BulkRenameTests : IDisposable
     [Fact]
     public void A_track_already_named_by_the_pattern_is_left_alone()
     {
-        var lines = _bulk.Preview(
+        var lines = _bulk.PreviewChecked(
             [Row("aaaaaaaaaaa", "A", "X", "Song", current: "A - Song")],
             "{album} - {title}"
         );
@@ -286,9 +286,32 @@ public sealed class BulkRenameTests : IDisposable
     }
 
     [Fact]
-    public void Applying_records_each_name_the_way_the_song_pages_rename_does()
+    public void The_light_preview_names_every_row_from_its_tags_and_marks_it_pending()
     {
         var lines = _bulk.Preview(
+            [Row("aaaaaaaaaaa", "A", "X", "One"), Row("bbbbbbbbbbb", "A", "X", "Two")],
+            "{artist} - {title}"
+        );
+
+        Assert.Equal(["X - One", "X - Two"], lines.Select(line => line.NewName));
+        Assert.All(lines, line => Assert.True(line.Pending));
+    }
+
+    [Fact]
+    public void The_checked_preview_is_not_pending()
+    {
+        var lines = _bulk.PreviewChecked(
+            [Row("aaaaaaaaaaa", "A", "X", "One")],
+            "{artist} - {title}"
+        );
+
+        Assert.All(lines, line => Assert.False(line.Pending));
+    }
+
+    [Fact]
+    public void Applying_records_each_name_the_way_the_song_pages_rename_does()
+    {
+        var lines = _bulk.PreviewChecked(
             [Row("aaaaaaaaaaa", "A", "X", "One"), Row("bbbbbbbbbbb", "A", "X", "Two")],
             "{artist} - {title}"
         );

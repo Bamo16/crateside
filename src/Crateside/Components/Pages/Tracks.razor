@@ -307,7 +307,7 @@
 
             @if (_bulkLoading)
             {
-                <p class="add-note">Reading the tracks' files…</p>
+                <p class="add-note">Checking the tracks' files; any that can't be renamed are marked when this is done…</p>
             }
 
             @if (_bulkResult is { } done)
@@ -688,15 +688,34 @@
     }
 
     /// <summary>Reads each shown track's files once, off the render path; every preview after is from memory.</summary>
-    private async Task LoadBulkAsync()
+    private async Task LoadBulkAsync(bool again = false)
     {
-        var rows = Shown.ToList();
+        var keys = BulkScope(_bulkAlbum)
+            .Select(row => row.TrackKey)
+            .Distinct()
+            .Where(key => again || !_bulkBases.ContainsKey(key))
+            .ToList();
+
+        if (keys.Count is 0)
+        {
+            PreviewBulk();
+
+            return;
+        }
 
         _bulkLoading = true;
+        PreviewBulk();
+        StateHasChanged();
 
         try
         {
-            _bulkBases = await Task.Run(() => BulkRenaming.Prepare(rows), _circuit.Token);
+            var read = await Task.Run(() => BulkRenaming.Prepare(keys), _circuit.Token);
+
+            _bulkBases = again
+                ? read
+                : new Dictionary<string, RenameBasis>(_bulkBases)
+                    .Concat(read)
+                    .ToDictionary(pair => pair.Key, pair => pair.Value);
         }
         catch (OperationCanceledException) { }
         finally
@@ -719,6 +738,9 @@
         _bulkAlbum = string.IsNullOrEmpty(album) ? null : album;
         _bulkResult = null;
         PreviewBulk();
+
+        if (!_bulkLoading)
+            _ = LoadBulkAsync();
     }
 
     private void PatternTyped(string? pattern)
@@ -728,10 +750,13 @@
         PreviewBulk();
     }
 
+    // The names show at once from the tags; once the files are read, the held-back ones are marked.
     private void PreviewBulk() =>
-        _bulkLines = string.IsNullOrWhiteSpace(_bulkPattern) || _bulkLoading
+        _bulkLines = string.IsNullOrWhiteSpace(_bulkPattern)
             ? null
-            : BulkRenaming.Preview(BulkScope(_bulkAlbum), _bulkPattern, _bulkBases);
+            : _bulkLoading
+                ? BulkRenaming.Preview(BulkScope(_bulkAlbum), _bulkPattern)
+                : BulkRenaming.Preview(BulkScope(_bulkAlbum), _bulkPattern, _bulkBases);
 
     private async Task ApplyBulk()
     {
@@ -744,7 +769,7 @@
         {
             _bulkResult = await Task.Run(() => BulkRenaming.Apply(lines));
             await Source.RefreshAsync(_circuit.Token);
-            await LoadBulkAsync();
+            await LoadBulkAsync(again: true);
         }
         catch (OperationCanceledException) { }
         finally

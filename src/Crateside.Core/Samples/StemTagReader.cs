@@ -80,6 +80,26 @@ public static class StemTagReader
             ]
             : [];
 
+    /// <summary>The audio files under <paramref name="root"/> cut from each of these uploads, in one walk of the folder.</summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> FilesCutFrom(
+        string root,
+        IReadOnlySet<string> trackKeys
+    ) =>
+        Directory.Exists(root)
+            ? new DirectoryInfo(root)
+                .EnumerateFiles("*", SearchOption.AllDirectories)
+                .Where(file => SampleFiles.IsAudio(file.FullName))
+                .Select(file => (file.FullName, Tags: Read(file)))
+                .Where(file =>
+                    file is { Tags.Provenance.SourceTrackKey: { } key } && trackKeys.Contains(key)
+                )
+                .GroupBy(file => file.Tags!.Provenance!.SourceTrackKey!)
+                .ToDictionary(
+                    group => group.Key,
+                    IReadOnlyList<string> (group) => [.. group.Select(file => file.FullName)]
+                )
+            : new Dictionary<string, IReadOnlyList<string>>();
+
     /// <summary>The tags crateside needs from a stem file; null if it is unreadable or unsupported.</summary>
     public static StemTags? Read(string path) => Read(path, new FileInfo(path));
 

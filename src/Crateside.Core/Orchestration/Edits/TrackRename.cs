@@ -55,6 +55,30 @@ public sealed class TrackRename(
         );
     }
 
+    /// <summary>
+    /// <see cref="BasisOf(string, ExistingFiles?, bool)"/> for many tracks, reading staging and the
+    /// library once for all of them instead of once per track.
+    /// </summary>
+    public IReadOnlyDictionary<string, RenameBasis> BasesOf(IReadOnlyCollection<string> trackKeys)
+    {
+        ExistingFiles existing = new();
+        var files = FilesOf(trackKeys);
+        var anySet =
+            sets is { } links
+            && links
+                .Using([.. files.Values.SelectMany(list => list).Select(file => file.Path)])
+                .Count > 0;
+
+        return trackKeys.ToDictionary(
+            key => key,
+            key => new RenameBasis(
+                files[key],
+                anySet ? Check([.. files[key].Select(file => file.Path)]) : new SetCheck([], null),
+                existing
+            )
+        );
+    }
+
     /// <summary>Whether any set uses a file of any of these tracks: one walk of the sets, not one per track.</summary>
     public bool AnySetUses(IEnumerable<string> trackKeys) =>
         sets is { } links
@@ -371,6 +395,23 @@ public sealed class TrackRename(
             .. staged.Of(trackKey).Select(stem => (stem.Path, paths.StagingFolder)),
             .. (library?.Of(trackKey) ?? []).Select(path => (path, paths.LibraryFolder)),
         ];
+
+    private Dictionary<string, (string Path, string Root)[]> FilesOf(
+        IReadOnlyCollection<string> trackKeys
+    )
+    {
+        var stagedFiles = staged.Of(trackKeys);
+        var libraryFiles = library?.Of(trackKeys);
+
+        return trackKeys.ToDictionary(
+            key => key,
+            key =>
+                stagedFiles[key]
+                    .Select(stem => (stem.Path, paths.StagingFolder))
+                    .Concat((libraryFiles?[key] ?? []).Select(path => (path, paths.LibraryFolder)))
+                    .ToArray()
+        );
+    }
 
     private string RootOf(string path) =>
         paths.LibraryFolder is { Length: > 0 } library
