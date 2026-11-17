@@ -390,10 +390,10 @@
         _row switch
         {
             _ when Sections.FirstOrDefault(section => section.Center == Center) is { } primary =>
-                $"the {primary.Label}, and the tag follows it",
-            { Samples.Count: 0 } => "no samples yet",
+                $"The {primary.Label}, the primary center: the tag follows it.",
+            { Samples.Count: 0 } => "No samples yet.",
             { Samples: var samples } =>
-                $"tagged in Ableton on {samples.Count(IsTaggedWithKey)} of {"sample".ToQuantity(samples.Count)}",
+                $"Tagged in Ableton on {samples.Count(IsTaggedWithKey)} of {"sample".ToQuantity(samples.Count)}.",
             null => string.Empty,
         };
 
