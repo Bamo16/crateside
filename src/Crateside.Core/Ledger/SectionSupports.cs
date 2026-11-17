@@ -1,14 +1,18 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Pairing;
 
 namespace Crateside.Core.Ledger;
 
-/// <summary>Which sections in a center other than the primary something independent of the judge places (ADR 0095).</summary>
+/// <summary>Which sections in a center other than the primary something independent of the judge places (ADR 0095, ADR 0100).</summary>
 internal static class SectionSupports
 {
     private const double Slack = 1;
     private const int BackersNeeded = 2;
+
+    /// <summary>How far before a section's start a lift may begin and still be its own: report 15's TAPI・TAPI lift starts 7 s early.</summary>
+    private const double LiftLead = 8;
 
     private static readonly string[] Detectors = ["ffmpeg keydetect", "madmom", "Essentia edma"];
 
@@ -16,7 +20,7 @@ internal static class SectionSupports
     public static IReadOnlyList<Section> Classify(RunRecord run) =>
         run is { Center: { } center, Sections: { Count: > 0 } sections }
         && sections.Any(section => MusicKey.Of(section.Center) != MusicKey.Of(center))
-            ? Classify(run, MusicKey.Of(center), Readings(run))
+            ? Classify(run, MusicKey.Of(center), Machine(run))
             : run.Sections;
 
     /// <summary>Whether two of keydetect, madmom and Essentia name the key in these readings.</summary>
@@ -26,46 +30,92 @@ internal static class SectionSupports
             && RecordTimeCheck.KeyOf(read) == key
         ) >= BackersNeeded;
 
-    private static List<Section> Classify(
-        RunRecord run,
-        MusicKey primary,
-        IReadOnlyList<WindowReading> readings
-    ) =>
+    private static List<Section> Classify(RunRecord run, MusicKey primary, MachineDto? machine)
+    {
+        var readings = WindowReading.Of(run, Windows(run, machine));
+        IReadOnlyList<MachineDto.KeyLiftDto> lifts = machine?.KeyLifts ?? [];
+
+        return
         [
             .. run.Sections.Select(section =>
                 MusicKey.Of(section.Center) is var key && key == primary
                     ? section
                     : section with
                     {
-                        Support = SupportOf(run, section, key, primary, readings),
+                        Support = SupportOf(run, section, key, readings, lifts),
                     }
             ),
         ];
+    }
 
     private static SectionSupport SupportOf(
         RunRecord run,
         Section section,
         MusicKey key,
-        MusicKey primary,
-        IReadOnlyList<WindowReading> readings
+        IReadOnlyList<WindowReading> readings,
+        IReadOnlyList<MachineDto.KeyLiftDto> lifts
     )
     {
-        var inside = readings.Where(reading => IsInside(run, reading, section)).ToList();
-
         if (run.Sources.Any(source => StatesIt(source, section, key)))
             return SectionSupport.HumanSource;
 
-        if (inside.Any(reading => reading.Window.AskedBy is WindowAsker.User))
+        if (
+            readings.Any(reading =>
+                IsInside(run, reading, section) && reading.Window.AskedBy is WindowAsker.User
+            )
+        )
             return SectionSupport.Asked;
 
-        return
-            inside.Any(reading => Backed(reading.Algorithms, key))
-            && readings.Any(reading =>
-                !IsInside(run, reading, section) && Backed(reading.Algorithms, primary)
-            )
-            ? SectionSupport.Detectors
-            : SectionSupport.Hypothesis;
+        return Lifted(run, section, lifts) ? SectionSupport.KeyLift : SectionSupport.Hypothesis;
     }
+
+    // keydetect's transposed repeat, with the two-key fit agreeing, begins where the section does and moves
+    // by the step from another center to this one, by tonic or by collection (ADR 0100).
+    private static bool Lifted(
+        RunRecord run,
+        Section section,
+        IReadOnlyList<MachineDto.KeyLiftDto> lifts
+    )
+    {
+        if (section.Start is not { } start || run.Center is not { } primary)
+            return false;
+
+        var shifts = run
+            .Sections.Select(other => other.Center)
+            .Append(primary)
+            .Where(other => MusicKey.Of(other) != MusicKey.Of(section.Center))
+            .SelectMany(other =>
+                new[]
+                {
+                    Step(other.Chromatic, section.Center.Chromatic),
+                    Step(Collection(other), Collection(section.Center)),
+                }
+            )
+            .Where(shift => shift is not 0)
+            .ToHashSet();
+        var end = EndOf(run, section);
+
+        return lifts.Any(lift =>
+            lift.At >= start - LiftLead && lift.At < end && shifts.Contains(lift.Shift)
+        );
+    }
+
+    private static int Step(int from, int to) => ((to - from) % 12 + 12) % 12;
+
+    // The major scale a mode's notes come from: A Aeolian and C Ionian share C's.
+    private static int Collection(TonalCenter center) =>
+        center.Chromatic
+        + center.Mode switch
+        {
+            DiatonicMode.Ionian => 0,
+            DiatonicMode.Dorian => -2,
+            DiatonicMode.Phrygian => -4,
+            DiatonicMode.Lydian => -5,
+            DiatonicMode.Mixolydian => -7,
+            DiatonicMode.Aeolian => -9,
+            DiatonicMode.Locrian => -11,
+            _ => throw new UnreachableException(),
+        };
 
     private static bool StatesIt(RunSource source, Section section, MusicKey key) =>
         source is { Kind: SourceKind.Authoritative or SourceKind.Corroborating }
@@ -86,12 +136,18 @@ internal static class SectionSupports
         ?? double.MaxValue;
 
     public static IReadOnlyList<WindowReading> Readings(RunRecord run) =>
-        run is { Windows.Count: > 0, Evidence: { } json } && Machine(json) is { } machine
-            ? WindowReading.Of(run, machine.Windows ?? [])
-            : WindowReading.Of(run, []);
+        WindowReading.Of(run, Windows(run, run.Windows.Count > 0 ? Machine(run) : null));
 
-    private static MachineDto? Machine(string json)
+    private static IReadOnlyList<MachineDto.WindowDto> Windows(
+        RunRecord run,
+        MachineDto? machine
+    ) => run.Windows.Count > 0 ? machine?.Windows ?? [] : [];
+
+    private static MachineDto? Machine(RunRecord run)
     {
+        if (run.Evidence is not { } json)
+            return null;
+
         try
         {
             return JsonSerializer.Deserialize(json, RunEvidenceJsonContext.Default.MachineDto);

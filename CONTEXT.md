@@ -81,6 +81,10 @@ the views, and running the workflow.
 
 - **Section** — a part of a song with its own tonal center: *A Dorian (verse), E minor
   (chorus)*. A source's key covers the sections it analyzed, not necessarily the song. The judge gives each a start time in seconds; older verdicts have none.
+- **Key lift** — earlier music coming back transposed, found in keydetect's chroma, where a
+  two-key fit agrees on the step and the place. A lift where a section starts, by the step from
+  another center into its own, places that section's center (ADR 0100). No lift says nothing
+  against one.
 - **Mixed** — two modes on one tonic at once, such as a major melody over minor harmony. Its
   collapse follows the harmony.
 - **Collapse** — reducing a tonal center to one of the 24 major and minor keys Ableton's Key

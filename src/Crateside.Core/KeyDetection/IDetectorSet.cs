@@ -25,6 +25,9 @@ public interface IDetectorSet
         CancellationToken ct = default
     );
 
+    /// <summary>The key lifts in keydetect's chroma over the whole audio (ADR 0100).</summary>
+    Task<KeyLiftReading> ReadKeyLiftsAsync(string audioPath, CancellationToken ct = default);
+
     /// <summary>keydetect alone, through the configured ffmpeg.</summary>
     Task<KeydetectReading> ReadKeydetectAsync(
         string audioPath,

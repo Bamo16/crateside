@@ -697,6 +697,11 @@ public sealed class VerdictDrainerTests : IDisposable
             CancellationToken ct = default
         ) => throw new NotSupportedException();
 
+        public Task<KeyLiftReading> ReadKeyLiftsAsync(
+            string audioPath,
+            CancellationToken ct = default
+        ) => throw new NotSupportedException();
+
         public Task<KeydetectReading> ReadKeydetectAsync(
             string audioPath,
             RunWindow? window,

@@ -59,6 +59,9 @@ public sealed class DetectorBackfill(
         var lacking = held.Select(run => (Song: run.Key, Lacks: Lacking(run.Value)))
             .Where(run => run.Lacks.Count > 0)
             .ToDictionary(run => run.Song, run => run.Lacks, StringComparer.OrdinalIgnoreCase);
+        var wanted = held.Select(run => (Song: run.Key, Wants: Wanted(run.Value)))
+            .Where(run => run.Wants.Count > 0)
+            .ToDictionary(run => run.Song, run => run.Wants, StringComparer.OrdinalIgnoreCase);
         var current = await detectors.KeydetectSha256Async(ct);
 
         if (current is not null && !_legacyStamped)
@@ -84,7 +87,7 @@ public sealed class DetectorBackfill(
             .Select(run => run.Key)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        if (lacking.Count is 0 && stale.Count is 0)
+        if (wanted.Count is 0 && stale.Count is 0)
             return null;
 
         var ledger = store.Read();
@@ -100,12 +103,12 @@ public sealed class DetectorBackfill(
             .ToList();
 
         return found
-                .Where(found => lacking.ContainsKey(found.Song))
+                .Where(found => wanted.ContainsKey(found.Song))
                 .Select(found => new BackfillTarget(
                     found.Song,
                     found.Path,
                     [
-                        .. lacking[found.Song]
+                        .. wanted[found.Song]
                             .Where(detector =>
                                 !_failed.Contains(FailureKey(found.Song, found.Path, detector))
                             ),
@@ -131,6 +134,7 @@ public sealed class DetectorBackfill(
         KeyReading? madmom = null;
         KeyReading? edma = null;
         KeydetectReading? keydetect = null;
+        KeyLiftReading? lifts = null;
 
         if (!File.Exists(target.AudioPath))
             failures = target.Detectors.ToDictionary(detector => detector, _ => "no audio on disk");
@@ -144,6 +148,9 @@ public sealed class DetectorBackfill(
 
             if (target.Detectors.Contains(KeydetectFilter.Name))
                 keydetect = await detectors.ReadKeydetectAsync(target.AudioPath, null, ct);
+
+            if (target.Detectors.Contains(KeyLifts.Name))
+                lifts = await detectors.ReadKeyLiftsAsync(target.AudioPath, ct);
         }
 
         List<string> added = [];
@@ -154,13 +161,15 @@ public sealed class DetectorBackfill(
         );
         Settle(MadmomKeyCnn.Name, (madmom as KeyReading.Failed)?.Error);
         Settle(EdmaKeyEstimator.Name, (edma as KeyReading.Failed)?.Error);
+        Settle(KeyLifts.Name, (lifts as KeyLiftReading.Failed)?.Error);
 
         if (added.Count > 0)
         {
             var part = DetectorSet.Part(
                 added.Contains(KeydetectFilter.Name) ? keydetect : null,
                 added.Contains(MadmomKeyCnn.Name) ? madmom : null,
-                added.Contains(EdmaKeyEstimator.Name) ? edma : null
+                added.Contains(EdmaKeyEstimator.Name) ? edma : null,
+                added.Contains(KeyLifts.Name) ? lifts : null
             );
 
             if (
@@ -330,6 +339,21 @@ public sealed class DetectorBackfill(
         JsonNode.Parse(json) is JsonObject { } evidence
             ? [.. Current.Where(detector => evidence["algorithms"]?[detector] is null)]
             : [];
+
+    /// <summary>What <see cref="Lacking"/> names, and the key lifts where the whole track was never scanned for them (ADR 0100); lifts never hold up judging.</summary>
+    private static List<string> Wanted(string json)
+    {
+        var wanted = Lacking(json);
+
+        if (
+            JsonNode.Parse(json) is JsonObject { } evidence
+            && evidence["segment"] is null
+            && evidence["key_lifts"] is null
+        )
+            wanted.Add(KeyLifts.Name);
+
+        return wanted;
+    }
 
     private static string FailureKey(string song, string audioPath, string detector) =>
         $"{song}|{audioPath}|{File.GetLastWriteTimeUtc(audioPath).Ticks}|{detector}";

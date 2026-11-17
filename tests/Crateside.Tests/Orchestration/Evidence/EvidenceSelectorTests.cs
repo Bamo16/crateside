@@ -221,6 +221,11 @@ public sealed class EvidenceSelectorTests : IDisposable
             CancellationToken ct = default
         ) => throw new UnreachableException();
 
+        public Task<KeyLiftReading> ReadKeyLiftsAsync(
+            string audioPath,
+            CancellationToken ct = default
+        ) => throw new UnreachableException();
+
         public Task<KeydetectReading> ReadKeydetectAsync(
             string audioPath,
             RunWindow? window,

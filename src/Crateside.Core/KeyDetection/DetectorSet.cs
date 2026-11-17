@@ -118,6 +118,17 @@ public sealed class DetectorSet(
         return await keydetect.ReadAsync(audioPath, window, ct);
     }
 
+    /// <summary>The key lifts in keydetect's chroma over the whole audio (ADR 0100).</summary>
+    public async Task<KeyLiftReading> ReadKeyLiftsAsync(
+        string audioPath,
+        CancellationToken ct = default
+    )
+    {
+        await SeededAsync(ct);
+
+        return await keydetect.ReadKeyLiftsAsync(audioPath, ct);
+    }
+
     private Task SeededAsync(CancellationToken ct) =>
         builds?.WhenSeededAsync(ct) ?? Task.CompletedTask;
 
@@ -125,7 +136,8 @@ public sealed class DetectorSet(
     internal static JsonObject Part(
         KeydetectReading? keydetect,
         KeyReading? madmom,
-        KeyReading? edma
+        KeyReading? edma,
+        KeyLiftReading? lifts = null
     ) =>
         JsonSerializer.SerializeToNode(
             new MachineDto
@@ -142,6 +154,7 @@ public sealed class DetectorSet(
                     ? starts
                     : null,
                 KeyEvents = keydetect is KeydetectReading.Read ? KeyEventsOf(keydetect) : null,
+                KeyLifts = LiftsOf(lifts),
             },
             Written
         ) as JsonObject
@@ -159,6 +172,7 @@ public sealed class DetectorSet(
         await SeededAsync(ct);
 
         var filter = keydetect.ReadAsync(audioPath, window, ct);
+        var lifts = window is null ? keydetect.ReadKeyLiftsAsync(audioPath, ct) : null;
         var (cnn, edma) = await ReadBackersAsync(audioPath, window, ct);
 
         var (ffmpeg, sha256) = await keydetect.IdentifyAsync(ct);
@@ -171,6 +185,7 @@ public sealed class DetectorSet(
                 ["onnxruntime"] = typeof(InferenceSession).Assembly.GetName().Version?.ToString(),
                 ["madmom_model"] = "key_cnn 2018 (madmom_models), as ONNX",
             },
+            KeyLifts = lifts is null ? null : LiftsOf(await lifts),
         };
 
         return
@@ -235,6 +250,22 @@ public sealed class DetectorSet(
                 }),
             ]
             : [];
+
+    /// <summary>The lifts as the evidence holds them; null when they could not be read, so the backfill tries again.</summary>
+    private static IReadOnlyList<MachineDto.KeyLiftDto>? LiftsOf(KeyLiftReading? lifts) =>
+        lifts is KeyLiftReading.Read(var read)
+            ?
+            [
+                .. read.Select(lift => new MachineDto.KeyLiftDto
+                {
+                    At = lift.At,
+                    Length = lift.Length,
+                    Shift = lift.Shift,
+                    Strength = lift.Strength,
+                    Fit = lift.Fit,
+                }),
+            ]
+            : null;
 
     internal static MachineDto Evidence(
         string audioPath,

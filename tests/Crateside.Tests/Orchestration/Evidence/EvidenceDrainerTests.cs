@@ -98,7 +98,7 @@ public sealed class EvidenceDrainerTests : IDisposable
         Assert.Equal(StageOutcome.Ran, tick.Outcome);
         Assert.True(tick.IsSuccess);
         Assert.Equal(Judged, tick.Subject);
-        Assert.Equal("added madmom, essentia_edma", tick.Note);
+        Assert.Equal("added madmom, essentia_edma, keydetect_key_lifts", tick.Note);
         Assert.False(tick.WakesOthers);
         Assert.Equal(3, _store.EvidenceFor(Judged)!.Algorithms.Count);
     }
@@ -185,6 +185,11 @@ public sealed class EvidenceDrainerTests : IDisposable
                     new KeyReading.Read(MusicKey.FromString("C major")!, 0.7)
                 )
             );
+
+        public Task<KeyLiftReading> ReadKeyLiftsAsync(
+            string audioPath,
+            CancellationToken ct = default
+        ) => Task.FromResult<KeyLiftReading>(new KeyLiftReading.Read([]));
 
         public Task<KeydetectReading> ReadKeydetectAsync(
             string audioPath,

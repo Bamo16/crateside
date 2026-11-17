@@ -95,6 +95,54 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, Func<string> 
             );
     }
 
+    /// <summary>The transposed repeats the filter's chroma shows over the whole audio, where the two-key fit agrees (ADR 0100).</summary>
+    public async Task<KeyLiftReading> ReadKeyLiftsAsync(
+        string audioPath,
+        CancellationToken ct = default
+    )
+    {
+        ProcessOutcome outcome;
+
+        try
+        {
+            outcome = await runner.RunAsync(
+                new ProcessRequest(
+                    ffmpegFileName(),
+                    [
+                        "-nostdin",
+                        "-hide_banner",
+                        "-nostats",
+                        "-i",
+                        audioPath,
+                        "-vn",
+                        "-af",
+                        // A frame can carry two chroma windows; printing through the log keeps the two printers' lines whole.
+                        "keydetect=chroma=1,ametadata=mode=print:key=lavfi.keydetect.chroma0,ametadata=mode=print:key=lavfi.keydetect.chroma1",
+                        "-f",
+                        "null",
+                        "-",
+                    ]
+                ),
+                ct
+            );
+        }
+        catch (Win32Exception ex)
+        {
+            return new KeyLiftReading.Failed($"ffmpeg could not be started: {ex.Message}");
+        }
+
+        if (!outcome.Succeeded)
+            return new KeyLiftReading.Failed(
+                outcome.LastLine ?? $"ffmpeg exited with {outcome.ExitCode}"
+            );
+
+        return KeyLifts.Parse(outcome.StandardError) is { Count: > 0 } windows
+            ? new KeyLiftReading.Read(await Task.Run(() => KeyLifts.Find(windows), ct))
+            : new KeyLiftReading.Failed(
+                "no lavfi.keydetect.chroma in ffmpeg's output: a build without chroma=1"
+            );
+    }
+
     /// <summary>Reads the summary the filter prints at the end of the stream, and the key changes before it.</summary>
     internal static KeydetectReading Parse(string stderr)
     {

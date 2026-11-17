@@ -14,10 +14,10 @@ public sealed class DetectorBackfillTests : IDisposable
     private const string Song = "rob dougan - furious angels";
 
     private const string Before =
-        """{"input":"a.flac","algorithms":{"ffmpeg_keydetect":{"key":"A minor","r":0.8}}}""";
+        """{"input":"a.flac","algorithms":{"ffmpeg_keydetect":{"key":"A minor","r":0.8}},"key_lifts":[]}""";
 
     private const string Complete =
-        """{"algorithms":{"ffmpeg_keydetect":{"key":"A minor"},"madmom":{"key":"A minor"},"essentia_edma":{"key":"C major"}}}""";
+        """{"algorithms":{"ffmpeg_keydetect":{"key":"A minor"},"madmom":{"key":"A minor"},"essentia_edma":{"key":"C major"}},"key_lifts":[]}""";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -122,7 +122,9 @@ public sealed class DetectorBackfillTests : IDisposable
     [Fact]
     public async Task A_song_missing_keydetect_gets_its_reading_and_chords()
     {
-        Judge("""{"algorithms":{"madmom":{"key":"A minor"},"essentia_edma":{"key":"A minor"}}}""");
+        Judge(
+            """{"algorithms":{"madmom":{"key":"A minor"},"essentia_edma":{"key":"A minor"}},"key_lifts":[]}"""
+        );
 
         var backfill = Backfill();
         var result = await backfill.ReadAsync(
@@ -158,7 +160,7 @@ public sealed class DetectorBackfillTests : IDisposable
         var target = await backfill.NextAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(
-            [KeydetectFilter.Name, MadmomKeyCnn.Name, EdmaKeyEstimator.Name],
+            [KeydetectFilter.Name, MadmomKeyCnn.Name, EdmaKeyEstimator.Name, KeyLifts.Name],
             target!.Detectors
         );
 
@@ -167,6 +169,32 @@ public sealed class DetectorBackfillTests : IDisposable
         Assert.Empty(result.Failed);
         Assert.Equal(3, _store.EvidenceFor(Song)!.Algorithms.Count);
         Assert.Single(_store.Read().Runs);
+    }
+
+    [Fact]
+    public async Task Evidence_never_scanned_for_key_lifts_gets_them_added_and_nothing_else()
+    {
+        Judge(
+            """{"algorithms":{"ffmpeg_keydetect":{"key":"A minor"},"madmom":{"key":"A minor"},"essentia_edma":{"key":"C major"}}}"""
+        );
+
+        var backfill = Backfill();
+        var target = (await backfill.NextAsync(TestContext.Current.CancellationToken))!;
+        var result = await backfill.ReadAsync(target, TestContext.Current.CancellationToken);
+
+        Assert.Equal([KeyLifts.Name], target.Detectors);
+        Assert.Equal([KeyLifts.Name], result.Added);
+        Assert.Contains(
+            "\"key_lifts\":[{\"at\":124,\"length\":65,\"shift\":1,\"strength\":0.949,\"fit\":0.2785}]",
+            _store.LatestEvidenceJson()[Song]
+        );
+        Assert.Null(await backfill.NextAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public void Missing_key_lifts_do_not_hold_up_judging()
+    {
+        Assert.True(DetectorBackfill.IsComplete(Complete.Replace(",\"key_lifts\":[]", ""), null));
     }
 
     [Fact]
@@ -433,7 +461,7 @@ public sealed class DetectorBackfillTests : IDisposable
         string key = "A minor",
         string chords = """["Am"]"""
     ) =>
-        $$$"""{"algorithms":{"ffmpeg_keydetect":{"key":"{{{key}}}"},"madmom":{"key":"A minor"},"essentia_edma":{"key":"A minor"}},"chords":{{{chords}}},"versions":{"ffmpeg_sha256":"{{{sha256}}}"}}""";
+        $$$"""{"algorithms":{"ffmpeg_keydetect":{"key":"{{{key}}}"},"madmom":{"key":"A minor"},"essentia_edma":{"key":"A minor"}},"chords":{{{chords}}},"key_lifts":[],"versions":{"ffmpeg_sha256":"{{{sha256}}}"}}""";
 
     private sealed class FakeDetectors : IDetectorSet
     {
@@ -466,6 +494,16 @@ public sealed class DetectorBackfillTests : IDisposable
                         new KeyReading.Read(MusicKey.FromString("A minor")!, 0.9),
                         new KeyReading.Read(MusicKey.FromString("C major")!, 0.7)
                     )
+            );
+
+        public Task<KeyLiftReading> ReadKeyLiftsAsync(
+            string audioPath,
+            CancellationToken ct = default
+        ) =>
+            Task.FromResult<KeyLiftReading>(
+                Fail
+                    ? new KeyLiftReading.Failed("too short")
+                    : new KeyLiftReading.Read([new KeyLift(124, 65, 1, 0.949, 0.2785)])
             );
 
         public Task<KeydetectReading> ReadKeydetectAsync(

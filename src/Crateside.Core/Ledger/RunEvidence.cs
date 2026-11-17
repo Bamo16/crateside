@@ -674,6 +674,9 @@ internal sealed record MachineDto
 
     public IReadOnlyList<KeyEventDto>? KeyEvents { get; init; }
 
+    /// <summary>Transposed repeats where the two-key fit agrees (ADR 0100); null when the whole track was never scanned, empty when it holds none.</summary>
+    public IReadOnlyList<KeyLiftDto>? KeyLifts { get; init; }
+
     public IReadOnlyDictionary<string, string?>? Versions { get; init; }
 
     /// <summary>Added when readings were written into a run after its verdict.</summary>
@@ -714,6 +717,20 @@ internal sealed record MachineDto
         public string? Key { get; init; }
 
         public double R { get; init; }
+    }
+
+    /// <summary>A <see cref="KeyDetection.KeyLift"/>: seconds, semitones up, and the two methods' scores.</summary>
+    internal sealed record KeyLiftDto
+    {
+        public double At { get; init; }
+
+        public double Length { get; init; }
+
+        public int Shift { get; init; }
+
+        public double Strength { get; init; }
+
+        public double Fit { get; init; }
     }
 }
 

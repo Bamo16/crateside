@@ -85,7 +85,9 @@ the source the library keeps. A re-judge with neither downloads the upload again
 still has no audio says so in its work order, so the judge neither asks for windows nor withholds
 waiting for them.
 
-**Section times.** Each section gives a `start`, in seconds into the track, read from the times of keydetect's key events (ADR 0064). A section without one is logged and kept; a negative one is refused. Verdicts from before it have none.
+**Section times.** A section gives a `start`, in seconds into the track, where a window or a source places it (ADR 0064, ADR 0095); keydetect's key events are running totals and never place one. A section without one is logged and kept; a negative one is refused. Verdicts from before ADR 0064 have none.
+
+**Second centers.** A section in a center other than the primary counts as a key change only when a human source states it for that section, the maintainer gave a window over it, or a **key lift** begins where it starts (ADR 0100). Otherwise it is the judge's hypothesis.
 
 **The text fields** have one job each (ADR 0064): `tonicCheck` is what the music does (at most 70 words), `reasoning` what the evidence is worth (at most 100 words in at most 2 paragraphs), `candidates` the 0 to 3 other keys weighed, each with a sentence, and a window's `why` one sentence. They are plain text with a blank line between paragraphs. An overrun is logged by the verdict run and never refused, since resuming a session to shorten it costs its start-up; a candidate equal to the verdict's key is dropped and logged. The screen typesets the text when it renders (`JudgeProse`), so old verdicts read the same way without being judged again.
 

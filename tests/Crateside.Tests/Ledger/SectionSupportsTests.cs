@@ -55,6 +55,27 @@ public sealed class SectionSupportsTests
             ]),
         }.ToJsonString();
 
+    private static string Lifted(params (double At, int Shift)[] lifts)
+    {
+        var evidence = JsonNode.Parse(Evidence("E major"))!.AsObject();
+
+        evidence["key_lifts"] = new JsonArray([
+            .. lifts.Select(lift =>
+                (JsonNode)
+                    new JsonObject
+                    {
+                        ["at"] = lift.At,
+                        ["length"] = 30,
+                        ["shift"] = lift.Shift,
+                        ["strength"] = 0.9,
+                        ["fit"] = 0.2,
+                    }
+            ),
+        ]);
+
+        return evidence.ToJsonString();
+    }
+
     private static JsonObject Algorithms(string?[] keys) =>
         new()
         {
@@ -139,7 +160,7 @@ public sealed class SectionSupportsTests
     }
 
     [Fact]
-    public void Two_detectors_reading_the_center_in_a_window_there_and_the_primary_elsewhere_confirm_it()
+    public void Two_detectors_reading_the_center_in_a_window_there_no_longer_place_it_alone()
     {
         var run = Run(
             [Verse, Outro],
@@ -155,35 +176,79 @@ public sealed class SectionSupportsTests
             )
         );
 
-        Assert.Equal(SectionSupport.Detectors, SupportOf(run, "Outro"));
+        Assert.Equal(SectionSupport.Hypothesis, SupportOf(run, "Outro"));
     }
 
     [Theory]
-    [InlineData("F# major", null, "E major", "E major")]
-    [InlineData("F# major", "F# major", "E major", null)]
-    [InlineData("F# major", "F# major", "A major", "A major")]
-    public void Detectors_short_of_two_in_either_window_leave_it_a_hypothesis(
-        string? outroFirst,
-        string? outroSecond,
-        string? verseFirst,
-        string? verseSecond
+    [InlineData(124, 2)]
+    [InlineData(113, 2)]
+    public void A_lift_by_the_step_into_the_center_where_the_section_starts_confirms_it(
+        double at,
+        int shift
     )
     {
-        var run = Run(
-            [Verse, Outro],
-            windows:
-            [
-                new RunWindow(10, 40, null, WindowAsker.Judge),
-                new RunWindow(125, 150, null, WindowAsker.Judge),
-            ],
-            evidence: Evidence(
-                null,
-                (10, 40, [verseFirst, verseSecond, null]),
-                (125, 150, [outroFirst, outroSecond, null])
-            )
-        );
+        var run = Run([Verse, Outro], evidence: Lifted((at, shift)));
+
+        Assert.Equal(SectionSupport.KeyLift, SupportOf(run, "Outro"));
+    }
+
+    [Theory]
+    [InlineData(124, 1)]
+    [InlineData(110, 2)]
+    [InlineData(60, 2)]
+    public void A_lift_by_another_step_or_away_from_the_start_leaves_it_a_hypothesis(
+        double at,
+        int shift
+    )
+    {
+        var run = Run([Verse, Outro], evidence: Lifted((at, shift)));
 
         Assert.Equal(SectionSupport.Hypothesis, SupportOf(run, "Outro"));
+    }
+
+    [Fact]
+    public void A_lift_only_counts_before_the_next_section_starts()
+    {
+        var bridge = new Section("Bridge", Away, 60);
+        var run = Run([Verse, bridge, Outro with { Center = Home }], evidence: Lifted((150, 2)));
+
+        Assert.Equal(SectionSupport.Hypothesis, SupportOf(run, "Bridge"));
+    }
+
+    [Fact]
+    public void A_lift_by_the_step_between_collections_confirms_a_modal_section()
+    {
+        // E Aeolian has G major's notes and B Dorian A major's: the notes move up 2, the tonic 7.
+        var minor = new TonalCenter("E", DiatonicMode.Aeolian);
+        var dorian = new TonalCenter("B", DiatonicMode.Dorian);
+        var run = Run(
+            [new Section("Verse", minor, 0), new Section("Outro", dorian, 120)],
+            evidence: Lifted((121, 2))
+        ) with
+        {
+            Center = minor,
+        };
+
+        Assert.Equal(SectionSupport.KeyLift, SupportOf(run, "Outro"));
+    }
+
+    [Fact]
+    public void A_lift_from_another_sections_center_confirms_it()
+    {
+        var up = new TonalCenter("G#", DiatonicMode.Ionian);
+        var run = Run([Verse, Outro, new Section("Coda", up, 200)], evidence: Lifted((200, 2)));
+
+        Assert.Equal(SectionSupport.KeyLift, SupportOf(run, "Coda"));
+    }
+
+    [Fact]
+    public void Evidence_never_scanned_for_lifts_or_a_section_without_a_start_stays_a_hypothesis()
+    {
+        var unscanned = Run([Verse, Outro], evidence: Evidence("E major"));
+        var unplaced = Run([Verse, Outro with { Start = null }], evidence: Lifted((124, 2)));
+
+        Assert.Equal(SectionSupport.Hypothesis, SupportOf(unscanned, "Outro"));
+        Assert.Equal(SectionSupport.Hypothesis, SupportOf(unplaced, "Outro"));
     }
 
     [Fact]

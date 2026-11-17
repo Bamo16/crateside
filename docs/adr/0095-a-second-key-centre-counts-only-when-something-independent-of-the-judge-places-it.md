@@ -1,6 +1,6 @@
 # 0095 - A second key centre counts only when something independent of the judge places it
 
-- Status: Accepted
+- Status: Accepted; amended by [ADR 0100](0100-a-key-lift-places-a-second-key-centre.md) on 2026-11-17: a key lift replaces the Detectors leg
 - Date: 2026-11-12
 - Implements [#171](https://github.com/Bamo16/crateside/issues/171) (a second key centre needs
   independent support before it counts as a key change). Amends

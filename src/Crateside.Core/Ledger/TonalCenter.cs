@@ -97,6 +97,6 @@ public enum SectionSupport
     /// <summary>The maintainer gave a window over it.</summary>
     Asked,
 
-    /// <summary>Two of keydetect, madmom and Essentia read it in a window there, and the primary in a window elsewhere.</summary>
-    Detectors,
+    /// <summary>keydetect's transposed repeat starts there, by the step from another center, and the two-key fit agrees (ADR 0100).</summary>
+    KeyLift,
 }
