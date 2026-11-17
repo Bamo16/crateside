@@ -37,6 +37,45 @@ public sealed record StemInventory
     /// <summary>A warp guide is on disk, so a re-cut need not make another (ADR 0018).</summary>
     public bool HasWarpGuide => Files.Any(file => file.Kind is StemKind.WarpGuide);
 
+    /// <summary>The root a file is in once it is in the library, so its warping is done.</summary>
+    public string? LibraryRoot { get; init; }
+
+    /// <summary>
+    /// The track's own guide is on disk. One cut from an added source is not it, or an added
+    /// source's guide would stand in for the guide of the audio the stems came from.
+    /// </summary>
+    public bool HasOwnWarpGuide(StemPlan plan) =>
+        Files.Any(file =>
+            file.Kind is StemKind.WarpGuide && !plan.AddedSources.Any(added => IsFrom(file, added))
+        );
+
+    /// <summary>
+    /// The drums guides an added source owes: a staged, instrumental source file with no guide of
+    /// its own yet. A source already in the library is warped and owes none (ADR 0103).
+    /// </summary>
+    public IReadOnlyList<AddedGuide> GuidesOwed(StemPlan plan) =>
+        [
+            .. plan
+                .AddedSources.Where(added =>
+                    added is { Type: SampleType.Instrumental }
+                    && !Files.Any(file => file.Kind is StemKind.WarpGuide && IsFrom(file, added))
+                )
+                .Select(added =>
+                    Files.FirstOrDefault(file =>
+                        file.Kind is StemKind.Source
+                        && IsFrom(file, added)
+                        && !file.File.Root.Equals(LibraryRoot, StringComparison.OrdinalIgnoreCase)
+                    )
+                        is { } source
+                        ? new AddedGuide(source.File.Path, added.Label)
+                        : null
+                )
+                .OfType<AddedGuide>(),
+        ];
+
+    private static bool IsFrom(ClassifiedStem file, AddedSource added) =>
+        added.TrackKey.Equals(file.File.SourceTrackKey, StringComparison.Ordinal);
+
     /// <summary>
     /// Files carrying a preset the separator no longer offers, which can be removed but never
     /// asked for again.
@@ -122,6 +161,7 @@ public sealed record StemInventory
         {
             Files = classified,
             IsClassified = !catalog.IsEmpty,
+            LibraryRoot = finishedRoot,
             IsFinished =
                 finishedRoot is not null
                 && classified.Any(file =>
@@ -195,3 +235,6 @@ public enum StemKind
     /// <summary>A file crateside took into the track rather than made (ADR 0022).</summary>
     Adopted,
 }
+
+/// <summary>A staged added source whose drums are to be cut, and what the user calls it.</summary>
+public sealed record AddedGuide(string FilePath, string Label);

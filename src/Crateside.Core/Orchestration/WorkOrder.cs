@@ -88,15 +88,24 @@ public sealed record SeparationRecipe
     public string Format { get; init; } = "flac";
 
     /// <summary>
-    /// How many files the separator should produce — one per preset, plus the warp guide. A kept
-    /// source is not among them: the download stage copies it (ADR 0019).
+    /// Added sources whose drums are cut as a guide each, in a run of their own beside the
+    /// track's (ADR 0103).
     /// </summary>
-    public int ExpectedOutputs => Presets.Count + (ExtractDrums ? 1 : 0);
+    public IReadOnlyList<AddedGuide> AddedGuides { get; init; } = [];
+
+    /// <summary>Whether the track's own source is separated at all, or only added sources are.</summary>
+    public bool CutsOwnSource => Presets.Count > 0 || ExtractDrums;
+
+    /// <summary>
+    /// How many files the separator should produce — one per preset, plus the warp guide and one
+    /// per added source's. A kept source is not among them: the download stage copies it (ADR 0019).
+    /// </summary>
+    public int ExpectedOutputs => Presets.Count + (ExtractDrums ? 1 : 0) + AddedGuides.Count;
 
     /// <summary>
     /// How many passes the separator makes. A kept source is not one of them: it is copied.
     /// </summary>
-    public int Passes => Presets.Count + (ExtractDrums ? 1 : 0);
+    public int Passes => ExpectedOutputs;
 
     /// <summary>
     /// Roughly how long the GPU will be busy — an assumed shape, not a measurement, so build no
@@ -113,10 +122,11 @@ public sealed record SeparationRecipe
         && ExtractDrums == other.ExtractDrums
         && KeepSource == other.KeepSource
         && Format == other.Format
-        && Presets.SequenceEqual(other.Presets, StringComparer.Ordinal);
+        && Presets.SequenceEqual(other.Presets, StringComparer.Ordinal)
+        && AddedGuides.SequenceEqual(other.AddedGuides);
 
     public override int GetHashCode() =>
-        HashCode.Combine(ExtractDrums, KeepSource, Format, Presets.Count);
+        HashCode.Combine(ExtractDrums, KeepSource, Format, Presets.Count, AddedGuides.Count);
 
     /// <summary>
     /// What to ask the separator for, given what the user asked for (ADR 0018).
@@ -138,7 +148,7 @@ public sealed record SeparationRecipe
             // ADR 0020 copies verbatim. With no sample on disk to copy from it is the guide or
             // nothing, which is what an instrumental release needs (#30), staged or not (#55).
             ExtractDrums =
-                !inventory.HasWarpGuide
+                !inventory.HasOwnWarpGuide(plan)
                 && (
                     shortfall.Presets.Count > 0
                     || (shortfall.KeepSource && inventory is { Presets.Count: 0, HasSource: false })
@@ -148,6 +158,7 @@ public sealed record SeparationRecipe
                     )
                 ),
             KeepSource = shortfall.KeepSource,
+            AddedGuides = inventory.GuidesOwed(plan),
         };
     }
 }

@@ -53,5 +53,9 @@ Keeping stands: a guide still moves to `Paths:KeptWarpGuides` once its track is 
 folder is an archive only. What changed is what the guide is for afterwards. Nothing brings a kept
 guide back to Staging when its track returns there. A swapped source replaces every stem, so its
 recipe asks for a fresh guide cut from the new audio (`TrackSwapTests`), and a re-cut that finds a
-guide already on disk asks for none. An added source gets no guide of its own yet: separation is
-per playlist track, and ADR 0103's "Not built" says why.
+guide already on disk asks for none. An added instrumental source gets a guide of its own, cut
+from its staged file as an extra drums-only pass inside the parent track's separation job (same job
+key; `SeparationRecipe.AddedGuides`). It is named `<Song> (<Label>) (Drums)` and tagged to the added
+upload's key, so it is that source's guide and not the track's own (`StemInventory.HasOwnWarpGuide`).
+Adding an instrumental requests a cut (`SourceAdd.Record`) to get the job made. A vocal gets none,
+and an added source already filed in the library owes none.

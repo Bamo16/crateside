@@ -1,6 +1,7 @@
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Plans;
+using Crateside.Core.Samples;
 using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.Plans;
@@ -148,5 +149,101 @@ public sealed class AddedSourceTests
 
         Assert.Equal([Official], plan.AddedSources);
         Assert.Empty(plan.Dropping("official instrumental").AddedSources);
+    }
+
+    private const string GuidePreset = "Drums - htdemucs_ft";
+
+    private static readonly StemPlan WithOfficial = StemPlan.Default.Adding(
+        Official with
+        {
+            Type = SampleType.Instrumental,
+        }
+    );
+
+    [Fact]
+    public void A_staged_instrumental_source_owes_a_drums_guide_cut_from_its_own_file()
+    {
+        var inventory = StemInventory.Of(
+            [
+                File("SUPADOPA (Drums).flac", Track, GuidePreset),
+                File("SUPADOPA (Official Instrumental).flac", Added),
+            ],
+            Catalog
+        );
+
+        var recipe = SeparationRecipe.For(WithOfficial, inventory);
+
+        var guide = Assert.Single(recipe.AddedGuides);
+
+        Assert.Equal(
+            Path.Combine(Staging, "SUPADOPA (Official Instrumental).flac"),
+            guide.FilePath
+        );
+        Assert.Equal("Official Instrumental", guide.Label);
+        Assert.False(recipe.ExtractDrums);
+        Assert.Equal(recipe.Presets.Count + 1, recipe.ExpectedOutputs);
+        Assert.Equal(recipe.ExpectedOutputs, recipe.Passes);
+    }
+
+    [Fact]
+    public void An_added_vocal_owes_no_guide()
+    {
+        var plan = StemPlan.Default.Adding(Official with { Type = SampleType.Vocal });
+        var inventory = StemInventory.Of(
+            [File("SUPADOPA (Official Instrumental).flac", Added)],
+            Catalog
+        );
+
+        Assert.Empty(SeparationRecipe.For(plan, inventory).AddedGuides);
+    }
+
+    [Fact]
+    public void An_added_source_already_in_the_library_owes_no_guide()
+    {
+        const string library = @"D:\Music\Mashup Samples";
+
+        var inventory = StemInventory.Of(
+            [
+                File("SUPADOPA (Official Instrumental).flac", Added) with
+                {
+                    Root = library,
+                    Path = Path.Combine(library, "SUPADOPA (Official Instrumental).flac"),
+                },
+            ],
+            Catalog,
+            library
+        );
+
+        Assert.Empty(SeparationRecipe.For(WithOfficial, inventory).AddedGuides);
+    }
+
+    [Fact]
+    public void An_added_source_with_its_guide_owes_no_second_one()
+    {
+        var inventory = StemInventory.Of(
+            [
+                File("SUPADOPA (Official Instrumental).flac", Added),
+                File("SUPADOPA (Official Instrumental) (Drums).flac", Added, GuidePreset),
+            ],
+            Catalog
+        );
+
+        Assert.Empty(SeparationRecipe.For(WithOfficial, inventory).AddedGuides);
+    }
+
+    [Fact]
+    public void An_added_source_s_guide_is_not_the_track_s_own()
+    {
+        var inventory = StemInventory.Of(
+            [
+                File("SUPADOPA.flac", Track),
+                File("SUPADOPA (Official Instrumental) (Drums).flac", Added, GuidePreset),
+            ],
+            Catalog
+        );
+
+        Assert.False(inventory.HasOwnWarpGuide(WithOfficial));
+        Assert.True(inventory.HasOwnWarpGuide(StemPlan.Default));
+        Assert.True(SeparationRecipe.For(WithOfficial, inventory).ExtractDrums);
     }
 }

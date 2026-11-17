@@ -26,10 +26,12 @@ before the new source existed, so `HandoffSidecars` found no sibling holding a w
    guide and all new stems go to Staging. The rule that a guide comes back when a track returns to
    Staging is gone; ADR 0046's kept guides stay as the archive they were.
 
-## Not built
+## Added-source guides
 
-An added source does not yet get its own drums guide. Cutting one needs a separation work item keyed
-by the added source, which the pipeline does not have (separation is per playlist track).
+An added instrumental source gets its own drums guide, as an extra drums-only pass inside the parent
+track's separation job rather than a job of its own, so the job key stays the track's. See ADR 0046's
+"Since ADR 0103". Known gap: if the track's separation finishes after the source is added but before
+its file is staged, the guide is not cut until the next cut request.
 
 ## Consequences
 

@@ -369,4 +369,46 @@ public sealed class SeparationRunnerTests : IDisposable
             f => f.EndsWith("track.flac", StringComparison.Ordinal)
         );
     }
+
+    [Fact]
+    public async Task An_added_source_is_cut_for_drums_from_its_own_file_in_a_run_of_its_own()
+    {
+        var log = Path.Combine(_directory, "runs.txt");
+        var script = FakeCli.Write(
+            _directory,
+            "log-stemforge",
+            windows: $$"""
+            @echo off
+            echo %* >> "{{log}}"
+            echo [{"succeeded":true,"outputFiles":["guide.flac"]}]
+            """,
+            unix: $$"""
+            echo "$@" >> '{{log}}'
+            echo '[{"succeeded":true,"outputFiles":["guide.flac"]}]'
+            """
+        );
+        var added = Path.Combine(_directory, "Song (Official Instrumental).flac");
+        var order = Order() with
+        {
+            Recipe = new SeparationRecipe
+            {
+                Presets = [],
+                ExtractDrums = false,
+                AddedGuides = [new AddedGuide(added, "Official Instrumental")],
+            },
+        };
+
+        var result = await new SeparationRunner(Interlock, Set, Paths, script).RunAsync(
+            order,
+            TestContext.Current.CancellationToken
+        );
+
+        var run = Assert.Single(File.ReadAllLines(log));
+
+        Assert.Equal(SeparationOutcome.Succeeded, result.Outcome);
+        Assert.Contains(added, run);
+        Assert.Contains("--extract-drums", run);
+        Assert.DoesNotContain("youtube.com", run);
+        Assert.Single(result.OutputFiles);
+    }
 }

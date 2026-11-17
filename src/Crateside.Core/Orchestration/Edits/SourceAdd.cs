@@ -9,12 +9,13 @@ namespace Crateside.Core.Orchestration.Edits;
 
 /// <summary>
 /// Attaches another whole file of a song to a track: downloaded, staged and tagged like any
-/// sample, and never separated (ADR 0019).
+/// sample; only an instrumental's drums are cut, as a warp guide (ADR 0019, ADR 0103).
 /// </summary>
 public sealed class SourceAdd(
     LedgerStore store,
     TrackInstructionStore instructions,
-    SourceProbe probe
+    SourceProbe probe,
+    TimeProvider time
 )
 {
     /// <summary>What adding this source would do, or why it cannot be done.</summary>
@@ -103,9 +104,21 @@ public sealed class SourceAdd(
         )
             return new AddOutcome { Problem = failure };
 
-        instructions.SetPlan(track.TrackKey, track.Plan.Adding(source));
+        Record(track.TrackKey, track.Plan, source);
 
         return new AddOutcome { Source = source };
+    }
+
+    /// <summary>
+    /// Puts the source on the plan. An instrumental also asks for a cut, which is what lets its
+    /// drums guide be made once the file is staged; a vocal needs none (ADR 0103).
+    /// </summary>
+    internal void Record(string trackKey, StemPlan plan, AddedSource source)
+    {
+        instructions.SetPlan(trackKey, plan.Adding(source));
+
+        if (source.Type is SampleType.Instrumental)
+            instructions.RequestCut(trackKey, time.GetUtcNow());
     }
 
     /// <summary>What the upload is called, for suggesting what kind of file it is.</summary>

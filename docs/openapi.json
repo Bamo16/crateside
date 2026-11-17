@@ -221,6 +221,22 @@
         },
         "description": "How the download crateside is holding for one track turned out, kept beside the audio so it\r\ndies with it."
       },
+      "AddedGuide": {
+        "required": [
+          "filePath",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "filePath": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "description": "A staged added source whose drums are to be cut, and what the user calls it."
+      },
       "AddedSource": {
         "required": [
           "videoId",
@@ -2862,13 +2878,24 @@
           "format": {
             "type": "string"
           },
+          "addedGuides": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddedGuide"
+            },
+            "description": "Added sources whose drums are cut as a guide each, in a run of their own beside the\r\ntrack's (ADR 0103)."
+          },
+          "cutsOwnSource": {
+            "type": "boolean",
+            "description": "Whether the track's own source is separated at all, or only added sources are."
+          },
           "expectedOutputs": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
               "string"
             ],
-            "description": "How many files the separator should produce — one per preset, plus the warp guide. A kept\r\nsource is not among them: the download stage copies it (ADR 0019).",
+            "description": "How many files the separator should produce — one per preset, plus the warp guide and one\r\nper added source's. A kept source is not among them: the download stage copies it (ADR 0019).",
             "format": "int32"
           },
           "passes": {
@@ -3279,6 +3306,13 @@
           "hasWarpGuide": {
             "type": "boolean",
             "description": "A warp guide is on disk, so a re-cut need not make another (ADR 0018)."
+          },
+          "libraryRoot": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The root a file is in once it is in the library, so its warping is done."
           },
           "unrecognized": {
             "type": "array",

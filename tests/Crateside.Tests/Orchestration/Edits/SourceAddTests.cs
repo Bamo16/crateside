@@ -42,8 +42,33 @@ public sealed class SourceAddTests : IDisposable
         new(
             TestLedger.Store(),
             new TrackInstructionStore(_ledger),
-            new SourceProbe(new ProcessRunner())
+            new SourceProbe(new ProcessRunner()),
+            TimeProvider.System
         );
+
+    [Theory]
+    [InlineData(SampleType.Instrumental, true)]
+    [InlineData(SampleType.Vocal, false)]
+    public void An_instrumental_asks_for_a_cut_so_its_guide_is_made_and_a_vocal_does_not(
+        SampleType type,
+        bool asked
+    )
+    {
+        var instructions = new TrackInstructionStore(_ledger);
+        var source = new AddedSource
+        {
+            TrackKey = "bbbbbbbbbbb",
+            Label = "Official Instrumental",
+            Type = type,
+        };
+
+        Sources().Record(Track.TrackKey, Track.Plan, source);
+
+        var recorded = Assert.Single(instructions.Read());
+
+        Assert.Equal(source, Assert.Single(recorded.Plan!.AddedSources));
+        Assert.Equal(asked, recorded.CutRequestedAt is not null);
+    }
 
     [Fact]
     public void Nothing_is_added_until_the_user_says_what_it_is()

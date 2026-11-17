@@ -4,6 +4,7 @@ using System.Text.Json;
 using CliWrap;
 using CliWrap.Buffered;
 using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Plans;
 using Crateside.Core.Samples;
 using Humanizer;
 
@@ -38,16 +39,62 @@ public sealed class SeparationRunner(
 
         var ownKey = IsOwnKey(order);
 
-        if (ownKey && !workingSet.TryGetSource(order.TrackKey, out retained))
+        // An added source's guide needs none of the track's own audio.
+        var cutsOwn = order.Recipe.CutsOwnSource;
+
+        if (cutsOwn && ownKey && !workingSet.TryGetSource(order.TrackKey, out retained))
             return SeparationResult.Failed($"the audio for {order.TrackKey} is not on disk");
 
-        if (ownKey && !await SupportsSourceUrlAsync(ct))
+        if (cutsOwn && ownKey && !await SupportsSourceUrlAsync(ct))
             return SeparationResult.Failed(StemForgeTooOld);
 
-        // No forceful token: ct must not kill the separation, only stop us waiting for it.
-        var running = Start(order, retained, ownKey);
+        List<string> outputs = [];
+        string? error = null;
 
-        // The check above and this claim must stay adjacent, and only this method may call
+        if (cutsOwn)
+            (error, outputs) = await RunProcessAsync(order, Start(order, retained, ownKey), ct);
+
+        // A swap throws away the retained download this run was reading, so its failure is the swap's doing (#205).
+        if (error is not null && retained is { } read && !File.Exists(read))
+        {
+            interlock.Cancel(order.TrackKey, SourceSwapped);
+
+            return SeparationResult.Canceled(SourceSwapped);
+        }
+
+        // One run per added source, after the track's own: the separator takes one input a run.
+        foreach (var guide in order.Recipe.AddedGuides)
+        {
+            if (error is not null)
+                break;
+
+            (error, var guideOutputs) = await RunProcessAsync(order, StartGuide(order, guide), ct);
+
+            outputs.AddRange(guideOutputs);
+        }
+
+        error ??= ShortfallFrom(order.Recipe, outputs);
+
+        interlock.Release(
+            order.TrackKey,
+            error,
+            error is null ? Summarize(order.Recipe, outputs.Count) : null
+        );
+
+        return error is null ? SeparationResult.Succeeded(outputs) : SeparationResult.Failed(error);
+    }
+
+    /// <summary>
+    /// Claims the GPU for a started process and waits for it, answering what it failed with or
+    /// the files it wrote.
+    /// </summary>
+    private async Task<(string? Error, List<string> Outputs)> RunProcessAsync(
+        WorkOrder order,
+        CommandTask<BufferedCommandResult> running,
+        CancellationToken ct
+    )
+    {
+        // The check before this and this claim must stay adjacent, and only RunAsync may call
         // Start — there is a gap between them since claiming needs the process to exist,
         // harmless only because one worker drives this loop.
         interlock.Claim(
@@ -60,33 +107,11 @@ public sealed class SeparationRunner(
         // ct fires on shutdown: the separation keeps running and its job stays open, for the next
         // start to adopt or settle off disk (ADR 0042).
         var result = await running.Task.WaitAsync(ct);
-        var stdout = result.StandardOutput;
-        var stderr = result.StandardError;
 
-        var error = FailureFrom(result.ExitCode, stdout, stderr);
-        IReadOnlyList<string> outputs = [];
-
-        if (error is null)
-        {
-            outputs = OutputFilesFrom(stdout);
-            error = ShortfallFrom(order.Recipe, outputs);
-        }
-
-        // A swap throws away the retained download this run was reading, so its failure is the swap's doing (#205).
-        if (error is not null && retained is { } read && !File.Exists(read))
-        {
-            interlock.Cancel(order.TrackKey, SourceSwapped);
-
-            return SeparationResult.Canceled(SourceSwapped);
-        }
-
-        interlock.Release(
-            order.TrackKey,
-            error,
-            error is null ? Summarize(order.Recipe, outputs.Count) : null
-        );
-
-        return error is null ? SeparationResult.Succeeded(outputs) : SeparationResult.Failed(error);
+        return
+            FailureFrom(result.ExitCode, result.StandardOutput, result.StandardError) is { } failure
+            ? (failure, [])
+            : (null, [.. OutputFilesFrom(result.StandardOutput)]);
     }
 
     public const string SourceSwapped = "source swapped";
@@ -122,9 +147,12 @@ public sealed class SeparationRunner(
     /// <summary>What a finished run cut, for the activity feed (#170); the feed adds how long it took.</summary>
     internal static string Summarize(SeparationRecipe recipe, int written)
     {
-        string[] cut = recipe.ExtractDrums
-            ? [.. recipe.Presets, "a drum guide"]
-            : [.. recipe.Presets];
+        string[] cut =
+        [
+            .. recipe.Presets,
+            .. recipe.ExtractDrums ? (string[])["a drum guide"] : [],
+            .. recipe.AddedGuides.Select(guide => $"a drum guide for {guide.Label}"),
+        ];
         var named = cut switch
         {
             [] => "nothing named",
@@ -211,6 +239,22 @@ public sealed class SeparationRunner(
             return null;
         }
     }
+
+    /// <summary>Drums only, from the added file: it carries its own provenance, which the guide inherits.</summary>
+    private CommandTask<BufferedCommandResult> StartGuide(WorkOrder order, AddedGuide guide) =>
+        Cli.Wrap(fileName)
+            .WithArguments(args =>
+                args.Add("separate")
+                    .Add(guide.FilePath)
+                    .Add("--extract-drums")
+                    .Add("--format")
+                    .Add(order.Recipe.Format)
+                    .Add("--output")
+                    .Add(paths.DestinationFor(order.Destination))
+                    .Add("--json")
+            )
+            .WithValidation(CommandResultValidation.None)
+            .ExecuteBufferedAsync(Encoding.UTF8);
 
     private CommandTask<BufferedCommandResult> Start(
         WorkOrder order,

@@ -1,6 +1,6 @@
 # 0019 — a track has many sources, and one of them is the separation source
 
-- Status: Accepted
+- Status: Accepted; amended by ADR 0103 (an added instrumental gets a drums warp guide, nothing else is cut)
 - Date: 2026-09-12
 - Answers the added-source half of [#22](https://github.com/Bamo16/crateside/issues/22).
 - Amends [ADR 0003](0003-crateside-may-write-abletons-tag-store.md) and
