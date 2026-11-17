@@ -4101,6 +4101,20 @@
               }
             ]
           },
+          "tagArtist": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The artist the file's own tags give; null for a playlist track and for a file without one."
+          },
+          "tagTitle": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The title the file's own tags give; null for a playlist track and for a file without one."
+          },
           "awaitingRename": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [

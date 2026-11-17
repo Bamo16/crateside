@@ -744,6 +744,53 @@
     border-color: rgba(255, 255, 255, 0.4);
 }
 
+.add-track.bulk select {
+    width: 100%;
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 7px 9px;
+}
+
+.add-track.bulk .actions {
+    margin-top: 8px;
+}
+
+.bulk-preview {
+    max-height: 320px;
+    overflow-y: auto;
+    margin: 6px 0;
+    font-size: 12px;
+}
+
+.bulk-line {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    padding: 2px 0;
+}
+
+.bulk-line .was {
+    color: var(--text-40);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bulk-line .now {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bulk-line.skipped .now {
+    color: var(--text-40);
+    font-style: italic;
+}
+
 /* The lapsed-access toast is a fault, not a result, so it does not borrow the amber the
    ready-to-warp toast uses to mean "your turn". */
 .toast.lapsed {

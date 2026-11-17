@@ -36,6 +36,15 @@ public sealed class TrackAnnotationReader(
                     .Where(record => record.Release is not null)
                     .ToDictionary(record => record.TrackKey, record => record.Release!)
                 ?? [],
+            TagNames =
+                intake
+                    ?.Read()
+                    .Where(record => record.Release is not null)
+                    .ToDictionary(
+                        record => record.TrackKey,
+                        record => new TagNames(record.Artist, record.SongTitle)
+                    )
+                ?? [],
         };
 
     /// <summary>

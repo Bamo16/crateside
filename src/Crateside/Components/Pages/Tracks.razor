@@ -41,6 +41,7 @@
 @inject IJSRuntime Js
 @inject IServiceProvider Services
 @inject ActionLog Actions
+@inject BulkRename BulkRenaming
 @inject IOptions<WarpOptions> Warps
 
 <PageTitle>Tracks · crateside</PageTitle>
@@ -171,6 +172,9 @@
         <button class="pill off" @onclick="ToggleAddTrack" disabled="@_working">
             + Add track
         </button>
+        <button class="pill @(_bulkOpen ? "on" : "off")" @onclick="ToggleBulk" disabled="@_working">
+            Rename from tags
+        </button>
         <span class="status">
             playlist @Synced
             <RefreshButton Title="Check the playlist now" Busy="_syncing" OnClick="Resync" />
@@ -264,6 +268,78 @@
                     </button>
                 }
                 <button class="outline" @onclick="CancelAddTrack" disabled="@_working">Cancel</button>
+            </div>
+        </div>
+    }
+
+    @if (_bulkOpen)
+    {
+        var albums = BulkScope(null).Select(row => row.Release?.Album).OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.OrdinalIgnoreCase).ToList();
+
+        <div class="add-track bulk">
+            <p class="add-note">
+                Names the @(_bulkAlbum is null ? "tracks shown below" : "tracks of one album") from their tags,
+                through the same rename as a track's page: stems, the source copy and Ableton sets follow, and a
+                track whose set is open waits. Lookups keep reading the tags, not the new name.
+                Nothing changes until Apply.
+            </p>
+            <label>
+                <span>Album</span>
+                <select @onchange="e => PickAlbum(e.Value?.ToString())">
+                    <option value="" selected="@(_bulkAlbum is null)">All @BulkScope(null).Count() shown</option>
+                    @foreach (var album in albums)
+                    {
+                        <option value="@album" selected="@(album == _bulkAlbum)">@album</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>Pattern: {album} {artist} {title} {game}</span>
+                <input class="mono" value="@_bulkPattern" @oninput="e => PatternTyped(e.Value?.ToString())" />
+            </label>
+            <div class="actions">
+                @foreach (var preset in BulkRename.Presets)
+                {
+                    <button class="outline small" @onclick="() => PatternTyped(preset)">@preset</button>
+                }
+            </div>
+
+            @if (_bulkResult is { } done)
+            {
+                <p class="add-note">
+                    Renamed @("track".ToQuantity(done.Renamed)).
+                    @if (done.Refused.Count > 0)
+                    {
+                        <span class="bad">@done.Refused.Count held back: @string.Join("; ", done.Refused.Take(3).Select(line => $"{line.Current} ({line.Problem})"))</span>
+                    }
+                </p>
+            }
+
+            @if (_bulkLines is { Count: > 0 } lines)
+            {
+                <p class="add-note">
+                    @lines.Count(line => line.WillRename) to rename ·
+                    @lines.Count(line => line.Unchanged) already named that ·
+                    @lines.Count(line => line.Problem is not null) skipped
+                </p>
+                <div class="bulk-preview">
+                    @foreach (var line in lines)
+                    {
+                        <div class="bulk-line @(line.WillRename ? null : "skipped")">
+                            <span class="was">@line.Current</span>
+                            <span class="arrow">→</span>
+                            <span class="now">@(line.NewName ?? (line.Unchanged ? "(same)" : line.Problem))</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="actions">
+                <button class="primary" disabled="@(_working || _bulkLines is not { } ready || !ready.Any(line => line.WillRename))"
+                        @onclick="ApplyBulk">
+                    @(_working ? "Renaming…" : "Apply")
+                </button>
+                <button class="outline" @onclick="ToggleBulk" disabled="@_working">Close</button>
             </div>
         </div>
     }
@@ -576,6 +652,66 @@
     private string? _playlistNote;
     private string? _linkProblem;
     private string? _dropNote;
+
+    /// <summary>Renaming the shown tracks from their tags (#202).</summary>
+    private bool _bulkOpen;
+
+    private string? _bulkAlbum;
+    private string _bulkPattern = BulkRename.Presets[0];
+    private IReadOnlyList<BulkRenameLine>? _bulkLines;
+    private BulkRenameResult? _bulkResult;
+
+    private IEnumerable<TrackRow> BulkScope(string? album) =>
+        Shown.Where(row => album is null || row.Release?.Album == album);
+
+    private void ToggleBulk()
+    {
+        _bulkOpen = !_bulkOpen;
+        _bulkResult = null;
+        _bulkLines = null;
+
+        if (_bulkOpen)
+            PreviewBulk();
+    }
+
+    private void PickAlbum(string? album)
+    {
+        _bulkAlbum = string.IsNullOrEmpty(album) ? null : album;
+        _bulkResult = null;
+        PreviewBulk();
+    }
+
+    private void PatternTyped(string? pattern)
+    {
+        _bulkPattern = pattern ?? string.Empty;
+        _bulkResult = null;
+        PreviewBulk();
+    }
+
+    private void PreviewBulk() =>
+        _bulkLines = string.IsNullOrWhiteSpace(_bulkPattern)
+            ? null
+            : BulkRenaming.Preview(BulkScope(_bulkAlbum), _bulkPattern);
+
+    private async Task ApplyBulk()
+    {
+        if (_bulkLines is not { } lines)
+            return;
+
+        _working = true;
+
+        try
+        {
+            _bulkResult = await Task.Run(() => BulkRenaming.Apply(lines));
+            await Source.RefreshAsync(_circuit.Token);
+            PreviewBulk();
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _working = false;
+        }
+    }
 
     private void ToggleAddTrack()
     {

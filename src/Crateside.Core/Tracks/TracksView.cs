@@ -300,6 +300,8 @@ public sealed record TracksView
                 Judge = judge,
                 Acquisition = acquisition,
                 Release = known.Releases.GetValueOrDefault(primary.TrackKey),
+                TagArtist = known.TagNames.GetValueOrDefault(primary.TrackKey)?.Artist,
+                TagTitle = known.TagNames.GetValueOrDefault(primary.TrackKey)?.Title,
                 GpuPosition = members
                     .Select(seed =>
                         gpuLine.TryGetValue(seed.TrackKey, out var position) ? position : (int?)null

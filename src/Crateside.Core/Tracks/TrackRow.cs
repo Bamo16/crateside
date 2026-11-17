@@ -107,6 +107,12 @@ public sealed record TrackRow
     /// <summary>What the source said about the release this track is from; null for a playlist track.</summary>
     public Release? Release { get; init; }
 
+    /// <summary>The artist the file's own tags give; null for a playlist track and for a file without one.</summary>
+    public string? TagArtist { get; init; }
+
+    /// <summary>The title the file's own tags give; null for a playlist track and for a file without one.</summary>
+    public string? TagTitle { get; init; }
+
     /// <summary>
     /// Staged files not yet carrying the name the user stated — zero unless a rename was
     /// interrupted part way.

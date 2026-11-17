@@ -409,6 +409,7 @@ public static class ServiceRegistration
         services.AddSingleton<SourceAdd>();
         services.AddSingleton<StemRecut>();
         services.AddSingleton<TrackRename>();
+        services.AddSingleton<BulkRename>();
         services.AddSingleton<TrackSwap>();
 
         return services;

@@ -24,6 +24,10 @@ public sealed record TrackAnnotations
     public IReadOnlyDictionary<string, Release> Releases { get; init; } =
         new Dictionary<string, Release>();
 
+    /// <summary>The artist and title a file's own tags give, by track key.</summary>
+    public IReadOnlyDictionary<string, TagNames> TagNames { get; init; } =
+        new Dictionary<string, TagNames>();
+
     public IReadOnlyList<Deletion> Deletions { get; init; } = [];
 
     public IReadOnlyDictionary<string, GenreRecord> Genres { get; init; } =
@@ -35,3 +39,6 @@ public sealed record TrackAnnotations
     public IReadOnlyDictionary<string, TrackMarkRecord> Marks { get; init; } =
         new Dictionary<string, TrackMarkRecord>();
 }
+
+/// <summary>What a file's own tags call the track.</summary>
+public sealed record TagNames(string? Artist, string? Title);
