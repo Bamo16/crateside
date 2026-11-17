@@ -403,6 +403,7 @@ shows no genre.
     "agreement": [],
     "backers": null,
     "chords": [],
+    "chordStarts": [],
     "keyEvents": [],
     "bpm": null
   },
