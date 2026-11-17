@@ -24,12 +24,6 @@ if (builder.Configuration.GetValue<bool>("Workers:Disabled"))
 
 var app = builder.Build();
 
-if (args is ["retag-sources", ..])
-    return RetagSourcesCommand.Run(
-        app.Services.GetRequiredService<Crateside.Core.CratesidePaths>(),
-        args
-    );
-
 if (!DocumentBuild.IsRunning)
     Start(app);
 
