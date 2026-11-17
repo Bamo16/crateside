@@ -8,6 +8,7 @@
 @using Crateside.Core.Ledger
 @using Crateside.Core.Library
 @using Crateside.Core.Pairing
+@using ShiftRange = Crateside.Core.Pairing.ShiftRange
 @using Crateside.Core.Tracks
 
 @inject LibrarySummary Library
@@ -39,7 +40,7 @@
             {
                 <RePitchTool Center="Own" Tempo="Tempo" IsTrack="_track is not null"
                              Shift="_shift" OnShift="ChooseShift"
-                             Max="_rePitchMax" OnMax="max => Change(() => { _rePitchMax = max; _shift = Math.Clamp(_shift, -max, max); })"
+                             Range="_rePitchRange" OnRange="ChooseRePitchRange"
                              OnToggle="ToggleRePitch" />
             }
             else
@@ -69,8 +70,7 @@
                           HasVerdict="_track?.Run?.Center is not null"
                           Sections="Sections" Primary="Primary" Section="_section"
                           OnSection="ChooseSection"
-                          Partners="_partners" Lowest="_lowest" Highest="_highest"
-                          OnSpan="ChooseSpan"
+                          Partners="_partners" Range="_partnersRange" OnRange="range => Change(() => _partnersRange = range)"
                           OnBack="() => Change(() => _shift = 0)" />
         </div>
 
@@ -91,15 +91,19 @@
 @code {
     private const string RePitchCookie = "crateside.tools.repitch";
 
+    private static readonly ShiftRange DefaultRePitchRange =
+        new(-Core.Pairing.RePitch.DefaultShift, Core.Pairing.RePitch.DefaultShift, Core.Pairing.RePitch.MaxShift);
+
+    private static readonly ShiftRange DefaultPartnersRange = new(0, 0, Core.Pairing.Partners.WidestShift);
+
     private LibrarySong? _track;
     private TonalCenter? _hand;
     private int? _section;
     private string _bpmText = string.Empty;
     private int _shift;
-    private int _lowest;
-    private int _highest;
+    private ShiftRange _rePitchRange = DefaultRePitchRange;
+    private ShiftRange _partnersRange = DefaultPartnersRange;
     private bool _rePitchOpen = true;
-    private int _rePitchMax = Core.Pairing.RePitch.DefaultMaxShift;
     private IReadOnlyList<MashupPartner> _partners = [];
     private IJSObjectReference? _module;
 
@@ -121,6 +125,12 @@
 
     [SupplyParameterFromQuery(Name = "shift")]
     public int? ShiftFromQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "rlo")]
+    public int? RePitchLowestFromQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "rhi")]
+    public int? RePitchHighestFromQuery { get; set; }
 
     [SupplyParameterFromQuery(Name = "lo")]
     public int? LowestFromQuery { get; set; }
@@ -202,12 +212,11 @@
         }
 
         _shift = Math.Clamp(ShiftFromQuery ?? 0, -Core.Pairing.RePitch.MaxShift, Core.Pairing.RePitch.MaxShift);
-        _rePitchMax = Math.Max(_rePitchMax, Math.Abs(_shift));
-
-        var widest = Core.Pairing.Partners.WidestShift;
-        var lowest = Math.Clamp(LowestFromQuery ?? 0, -widest, widest);
-        var highest = Math.Clamp(HighestFromQuery ?? 0, -widest, widest);
-        (_lowest, _highest) = lowest <= highest ? (lowest, highest) : (0, 0);
+        _rePitchRange = Widened(
+            ShiftRange.Parse(RePitchLowestFromQuery, RePitchHighestFromQuery, Core.Pairing.RePitch.MaxShift, Core.Pairing.RePitch.DefaultShift),
+            _shift
+        );
+        _partnersRange = ShiftRange.Parse(LowestFromQuery, HighestFromQuery, Core.Pairing.Partners.WidestShift, 0);
 
         Recalculate();
     }
@@ -274,7 +283,15 @@
             _shift = 0;
         });
 
-    private Task ChooseSpan((int Lowest, int Highest) span) => Change(() => (_lowest, _highest) = span);
+    private static ShiftRange Widened(ShiftRange range, int shift) =>
+        new(Math.Min(range.Lowest, shift), Math.Max(range.Highest, shift), range.Max);
+
+    private Task ChooseRePitchRange(ShiftRange range) =>
+        Change(() =>
+        {
+            _rePitchRange = range;
+            _shift = Math.Clamp(_shift, range.Lowest, range.Highest);
+        });
 
     private async Task ToggleRePitch()
     {
@@ -298,7 +315,7 @@
 
     private void Recalculate() =>
         _partners = Shown is { } shown
-            ? Core.Pairing.Partners.For(Core.Pairing.Partners.Basis(shown, Mixed), _lowest, _highest)
+            ? Core.Pairing.Partners.For(Core.Pairing.Partners.Basis(shown, Mixed), _partnersRange.Lowest, _partnersRange.Highest)
             : [];
 
     /// <summary>A key from the address: <c>a-dorian</c>, or a 24-key name from before modes.</summary>
@@ -340,8 +357,11 @@
         if (_shift is not 0)
             parts.Add($"shift={_shift}");
 
-        if ((_lowest, _highest) is not (0, 0))
-            parts.Add($"lo={_lowest}&hi={_highest}");
+        if (_rePitchRange != DefaultRePitchRange)
+            parts.Add($"rlo={_rePitchRange.Lowest}&rhi={_rePitchRange.Highest}");
+
+        if (_partnersRange != DefaultPartnersRange)
+            parts.Add($"lo={_partnersRange.Lowest}&hi={_partnersRange.Highest}");
 
         return parts.Count is 0 ? string.Empty : $"?{string.Join('&', parts)}";
     }

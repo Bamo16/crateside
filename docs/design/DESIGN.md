@@ -417,12 +417,14 @@ with AM/PM here. Never a hard-coded `HH:mm`.
 The sample list and picker are `StemList` and `StemConfirm`, both driven by one `StemEditor`, and
 are mounted by the Tracks row and by Track details.
 
-**A range of shifts is a row of chips**, −2 … +2 (handoff 19, Partners): 38×30, radius 6, mono 12.5,
-off on `--raised` with a 1px `--line` (the `0` chip at `--text-75` as the anchor), in the span
-`--text` at 9% with a 50% border and 600, the two ends at 18% so the span reads as a bar. With one
-shift chosen, clicking another stretches the span to it; with a span, a click collapses it to that
-chip. After the chips, the span in mono (`0 only`, `−1 to +2`) and the count; under them a hint
-saying how clicking works. Each chip carries `aria-pressed`.
+**A range of shifts is one `ShiftRange` control** (#169, ADR 0101), used by Re-Pitch (±12) and
+Partners (±2): two handles on one track with a tick per semitone, the bar teal between them, and
+**0 fixed where the halves meet**. The low handle lives on −Max to 0 and the high on 0 to +Max, so
+neither crosses 0. Each handle is a native range input (`aria-valuetext` "Lowest shift −1
+semitone"); a drag, an arrow key or a click on the track moves that one end and nothing else, so no
+click depends on the other end. Above the track, caps *Shift range*, the readout in mono (`−1 to +1
+· 3 rows`, or `0 only`) and a `± linked` checkbox, off by default, that moves both ends together.
+Under it the scale `−Max · 0 · +Max`. The focus ring is the Tools accent. Max 28rem wide.
 
 ## Side stack
 
@@ -565,7 +567,7 @@ Tools · Settings**), at `/` and `/dashboard`; Tracks moved to `/tracks`. No wid
 Handoff 12, superseding handoff 09's sub-tabs. **One page at `/tools`, no sub-tabs**, in two
 columns: *Working on* (340px) with the **Camelot wheel** under it, beside **Re-Pitch** (foldable)
 above **Partners** (never folds), which share one column of up to 860px. The state lives in the query (`?track=`
-and `&section=`, or `?key=a-dorian&bpm=`, plus `&shift=` and `&lo=&hi=`), so a reload or a pasted
+and `&section=`, or `?key=a-dorian&bpm=`, plus `&shift=`, Re-Pitch's `&rlo=&rhi=` (default ±1, omitted) and Partners' `&lo=&hi=` (default 0 to 0, omitted)), so a reload or a pasted
 link restores it, and the tab reopens where it was left until a restart.
 
 - **The selected track** is a clickable card (song, the verdict's key with the arrow for a mode,
@@ -602,7 +604,8 @@ link restores it, and the tab reopens where it was left until a restart.
   mixes-as-is at 22%, a shift away dashed, and the track's own key ringed when a Re-Pitch shift is
   in force. Read-only.
 - **Re-Pitch's *Lands on*** names the center, mode included (`G♯ Dorian`), with its tag's Camelot.
-  It keeps its ±N slider: it lists every shift's BPM to pick one row, which a span would not help.
+  It lists the shifts of its own `ShiftRange` (default ±1), one row each to pick from, and keeps a range
+  separate from Partners'. The chosen shift widens the range to include it.
 - **Breakpoints**: below 1700px *Working on* runs across the top and the wheel moves to the right of
   the tools (300px); below 1100px one column with the wheel last. The wheel is never drawn inside
   Partners: beside its short basis box it left a hole (2026-11-04).

@@ -16,11 +16,7 @@
         Partners works from that key.
     </p>
 
-    <label class="slider">
-        <span>Max shift <em>±@("semitone".ToQuantity(Max))</em></span>
-        <input type="range" min="1" max="@Core.Pairing.RePitch.MaxShift" step="1"
-               value="@Max" @oninput="e => OnMax.InvokeAsync(int.Parse((string)e.Value!, CultureInfo.InvariantCulture))" />
-    </label>
+    <ShiftRange Range="Range" OnChange="OnRange" />
 
     <table class="repitch">
         <thead>
@@ -32,7 +28,7 @@
             </tr>
         </thead>
         <tbody>
-            @for (var shift = Max; shift >= -Max; shift--)
+            @foreach (var shift in Range.Rows())
             {
                 var n = shift;
                 var lands = Center?.Transposed(n);
@@ -111,11 +107,11 @@
     [Parameter]
     public EventCallback<int> OnShift { get; set; }
 
-    [Parameter]
-    public int Max { get; set; } = Core.Pairing.RePitch.DefaultMaxShift;
+    [Parameter, EditorRequired]
+    public required Core.Pairing.ShiftRange Range { get; set; }
 
     [Parameter]
-    public EventCallback<int> OnMax { get; set; }
+    public EventCallback<Core.Pairing.ShiftRange> OnRange { get; set; }
 
     [Parameter]
     public EventCallback OnToggle { get; set; }

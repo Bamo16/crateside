@@ -6,7 +6,7 @@ namespace Crateside.Core.Pairing;
 /// <summary>Ableton's Re-Pitch warp mode, where speed and pitch move together (#58).</summary>
 public static class RePitch
 {
-    public const int DefaultMaxShift = 3;
+    public const int DefaultShift = 1;
     public const int MaxShift = 12;
 
     private const double FastestBpm = 999;

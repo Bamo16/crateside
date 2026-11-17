@@ -4,6 +4,10 @@ namespace Crateside.Tests.Pairing;
 
 public sealed class RePitchTests
 {
+    [Fact]
+    public void The_default_range_is_one_semitone_either_side() =>
+        Assert.Equal(1, RePitch.DefaultShift);
+
     [Theory]
     [InlineData(2, 143.68)]
     [InlineData(-1, 120.82)]

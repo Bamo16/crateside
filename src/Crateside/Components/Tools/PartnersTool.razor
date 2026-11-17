@@ -66,21 +66,9 @@
 
         <div class="span">
             <div class="span-row">
-                <span class="span-label">Shift</span>
-                <span class="chips">
-                    @for (var n = -Core.Pairing.Partners.WidestShift; n <= Core.Pairing.Partners.WidestShift; n++)
-                    {
-                        var shift = n;
-                        var inSpan = shift >= Lowest && shift <= Highest;
-
-                        <button class="chip mono @(shift is 0 ? "anchor" : null) @(inSpan ? "in" : null) @(shift == Lowest || shift == Highest ? "end" : null)"
-                                aria-pressed="@(inSpan ? "true" : "false")" @onclick="() => Click(shift)">@MashupPartner.FormatShift(shift)</button>
-                    }
-                </span>
-                <span class="mono span-text">@SpanText</span>
+                <ShiftRange Range="Range" OnChange="OnRange" Noun="shift" />
                 <span class="count">@("key".ToQuantity(Partners.Count))</span>
             </div>
-            <span class="hint">Click a shift to work at it alone; click another to stretch the span to it.</span>
         </div>
 
         <table class="partners">
@@ -100,7 +88,7 @@
         </table>
 
         <p class="hint">
-            @(Lowest is 0 && Highest is 0
+            @(Range is { Lowest: 0, Highest: 0 }
                 ? $"Every key reaches every other within ±{Core.Pairing.Partners.WidestShift} at its smallest shift; widen the span to see them."
                 : "A key is listed once, at its in-range shift closest to 0. Alt holds its other shifts, a fifth either way.")
         </p>
@@ -146,14 +134,11 @@
     [Parameter, EditorRequired]
     public required IReadOnlyList<MashupPartner> Partners { get; set; }
 
-    [Parameter]
-    public int Lowest { get; set; }
+    [Parameter, EditorRequired]
+    public required Core.Pairing.ShiftRange Range { get; set; }
 
     [Parameter]
-    public int Highest { get; set; }
-
-    [Parameter]
-    public EventCallback<(int Lowest, int Highest)> OnSpan { get; set; }
+    public EventCallback<Core.Pairing.ShiftRange> OnRange { get; set; }
 
     [Parameter]
     public EventCallback OnBack { get; set; }
@@ -175,21 +160,6 @@
             ({ } reason, true) => $"{reason.TrimEnd('.')}, and paired as its tag.",
             var (reason, _) => reason,
         };
-
-    private string SpanText =>
-        (Lowest, Highest) switch
-        {
-            (0, 0) => "0 only",
-            var (lowest, highest) when lowest == highest => $"{MashupPartner.FormatShift(lowest)} only",
-            var (lowest, highest) => $"{MashupPartner.FormatShift(lowest)} to {MashupPartner.FormatShift(highest)}",
-        };
-
-    private Task Click(int shift) =>
-        OnSpan.InvokeAsync(
-            Lowest == Highest && shift != Lowest
-                ? (Math.Min(Lowest, shift), Math.Max(Lowest, shift))
-                : (shift, shift)
-        );
 
     private static string Short(TonalCenter center) =>
         ModeText.Abbreviation(center, mixed: false) is { } mode
