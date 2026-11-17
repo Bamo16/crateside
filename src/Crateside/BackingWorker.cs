@@ -24,6 +24,7 @@ public sealed class BackingWorker(
     LiveAnswers answers,
     TrackMarkStore trackMarks,
     MeterStore meters,
+    WarpTempoReader warpTempos,
     TagStoreBackups backups,
     FileIndexReader index,
     IOptions<CratesidePaths> paths,
@@ -121,6 +122,7 @@ public sealed class BackingWorker(
         // Before anything is written, so an answer given in Live outranks what this pass would write.
         RecordLiveAnswers(ledger, libraryIndex);
         SettleMeters(ledger, libraryIndex);
+        MarkOddFromWarps(ledger);
 
         var settled = genres.Read();
         var reach = familiarity.Read();
@@ -220,6 +222,22 @@ public sealed class BackingWorker(
                     ? "the stems contradict"
                     : string.Join(", ", meters.Of(song.Key)?.Applied ?? [])
             );
+    }
+
+    /// <summary>Marks Odd bars on a song whose Live warp is not 4/4, once; taking the mark off afterwards sticks (ADR 0097).</summary>
+    private void MarkOddFromWarps(KeyLedger ledger)
+    {
+        foreach (
+            var song in new[] { _paths.LibraryFolder, _paths.StagingFolder }
+                .SelectMany(root => runner.WarpOddSongs(root, ledger, warpTempos.Read))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Where(meters.TakeWarpOdd)
+                .ToList()
+        )
+        {
+            trackMarks.Set(song, TrackMark.OddBars, marked: true);
+            logger.LogInformation("Odd bars set on {Song}: its Live warp is not 4/4", song);
+        }
     }
 
     private void RecordLiveAnswers(KeyLedger ledger, FolderInfo? libraryIndex)

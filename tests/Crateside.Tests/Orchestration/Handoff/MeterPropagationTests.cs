@@ -136,6 +136,22 @@ public sealed class MeterPropagationTests : IDisposable
             Assert.Empty(assignments);
     }
 
+    [Theory]
+    [InlineData("7/4", true)]
+    [InlineData(null, false)]
+    public void A_stem_whose_live_warp_is_not_four_four_names_its_song(string? meter, bool named)
+    {
+        File.WriteAllText($"{Stem("Vocal - Full", "Key|A")}.asd", string.Empty);
+
+        var songs = _runner.WarpOddSongs(
+            _root,
+            Ledger(),
+            _ => new WarpTempo(120, TempoShape.Steady, 120, 120, []) { Meter = meter }
+        );
+
+        Assert.Equal(named ? [Song] : [], songs);
+    }
+
     private void Pass(MeterStore store) =>
         _runner.Run(
             _root,

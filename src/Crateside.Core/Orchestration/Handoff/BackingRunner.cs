@@ -243,6 +243,32 @@ public sealed class BackingRunner(
         return found;
     }
 
+    /// <summary>The songs under <paramref name="root"/> with a stem whose Live warp is not 4/4 (ADR 0097).</summary>
+    public IReadOnlyList<string> WarpOddSongs(
+        string root,
+        KeyLedger ledger,
+        Func<string, WarpTempo?> tempoOf
+    ) =>
+        !Directory.Exists(root)
+            ? []
+            :
+            [
+                .. Directory
+                    .EnumerateFiles(root, "*", SearchOption.AllDirectories)
+                    .Where(path =>
+                        SampleFiles.IsAudio(path)
+                        && File.Exists($"{path}.asd")
+                        && tempoOf(path) is { Meter: not null }
+                    )
+                    .Select(path =>
+                        ProvenanceOf(path) is { SourceTrackKey: { } trackKey }
+                            ? ledger.SongFor(trackKey) ?? trackKey
+                            : null
+                    )
+                    .OfType<string>()
+                    .Distinct(StringComparer.OrdinalIgnoreCase),
+            ];
+
     private static HashSet<string> Meters(IEnumerable<string> keywords) =>
         [.. keywords.Select(MeterTags.ValueOf).OfType<string>()];
 

@@ -316,7 +316,8 @@ by hand; everything below describes candidates against it.
   [ADR 0095](docs/adr/0095-a-second-key-centre-counts-only-when-something-independent-of-the-judge-places-it.md)),
   or that the user marked as changing key, in *Key caveat*. Any number mapped to no meaning is the user's.
   *Odd bars* is every stem of a track the user marked as not consistent 4/4
-  ([ADR 0058](docs/adr/0058-a-staged-stem-shows-its-state-in-live.md)).
+  ([ADR 0058](docs/adr/0058-a-staged-stem-shows-its-state-in-live.md)), or whose Live warp is not
+  4/4, set once and the user's to take off ([ADR 0097](docs/adr/0097-a-non-four-four-live-warp-sets-odd-bars-once.md)).
 - **Meter** — the `Meter|` tag group the user sets in Live: a base (`4/4`, `3/4`, any `n/d`, or
   `Mixed`) and optionally `Odd bars`. Any Meter tag means the user heard the track through and
   signed off its meter; none means unchecked. crateside copies a change on one stem to the track's

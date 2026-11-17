@@ -55,6 +55,28 @@ public sealed class MeterStore(CratesidePaths paths)
                     : Array.Empty<TrackMark>(),
             ];
 
+    /// <summary>True the first time a song's Live warp is seen as non-4/4, so the mark it sets is the person's to take off (ADR 0097).</summary>
+    public bool TakeWarpOdd(string song)
+    {
+        lock (_gate)
+        {
+            var file = Open();
+
+            if (file.WarpOdd.Contains(song, StringComparer.OrdinalIgnoreCase))
+                return false;
+
+            MeterJsonContext.Default.MeterFile.WriteFile(
+                _path,
+                file with
+                {
+                    WarpOdd = [.. file.WarpOdd, song],
+                }
+            );
+
+            return true;
+        }
+    }
+
     /// <summary>Carries the stems' changes to the song's record; true when the record changed.</summary>
     public bool Settle(string song, IReadOnlyList<StemMeter> stems)
     {
@@ -87,14 +109,14 @@ public sealed class MeterStore(CratesidePaths paths)
         }
     }
 
+    private MeterFile Open() =>
+        MeterJsonContext.Default.MeterFile.ReadFileOrDefault(_path) ?? new();
+
     private Dictionary<string, MeterRecord> Load() =>
-        new(
-            MeterJsonContext.Default.MeterFile.ReadFileOrDefault(_path)?.Songs ?? [],
-            StringComparer.OrdinalIgnoreCase
-        );
+        new(Open().Songs, StringComparer.OrdinalIgnoreCase);
 
     private void Save(Dictionary<string, MeterRecord> records) =>
-        MeterJsonContext.Default.MeterFile.WriteFile(_path, new MeterFile { Songs = records });
+        MeterJsonContext.Default.MeterFile.WriteFile(_path, Open() with { Songs = records });
 }
 
 /// <summary>One song's Meter tags as crateside last applied them.</summary>
@@ -125,6 +147,9 @@ public sealed record MeterRecord
 public sealed record MeterFile
 {
     public Dictionary<string, MeterRecord> Songs { get; init; } = [];
+
+    /// <summary>Songs whose non-4/4 Live warp has already set Odd bars once.</summary>
+    public IReadOnlyList<string> WarpOdd { get; init; } = [];
 }
 
 [JsonSourceGenerationOptions(

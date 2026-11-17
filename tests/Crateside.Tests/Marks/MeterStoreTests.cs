@@ -37,6 +37,28 @@ public sealed class MeterStoreTests : IDisposable
     }
 
     [Fact]
+    public void A_warp_sets_odd_bars_once_so_taking_the_mark_off_sticks_across_a_restart()
+    {
+        Assert.True(new MeterStore(FilePath).TakeWarpOdd(Song));
+        Assert.False(new MeterStore(FilePath).TakeWarpOdd("ARTIST - title"));
+    }
+
+    [Fact]
+    public void Taking_a_warp_leaves_the_stems_meter_record_alone()
+    {
+        var store = new MeterStore(FilePath);
+
+        store.Settle(Song, [Stem("6/8")]);
+        store.TakeWarpOdd(Song);
+
+        Assert.Equal(["6/8"], store.Of(Song)?.Applied);
+
+        store.Settle(Song, [Stem("3/4")]);
+
+        Assert.False(store.TakeWarpOdd(Song));
+    }
+
+    [Fact]
     public void Settling_the_same_stems_again_changes_nothing()
     {
         var store = new MeterStore(FilePath);
