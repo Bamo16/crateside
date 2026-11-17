@@ -201,7 +201,7 @@
                     <section id="evidence" class="evidence-section">
                         @if (_run is null && _pending is { } pending)
                         {
-                            <Evidence Run="pending" Row="_row" Heading="What was found" Summary="Nothing is decided yet: the detectors' readings and the pages the lookup found."
+                            <Evidence Run="pending" Row="_row" Tempo="Tempo" Heading="What was found" Summary="Nothing is decided yet: the detectors' readings and the pages the lookup found."
                                       Withheld="true" Pending="true" />
                         }
                         else if (_run is null)
