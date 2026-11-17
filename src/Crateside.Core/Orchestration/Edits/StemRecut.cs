@@ -1,3 +1,4 @@
+using Crateside.Core.Ableton;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Plans;
 using Crateside.Core.Samples;
@@ -16,7 +17,8 @@ public sealed class StemRecut(
     IStagedFiles staged,
     TimeProvider time,
     DeletionLog? deletions = null,
-    KeptWarps? keptWarps = null
+    KeptWarps? keptWarps = null,
+    ISetLinks? setLinks = null
 )
 {
     private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
@@ -37,22 +39,31 @@ public sealed class StemRecut(
         var files = staged.Of(trackKey);
         var stagedInventory = StemInventory.Of(files.Select(AsOnDisk), catalog);
 
-        // Everywhere the track's files could be, so a preset already sitting in the library
-        // is never asked for again — only staging is trusted to say what a re-cut may delete.
+        // Everywhere the track's files could be: a preset already in the library is never asked
+        // for again, and a library file the plan drops goes too, to the Recycle Bin (ADR 0103).
+        var staging = files.Select(file => file.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var everywhere = new StemInventory
         {
-            Files = [.. stagedInventory.Files, .. (known ?? StemInventory.Empty).Files],
+            Files =
+            [
+                .. stagedInventory.Files,
+                .. (known ?? StemInventory.Empty).Files.Where(file =>
+                    !staging.Contains(file.File.Path)
+                ),
+            ],
             IsFinished = known?.IsFinished is true,
         };
 
         var stored = Stored(trackKey);
         var recipe = SeparationRecipe.For(wanted, everywhere);
-        var removing = stagedInventory.Superseded(wanted, stored);
+        var removing = everywhere.Superseded(wanted, stored);
 
         return new RecutPlan
         {
             Recipe = recipe,
             Removing = removing,
+            Sets = SetsUsing(removing, staging),
+            InLibrary = removing.Count(stem => !staging.Contains(stem.File.Path)),
             WillRefetch = !workingSet.TryGetSource(trackKey, out _),
             Refusal = RefusalFor(
                 catalog,
@@ -117,6 +128,21 @@ public sealed class StemRecut(
         return new RecutOutcome { Removed = removed, Recipe = plan.Recipe };
     }
 
+    /// <summary>The Live sets that use a library file this re-cut would delete.</summary>
+    private IReadOnlyList<string> SetsUsing(
+        IReadOnlyList<ClassifiedStem> removing,
+        HashSet<string> staging
+    ) =>
+        setLinks is null
+            ? []
+            : setLinks.Using(
+                [
+                    .. removing
+                        .Select(stem => stem.File.Path)
+                        .Where(path => !staging.Contains(path)),
+                ]
+            );
+
     /// <summary>The plan this track currently has, which says which of its files were added.</summary>
     private StemPlan Stored(string trackKey) =>
         instructions
@@ -167,8 +193,14 @@ public sealed record RecutPlan
 {
     public required SeparationRecipe Recipe { get; init; }
 
-    /// <summary>The staged files the plan no longer asks for. Empty when it only adds.</summary>
+    /// <summary>The staged and library files the plan no longer asks for. Empty when it only adds.</summary>
     public required IReadOnlyList<ClassifiedStem> Removing { get; init; }
+
+    /// <summary>How many of the removed files are in the library, which go to the Recycle Bin.</summary>
+    public int InLibrary { get; init; }
+
+    /// <summary>The Live sets that use a library file being removed, named in the confirmation.</summary>
+    public IReadOnlyList<string> Sets { get; init; } = [];
 
     /// <summary>
     /// The audio is no longer held, so separation downloads it again before it runs. Costs a

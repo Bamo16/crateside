@@ -51,7 +51,7 @@ public sealed record StemPicker
     /// </param>
     public static StemPicker For(TrackRow row, PresetCatalog catalog, StemPlan? wanted = null)
     {
-        var plan = WithLibraryFiles(wanted ?? row.Plan, row);
+        var plan = wanted ?? KeepingLibrary(row.Plan, row);
 
         var byPreset = row
             .Samples.Where(sample => sample.PresetId is not null)
@@ -172,16 +172,16 @@ public sealed record StemPicker
         {
             Bands = [.. bands.Where(band => band.Lines.Count > 0)],
             Wanted = plan,
-            Stored = WithLibraryFiles(row.Plan, row),
+            Stored = KeepingLibrary(row.Plan, row),
             IsCutInFlight = row.IsCutInFlight,
         };
     }
 
     /// <summary>
-    /// The plan with every file already in the library kept, since nothing can tick
-    /// those off (ADR 0019).
+    /// The plan with every file already in the library kept, which is where picking starts: a
+    /// library file goes only when the user unticks it (ADR 0103).
     /// </summary>
-    private static StemPlan WithLibraryFiles(StemPlan plan, TrackRow row) =>
+    public static StemPlan KeepingLibrary(StemPlan plan, TrackRow row) =>
         plan with
         {
             Presets =
@@ -254,10 +254,9 @@ public sealed record StemChoice
     public bool IsSample => Kind is StemKind.Preset or StemKind.Source;
 
     /// <summary>
-    /// Whether ticking it is out of the user's hands: a guide, or a file already in
-    /// the library (ADR 0019).
+    /// Whether ticking it is out of the user's hands: a guide.
     /// </summary>
-    public bool IsPinned => !IsSample || IsInLibrary;
+    public bool IsPinned => !IsSample;
 
     public bool IsInLibrary => Files.Any(file => file.IsInLibrary);
 

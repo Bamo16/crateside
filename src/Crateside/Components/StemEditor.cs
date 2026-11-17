@@ -151,7 +151,8 @@ public sealed class StemEditor(
     /// </summary>
     public void Toggle(TrackRow row, StemChoice line)
     {
-        if (line.IsPinned)
+        // A library file goes only once the cut is done: the separator may be writing beside it.
+        if (line.IsPinned || (row.IsCutInFlight && line.IsInLibrary))
             return;
 
         if (row.IsCutInFlight)
@@ -162,7 +163,7 @@ public sealed class StemEditor(
             return;
         }
 
-        var plan = IsPicking(row) ? _wanted : PlanOf(row);
+        var plan = IsPicking(row) ? _wanted : StemPicker.KeepingLibrary(PlanOf(row), row);
 
         var wanted = line switch
         {
@@ -237,7 +238,7 @@ public sealed class StemEditor(
         {
             var outcome = recut.Apply(
                 row.TrackKey,
-                Recipes.PlanOf(Recipe.Instrumental),
+                StemPicker.KeepingLibrary(Recipes.PlanOf(Recipe.Instrumental), row),
                 Presets,
                 row.Inventory
             );
@@ -272,7 +273,12 @@ public sealed class StemEditor(
             }
             else
             {
-                var outcome = recut.Apply(row.TrackKey, wanted, Presets, row.Inventory);
+                var outcome = recut.Apply(
+                    row.TrackKey,
+                    StemPicker.KeepingLibrary(wanted, row),
+                    Presets,
+                    row.Inventory
+                );
 
                 Problem = outcome.Problem;
 
@@ -294,7 +300,14 @@ public sealed class StemEditor(
     public Task CutShortfallAsync(TrackRow row) =>
         WorkAsync(async () =>
         {
-            Problem = recut.Apply(row.TrackKey, row.Plan, Presets, row.Inventory).Problem;
+            Problem = recut
+                .Apply(
+                    row.TrackKey,
+                    StemPicker.KeepingLibrary(row.Plan, row),
+                    Presets,
+                    row.Inventory
+                )
+                .Problem;
 
             if (Problem is null)
                 actions.Record(

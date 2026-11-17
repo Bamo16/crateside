@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
+using Crateside.Core.Ableton;
 using Crateside.Core.Art;
 using Crateside.Core.Ledger;
+using Crateside.Core.Library;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Samples;
@@ -20,7 +22,9 @@ public sealed class TrackSwap(
     TimeProvider time,
     DeletionLog? deletions = null,
     CoverArt? covers = null,
-    ResolvedNameStore? names = null
+    ResolvedNameStore? names = null,
+    ILibraryFiles? library = null,
+    ISetLinks? setLinks = null
 )
 {
     private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
@@ -43,6 +47,8 @@ public sealed class TrackSwap(
                 NewTrackKey = newTrackKey,
                 Url = $"https://music.youtube.com/watch?v={newTrackKey}",
                 Removing = staged.Of(trackKey),
+                LibraryFiles = library?.Of(trackKey) ?? [],
+                Sets = SetsUsing(library?.Of(trackKey) ?? []),
                 CarriesVerdict = judged,
             },
         };
@@ -89,6 +95,28 @@ public sealed class TrackSwap(
             }
         }
 
+        foreach (var path in plan.LibraryFiles)
+        {
+            try
+            {
+                _deletions.Recycle(path, "superseded by a source swap");
+                RecycleBin.Remove(StemFileName.AnalysisFor(path));
+
+                removed++;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return new SwapOutcome
+                {
+                    NewTrackKey = plan.NewTrackKey,
+                    Removed = removed,
+                    Problem =
+                        $"{Path.GetFileName(path)} could not be removed — it is probably open in "
+                        + "Ableton. Close it and press again.",
+                };
+            }
+        }
+
         // The retained download is the old upload, and separation prefers it over the URL.
         workingSet.Discard(trackKey);
 
@@ -107,6 +135,9 @@ public sealed class TrackSwap(
     /// </summary>
     private string? Restate(string trackKey, string url, KeyLedger ledger) =>
         ledger.HasRunFor(trackKey) ? store.Restate(trackKey, url).Refusal : null;
+
+    private IReadOnlyList<string> SetsUsing(IReadOnlyList<string> files) =>
+        files is [] || setLinks is null ? [] : setLinks.Using([.. files]);
 
     private static SwapPlan Impossible(string refusal) =>
         new() { Removing = [], Refusal = refusal };
@@ -132,6 +163,12 @@ public sealed record SwapPlan
 
     /// <summary>The staged files that would go: they came from the upload being replaced.</summary>
     public required IReadOnlyList<StagedFile> Removing { get; init; }
+
+    /// <summary>The library files of the old upload, which go to the Recycle Bin (ADR 0103).</summary>
+    public IReadOnlyList<string> LibraryFiles { get; init; } = [];
+
+    /// <summary>The Live sets that use those library files, named in the confirmation.</summary>
+    public IReadOnlyList<string> Sets { get; init; } = [];
 
     /// <summary>Whether there is a verdict to carry across to the new upload.</summary>
     public bool CarriesVerdict { get; init; }

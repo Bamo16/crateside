@@ -128,6 +128,46 @@ public sealed class TrackSwapTests : IDisposable
     }
 
     [Fact]
+    public void A_swap_recycles_the_old_upload_s_library_files_and_names_the_sets_using_them()
+    {
+        var libraryFile = Path.Combine(_root, "library", "Rob Dougan - Furious Angels.flac");
+        Directory.CreateDirectory(Path.GetDirectoryName(libraryFile)!);
+        File.WriteAllText(libraryFile, "audio");
+        var swap = new TrackSwap(
+            Ledger,
+            Settings(),
+            new WorkingSet(WorkingRoot),
+            Staged(),
+            TimeProvider.System,
+            library: new LibraryOf(libraryFile),
+            setLinks: new SetsNamed("Night Set")
+        );
+
+        var plan = swap.PlanFor(Video, Replacement);
+        var outcome = swap.Apply(Video, Replacement);
+
+        Assert.Equal([libraryFile], plan.LibraryFiles);
+        Assert.Equal(["Night Set"], plan.Sets);
+        Assert.True(outcome.Succeeded, outcome.Problem);
+        Assert.False(File.Exists(libraryFile));
+    }
+
+    private sealed class LibraryOf(params string[] files) : Core.Library.ILibraryFiles
+    {
+        public IReadOnlyList<string> Of(string trackKey) => files;
+    }
+
+    private sealed class SetsNamed(params string[] names) : Core.Ableton.ISetLinks
+    {
+        public IReadOnlyList<string> Using(IReadOnlyCollection<string> samples) => names;
+
+        public Core.Ableton.OpenSet ReadOpenSet() => throw new NotSupportedException();
+
+        public Core.Ableton.SetRelink Relink(IReadOnlyList<AbleKit.Sets.SampleMove> moves) =>
+            throw new NotSupportedException();
+    }
+
+    [Fact]
     public void The_verdict_still_resolves_through_both_video_ids_afterwards()
     {
         WriteLedger(Line("2026-09-01T00:00:00+00:00", Song, Video));

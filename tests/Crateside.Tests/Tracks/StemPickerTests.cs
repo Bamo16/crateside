@@ -256,17 +256,26 @@ public sealed class StemPickerTests
     }
 
     [Fact]
-    public void A_file_in_the_library_locks_its_own_line_and_nothing_else()
+    public void A_file_in_the_library_starts_kept_and_goes_only_when_unticked()
     {
-        // Only the library line is pinned (ADR 0019).
-        var picker = StemPicker.For(
-            Row(StemPlan.Default, false, Made("vocal_full", "Vocal - Full", inLibrary: true)),
-            Catalog
+        var row = Row(
+            StemPlan.Default,
+            false,
+            Made("vocal_full", "Vocal - Full", inLibrary: true)
         );
 
-        Assert.False(picker.IsCutInFlight);
-        Assert.True(Line(picker, "Vocal - Full").IsPinned);
-        Assert.False(Line(picker, "Instrumental - Full").IsPinned);
+        var untouched = StemPicker.For(row, Catalog);
+        var unticked = StemPicker.For(
+            row,
+            Catalog,
+            StemPicker.KeepingLibrary(row.Plan, row).Toggling("vocal_full")
+        );
+
+        Assert.False(Line(untouched, "Vocal - Full").IsPinned);
+        Assert.Equal(StemState.Kept, Line(untouched, "Vocal - Full").State);
+        Assert.Equal(0, untouched.Removing);
+        Assert.Equal(StemState.Going, Line(unticked, "Vocal - Full").State);
+        Assert.Equal(1, unticked.Removing);
     }
 
     [Fact]

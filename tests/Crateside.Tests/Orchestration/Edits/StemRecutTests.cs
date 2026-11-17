@@ -1,3 +1,5 @@
+using AbleKit.Sets;
+using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Edits;
@@ -138,9 +140,42 @@ public sealed class StemRecutTests : IDisposable
     }
 
     [Fact]
-    public void A_preset_already_in_the_library_is_never_offered_for_deletion()
+    public void A_library_preset_the_plan_drops_is_offered_for_deletion_with_the_sets_that_use_it()
     {
-        // crateside never deletes from the library (ADR 0019).
+        Stage("Instrumental - Full");
+
+        var library = Path.Combine(_root, "Library", "Vocal - Full.flac");
+        var known = StemInventory.Of(
+            [
+                new StemOnDisk
+                {
+                    Path = library,
+                    Root = Path.GetDirectoryName(library)!,
+                    Preset = "Vocal - Full",
+                },
+            ],
+            Catalog
+        );
+        var wanted = new StemPlan { Presets = ["instrumental_full"] };
+
+        var plan = new StemRecut(
+            Settings(),
+            WorkingSetWithSource(),
+            Staged(),
+            TimeProvider.System,
+            setLinks: new SetsNamed("Night Set")
+        ).PlanFor(Video, wanted, Catalog, known);
+
+        Assert.Equal(library, Assert.Single(plan.Removing).File.Path);
+        Assert.Equal(1, plan.InLibrary);
+        Assert.Equal(["Night Set"], plan.Sets);
+    }
+
+    [Fact]
+    public void A_library_preset_the_plan_keeps_is_never_offered_for_deletion()
+    {
+        Stage("Instrumental - Full");
+
         var known = StemInventory.Of(
             [
                 new StemOnDisk
@@ -152,12 +187,23 @@ public sealed class StemRecutTests : IDisposable
             ],
             Catalog
         );
-
-        var wanted = new StemPlan { Presets = ["instrumental_full"] };
+        var wanted = new StemPlan { Presets = ["instrumental_full", "vocal_full"] };
 
         var plan = Recut().PlanFor(Video, wanted, Catalog, known);
 
-        Assert.DoesNotContain(plan.Removing, stem => stem.File.Path == "M:/Vocal - Full.flac");
+        Assert.Empty(plan.Removing);
+        Assert.Equal(0, plan.InLibrary);
+    }
+
+    private sealed class SetsNamed(params string[] names) : ISetLinks
+    {
+        public IReadOnlyList<string> Using(IReadOnlyCollection<string> samples) =>
+            samples.Count is 0 ? [] : names;
+
+        public OpenSet ReadOpenSet() => throw new NotSupportedException();
+
+        public SetRelink Relink(IReadOnlyList<SampleMove> moves) =>
+            throw new NotSupportedException();
     }
 
     [Fact]

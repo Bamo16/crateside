@@ -108,11 +108,15 @@ else if (Part is Parts.Source && HasSource(Row))
             </p>
             <p class="stack-status">
                 @(_swapPlan?.Refusal ?? _swapPlan?.Detail ?? SwapPlan.DetailFor(Row.Verdict is not null))
-                @if (Row.SamplesLeftInLibrary > 0)
+                @if (_swapPlan is { LibraryFiles.Count: > 0 } library)
                 {
                     <text>
-                        @("sample".ToQuantity(Row.SamplesLeftInLibrary)) of the old upload are in
-                        the library; crateside never writes there, so remove them yourself.
+                        @("sample".ToQuantity(library.LibraryFiles.Count)) of the old upload are in
+                        the library and go to the Recycle Bin.
+                        @if (library.Sets is { Count: > 0 })
+                        {
+                            <text>@("set".ToQuantity(library.Sets.Count)) use them: @string.Join(", ", library.Sets).</text>
+                        }
                     </text>
                 }
             </p>
@@ -351,8 +355,8 @@ else if (Part is Parts.Source && HasSource(Row))
     }
 
     private static string SwapScope(SwapPlan? plan) =>
-        plan?.Removing is { Count: > 0 } removing
-            ? $"Swap source · remove {"file".ToQuantity(removing.Count)}"
+        plan is { } p && p.Removing.Count + p.LibraryFiles.Count is > 0 and var count
+            ? $"Swap source · remove {"file".ToQuantity(count)}"
             : "Swap source";
 
     private static string From(TrackNameSource source) =>
