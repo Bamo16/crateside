@@ -13,6 +13,7 @@
             <span class="muted"> · @entry.Readings.Count stretches, spread @((entry.Readings.Max() - entry.Readings.Min()).ToString("0.#", CultureInfo.InvariantCulture))</span>
         }
         <span class="muted"> · @Say(entry)</span>
+        </span>
         @if (entry.State is TuningState.Review)
         {
             <button class="pill plain" @onclick="Accept">Detune @Cents(-entry.Median)</button>
