@@ -6,6 +6,7 @@
 @if (Store.Of(TrackKey) is { Median: not null } entry)
 {
     <p class="tuning">
+        <span>
         <span class="mono">tuning @Cents(entry.Median) ¢</span>
         @if (entry.Readings.Count > 0)
         {
@@ -18,7 +19,7 @@
         }
         @if (entry.Written.Count > 0)
         {
-            <button class="pill plain" @onclick="PutBack">Put back</button>
+            <button class="pill plain" title="Sets the detune in the clips crateside detuned back to 0, as it was before (a clip whose detune you changed since is left alone), and crateside leaves this track's tuning alone from now on." @onclick="PutBack">Undo detune</button>
         }
     </p>
 }
