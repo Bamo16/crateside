@@ -53,10 +53,10 @@
                                 }
                                 <span class="mono value key @(Key is null ? "empty" : null)">@(KeyText.Spell(Key) ?? "—")</span>
                             </div>
-                            @if (OtherSections is { Count: > 0 } others)
+                            @if (ListedSections is { Count: > 1 } listed)
                             {
                                 <ul class="sections">
-                                    @foreach (var part in others)
+                                    @foreach (var part in listed)
                                     {
                                         <li>
                                             <a class="section-pick" href="@($"song/{Uri.EscapeDataString(TrackKey)}#evidence")" title="What was found for this section" @onclick="() => _section = part.Label">
@@ -64,7 +64,11 @@
                                                 <span class="sep">·</span>
                                                 <span class="mono section-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
                                             </a>
-                                            @if (part.IsHypothesis)
+                                            @if (part.Center == Center)
+                                            {
+                                                <span class="basis">@BasisOf(part)</span>
+                                            }
+                                            else if (part.IsHypothesis)
                                             {
                                                 <span class="note hypothesis">possible key change (the judge's reading, unconfirmed)@(part.Start is { } from ? $" · from {TempoFormat.Clock(from)}" : null)</span>
                                                 @if (StretchOf(part) is { } proposed && Judging.Of(TrackKey) is not { IsRunning: true })
@@ -303,8 +307,16 @@
         _openRequests++;
     }
 
-    private IReadOnlyList<Section> OtherSections =>
-        [.. Sections.Where(section => section.Center != Center)];
+    /// <summary>The sections the header lists: all of them when there are several, so the primary's key sits beside the others.</summary>
+    private IReadOnlyList<Section> ListedSections => Center is null ? [] : Sections;
+
+    /// <summary>What names the primary center's section: the sources that state its key for it, else the detectors and the judge.</summary>
+    private string BasisOf(Section part) =>
+        _run?.SourcesNaming(part).Select(source => source.Host?.Replace("www.", string.Empty) ?? "a source").Distinct().ToList() switch
+        {
+            [_, ..] hosts => $"named by {string.Join(" and ", hosts)}",
+            _ => "from the detectors and the judge's reading",
+        };
 
     /// <summary>A library-only track never ran through crateside, so it has no stages to draw.</summary>
     private bool HasFlow => _row is { IsLibraryOnly: false };

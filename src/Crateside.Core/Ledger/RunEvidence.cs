@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Crateside.Core.Orchestration.Verdict;
+using Crateside.Core.Pairing;
 
 namespace Crateside.Core.Ledger;
 
@@ -97,6 +98,12 @@ public sealed record RunEvidence
     /// coverage at all.
     /// </summary>
     public IReadOnlyList<EvidenceSource> Sources { get; init; } = [];
+
+    /// <summary>The human sources that state the primary center's key for this section.</summary>
+    public IReadOnlyList<EvidenceSource> SourcesNaming(Section section) =>
+        Center is { } center
+            ? [.. Sources.Where(source => source.Names(section, MusicKey.Of(center)))]
+            : [];
 
     /// <summary>Every page the lookup handed the judge, by site, cited or not; empty on runs recorded before #176.</summary>
     public IReadOnlyList<SiteLookup> Lookups { get; init; } = [];
@@ -368,6 +375,11 @@ public sealed partial record EvidenceSource
     public Uri? Link => ParseLink(Url);
 
     public string? Host => Link?.Host;
+
+    internal bool Names(Section section, MusicKey key) =>
+        Kind is SourceKind.Authoritative or SourceKind.Corroborating
+        && RecordTimeCheck.KeyOf(StatesKey) == key
+        && Sections?.Contains(section.Label, StringComparer.OrdinalIgnoreCase) is true;
 
     /// <summary>Whether this source agreed with the verdict.</summary>
     public SourceStance Stance =>
