@@ -182,6 +182,64 @@ public sealed class WarpWordingTests
     public void A_time_in_the_audio_reads_to_the_hundredth(double seconds, string text) =>
         Assert.Equal(text, WarpWording.Time(seconds));
 
+    [Theory]
+    [InlineData(TrueUpReason.WithinNoise, "Not offered: the warp already holds against the audio.")]
+    [InlineData(
+        TrueUpReason.Steps,
+        "Not offered: the grid steps partway through, which a new tempo does not fix."
+    )]
+    [InlineData(
+        TrueUpReason.NotSteady,
+        "Not offered: crateside could not check the warp against the audio."
+    )]
+    public void Each_reason_a_true_up_is_not_offered_has_its_own_sentence(
+        TrueUpReason reason,
+        string text
+    ) => Assert.Equal(text, WarpWording.TrueUpRefusal(new TrueUpPlan.Left(reason)));
+
+    [Fact]
+    public void A_true_up_that_could_not_agree_or_failed_says_so()
+    {
+        Assert.Equal(
+            "Not offered: the stems the track is warped by hold different warps.",
+            WarpWording.TrueUpRefusal(new TrueUpPlan.Disagree([]))
+        );
+        Assert.Equal(
+            "Not offered: no audio",
+            WarpWording.TrueUpRefusal(new TrueUpPlan.Failed("no audio"))
+        );
+        Assert.Equal(
+            "Not retyped: disk full",
+            WarpWording.TrueUpDone(new TrueUpOutcome.Failed("disk full"), "just now")
+        );
+    }
+
+    [Theory]
+    [InlineData(WarpMode.RePitch, "Re-Pitch")]
+    [InlineData(WarpMode.ComplexPro, "Complex Pro")]
+    [InlineData(WarpMode.Rex, "REX")]
+    [InlineData(WarpMode.Beats, "Beats")]
+    public void A_warp_mode_is_named_the_way_Live_names_it(WarpMode mode, string text) =>
+        Assert.Equal(text, WarpWording.Mode(mode));
+
+    [Fact]
+    public void Saved_edits_are_listed_in_the_edit_bars_order()
+    {
+        Assert.Equal(
+            "bar two beats earlier, -1.5 ms, tempo ×0.75, clip start bar 3",
+            WarpWording.Changes(new SavedEdits(-2, -1.5, 0.75, 3, 1, false))
+        );
+        Assert.Equal(
+            "bar a beat later, +4 ms, tempo halved",
+            WarpWording.Changes(new SavedEdits(1, 4, 0.5, null, null, true))
+        );
+        Assert.Equal(
+            "tempo doubled",
+            WarpWording.Changes(new SavedEdits(0, 0, 2, null, null, false))
+        );
+        Assert.Equal("no edits", WarpWording.Changes(new SavedEdits(0, 0, 1, null, null, false)));
+    }
+
     private static StemWarp Lender() =>
         Stem(Instrumental, new WarpOwner.Yours(Saved, [Vocal], null), Shared) with
         {
