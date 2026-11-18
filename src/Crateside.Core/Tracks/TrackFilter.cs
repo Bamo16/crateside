@@ -13,6 +13,9 @@ public enum TrackFilter
     /// <summary>Staged and tagged: the warping view, and the one the user lives in.</summary>
     InStaging,
 
+    /// <summary>A stem's warp is a starter warp, which the UI calls an auto warp.</summary>
+    AutoWarp,
+
     /// <summary>Something automatic is happening, or is about to.</summary>
     InFlight,
 
@@ -55,6 +58,7 @@ public static class TrackFilters
         {
             TrackFilter.Unfinished => row.State is not TrackState.Done,
             TrackFilter.InStaging => row.State is TrackState.ReadyToWarp or TrackState.ReadyToMove,
+            TrackFilter.AutoWarp => row.AutoWarp,
             TrackFilter.InFlight => row.State
                 is TrackState.Queued
                     or TrackState.Downloading

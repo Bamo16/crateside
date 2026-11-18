@@ -1,9 +1,9 @@
 @using Crateside.Core.Library
 
 <section id="p-starter" class="starter">
-    <h3>How the starter warps fared</h3>
+    <h3>How the auto warps fared</h3>
     <p class="lead">
-        The starter warp crateside writes from beatdetect's reading, set against the warp you finished in Live,
+        The auto warp crateside writes from beatdetect's reading, set against the warp you finished in Live,
         on the <span class="mono">@Counts.Compared</span> songs with a steady warp and a reading.
         @if (Counts.NotCompared > 0)
         {
@@ -92,7 +92,7 @@
             StarterFate.OtherOctave => "Tempo at half or double",
             StarterFate.BarCorrected => "Bar corrected",
             StarterFate.LeftAtBeatZero => "Left at beat 0",
-            _ => "No starter written",
+            _ => "No auto warp written",
         };
 
     internal static string Rule(StarterFate fate) =>
@@ -100,7 +100,7 @@
         {
             StarterFate.Kept => "the marker is on a beat of your warp, in the right bar",
             StarterFate.BeatMoved => "your warp's beats are not where the marker went (beat wrong)",
-            StarterFate.OtherOctave => "you retyped the tempo, half or double the starter's",
+            StarterFate.OtherOctave => "you retyped the tempo, half or double the auto warp's",
             StarterFate.BarCorrected => "the downbeat was trusted and was wrong (downbeat wrong)",
             StarterFate.LeftAtBeatZero => "the downbeat was not trusted (low confidence), and your bar differs",
             _ => "beatdetect read no steady tempo to start from",

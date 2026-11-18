@@ -23,6 +23,10 @@
     --red: #e07a6d;
     --green: #7fcf9a;
 
+    /* Not one of the meaning colors: it only marks a warp crateside guessed ("Auto warp"), so it
+       cannot be read as machine-working, your-turn or a finding. */
+    --lilac: #b9a3e3;
+
     /* Dimmed text, as alpha over --bg rather than as separate hexes, so a tier can be used on
        --surface and --raised too without a second set of values.
 

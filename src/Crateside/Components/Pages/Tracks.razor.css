@@ -399,6 +399,11 @@
     border-color: rgba(255, 255, 255, 0.2);
 }
 
+.flag.auto {
+    color: var(--lilac);
+    border-color: rgba(185, 163, 227, 0.45);
+}
+
 .key {
     font-size: 13px;
     font-weight: 500;

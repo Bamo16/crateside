@@ -460,6 +460,7 @@ public sealed record TracksView
                                     sample.HasDefaultClip: true,
                                     written: null or { IsStarter: false, IsUnwarped: false },
                                 },
+                        AutoWarp = staged.written is { IsStarter: true },
                         Tempo = staged.sample.HasDefaultClip
                             ? readings.TempoOf?.Invoke(staged.sample.Path)
                             : null,

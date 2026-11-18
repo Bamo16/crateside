@@ -272,7 +272,7 @@ by hand; everything below describes candidates against it.
   ([ADR 0066](docs/adr/0066-keydetect-has-its-own-pinned-build.md)).
   Before a song is judged its working-set evidence is made whole the same way, so the judge never
   sees fewer detectors than exist ([ADR 0068](docs/adr/0068-a-song-is-judged-only-on-complete-evidence.md)).
-- **Starter warp** — a one-marker warp crateside writes, at its own steady beatdetect reading of the
+- **Starter warp** — (the UI calls it **Auto warp**; code, ADRs and the API keep "starter") a one-marker warp crateside writes, at its own steady beatdetect reading of the
   instrumental, onto each stem of an upload nothing is warped on yet as it lands in staging, so the
   group dragged into an empty set sets its tempo. It is written only where that one tempo keeps the
   beats on its grid through the track, within 10 ms

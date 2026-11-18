@@ -205,7 +205,7 @@ public sealed class WarpEditorTests : IDisposable
 
         Assert.Contains("Saved in crateside on", wording.Sentence(stem));
         Assert.Contains("bar a beat later, +4 ms", wording.Sentence(stem));
-        Assert.Contains("from crateside's starter", wording.Sentence(stem));
+        Assert.Contains("from crateside's auto warp", wording.Sentence(stem));
 
         File.SetLastWriteTimeUtc($"{Instrumental}.asd", DateTime.UtcNow.AddMinutes(5));
 

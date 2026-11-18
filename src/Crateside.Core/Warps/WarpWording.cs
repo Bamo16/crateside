@@ -70,7 +70,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
                 $"Borrowed from {Name(from)}",
                 ChipStyle.Outlined
             ),
-            WarpOwner.Starter => new("Starter", ChipStyle.Dashed),
+            WarpOwner.Starter => new("Auto warp", ChipStyle.Auto),
             WarpOwner.Unwarped => new("Warp off", ChipStyle.Dashed),
             WarpOwner.LiveAnalysis => new("Live's analysis", ChipStyle.Dashed),
             WarpOwner.WaitingForLive => new("Waiting for Live", ChipStyle.Amber),
@@ -119,7 +119,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             WarpOwner.Starter =>
                 $"One marker at crateside's reading{StarterTempo(stem)}, so dropping it into an empty set sets the set's tempo. Not a finished warp: warp it in Live and press Save Default Clip.",
             WarpOwner.Unwarped(var written) =>
-                $"crateside saved its clip with Warp off on {Day(written)}, so it comes in at the loudness target in its color. One tempo does not hold on its beats, or it is not read yet, so it has no starter: warp it in Live and press Save Default Clip.",
+                $"crateside saved its clip with Warp off on {Day(written)}, so it comes in at the loudness target in its color. One tempo does not hold on its beats, or it is not read yet, so it has no auto warp: warp it in Live and press Save Default Clip.",
             WarpOwner.LiveAnalysis =>
                 "Live has opened it, but no warp is saved. Live ignores these markers until you press Save Default Clip.",
             WarpOwner.WaitingForLive =>
@@ -146,7 +146,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             (true, WarpOwner.Yours, { } lender) =>
                 $"Writes {Name(lender.Path)}'s warp over yours again. Yours is backed up first.",
             (true, WarpOwner.Starter, { } lender) =>
-                $"Writes {Name(lender.Path)}'s warp over the starter. The starter is backed up first.",
+                $"Writes {Name(lender.Path)}'s warp over the auto warp. The auto warp is backed up first.",
             (true, WarpOwner.Unwarped, { } lender) =>
                 $"Writes {Name(lender.Path)}'s warp over the clip with Warp off. It is backed up first.",
             (true, _, { } lender) =>
@@ -289,7 +289,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
         lentTo is { Count: > 0 } ? $" crateside lends it to {Names(lentTo)}." : string.Empty;
 
     private static string WhatSaved(SavedEdits edits) =>
-        $"from {(edits.FromStarter ? "crateside's starter" : "the saved warp")}: {Changes(edits)}";
+        $"from {(edits.FromStarter ? "crateside's auto warp" : "the saved warp")}: {Changes(edits)}";
 
     /// <summary>The edits in the edit bar's order: bar, nudge, tempo, clip start; "no edits" for none.</summary>
     public static string Changes(SavedEdits edits)
@@ -332,7 +332,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
         {
             { From: { } from } => $"lent it {Name(from)}'s warp",
             { IsUnwarped: true } => "saved its clip with Warp off",
-            _ => "gave it a starter warp",
+            _ => "gave it an auto warp",
         };
 
     private static string StarterTempo(StemWarp stem) =>
@@ -349,4 +349,5 @@ public enum ChipStyle
     Faint,
     Amber,
     Teal,
+    Auto,
 }

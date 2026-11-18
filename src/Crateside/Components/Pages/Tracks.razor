@@ -157,6 +157,10 @@
         {
             <span class="gist">steady warps whose grid falls away from the audio · furthest first</span>
         }
+        else if (Viewing is TrackFilter.AutoWarp)
+        {
+            <span class="gist">a stem's warp is crateside's guess, not one you saved</span>
+        }
         else if (Viewing is TrackFilter.ClipOffBarLine)
         {
             <span class="gist">default clips that start between two bars of Live's ruler</span>
@@ -463,6 +467,10 @@
                                 title="Re-cut as the source and a drum guide, with no vocal or instrumental stem.">
                             @(_stems.Working ? "Switching…" : "Switch to Instrumental")
                         </button>
+                    }
+                    @if (row.AutoWarp)
+                    {
+                        <span class="flag auto" title="A stem's warp is crateside's guess at the tempo, not one you saved.">Auto warp</span>
                     }
                     @if (row.IsAddedByUrl)
                     {
@@ -1394,6 +1402,7 @@
         filter switch
         {
             TrackFilter.InStaging => "In staging",
+            TrackFilter.AutoWarp => "Auto warp",
             TrackFilter.InFlight => "In flight",
             TrackFilter.NeedsAttention => "Needs attention",
             TrackFilter.TempoDrifts => "Tempo drifts",

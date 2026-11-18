@@ -47,8 +47,11 @@ labels and decoration only, never a sentence.
 A thing that is none of these is monochrome. The evidence's source-kind badges are the example:
 filled for authoritative, outlined for corroborating, dashed for algorithmic and chords-only.
 The warp view's provenance chips are the second: filled for the user's warp, outlined for one
-borrowed from a sibling, dashed for a starter, Live's unsaved analysis or no warp yet; amber only
-while waiting on Live, teal only while crateside writes.
+borrowed from a sibling, dashed for Live's unsaved analysis or no warp yet; amber only
+while waiting on Live, teal only while crateside writes. The starter warp's chip reads *Auto warp*
+(the UI's name for it) in its own lilac, `--lilac`, which no state color shares; the Tracks page
+shows the same word as a small lilac badge on a row where any stem's warp is a starter, and an
+*Auto warp* filter pill sits beside *In staging*.
 
 ## Type
 

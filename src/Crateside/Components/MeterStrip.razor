@@ -28,7 +28,7 @@ else
 @if (StarterFates.Of(Row.Beats, Row.Tempo) is { } fate)
 {
     <div class="tag-line">
-        <span class="tag-label">Starter</span>
+        <span class="tag-label">Auto warp</span>
         <span class="tag-value">@Outcome(fate)</span>
     </div>
 }
@@ -45,7 +45,7 @@ else
             StarterFate.OtherOctave => "Tempo halved or doubled",
             StarterFate.BarCorrected => "Bar corrected",
             StarterFate.LeftAtBeatZero => "Left at beat 0, bars renumbered",
-            StarterFate.NoStarter => "No starter written",
+            StarterFate.NoStarter => "No auto warp written",
             _ => throw new UnreachableException(),
         };
 }

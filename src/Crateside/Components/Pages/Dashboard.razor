@@ -617,7 +617,7 @@
             new("p-key", "By key", Represented, IsPanel: true),
             LoudnessCounted > 0 ? new("p-loud", "Loudness adjustments", LoudnessCounted, IsPanel: true) : null,
             _tempo.Warped > 0 ? new("p-tempo", "By tempo", _tempo.Warped, IsPanel: true) : null,
-            _starters.Compared > 0 ? new("p-starter", "Starter warps", _starters.Compared, IsPanel: true) : null,
+            _starters.Compared > 0 ? new("p-starter", "Auto warps", _starters.Compared, IsPanel: true) : null,
             new("p-genre", "By genre", _distribution.Genres.Count(g => g.Tracks > 0), IsPanel: true),
             new("p-familiarity", "By familiarity", _familiarity.Count(f => f is { Value: not null, Songs: > 0 }), IsPanel: true),
             _artists.Artists.Count > 0 ? new("p-artist", "By artist", _artists.Artists.Count, IsPanel: true) : null,

@@ -19,7 +19,7 @@ public static class WarpSummary
             WarpOutcome.Written(var from, _) =>
                 $"borrowed the warp of {StemFileName.PresetOf(from) ?? Path.GetFileName(from)}",
             WarpOutcome.Started(var bpm, _, var markerSeconds) =>
-                $"starter warp at {bpm:0.00} BPM, marker at {markerSeconds:0.00} s",
+                $"auto warp at {bpm:0.00} BPM, marker at {markerSeconds:0.00} s",
             WarpOutcome.Unwarped(_, var because) => $"Warp off: {because ?? "no tempo reading"}",
             _ => null,
         };

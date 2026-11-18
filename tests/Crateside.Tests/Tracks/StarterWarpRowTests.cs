@@ -62,6 +62,22 @@ public sealed class StarterWarpRowTests : IDisposable
     }
 
     [Fact]
+    public void A_row_is_an_auto_warp_where_any_stem_holds_a_starter_warp()
+    {
+        var starter = Row(path =>
+            path.Contains("Vocal", StringComparison.Ordinal)
+                ? new WrittenWarp(null, 0, default)
+                : null
+        );
+        var none = Row(_ => null);
+
+        Assert.True(starter.AutoWarp);
+        Assert.True(starter.Matches(TrackFilter.AutoWarp));
+        Assert.False(none.AutoWarp);
+        Assert.False(none.Matches(TrackFilter.AutoWarp));
+    }
+
+    [Fact]
     public void A_track_whose_stems_hold_only_starter_warps_is_not_ready_to_move() =>
         Assert.NotEqual(TrackState.ReadyToMove, Row(_ => new WrittenWarp(null, 0, default)).State);
 

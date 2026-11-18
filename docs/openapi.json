@@ -4085,6 +4085,7 @@
         "enum": [
           "Unfinished",
           "InStaging",
+          "AutoWarp",
           "InFlight",
           "NeedsAttention",
           "TempoDrifts",
@@ -4471,6 +4472,10 @@
             "type": "boolean",
             "description": "Some sample's default clip starts off a bar line of Live's ruler (#177)."
           },
+          "autoWarp": {
+            "type": "boolean",
+            "description": "Some stem's warp is a starter warp: the UI's \"Auto warp\"."
+          },
           "runningStage": {
             "oneOf": [
               {
@@ -4817,6 +4822,10 @@
           "hasDefaultClip": {
             "type": "boolean",
             "description": "Its default clip is saved, which only a finished warp gets. Read for staged samples only\r\n(ADR 0037)."
+          },
+          "autoWarp": {
+            "type": "boolean",
+            "description": "Its warp is crateside's starter guess, not a saved one (#77)."
           },
           "warpBorrowedFrom": {
             "type": [

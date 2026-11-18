@@ -618,6 +618,13 @@
     border-color: rgba(111, 199, 214, 0.3);
 }
 
+/* crateside's own guess at the tempo: a hue none of the state colors use. */
+.wchip.auto {
+    color: var(--lilac);
+    background: rgba(185, 163, 227, 0.14);
+    border-color: rgba(185, 163, 227, 0.35);
+}
+
 /* The selected lane's detail. */
 .detail {
     margin-top: 10px;

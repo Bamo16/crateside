@@ -212,7 +212,7 @@ public sealed class CratesideApiTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(400, (int?)problem["status"]);
         Assert.StartsWith(
-            "filter must be one of: Unfinished, InStaging, ",
+            "filter must be one of: Unfinished, InStaging, AutoWarp, ",
             (string?)problem["detail"]
         );
     }
