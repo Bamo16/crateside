@@ -1504,8 +1504,19 @@ button.jtag:hover {
     background: rgba(236, 231, 220, 0.75);
     clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
     transform: translateX(-5.5px);
-    cursor: ew-resize;
+    cursor: grab;
     touch-action: none;
+    z-index: 3;
+}
+
+.notch.grip.held {
+    cursor: grabbing;
+}
+
+/* A clip start at the ruler's left edge keeps its whole grip: the ruler clips a little past its edges, not a flag's half. */
+.ruler:has(.notch.grip) {
+    overflow: clip;
+    overflow-clip-margin: 6px;
 }
 
 .notch.grip:hover,

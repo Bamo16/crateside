@@ -141,7 +141,7 @@ export const View = (Base) =>
             if (target.closest("[data-overview]"))
                 return this.hoverOverview(event);
 
-            if (target.closest(".ruler.dragging, .jtag, .edge"))
+            if (target.closest(".ruler.dragging, .jtag, .edge, .notch.grip"))
                 return this.hideSeekLine();
 
             const ruler = target.closest(".ruler");
@@ -246,7 +246,7 @@ export const View = (Base) =>
                 return;
             }
 
-            if (target.closest(".jtag, .edge, button, a, input, select"))
+            if (target.closest(".jtag, .edge, .notch.grip, button, a, input, select"))
                 return;
 
             const ruler = target.closest(".ruler:not(.dragging)");
