@@ -259,6 +259,54 @@ export function editDrag(section, server) {
         }
     };
 
+    // The page's router is static, so Blazor never offers a link click or Back to the page's
+    // NavigationLock. While a draft is unsaved this asks the server instead: a click on an in-app
+    // link, or Back (a sentinel history entry stands in front of it), becomes a "leave?" question.
+    let guarding = false;
+    let pushed = false;
+    let ignorePop = false;
+
+    const click = (event) => {
+        if (!guarding || event.defaultPrevented || event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey)
+            return;
+
+        const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+
+        if (!link || (link.target && link.target !== "_self") || link.hasAttribute("download"))
+            return;
+
+        const to = new URL(link.href, location.href);
+
+        if (to.origin !== location.origin || (to.pathname === location.pathname && to.search === location.search))
+            return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        server.invokeMethodAsync("AskLeave", to.pathname + to.search + to.hash);
+    };
+
+    const pop = () => {
+        if (ignorePop) {
+            ignorePop = false;
+
+            return;
+        }
+
+        if (guarding && pushed) {
+            pushed = false;
+            server.invokeMethodAsync("AskLeave", null);
+        }
+    };
+
+    const rearm = () => {
+        if (guarding && !pushed) {
+            history.pushState({ ...history.state, leaveGuard: true }, "", location.href);
+            pushed = true;
+        }
+    };
+
+    window.addEventListener("click", click, true);
+    window.addEventListener("popstate", pop);
     document.addEventListener("keydown", key);
     document.addEventListener("keydown", escape, true);
     section.addEventListener("pointerdown", down);
@@ -267,7 +315,30 @@ export function editDrag(section, server) {
     section.addEventListener("pointercancel", settle);
 
     return {
+        guard(active) {
+            guarding = active;
+
+            if (active)
+                rearm();
+            else if (pushed) {
+                pushed = false;
+
+                if (history.state?.leaveGuard) {
+                    ignorePop = true;
+                    history.back();
+                }
+            }
+        },
+        stay: rearm,
+        leaveBack() {
+            guarding = false;
+
+            // The sentinel was spent by the Back that asked; one more Back goes where it was headed.
+            history.back();
+        },
         dispose() {
+            window.removeEventListener("click", click, true);
+            window.removeEventListener("popstate", pop);
             document.removeEventListener("keydown", key);
             document.removeEventListener("keydown", escape, true);
             section.removeEventListener("pointerdown", down);

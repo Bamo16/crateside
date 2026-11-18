@@ -46,6 +46,8 @@ public partial class WarpView
     private WarpSaved? _undo;
     private DateTimeOffset _lineAt;
     private string? _leaveTo;
+    private bool _leaveBack;
+    private bool _guarded;
     private bool _focusStay;
     private bool _focusKeep;
     private ElementReference _stay;
@@ -193,7 +195,7 @@ public partial class WarpView
     private void ResetEdit()
     {
         CloseEdit();
-        (_line, _undo, _leaveTo, _phase) = (null, null, null, Phase.Idle);
+        (_line, _undo, _leaveTo, _leaveBack, _phase) = (null, null, null, false, Phase.Idle);
         _sentPeaks.Clear();
     }
 
@@ -289,6 +291,17 @@ public partial class WarpView
         if (_group is not null)
             SetClip(bar);
 
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>A link click or Back while a draft is unsaved; <paramref name="target"/> is null for Back.</summary>
+    [JSInvokable]
+    public async Task AskLeave(string? target)
+    {
+        if (!IsDirty)
+            return;
+
+        (_leaveTo, _leaveBack, _focusStay) = (target ?? Nav.Uri, target is null, true);
         await InvokeAsync(StateHasChanged);
     }
 
@@ -464,26 +477,34 @@ public partial class WarpView
         return Task.CompletedTask;
     }
 
-    private void LeaveKey(KeyboardEventArgs key)
-    {
-        if (key.Key is "Escape")
-            Stay();
-    }
+    private Task LeaveKey(KeyboardEventArgs key) =>
+        key.Key is "Escape" ? StayAsync() : Task.CompletedTask;
 
     private string? DraftTempo(WarpGroup disk, WarpGroup drawn) =>
         IsDirty && disk.Lender is { Sidecar: { } was } && drawn.Lender is { Sidecar: { } now }
             ? WarpEditWording.DraftTempo(was, now, _draft)
             : null;
 
-    private void Stay() => _leaveTo = null;
-
-    private void LeaveAnyway()
+    private async Task StayAsync()
     {
-        var target = _leaveTo;
+        var back = _leaveBack;
+
+        (_leaveTo, _leaveBack) = (null, false);
+
+        if (back && _editJs is not null)
+            await _editJs.InvokeVoidAsync("stay");
+    }
+
+    private async Task LeaveAnywayAsync()
+    {
+        var (target, back) = (_leaveTo, _leaveBack);
 
         ResetEdit();
+        _guarded = false;
 
-        if (target is not null)
+        if (back && _editJs is not null)
+            await _editJs.InvokeVoidAsync("leaveBack");
+        else if (target is not null)
             Nav.NavigateTo(target);
     }
 

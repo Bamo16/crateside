@@ -34,8 +34,8 @@
             <h2 id="leave-title">Leave without saving the warp?</h2>
             <p id="leave-body">The draft (@WarpEditWording.Changes(_draft)) is not kept. The @("stem".ToQuantity(SavingCount, ShowQuantityAs.Words)) stay as they are on disk.</p>
             <div class="leave-actions">
-                <button class="outline" @ref="_stay" @onclick="Stay">Stay</button>
-                <button class="danger" @onclick="LeaveAnyway">Leave without saving</button>
+                <button class="outline" @ref="_stay" @onclick="StayAsync">Stay</button>
+                <button class="danger" @onclick="LeaveAnywayAsync">Leave without saving</button>
             </div>
         </div>
     </div>
@@ -1218,6 +1218,12 @@
             if (_editJs is null)
                 _editJs = await (await Js.InvokeAsync<IJSObjectReference>("import", "./Components/WarpView.razor.js"))
                     .InvokeAsync<IJSObjectReference>("editDrag", _section, _self);
+
+            if (_guarded != IsDirty)
+            {
+                _guarded = IsDirty;
+                await _editJs.InvokeVoidAsync("guard", _guarded);
+            }
 
             if (_leaveTo is not null && _focusStay)
             {
