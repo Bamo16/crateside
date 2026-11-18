@@ -158,7 +158,7 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, Func<string> 
             ? double.Parse(confidenceLine.Groups["R"].Value, CultureInfo.InvariantCulture)
             : 0;
 
-        IReadOnlyList<string> chords = FinalChords.Matches(stderr) is [.., var chordLine]
+        List<string> chords = FinalChords.Matches(stderr) is [.., var chordLine]
             ? Collapsed(chordLine.Groups["Chords"].Value.Split('-'))
             : [];
 

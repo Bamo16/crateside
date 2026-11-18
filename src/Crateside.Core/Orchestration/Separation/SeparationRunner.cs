@@ -166,7 +166,7 @@ public sealed class SeparationRunner(
     /// <summary>
     /// Whether the run produced at least what the recipe asked for, said as an error when it did not.
     /// </summary>
-    private static string? ShortfallFrom(SeparationRecipe recipe, IReadOnlyList<string> outputs) =>
+    private static string? ShortfallFrom(SeparationRecipe recipe, List<string> outputs) =>
         outputs.Count < recipe.ExpectedOutputs
             ? $"the recipe asked for {"file".ToQuantity(recipe.ExpectedOutputs)} "
                 + $"and the run produced {outputs.Count}"
