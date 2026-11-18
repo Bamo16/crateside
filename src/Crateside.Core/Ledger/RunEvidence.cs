@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Crateside.Core.KeyDetection;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Pairing;
 
@@ -131,6 +132,9 @@ public sealed record RunEvidence
     /// <summary>Where each chord in the progression starts, in seconds; empty on runs recorded before #198.</summary>
     public IReadOnlyList<double> ChordStarts { get; init; } = [];
 
+    /// <summary>Every chord event keydetect printed, with its start; <c>Chords</c> keeps only the last 64. Empty on runs recorded before it was kept.</summary>
+    public IReadOnlyList<ChordTime> ChordTimeline { get; init; } = [];
+
     /// <summary>Every time the running key estimate changed. Early instability is often just a sparse intro.</summary>
     public IReadOnlyList<KeyEvent> KeyEvents { get; init; } = [];
 
@@ -214,6 +218,7 @@ public sealed record RunEvidence
                 && starts.Count == named.Count
                     ? starts
                     : [],
+            ChordTimeline = machine?.ChordTimeline ?? [],
             KeyEvents =
             [
                 .. (machine?.KeyEvents ?? []).Select(change => new KeyEvent
@@ -689,6 +694,8 @@ internal sealed record MachineDto
     public IReadOnlyList<string>? Chords { get; init; }
 
     public IReadOnlyList<double>? ChordStarts { get; init; }
+
+    public IReadOnlyList<ChordTime>? ChordTimeline { get; init; }
 
     public IReadOnlyList<KeyEventDto>? KeyEvents { get; init; }
 

@@ -153,6 +153,10 @@ public sealed class DetectorSet(
                     is KeydetectReading.Read { ChordStarts: { Count: > 0 } starts }
                     ? starts
                     : null,
+                ChordTimeline = keydetect
+                    is KeydetectReading.Read { ChordTimeline: { Count: > 0 } timeline }
+                    ? timeline
+                    : null,
                 KeyEvents = keydetect is KeydetectReading.Read ? KeyEventsOf(keydetect) : null,
                 KeyLifts = LiftsOf(lifts),
             },
@@ -310,6 +314,10 @@ public sealed class DetectorSet(
             Chords = keydetect is KeydetectReading.Read { Chords: var chords } ? chords : [],
             ChordStarts = keydetect is KeydetectReading.Read { ChordStarts: { Count: > 0 } starts }
                 ? starts
+                : null,
+            ChordTimeline = keydetect
+                is KeydetectReading.Read { ChordTimeline: { Count: > 0 } timeline }
+                ? timeline
                 : null,
             KeyEvents = KeyEventsOf(keydetect),
         };

@@ -15,22 +15,35 @@ public static class ChordStrip
     /// "no chord", leaves a gap. A run with no stored starts draws nothing.
     /// </summary>
     public static IReadOnlyList<ChordBand> Plan(RunEvidence run, double seconds) =>
-        run is { Chords: var chords, ChordStarts: var starts } && starts.Count == chords.Count
-            ?
-            [
-                .. chords
-                    .Select(
-                        (chord, index) =>
-                            new ChordBand(
-                                starts[index],
-                                index + 1 < starts.Count ? starts[index + 1] : seconds,
-                                chord
-                            )
-                    )
-                    .Where(band =>
-                        band is { Chord: not "N" } && band.End > band.Start && band.Start < seconds
-                    )
-                    .Select(band => band with { End = Math.Min(band.End, seconds) }),
-            ]
-            : [];
+        run switch
+        {
+            // The whole track; the summary's chords keep only the last 64.
+            { ChordTimeline: { Count: > 0 } timeline } => Bands(
+                timeline.Select(time => (time.Chord, time.Start)).ToList(),
+                seconds
+            ),
+            { Chords: var chords, ChordStarts: var starts } when starts.Count == chords.Count =>
+                Bands([.. chords.Zip(starts)], seconds),
+            _ => [],
+        };
+
+    private static List<ChordBand> Bands(
+        List<(string Chord, double Start)> chords,
+        double seconds
+    ) =>
+        [
+            .. chords
+                .Select(
+                    (chord, index) =>
+                        new ChordBand(
+                            chord.Start,
+                            index + 1 < chords.Count ? chords[index + 1].Start : seconds,
+                            chord.Chord
+                        )
+                )
+                .Where(band =>
+                    band is { Chord: not "N" } && band.End > band.Start && band.Start < seconds
+                )
+                .Select(band => band with { End = Math.Min(band.End, seconds) }),
+        ];
 }

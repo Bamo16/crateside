@@ -290,7 +290,9 @@ running totals, so a change is where the whole-song estimate flipped, not where 
   20px tall) with the chord in mono 11 where the block has 7px per character plus 6 (`D` from 13px, `G♯m` from 27px). Each block runs from its chord's
   start to the next one's, the last to the track's end; `N` (no chord) is a gap. A block seeks like a key band
   (`▶ from 0:05`). The starts are keydetect's `start=` on its chord lines, kept with the run as
-  `chord_starts` beside `chords` (`ChordStrip.Plan`). A run recorded before they were kept has the gutter
+  `chord_starts` beside `chords` (`ChordStrip.Plan`). The summary behind `chords` keeps only the last 64 chords, so
+  the lane draws from `chord_timeline` (`[{chord, start}]`, one entry per chord event the filter printed, the
+  whole track) and falls back to `chord_starts` + `chords` (the tail) where a run has none. A run recorded before they were kept has the gutter
   note `chord times pending: reading the track again` and no blocks until the evidence backfill reads
   keydetect again and attaches them (`DetectorBackfill`, wanted as `chord times`; no verdict changes, no re-judging).
 - **The band invites it** only where the verdict is WITHHELD, or LOW with the whole-file detectors

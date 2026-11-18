@@ -206,7 +206,15 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, Func<string> 
             starts,
             Tuning.Matches(stderr) is [.., var tuned]
                 ? double.Parse(tuned.Groups["Cents"].Value, CultureInfo.InvariantCulture)
-                : null
+                : null,
+            [
+                .. ChordEvent
+                    .Matches(stderr)
+                    .Select(match => new ChordTime(
+                        match.Groups["Chord"].Value,
+                        double.Parse(match.Groups["Start"].Value, CultureInfo.InvariantCulture)
+                    )),
+            ]
         );
     }
 
@@ -270,6 +278,7 @@ public abstract record KeydetectReading
     /// <param name="RunnerUp">The second-ranked key (<c>key_alt</c>), where the build prints one.</param>
     /// <param name="Reranked">Whether the chord rerank changed the answer (<c>key_reranked</c>).</param>
     /// <param name="TuningCents">How far the audio sits from A = 440, in cents within ±50 (<c>tuning_cents</c>); null when the build prints none.</param>
+    /// <param name="ChordTimeline">Every chord event the filter printed with its start, however many the summary kept; empty when the build prints none.</param>
     /// <param name="ChordStarts">Where each of <paramref name="Chords"/> starts, in seconds (<c>start=</c>, v1.1.0 on); empty when the build prints none.</param>
     public sealed record Read(
         MusicKey Key,
@@ -280,7 +289,8 @@ public abstract record KeydetectReading
         double? RunnerUpR = null,
         bool? Reranked = null,
         IReadOnlyList<double>? ChordStarts = null,
-        double? TuningCents = null
+        double? TuningCents = null,
+        IReadOnlyList<ChordTime>? ChordTimeline = null
     ) : KeydetectReading;
 
     public sealed record Failed(string Error) : KeydetectReading;
@@ -288,3 +298,6 @@ public abstract record KeydetectReading
 
 /// <summary>A change of <c>keydetect</c>'s running estimate, in the filter's spelling.</summary>
 public sealed record KeydetectEvent(double Seconds, string Key, double R);
+
+/// <summary>One committed chord and where it starts, in seconds.</summary>
+public sealed record ChordTime(string Chord, double Start);

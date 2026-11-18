@@ -98,6 +98,33 @@ public sealed class KeydetectFilterTests : IDisposable
     }
 
     [Fact]
+    public void The_timeline_holds_every_chord_event_though_the_summary_lists_only_64()
+    {
+        string[] names = ["C", "G", "Am", "F"];
+        var events = Enumerable
+            .Range(0, 70)
+            .Select(i =>
+                $"[Parsed_keydetect_0 @ 0] t={i + 1}.00 chord={names[i % 4]} start={i}.50"
+            );
+        var listed = Enumerable.Range(6, 64).Select(i => names[i % 4]);
+        var stderr = string.Join(
+            '\n',
+            [
+                .. events,
+                "[Parsed_keydetect_0 @ 0] lavfi.keydetect.key=C",
+                $"[Parsed_keydetect_0 @ 0] lavfi.keydetect.chords={string.Join('-', listed)}",
+            ]
+        );
+
+        var read = Assert.IsType<KeydetectReading.Read>(KeydetectFilter.Parse(stderr));
+
+        Assert.Equal(64, read.Chords.Count);
+        Assert.Equal(70, read.ChordTimeline!.Count);
+        Assert.Equal(new ChordTime("C", 0.5), read.ChordTimeline[0]);
+        Assert.Equal(new ChordTime("G", 69.5), read.ChordTimeline[^1]);
+    }
+
+    [Fact]
     public void A_build_that_prints_no_starts_leaves_them_empty()
     {
         const string Stderr = """

@@ -62,6 +62,16 @@ public sealed class RunEvidenceTests : IDisposable
     }
 
     [Fact]
+    public void A_runs_chord_timeline_is_read_whole()
+    {
+        File.WriteAllLines(_path, [Run("2026-09-01T00:00:00+00:00", timeline: true)]);
+
+        var run = TestLedger.EvidenceFor(_path, Song);
+
+        Assert.Equal([new("Cm", 0.0), new("Ab", 2.5), new("Cm", 9)], run?.ChordTimeline);
+    }
+
+    [Fact]
     public void A_run_recorded_before_chord_starts_were_kept_has_none() =>
         Assert.Empty(
             TestLedger.EvidenceFor(WriteRun("2026-09-01T00:00:00+00:00"), Song)?.ChordStarts ?? [1]
@@ -77,7 +87,8 @@ public sealed class RunEvidenceTests : IDisposable
     private static string Run(
         string timestamp,
         string reasoning = "the argument",
-        double[]? chordStarts = null
+        double[]? chordStarts = null,
+        bool timeline = false
     ) =>
         JsonSerializer.Serialize(
             new
@@ -93,6 +104,14 @@ public sealed class RunEvidenceTests : IDisposable
                 {
                     chords = new[] { "Cm", "Ab" },
                     chord_starts = chordStarts,
+                    chord_timeline = timeline
+                        ? new[]
+                        {
+                            new { chord = "Cm", start = 0.0 },
+                            new { chord = "Ab", start = 2.5 },
+                            new { chord = "Cm", start = 9.0 },
+                        }
+                        : null,
                     key_events = new[] { new { t = 0.0, key = "C minor" } },
                 },
             }

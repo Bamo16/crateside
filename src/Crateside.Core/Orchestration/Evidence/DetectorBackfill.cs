@@ -170,7 +170,7 @@ public sealed class DetectorBackfill(
             keydetect switch
             {
                 KeydetectReading.Failed(var cError) => cError,
-                KeydetectReading.Read { ChordStarts: { Count: > 0 } } => null,
+                KeydetectReading.Read { ChordTimeline: { Count: > 0 } } => null,
                 _ => "this build prints no chord times",
             }
         );
@@ -180,8 +180,11 @@ public sealed class DetectorBackfill(
 
         if (
             added.Contains(ChordTimes)
-            && keydetect is KeydetectReading.Read { ChordStarts: { } starts }
-            && !store.EditLatestEvidence(target.Song, json => WithChordTimes(json, starts))
+            && keydetect is KeydetectReading.Read { ChordTimeline: { } timeline } read
+            && !store.EditLatestEvidence(
+                target.Song,
+                json => WithChordTimes(json, read.ChordStarts ?? [], timeline)
+            )
         )
         {
             added.Remove(ChordTimes);
@@ -263,27 +266,57 @@ public sealed class DetectorBackfill(
         return evidence.ToJsonString(Relaxed);
     }
 
-    /// <summary>The evidence with <c>chord_starts</c> set, when the run has chords and as many times; null otherwise. Nothing else changes, so no verdict does.</summary>
-    internal static string? WithChordTimes(string json, IReadOnlyList<double> starts)
+    /// <summary>
+    /// The evidence with <c>chord_starts</c> (when the run has chords and as many times) and <c>chord_timeline</c> set;
+    /// null when neither could be added. Nothing else changes, so no verdict does.
+    /// </summary>
+    internal static string? WithChordTimes(
+        string json,
+        IReadOnlyList<double> starts,
+        IReadOnlyList<ChordTime> timeline
+    )
     {
         if (
             JsonNode.Parse(json) is not JsonObject { Count: > 0 } evidence
             || evidence["chords"] is not JsonArray { Count: > 0 } chords
-            || chords.Count != starts.Count
         )
             return null;
 
-        evidence["chord_starts"] = new JsonArray([
-            .. starts.Select(start => JsonValue.Create(start)),
-        ]);
+        var changed = false;
 
-        return evidence.ToJsonString(Relaxed);
+        if (
+            evidence["chord_starts"] is not JsonArray { Count: > 0 }
+            && chords.Count == starts.Count
+        )
+        {
+            evidence["chord_starts"] = new JsonArray([
+                .. starts.Select(start => JsonValue.Create(start)),
+            ]);
+            changed = true;
+        }
+
+        if (evidence["chord_timeline"] is not JsonArray { Count: > 0 } && timeline.Count > 0)
+        {
+            evidence["chord_timeline"] = new JsonArray([
+                .. timeline.Select(time =>
+                    (JsonNode?)new JsonObject { ["chord"] = time.Chord, ["start"] = time.Start }
+                ),
+            ]);
+            changed = true;
+        }
+
+        return changed && evidence["chord_starts"] is JsonArray { Count: > 0 }
+            ? evidence.ToJsonString(Relaxed)
+            : null;
     }
 
     private static bool LacksChordTimes(string json) =>
         JsonNode.Parse(json) is JsonObject { } evidence
         && evidence["chords"] is JsonArray { Count: > 0 }
-        && evidence["chord_starts"] is not JsonArray { Count: > 0 };
+        && (
+            evidence["chord_starts"] is not JsonArray { Count: > 0 }
+            || evidence["chord_timeline"] is not JsonArray { Count: > 0 }
+        );
 
     /// <summary>The evidence with each field <paramref name="fresh"/> holds replaced, each detector on its own; every other field is kept.</summary>
     internal static string? Refreshed(string json, string fresh)

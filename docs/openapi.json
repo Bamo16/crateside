@@ -713,6 +713,27 @@
         },
         "description": "What ffmpeg's `beatdetect` reads on one file, an upload's source or instrumental: the whole file, and each 30 s of it."
       },
+      "ChordTime": {
+        "required": [
+          "chord",
+          "start"
+        ],
+        "type": "object",
+        "properties": {
+          "chord": {
+            "type": "string"
+          },
+          "start": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "One committed chord and where it starts, in seconds."
+      },
       "ClassifiedStem": {
         "required": [
           "file",
@@ -2710,6 +2731,13 @@
               "format": "double"
             },
             "description": "Where each chord in the progression starts, in seconds; empty on runs recorded before #198."
+          },
+          "chordTimeline": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChordTime"
+            },
+            "description": "Every chord event keydetect printed, with its start; `Chords` keeps only the last 64. Empty on runs recorded before it was kept."
           },
           "keyEvents": {
             "type": "array",

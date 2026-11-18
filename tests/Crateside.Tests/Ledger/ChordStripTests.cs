@@ -1,3 +1,4 @@
+using Crateside.Core.KeyDetection;
 using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Ledger;
@@ -30,6 +31,21 @@ public sealed class ChordStripTests
     [Fact]
     public void A_run_recorded_without_starts_draws_nothing() =>
         Assert.Empty(ChordStrip.Plan(Run(["F", "C"], []), 10));
+
+    [Fact]
+    public void The_full_timeline_is_drawn_when_the_summary_kept_only_the_tail()
+    {
+        var timeline = Enumerable
+            .Range(0, 70)
+            .Select(i => new ChordTime(i % 2 == 0 ? "C" : "G", i))
+            .ToArray();
+        var run = Run(["C", "G"], [68, 69]) with { ChordTimeline = timeline };
+
+        var bands = ChordStrip.Plan(run, 70);
+
+        Assert.Equal(70, bands.Count);
+        Assert.Equal(0, bands[0].Start);
+    }
 
     [Fact]
     public void A_chord_past_the_end_of_the_track_is_dropped() =>

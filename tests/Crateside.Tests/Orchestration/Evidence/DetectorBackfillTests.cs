@@ -474,9 +474,32 @@ public sealed class DetectorBackfillTests : IDisposable
 
         var after = _store.LatestEvidenceJson()[Song];
 
-        Assert.Equal(before[..^1] + ",\"chord_starts\":[0,4.5]}", after);
+        Assert.Equal(
+            before[..^1]
+                + ",\"chord_starts\":[0,4.5],\"chord_timeline\":[{\"chord\":\"Am\",\"start\":0},{\"chord\":\"G\",\"start\":4.5}]}",
+            after
+        );
         Assert.Equal(Song, Assert.Single(_store.Read().Runs).Song);
         Assert.Null(await backfill.NextAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task A_run_with_chord_starts_but_no_timeline_gets_the_timeline_only()
+    {
+        Judge(ReadBy("new", chords: """["Am","G"]""", starts: "[0,4.5]", timeline: false));
+        _detectors.Sha256 = "new";
+        _detectors.ChordStarts = [0, 4.5];
+
+        var backfill = Backfill();
+        var target = (await backfill.NextAsync(TestContext.Current.CancellationToken))!;
+        var before = _store.LatestEvidenceJson()[Song];
+        await backfill.ReadAsync(target, TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            before[..^1]
+                + ",\"chord_timeline\":[{\"chord\":\"Am\",\"start\":0},{\"chord\":\"G\",\"start\":4.5}]}",
+            _store.LatestEvidenceJson()[Song]
+        );
     }
 
     [Fact]
@@ -524,9 +547,10 @@ public sealed class DetectorBackfillTests : IDisposable
         string sha256,
         string key = "A minor",
         string chords = """["Am"]""",
-        string? starts = "[0]"
+        string? starts = "[0]",
+        bool timeline = true
     ) =>
-        $$$"""{"algorithms":{"ffmpeg_keydetect":{"key":"{{{key}}}"},"madmom":{"key":"A minor"},"essentia_edma":{"key":"A minor"}},"chords":{{{chords}}}{{{(starts is null ? string.Empty : $",\"chord_starts\":{starts}")}}},"key_lifts":[],"versions":{"ffmpeg_sha256":"{{{sha256}}}"}}""";
+        $$$"""{"algorithms":{"ffmpeg_keydetect":{"key":"{{{key}}}"},"madmom":{"key":"A minor"},"essentia_edma":{"key":"A minor"}},"chords":{{{chords}}}{{{(starts is null ? string.Empty : $",\"chord_starts\":{starts}")}}}{{{(starts is null || !timeline ? string.Empty : ",\"chord_timeline\":[{\"chord\":\"Am\",\"start\":0}]")}}},"key_lifts":[],"versions":{"ffmpeg_sha256":"{{{sha256}}}"}}""";
 
     private sealed class FakeDetectors : IDetectorSet
     {
@@ -586,7 +610,13 @@ public sealed class DetectorBackfillTests : IDisposable
                         0.8,
                         ["Am", "G"],
                         [],
-                        ChordStarts: ChordStarts
+                        ChordStarts: ChordStarts,
+                        ChordTimeline:
+                        [
+                            .. ChordStarts.Select(
+                                (start, i) => new ChordTime(i % 2 == 0 ? "Am" : "G", start)
+                            ),
+                        ]
                     )
             );
 
