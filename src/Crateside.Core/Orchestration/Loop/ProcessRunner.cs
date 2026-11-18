@@ -52,7 +52,7 @@ public sealed class ProcessRunner(ILogger<ProcessRunner>? log = null) : IProcess
             command = command.WithStandardInputPipe(PipeSource.FromString(input, Encoding.UTF8));
 
         using var timeout = new CancellationTokenSource(
-            request.Timeout ?? System.Threading.Timeout.InfiniteTimeSpan
+            request.Timeout ?? Timeout.InfiniteTimeSpan
         );
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, timeout.Token);
 

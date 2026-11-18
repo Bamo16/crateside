@@ -223,10 +223,7 @@ public sealed class SourceRetentionTests : IDisposable
             file.Save();
         }
 
-        Assert.Equal(
-            "w-p4B1Si31s",
-            Crateside.Core.Samples.StemTagReader.Read(stem)?.SourceTrackKey
-        );
+        Assert.Equal("w-p4B1Si31s", Core.Samples.StemTagReader.Read(stem)?.SourceTrackKey);
     }
 
     [Fact]

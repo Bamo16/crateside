@@ -215,12 +215,10 @@ public sealed class BackingRunnerTests : IDisposable
     [Fact]
     public void All_three_familiarities_are_keywords_the_writer_accepts() =>
         Assert.All(
-            Crateside.Core.Familiarity.FamiliarityVocabulary.All,
+            Core.Familiarity.FamiliarityVocabulary.All,
             value =>
                 Assert.True(
-                    CratesideKeywords.IsKnown(
-                        Crateside.Core.Familiarity.FamiliarityVocabulary.Keyword(value)
-                    )
+                    CratesideKeywords.IsKnown(Core.Familiarity.FamiliarityVocabulary.Keyword(value))
                 )
         );
 
@@ -228,11 +226,9 @@ public sealed class BackingRunnerTests : IDisposable
     public void Every_genre_on_the_list_is_a_keyword_the_writer_accepts()
     {
         Assert.All(
-            Crateside.Core.Genres.GenreVocabulary.All,
+            Core.Genres.GenreVocabulary.All,
             genre =>
-                Assert.True(
-                    CratesideKeywords.IsKnown(Crateside.Core.Genres.GenreVocabulary.Keyword(genre))
-                )
+                Assert.True(CratesideKeywords.IsKnown(Core.Genres.GenreVocabulary.Keyword(genre)))
         );
     }
 

@@ -100,7 +100,7 @@ public sealed class StemDetailsReader(
 
     /// <summary>From Live's index once the sample is in the library, else from the folder's tag store (ADR 0013).</summary>
     private FileTags? TagsOf(TrackSample sample) =>
-        System.IO.Path.GetDirectoryName(sample.Path) is { Length: > 0 } folder
+        Path.GetDirectoryName(sample.Path) is { Length: > 0 } folder
         && AbletonReads
             .TagsOrEmpty(sample.IsInLibrary ? index.Read : folderInfo.Read, folder)
             .TryGet(sample.Path, out var tags)

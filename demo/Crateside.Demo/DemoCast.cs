@@ -58,7 +58,7 @@ internal sealed record DemoTrack(
     public string Url => $"https://music.youtube.com/watch?v={VideoId}";
 
     /// <summary>What crateside recorded for the song; null for a track not judged yet.</summary>
-    public Verdict? Verdict => HasVerdict ? Crateside.Demo.Verdict.Of(Artist, Title) : null;
+    public Verdict? Verdict => HasVerdict ? Verdict.Of(Artist, Title) : null;
 
     public KeyConfidence Confidence => Verdict?.Confidence ?? KeyConfidence.Unknown;
 

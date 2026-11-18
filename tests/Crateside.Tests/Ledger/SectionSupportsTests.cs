@@ -318,7 +318,7 @@ public sealed class SectionSupportsTests
             [null, SectionSupport.Hypothesis],
             latest.Sections.Select(section => section.Support)
         );
-        Assert.Empty(Crateside.Core.Ableton.BrowserCollections.TrackMarksFor(latest));
+        Assert.Empty(Core.Ableton.BrowserCollections.TrackMarksFor(latest));
     }
 
     [Fact]

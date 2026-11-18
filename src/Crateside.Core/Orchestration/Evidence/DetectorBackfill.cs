@@ -170,7 +170,7 @@ public sealed class DetectorBackfill(
             keydetect switch
             {
                 KeydetectReading.Failed(var cError) => cError,
-                KeydetectReading.Read { ChordTimeline: { Count: > 0 } } => null,
+                KeydetectReading.Read { ChordTimeline.Count: > 0 } => null,
                 _ => "this build prints no chord times",
             }
         );

@@ -135,7 +135,7 @@ public sealed class HandoffSupersedeTests : IDisposable
     }
 
     private static bool StemTagsSay(string path, string trackKey) =>
-        Crateside.Core.Samples.StemTagReader.Read(path)?.Provenance?.SourceTrackKey is { } id
+        StemTagReader.Read(path)?.Provenance?.SourceTrackKey is { } id
         && id.Equals(trackKey, StringComparison.Ordinal);
 
     [Fact]
