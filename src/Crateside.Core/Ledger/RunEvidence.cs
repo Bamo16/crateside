@@ -143,6 +143,7 @@ public sealed record RunEvidence
             ? JsonSerializer.Deserialize(json, RunEvidenceJsonContext.Default.MachineDto)
             : null;
         var lookups = ReadLookups(run.Lookups);
+        var sections = SectionSupports.Classify(run);
 
         return new()
         {
@@ -153,10 +154,10 @@ public sealed record RunEvidence
             Center = run.Center,
             Mixed = run.Mixed,
             DecidedBy = run.DecidedBy,
-            Sections = SectionSupports.Classify(run),
+            Sections = sections,
             Windows = run.Windows,
             Direction = run.Direction,
-            Readings = WindowReading.Of(run, machine?.Windows ?? []),
+            Readings = WindowReading.Of(run, machine?.Windows ?? [], sections),
             TonicCheck = run.TonicCheck,
             Reasoning = run.Reasoning,
             Candidates = run.Candidates,
@@ -285,7 +286,8 @@ public sealed record WindowReading(
     /// <summary>The run's windows matched to their reports by span, and to sections by name.</summary>
     internal static IReadOnlyList<WindowReading> Of(
         RunRecord run,
-        IReadOnlyList<MachineDto.WindowDto> reports
+        IReadOnlyList<MachineDto.WindowDto> reports,
+        IReadOnlyList<Section>? sections = null
     ) =>
         [
             .. run.Windows.Select(window =>
@@ -301,7 +303,7 @@ public sealed record WindowReading(
                     window,
                     AlgorithmResult.FromDto(report?.Algorithms),
                     report?.Backers,
-                    run.Sections.FirstOrDefault(section =>
+                    (sections ?? run.Sections).FirstOrDefault(section =>
                         section.Label.Equals(window.Name, StringComparison.OrdinalIgnoreCase)
                     )
                 );

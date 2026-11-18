@@ -68,6 +68,40 @@ public sealed class KeyStripTests
     }
 
     [Fact]
+    public void A_section_a_window_was_asked_over_is_drawn_from_a_recorded_run()
+    {
+        TonalCenter home = new("C#", DiatonicMode.Aeolian);
+        TonalCenter away = new("A#", DiatonicMode.Aeolian);
+        var run = RunEvidence.From(
+            new()
+            {
+                RecordedAt = DateTimeOffset.UnixEpoch,
+                Song = "a - b",
+                Confidence = KeyConfidence.Medium,
+                Center = home,
+                Sections =
+                [
+                    new("Main Section", home, 0),
+                    new("Buildup and Last Drop", away, 141.84),
+                ],
+                Windows =
+                [
+                    new(0, 141.84, "Main Section", WindowAsker.User),
+                    new(141.84, 219.07, "Buildup and Last Drop", WindowAsker.User),
+                ],
+            }
+        );
+
+        var plan = KeyStrip.Plan(run, 219.07);
+
+        Assert.Equal(
+            "0-142 Main Section · C♯ min | 142-219 Buildup and Last Drop · A♯ min",
+            Drawn(plan)
+        );
+        Assert.Empty(plan.Unplaced);
+    }
+
+    [Fact]
     public void A_section_without_a_time_is_named_and_not_drawn()
     {
         Section bridge = new("bridge", CLydian);
