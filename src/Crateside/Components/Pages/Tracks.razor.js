@@ -3,6 +3,7 @@
 const Motion = 220;
 const Settle = 80;
 const Patience = 1000;
+const ScrollKeys = new Set(["Home", "End", "PageUp", "PageDown"]);
 
 // A virtualized list renders only what is near the viewport, so a row far down is scrolled to by its
 // place in the list first, then by its element once the list has drawn it.
@@ -130,6 +131,20 @@ export function keepPlace(spacer) {
         busy = false;
     };
 
+    const typing = (event) => event.target.closest?.("input, textarea, select, [contenteditable]");
+
+    // Blazor's Virtualize listens on the document and scrolls the list for Home, End, PageUp and PageDown,
+    // keys that belong to the caret in a text box; a capture listener keeps them from reaching it there.
+    const keepTyping = (event) => {
+        if (ScrollKeys.has(event.key) && typing(event))
+            event.stopPropagation();
+    };
+
+    const onUserKey = (event) => {
+        if (!typing(event))
+            onUserScroll();
+    };
+
     // After a close, the spacer only ever shrinks, as the user scrolls back up.
     const onScroll = () => {
         if (busy || height === 0)
@@ -145,7 +160,8 @@ export function keepPlace(spacer) {
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("wheel", onUserScroll, { passive: true });
     window.addEventListener("touchmove", onUserScroll, { passive: true });
-    window.addEventListener("keydown", onUserScroll);
+    window.addEventListener("keydown", onUserKey);
+    document.addEventListener("keydown", keepTyping, true);
     document.documentElement.style.overflowAnchor = "none";
 
     return {
@@ -157,7 +173,8 @@ export function keepPlace(spacer) {
             window.removeEventListener("scroll", onScroll);
             window.removeEventListener("wheel", onUserScroll);
             window.removeEventListener("touchmove", onUserScroll);
-            window.removeEventListener("keydown", onUserScroll);
+            window.removeEventListener("keydown", onUserKey);
+            document.removeEventListener("keydown", keepTyping, true);
             document.documentElement.style.overflowAnchor = "";
         },
     };
