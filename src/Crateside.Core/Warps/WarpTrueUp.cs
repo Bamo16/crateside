@@ -268,7 +268,15 @@ public sealed class WarpTrueUp(
 }
 
 /// <summary>A sidecar as it was when the plan read it.</summary>
-public readonly record struct SidecarStamp(string Path, long Length, DateTime Written);
+public readonly record struct SidecarStamp(string Path, long Length, DateTime Written)
+{
+    public static SidecarStamp Of(string audioPath)
+    {
+        var sidecar = new FileInfo(StemFileName.AnalysisFor(audioPath));
+
+        return new SidecarStamp(audioPath, sidecar.Length, sidecar.LastWriteTimeUtc);
+    }
+}
 
 public abstract record TrueUpPlan
 {

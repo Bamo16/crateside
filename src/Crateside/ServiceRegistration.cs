@@ -514,6 +514,8 @@ public static class ServiceRegistration
         services.AddSingleton<TransientOrigins>();
         services.AddSingleton<LiveAnalyses>();
         services.AddSingleton<RetypedWarps>();
+        services.AddSingleton<SavedWarps>();
+        services.AddSingleton<WarpEditor>();
         services.AddSingleton<SidecarBackups>();
         services.AddSingleton<WarpOffRepair>();
         services.AddHostedService<WarpOffRepairWorker>();

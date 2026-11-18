@@ -80,6 +80,14 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
     public string Sub(StemWarp stem) =>
         stem.Owner switch
         {
+            WarpOwner.Yours
+            {
+                SavedHere: not null,
+                Saved: var saved,
+                LentTo: { Count: > 0 } lentTo
+            } => $"saved in crateside {Day(saved)} · lent to {Names(lentTo)}{Differs(stem)}",
+            WarpOwner.Yours { SavedHere: not null, Saved: var saved } =>
+                $"saved in crateside {Day(saved)}{Differs(stem)}",
             WarpOwner.Yours(var saved, _, not null) =>
                 $"saved over crateside's · {Day(saved)}{Differs(stem)}",
             WarpOwner.Yours(var saved, { Count: > 0 } lentTo, _) =>
@@ -97,6 +105,8 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
     public string Sentence(StemWarp stem) =>
         stem.Owner switch
         {
+            WarpOwner.Yours { SavedHere: { } here, LentTo: var lentTo } =>
+                $"Saved in crateside on {Day(here.At.LocalDateTime)}, {WhatSaved(here.Edits)}.{Lends(lentTo)}{FollowsUntil(stem)}",
             WarpOwner.Yours(var saved, _, { } over) =>
                 $"crateside {WhatItWrote(over)} on {Day(over.Written.ToLocalTime())}; you saved over it in Live on {Day(saved)}, so it is yours now.{FollowsUntil(stem)}",
             WarpOwner.Yours(var saved, { Count: > 0 } lentTo, _) =>
@@ -273,6 +283,36 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
         group.PartsFrom(stem) is { } parts
             ? $" · differs from {TempoFormat.Clock(parts)}"
             : string.Empty;
+
+    private string Lends(IReadOnlyList<string> lentTo) =>
+        lentTo is { Count: > 0 } ? $" crateside lends it to {Names(lentTo)}." : string.Empty;
+
+    private static string WhatSaved(SavedEdits edits)
+    {
+        List<string> changes = [];
+
+        if (edits.BarShift is not 0)
+            changes.Add(
+                $"grid {(Math.Abs(edits.BarShift) is 1 ? "a beat" : $"{Math.Abs(edits.BarShift).ToWords()} beats")} {(edits.BarShift > 0 ? "later" : "earlier")}"
+            );
+
+        if (edits.NudgeMs is not 0)
+            changes.Add(
+                edits.NudgeMs.ToString("+0.##;-0.##", CultureInfo.InvariantCulture) + " ms"
+            );
+
+        if (Math.Abs(edits.TempoFactor - 1) > 1e-9)
+            changes.Add(
+                Math.Abs(edits.TempoFactor - 0.5) < 1e-9 ? "tempo halved"
+                : Math.Abs(edits.TempoFactor - 2) < 1e-9 ? "tempo doubled"
+                : $"tempo ×{edits.TempoFactor.ToString("0.###", CultureInfo.InvariantCulture)}"
+            );
+
+        if (edits.ClipStartBar is { } bar)
+            changes.Add($"clip start bar {bar}");
+
+        return $"from {(edits.FromStarter ? "crateside's starter" : "the saved warp")}: {(changes is [] ? "no edits" : string.Join(", ", changes))}";
+    }
 
     private string FollowsUntil(StemWarp stem) =>
         (group.PartsFrom(stem), group.Lender) switch

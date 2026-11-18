@@ -196,7 +196,8 @@ by hand; everything below describes candidates against it.
   marker at the start of the clip at the arrangement's tempo, which is right only in the
   rare case where bar 1 begins exactly there, and a hard warp (tempo changes, say) can sit
   half done in staging with many markers. The **default clip** is saved only once the warp
-  is good, so it is the last step before the move. Described step by step in
+  is good, so it is the last step before the move. It is saved in Live (*Save Default Clip*) or in
+  crateside's warp view, whose save writes the stems and counts as the maintainer's own warp. Described step by step in
   [the manual workflow](docs/the-manual-workflow.md).
 - **Default clip** — the range of a sample Ableton pulls in when it is dragged out of the
   library: from where its **first verse** begins to the end of the clip. What makes an

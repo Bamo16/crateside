@@ -2832,6 +2832,103 @@
           null
         ]
       },
+      "SavedEdits": {
+        "required": [
+          "barShift",
+          "nudgeMs",
+          "tempoFactor",
+          "clipStartBar",
+          "clipWasBar",
+          "fromStarter"
+        ],
+        "type": "object",
+        "properties": {
+          "barShift": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "How many beats later the grid sits under the audio; negative for earlier.",
+            "format": "int32"
+          },
+          "nudgeMs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "tempoFactor": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The tempo's net scaling: 0.5 for halved, 2 for doubled, 1 for none.",
+            "format": "double"
+          },
+          "clipStartBar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "The bar the clip now starts on, or null when it stayed.",
+            "format": "int32"
+          },
+          "clipWasBar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "The bar the clip started on before the save.",
+            "format": "int32"
+          },
+          "fromStarter": {
+            "type": "boolean",
+            "description": "Whether the warp it started from was crateside's starter."
+          }
+        },
+        "description": "What a save changed in the warp it started from."
+      },
+      "SavedWarp": {
+        "required": [
+          "at",
+          "length",
+          "written",
+          "edits"
+        ],
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "length": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The sidecar's size as written, to tell whether Live has saved over it.",
+            "format": "int64"
+          },
+          "written": {
+            "type": "string",
+            "description": "The sidecar's last write time (UTC) as written.",
+            "format": "date-time"
+          },
+          "edits": {
+            "$ref": "#/components/schemas/SavedEdits"
+          }
+        },
+        "description": "A warp saved from the warp view, and the sidecar as it was written."
+      },
       "Section": {
         "required": [
           "label",
@@ -5246,6 +5343,17 @@
               {
                 "description": "The warp crateside wrote that the user saved over, if any.",
                 "$ref": "#/components/schemas/WrittenWarp"
+              }
+            ]
+          },
+          "savedHere": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The save from the warp view this sidecar still holds, null once Live has saved over it.",
+                "$ref": "#/components/schemas/SavedWarp"
               }
             ]
           }

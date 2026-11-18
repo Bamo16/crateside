@@ -108,7 +108,11 @@ public abstract record WarpOwner
     /// <param name="LentTo">The siblings crateside lent this warp to, whose sidecars still hold it.</param>
     /// <param name="SavedOver">The warp crateside wrote that the user saved over, if any.</param>
     public sealed record Yours(DateTime Saved, IReadOnlyList<string> LentTo, WrittenWarp? SavedOver)
-        : WarpOwner;
+        : WarpOwner
+    {
+        /// <summary>The save from the warp view this sidecar still holds, null once Live has saved over it.</summary>
+        public SavedWarp? SavedHere { get; init; }
+    }
 
     /// <summary>A sibling's warp crateside copied onto this stem (ADR 0043).</summary>
     public sealed record Borrowed(string From, DateTime Written) : WarpOwner;
@@ -136,7 +140,8 @@ public abstract record WarpOwner
 public sealed class StemWarpReader(
     WrittenWarps written,
     TransientOrigins origins,
-    LiveAnalyses waiting
+    LiveAnalyses waiting,
+    SavedWarps? saved = null
 )
 {
     /// <summary>The track's lanes on one time axis, as the warp view draws them.</summary>
@@ -192,7 +197,10 @@ public sealed class StemWarpReader(
                 changed,
                 written.LentTo(audioPath),
                 written.Ever(audioPath)
-            ),
+            )
+            {
+                SavedHere = saved?.Of(audioPath),
+            },
             _ => new WarpOwner.LiveAnalysis(),
         };
 

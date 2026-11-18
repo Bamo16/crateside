@@ -182,6 +182,13 @@ public sealed class CratesidePaths
         set;
     }
 
+    /// <summary>The sidecars saved from the warp view, and what each save changed.</summary>
+    public string SavedWarpsFile
+    {
+        get => field ?? Roaming("saved-warps.json");
+        set;
+    }
+
     /// <summary>Where the transients crateside wrote into sidecars came from.</summary>
     public string TransientOriginsFile
     {

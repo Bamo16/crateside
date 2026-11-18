@@ -280,7 +280,9 @@ nor a verdict for the video ID:
   markers in seconds and beats, the tempo read bar by bar, the default clip and loop in seconds,
   and whether Warp is on. Beside that, crateside's own records about the warp: the one it wrote that
   the sidecar still holds (`written`), the one it last wrote even if saved over (`lastWritten`),
-  a retype to a truer tempo (`retyped`), and the copies of the sidecar it kept (`backups`). A
+  a retype to a truer tempo (`retyped`), and, on `owner` when `kind` is `yours`, the save made from the
+  warp view that the sidecar still holds (`savedHere`: when, and the edits: bar shift, nudge in ms,
+  tempo factor, clip start bar and the bar it was), null once Live has saved over it, and the copies of the sidecar it kept (`backups`). A
   starter written since 2026-11-01 says how it was made (`written.starter`): the tempo written and
   beatdetect's before refining, the marker in seconds and its beat within the bar (0 the downbeat),
   beatdetect's beat and downbeat with its confidence and the gate it was held to, where the beat

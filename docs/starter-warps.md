@@ -18,8 +18,8 @@ The Collections below are written only for a meaning mapped to a number in Setti
 
 | crateside wrote | the stem's Collection | left to do by hand |
 |---|---|---|
-| a starter | Check beat (orange) | check the bars fall on the downbeats, move the clip start to the first verse's bar, save |
-| a clip with Warp off | Warp by hand (blue) | the whole warp and the clip start |
+| a starter | Check beat (orange) | check the bars fall on the downbeats, move the clip start to the first verse's bar, and save: in Live (Save Default Clip) or in crateside's warp view, which writes every stem of the group ([ADR 0107](adr/0107-a-warp-saved-in-crateside-is-the-maintainers-own.md)) |
+| a clip with Warp off | Warp by hand (blue) | the whole warp and the clip start, in Live |
 | a lent warp (a sibling's saved warp) | Warped (green) | nothing: the sibling's clip start comes with it |
 
 ## Settings
