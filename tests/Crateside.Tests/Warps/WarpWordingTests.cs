@@ -173,6 +173,12 @@ public sealed class WarpWordingTests
     [Theory]
     [InlineData(14.2, "0:14.20")]
     [InlineData(251.66, "4:11.66")]
+    [InlineData(0, "0:00.00")]
+    [InlineData(59.999, "1:00.00")]
+    [InlineData(-0.007, "-0:00.01")]
+    [InlineData(-0.001, "0:00.00")]
+    [InlineData(-83.5, "-1:23.50")]
+    [InlineData(-59.999, "-1:00.00")]
     public void A_time_in_the_audio_reads_to_the_hundredth(double seconds, string text) =>
         Assert.Equal(text, WarpWording.Time(seconds));
 

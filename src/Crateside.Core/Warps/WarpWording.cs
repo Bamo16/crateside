@@ -11,9 +11,10 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
 {
     public static string Time(double seconds)
     {
-        var whole = (int)Math.Floor(seconds / 60);
+        var hundredths = (long)Math.Round(Math.Abs(seconds) * 100, MidpointRounding.AwayFromZero);
+        var sign = seconds < 0 && hundredths > 0 ? "-" : string.Empty;
 
-        return $"{whole}:{(seconds - whole * 60).ToString("00.00", CultureInfo.InvariantCulture)}";
+        return $"{sign}{hundredths / 6000}:{hundredths % 6000 / 100:00}.{hundredths % 100:00}";
     }
 
     public static string Day(DateTime when) => when.ToString("d MMM", CultureInfo.CurrentCulture);
