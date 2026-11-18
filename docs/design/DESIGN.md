@@ -231,22 +231,24 @@ open, no fold, drawn when the track has samples.
   table of the stem's envelope (`WavePeaks`: one of Live's bins to a column, more past 65,536),
   sliced with the same arithmetic on both sides, and the transient ticks are one path with the
   same markup. A still view is the same pixels whichever drew it.
-- **Seeking**: a click on the ruler plays from the start of the bar under the pointer (a faint 1px
-  `--text` 30% line shows where), exactly where the pointer is without a warp; playing carries on,
-  paused stays paused. A click on a lane seeks there, selects the lane and plays its stem. A key band
-  is a `<button>` titled `chorus · E minor · ▶ from 1:53` and seeks to its start. The drawer's *Play
+- **Seeking** (narrowed 2026-11-17): only the ruler's bar-number row, its bottom 22px (`.seek-row`),
+  seeks. A click there plays from the start of the bar under the pointer (a faint 1px `--text` 30%
+  line shows where), exactly where the pointer is without a warp; playing carries on, paused stays
+  paused. The lanes, key bands, chord blocks and the rest of the ruler do not seek; a click on a lane
+  still selects it, and a key band still picks its section. A key band is a `<button>` titled
+  `chorus · E minor · from 1:53`. The drawer's *Play
   window* seeks to the window's start and plays (with loop on it sets the braces to the window). A seek
   outside the window brings the window, at its width, to the bar that holds the spot. The overview
   strip, tempo line, *Off the grid*, the time axis and the gutters never seek. A lane's gutter wears a
   14px speaker glyph at its top right while its stem is what plays.
 - **Cursors** (the maintainer's, 2026-11-11): the handles wear a `[` (start) and `]` (end) with the
   hotspot on the vertical stroke and `ew-resize` behind it; the ruler, lanes, key bands and the slim
-  waveform wear a speaker, `default` behind it; the body keeps `grab` and `grabbing`. Nothing a
+  waveform wear a speaker, `default` behind it (2026-11-17: the speaker is on the ruler's bar-number row only, so the cursor and the click area are the same element); the body keeps `grab` and `grabbing`. Nothing a
   drag acts on shows the hand.
 - **A lane**: flags (7×9 pennants) where every visible pair is ≥ 9px apart, else 9px ticks with
   faint lines; Live's overview at 42%, stereo as two channels; transients only when zoomed;
-  the whole file at full strength, the stem's clip start a 1px `--text-50` line (nothing dimmed
-  before or after the clip, ADR 0072); a stem with markers of its own boxed dashed from where
+  the whole file at full strength (nothing dimmed before or after the clip, ADR 0072; the clip start
+  is marked on the ruler only, not on the lanes); a stem with markers of its own boxed dashed from where
   it parts. No sidecar: a dashed box with one line (amber while waiting for Live).
 - **Markers are the ones Live shows**: Live writes one more, 1/32 beat past the last, and that one is
   never drawn or counted. A steady warp is *1 marker*.
@@ -291,8 +293,8 @@ running totals, so a change is where the whole-song estimate flipped, not where 
 `KeyLane`.
 - **The chord lane** (#198): the row under the key strip, 26px, same axis, same outlined blocks (1px at 30%,
   20px tall) with the chord in mono 11 where the block has 7px per character plus 6 (`D` from 13px, `G♯m` from 27px). Each block runs from its chord's
-  start to the next one's, the last to the track's end; `N` (no chord) is a gap. A block seeks like a key band
-  (`▶ from 0:05`). The starts are keydetect's `start=` on its chord lines, kept with the run as
+  start to the next one's, the last to the track's end; `N` (no chord) is a gap. A block is titled like a key band
+  (`from 0:05`) and does not seek. The starts are keydetect's `start=` on its chord lines, kept with the run as
   `chord_starts` beside `chords` (`ChordStrip.Plan`). The summary behind `chords` keeps only the last 64 chords, so
   the lane draws from `chord_timeline` (`[{chord, start}]`, one entry per chord event the filter printed, the
   whole track) and falls back to `chord_starts` + `chords` (the tail) where a run has none. A run recorded before they were kept has the gutter
@@ -316,11 +318,13 @@ running totals, so a change is where the whole-song estimate flipped, not where 
   *Revert* and *Close*. Keys `,` `.` (a beat) and `←` `→` (1 ms, Shift 5 ms) apply when focus is not
   in a text field, a slider or the view's window.
 - **The draft on the lanes**: ruler, grid, tempo line (`64.00 was 128.00`), Off the grid (recomputed),
-  flags, clip-start lines, the click and the player readout are drawn in the draft's bars; the view
-  keeps its place in the audio. Saving lanes carry `○ draft` after the chip; the clip-start line is
-  dashed and the marker flag hollow. The gist ends `· ○ draft`. Nothing is colored but state: teal
+  flags, the click and the player readout are drawn in the draft's bars; the view
+  keeps its place in the audio. Saving lanes carry `○ draft` after the chip; the marker flag is
+  hollow. The gist ends `· ○ draft`. Nothing is colored but state: teal
   while writing, red for a failed write, amber for *Not saved*.
-- **Clip-start grip**: while the bar is open the notch is an 11×16 pennant that moves in whole bars
+- **Clip-start grip**: while the bar is open the notch is an 11×16 pennant (in a 20px-wide hit area
+  the ruler's full height, above the seek row, `grab`/`grabbing`; one grip for all stems, no line down
+  the lanes; a press on it never seeks) that moves in whole bars
   (tag `clip start · bar 64`, a dashed ghost at the old place); release sets the draft, Esc reverts.
   A `role="slider"`; ←/→ move a bar, Shift four.
 - **Saving, Saved, Undo**: the bar folds into one teal-bordered line (`Saving to 4 stems · backing
@@ -710,6 +714,10 @@ time). Track details uses `--table-tracks`. The Tools column caps itself at
 
 Where the build departs from a canvas, by page. Clear an entry once a later design supersedes it.
 
+- **Warp view, click-to-seek** (2026-11-17): the canvas seeks from the ruler, lanes, key bands and chord
+  blocks; the build seeks from the ruler's bar-number row only, and draws the clip start once, as the
+  ruler's grip, with no line through the lanes.
+
 ### Playback (handoff 22, #105)
 
 - **The music is leveled under the click** (2026-11-12, #105): it plays at -18 LUFS (never raised) by
@@ -832,7 +840,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **The bar phrase says "bar", not "grid"**: a saved lane reads *bar two beats later, +4 ms*, as
   the handoff's own example does.
 - **While the grip is dragged the lanes' own flags do not move**; only the ghost, the tag and the
-  clip-start line follow the pointer, and the lanes redraw in the new bar on release.
+  grip follow the pointer, and the lanes redraw in the new bar on release.
 - **Peaks are sent to the player once** and reused across keypresses, so a draft redraw does not
   resend audio data.
 

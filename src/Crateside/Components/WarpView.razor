@@ -359,6 +359,7 @@
                 <div class="ruler @(_form is not null ? "dragging" : null)"
                      data-snaps="@(_form is null ? null : string.Join(',', SnapBounds(group, from, to).Select(F)))"
                      data-clip-snaps="@(_editing ? ClipSnaps(group, from, to) : null)">
+                    <div class="seek-row"></div>
                     @if (group.Lender is null)
                     {
                         @foreach (var at in TimeTicks(from, to))
@@ -580,11 +581,6 @@
                                     <svg class="transients" viewBox="0 0 @Columns 64" preserveAspectRatio="none">
                                         <path d="@TransientTicks(stem, from, to)" />
                                     </svg>
-                                }
-
-                                @if (X(stem.Clip.Start, from, to) is >= 0 and <= 100 and var stemClipX)
-                                {
-                                    <div class="clip-line @(onDraft ? "draft" : null)" style="left: @P(stemClipX)%"></div>
                                 }
                             }
                             @if (parts is { } parting && wording.Name(group.Lender!.Path) is var sibling)

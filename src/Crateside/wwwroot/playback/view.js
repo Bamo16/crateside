@@ -144,19 +144,13 @@ export const View = (Base) =>
             if (target.closest(".ruler.dragging, .jtag, .edge, .notch.grip"))
                 return this.hideSeekLine();
 
-            const ruler = target.closest(".ruler");
-            const lane = target.closest(".lane > .plot");
+            const row = target.closest(".ruler:not(.dragging) .seek-row");
 
-            if (ruler) {
-                const at = this.plotTime(event, ruler);
+            if (row) {
+                const at = this.plotTime(event, row);
                 const bar = this.grid ? this.snaps()[this.floorIndex(at)] : at;
 
                 this.showSeekLine(bar, 0, this.fieldBox?.height ?? 0);
-            } else if (lane) {
-                const box = lane.getBoundingClientRect();
-                const field = this.els.field.getBoundingClientRect();
-
-                this.showSeekLine(this.plotTime(event, lane), box.top - field.top, box.height);
             } else {
                 this.hideSeekLine();
             }
@@ -225,52 +219,15 @@ export const View = (Base) =>
             if (target.closest("[data-overview]"))
                 return;
 
-            const keys = target.closest(".key-strip, .chord-strip");
-
-            // Under the sliding strip the key's bands are not the server's to click.
-            if (keys && this.strip) {
-                const at = this.plotTime(event, keys);
-                const under = (keys.classList.contains("chord-strip") ? this.live?.chords : this.live?.keys)?.find((key) => at >= key.start && at < key.end);
-
-                if (under)
-                    this.seek(under.start);
-
-                return;
-            }
-
-            const band = target.closest(".key-band[data-start]");
-
-            if (band) {
-                this.seek(Number(band.dataset.start));
-
-                return;
-            }
-
             if (target.closest(".jtag, .edge, .notch.grip, button, a, input, select"))
                 return;
 
-            const ruler = target.closest(".ruler:not(.dragging)");
+            const row = target.closest(".ruler:not(.dragging) .seek-row");
 
-            if (ruler) {
-                const at = this.plotTime(event, ruler);
+            if (row) {
+                const at = this.plotTime(event, row);
 
                 this.seek(this.grid ? this.snaps()[this.floorIndex(at)] : at);
-
-                return;
-            }
-
-            const lane = target.closest(".lane > .plot");
-
-            if (lane) {
-                const file = lane.closest(".lane").dataset.file;
-                const at = this.plotTime(event, lane);
-
-                if (file && file !== this.fileId && this.files.some((playable) => playable.id === file))
-                    this.selectFile(file, { at, play: true }).then(() => this.paintLanes());
-                else
-                    this.seek(at, { play: true });
-
-                this.paintLanes();
             }
         }
 

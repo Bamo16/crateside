@@ -262,7 +262,19 @@
     position: relative;
     height: 49px;
     overflow: hidden;
+}
+
+/* The only part of the ruler that seeks. */
+.seek-row {
+    position: absolute;
+    inset: auto 0 0;
+    height: 22px;
     cursor: url("/cursors/speaker.svg") 4 12, default;
+}
+
+.ruler .tick,
+.ruler .bar-number {
+    pointer-events: none;
 }
 
 .grid > * {
@@ -411,10 +423,6 @@
     display: contents;
 }
 
-.lane > .plot {
-    cursor: url("/cursors/speaker.svg") 4 12, default;
-}
-
 .lane > .lane-gutter {
     position: relative;
     cursor: pointer;
@@ -520,16 +528,6 @@
     stroke: var(--text-30);
     shape-rendering: crispEdges;
     vector-effect: non-scaling-stroke;
-}
-
-/* The clip start, marked rather than dimmed. */
-.clip-line {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--text-50);
-    pointer-events: none;
 }
 
 .differs {
@@ -1489,11 +1487,7 @@ button.jtag:hover {
     color: var(--text);
 }
 
-/* A draft: the clip start dashed and the marker flag hollow, on the lanes the save would write. */
-.clip-line.draft {
-    background: none;
-    border-left: 1px dashed rgba(236, 231, 220, 0.75);
-}
+/* A draft: the marker flag hollow, on the lanes the save would write. */
 
 .flag.draft {
     background: var(--bg);
@@ -1503,17 +1497,27 @@ button.jtag:hover {
 
 /* The clip-start grip while the bar is open. */
 .notch.grip {
-    bottom: auto;
+    bottom: 0;
     top: 0;
-    width: 11px;
-    height: 16px;
+    width: 20px;
+    height: auto;
     border: 0;
-    background: rgba(236, 231, 220, 0.75);
-    clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
-    transform: translateX(-5.5px);
+    background: none;
+    transform: translateX(-10px);
     cursor: grab;
     touch-action: none;
     z-index: 3;
+}
+
+.notch.grip::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 4.5px;
+    width: 11px;
+    height: 16px;
+    background: rgba(236, 231, 220, 0.75);
+    clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
 }
 
 .notch.grip.held {
@@ -1526,10 +1530,13 @@ button.jtag:hover {
     overflow-clip-margin: 6px;
 }
 
-.notch.grip:hover,
-.notch.grip.held,
-.notch.grip:focus-visible {
+.notch.grip:hover::before,
+.notch.grip.held::before,
+.notch.grip:focus-visible::before {
     background: var(--text);
+}
+
+.notch.grip:focus-visible {
     outline: none;
 }
 
@@ -1556,11 +1563,6 @@ button.jtag:hover {
     color: var(--text);
     transform: translateX(-50%);
     pointer-events: none;
-}
-
-.plot ::deep .clip-line.held {
-    background: var(--text);
-    border: 0;
 }
 
 /* Leaving with a draft. */

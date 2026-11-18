@@ -46,7 +46,6 @@
     font: inherit;
     color: inherit;
     text-align: left;
-    cursor: url("/cursors/speaker.svg") 4 12, default;
     position: absolute;
     top: 3.5px;
     height: 22px;

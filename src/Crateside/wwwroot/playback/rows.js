@@ -341,7 +341,7 @@ export const Rows = (Base) =>
             const { live, grid } = { live: this.live, grid: this.grid };
             const { from, to, wide } = view;
             const px = (pixels) => plotPx(pixels) / wide;
-            const html = [];
+            const html = [`<div ${scope} class="seek-row"></div>`];
             const clipX = live.clip && xOf(view, live.clip.start) >= 0 && xOf(view, live.clip.start) <= 100 ? xOf(view, live.clip.start) : null;
             const toLeft = clipX !== null && clipX > 100 - px(72);
             const underClip = (at) => clipX !== null && (toLeft ? at > clipX - px(90) && at < clipX - px(7) : at > clipX - px(19) && at < clipX + px(66));
@@ -570,11 +570,6 @@ export const Rows = (Base) =>
                     `<svg ${scope} class="transients" viewBox="0 0 ${COLUMNS} 64" preserveAspectRatio="none"><path ${scope} d="${ticks.join("")}"/></svg>`,
                 );
             }
-
-            const clip = xOf(view, lane.clip);
-
-            if (clip >= 0 && clip <= 100)
-                html.push(`<div ${scope} class="clip-line${lane.draft ? " draft" : ""}" style="left:${pct(clip)}%"></div>`);
 
             if (lane.parts !== null && lane.parts !== undefined)
                 html.push(`<div ${scope} class="differs" style="left:${pct(Math.max(0, xOf(view, lane.parts)))}%"></div>`);

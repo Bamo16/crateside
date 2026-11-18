@@ -119,9 +119,9 @@
             : "no key";
 
     internal static string Title(KeyBand band) =>
-        $"{(band.Section is { Length: > 0 } named ? named + " · " : null)}{ModeText.Named(band.Center)} · ▶ from {WarpWording.Time(band.Start)}{(band.FromWindow ? " · from a window" : null)}";
+        $"{(band.Section is { Length: > 0 } named ? named + " · " : null)}{ModeText.Named(band.Center)} · from {WarpWording.Time(band.Start)}{(band.FromWindow ? " · from a window" : null)}";
 
-    internal static string ChordTitle(ChordBand band) => $"{band.Label} · ▶ from {WarpWording.Time(band.Start)}";
+    internal static string ChordTitle(ChordBand band) => $"{band.Label} · from {WarpWording.Time(band.Start)}";
 
     private double X(double seconds) => (seconds - From) / (To - From) * 100;
 

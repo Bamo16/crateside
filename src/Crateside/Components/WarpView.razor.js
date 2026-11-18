@@ -169,7 +169,6 @@ export function editDrag(section, server) {
     const release = () => {
         grab.tag.remove();
         grab.ghost.remove();
-        grab.lines.forEach((line) => line.remove());
         grab.notch.classList.remove("held");
     };
 
@@ -206,15 +205,6 @@ export function editDrag(section, server) {
             home: notch.style.left,
             bars: snaps(ruler),
             bar: Number(notch.dataset.bar),
-            lines: [...section.querySelectorAll(".lane.saving .plot")].map((plot) => {
-                const line = document.createElement("div");
-
-                line.className = "clip-line held";
-                line.style.left = notch.style.left;
-                plot.append(line);
-
-                return line;
-            }),
         };
         tag.style.left = notch.style.left;
         tag.textContent = `clip start · bar ${grab.bar}`;
@@ -234,7 +224,6 @@ export function editDrag(section, server) {
         grab.notch.style.left = left;
         grab.tag.style.left = left;
         grab.tag.textContent = `clip start · bar ${bar}`;
-        grab.lines.forEach((line) => (line.style.left = left));
     };
 
     const up = async () => {
