@@ -22,6 +22,10 @@ public sealed record WarpDraft
     /// <summary>The clip's start as a whole bar number; null leaves it where it is.</summary>
     public int? ClipStartBar { get; init; }
 
+    /// <summary>Whether the draft changes nothing: no shift, nudge, net tempo change or clip start.</summary>
+    public bool IsEmpty =>
+        BarShift is 0 && NudgeMs is 0 && Math.Abs(TempoFactor - 1) < 1e-9 && ClipStartBar is null;
+
     public double TempoFactor => Tempo.Aggregate(1.0, (factor, step) => factor * step.Factor);
 
     public WarpDraft Later(int beats) => this with { BarShift = BarShift + beats };

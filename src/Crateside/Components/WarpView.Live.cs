@@ -11,7 +11,8 @@ public partial class WarpView
     // One of Live's bins to a column up to about 6:20 of audio, two past that.
     private const int PeakColumnsCap = 65_536;
 
-    private readonly ConditionalWeakTable<StemWarp, WavePeaks> _peaks = [];
+    // Keyed by the analysis, which a drafted copy of a stem shares with the stem on disk.
+    private readonly ConditionalWeakTable<object, WavePeaks> _peaks = [];
 
     private WarpGroup? _liveGroup;
     private string? _liveKey;
@@ -115,7 +116,8 @@ public partial class WarpView
             {
                 file = Path.GetFileName(stem.Path),
                 covered = true,
-                peaks = PeaksOf(stem),
+                peaks = PeaksSent(stem),
+                draft = Drafted(stem),
                 markers = stem.Markers.Select(marker => marker.Seconds),
                 transients = stem.TransientTimes,
                 clip = stem.Clip.Start,
@@ -149,8 +151,8 @@ public partial class WarpView
     /// <summary>The stem's envelope, read from its overview once.</summary>
     private WavePeaks Peaks(StemWarp stem) =>
         _peaks.GetValue(
-            stem,
-            read => WavePeaks.Of(read.Sidecar?.Audio.Overview, read.SampleRate, PeakColumnsCap)
+            (object?)stem.Sidecar?.Audio ?? stem,
+            _ => WavePeaks.Of(stem.Sidecar?.Audio.Overview, stem.SampleRate, PeakColumnsCap)
         );
 
     private object PeaksOf(StemWarp stem)

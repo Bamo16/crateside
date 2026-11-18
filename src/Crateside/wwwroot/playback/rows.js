@@ -22,9 +22,14 @@ export const Rows = (Base) =>
         strip = null;
 
         setLive(live) {
+            // A lane whose envelope did not change is sent without it: the one from the last time stands.
+            const before = new Map((this.live?.lanes ?? []).map((lane) => [lane.file, lane.peaks]));
+
             for (const lane of live.lanes) {
                 if (lane.peaks)
                     lane.peaks.bytes = Uint8Array.from(atob(lane.peaks.data), (char) => char.charCodeAt(0));
+                else if (lane.covered)
+                    lane.peaks = before.get(lane.file);
             }
 
             this.live = live;
@@ -548,7 +553,7 @@ export const Rows = (Base) =>
                     continue;
 
                 html.push(`<span ${scope} class="marker-line${flags ? "" : " dense"}" style="left:${pct(at100)}%"></span>`);
-                html.push(`<span ${scope} class="${flags ? "flag" : "flag-tick"}" style="left:${pct(at100)}%"></span>`);
+                html.push(`<span ${scope} class="${flags ? "flag" : "flag-tick"}${lane.draft ? " draft" : ""}" style="left:${pct(at100)}%"></span>`);
             }
 
             if (view.zoomed) {
@@ -569,7 +574,7 @@ export const Rows = (Base) =>
             const clip = xOf(view, lane.clip);
 
             if (clip >= 0 && clip <= 100)
-                html.push(`<div ${scope} class="clip-line" style="left:${pct(clip)}%"></div>`);
+                html.push(`<div ${scope} class="clip-line${lane.draft ? " draft" : ""}" style="left:${pct(clip)}%"></div>`);
 
             if (lane.parts !== null && lane.parts !== undefined)
                 html.push(`<div ${scope} class="differs" style="left:${pct(Math.max(0, xOf(view, lane.parts)))}%"></div>`);

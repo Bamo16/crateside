@@ -196,6 +196,11 @@ class Playback extends View(Rows(Overview(Follow(Loop(Window(PlayerStrip(AudioEn
             this.emit();
     }
 
+    // Where the playhead is, in seconds of audio, whether playing, parked or being scrubbed.
+    playhead() {
+        return this.scrubbing ? this.scrubbing.at : this.playing ? this.position() : this.parked;
+    }
+
     setGrid(source, duration, laneFiles) {
         const first = this.duration === 0;
 

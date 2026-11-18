@@ -60,7 +60,7 @@ public sealed class WarpEditorTests : IDisposable
             plan,
             siblings,
             new WarpDraft(),
-            TestContext.Current.CancellationToken
+            ct: TestContext.Current.CancellationToken
         );
 
         Assert.IsType<WarpSaveOutcome.Saved>(outcome);
@@ -88,7 +88,7 @@ public sealed class WarpEditorTests : IDisposable
             plan,
             siblings,
             new WarpDraft().Later(1),
-            TestContext.Current.CancellationToken
+            ct: TestContext.Current.CancellationToken
         );
         new KeptWarps(_paths, _written).Keep(Instrumental);
 
@@ -107,7 +107,7 @@ public sealed class WarpEditorTests : IDisposable
             plan,
             siblings,
             new WarpDraft().Later(4).Nudged(5),
-            TestContext.Current.CancellationToken
+            ct: TestContext.Current.CancellationToken
         );
 
         Assert.All(
@@ -137,7 +137,7 @@ public sealed class WarpEditorTests : IDisposable
             plan,
             siblings,
             new WarpDraft().Later(1),
-            TestContext.Current.CancellationToken
+            ct: TestContext.Current.CancellationToken
         );
 
         Assert.Equal(new WarpSaveOutcome.Changed(Instrumental), outcome);
@@ -154,7 +154,7 @@ public sealed class WarpEditorTests : IDisposable
                 plan,
                 siblings,
                 new WarpDraft().Later(1),
-                TestContext.Current.CancellationToken
+                ct: TestContext.Current.CancellationToken
             )
         );
 
@@ -180,7 +180,7 @@ public sealed class WarpEditorTests : IDisposable
                 plan,
                 siblings,
                 new WarpDraft().Later(1),
-                TestContext.Current.CancellationToken
+                ct: TestContext.Current.CancellationToken
             )
         );
         File.SetLastWriteTimeUtc($"{Vocal}.asd", DateTime.UtcNow.AddMinutes(5));
@@ -198,13 +198,13 @@ public sealed class WarpEditorTests : IDisposable
             plan,
             siblings,
             new WarpDraft().Later(1).Nudged(4),
-            TestContext.Current.CancellationToken
+            ct: TestContext.Current.CancellationToken
         );
         var stem = Reader().Read(Instrumental);
         var wording = new WarpWording(WarpGroup.Of([stem]), path => Path.GetFileName(path));
 
         Assert.Contains("Saved in crateside on", wording.Sentence(stem));
-        Assert.Contains("grid a beat later, +4 ms", wording.Sentence(stem));
+        Assert.Contains("bar a beat later, +4 ms", wording.Sentence(stem));
         Assert.Contains("from crateside's starter", wording.Sentence(stem));
 
         File.SetLastWriteTimeUtc($"{Instrumental}.asd", DateTime.UtcNow.AddMinutes(5));

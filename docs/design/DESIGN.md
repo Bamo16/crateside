@@ -300,6 +300,34 @@ running totals, so a change is where the whole-song estimate flipped, not where 
   here and opens the form. Running, the cell holds the teal chip `● judging from bars` and
   `{spans} · {step} · started {time}`; recorded, `judged from bars 33–48, 82–96 · just now`.
 
+### Editing the warp (handoff 24, #105)
+
+- **Opener**: `Edit the warp` (`.outline small`) after *Judge again* in the head line. With no saved
+  warp it is disabled, reason `warp it in Live first`; where the stems hold different warps, reason
+  `the stems hold different warps; settle it in Live`, and the gist reads `4 stems · two warps ·
+  Instrumental and Drums differ`. An open panel hides its own opener; opening the other closes it,
+  asking *Close without saving the warp?* first when there is a draft.
+- **Edit bar** (`role="region"`, `aria-label="Edit the warp"`) between the head line and the View
+  row: four cells (Bar, Nudge, Tempo, Clip start), each readout at `--text` when it differs from disk
+  and `--text-50` otherwise; a foot with *Saves to* lines, the key hint, *Save the default clip*,
+  *Revert* and *Close*. Keys `,` `.` (a beat) and `←` `→` (1 ms, Shift 5 ms) apply when focus is not
+  in a text field, a slider or the view's window.
+- **The draft on the lanes**: ruler, grid, tempo line (`64.00 was 128.00`), Off the grid (recomputed),
+  flags, clip-start lines, the click and the player readout are drawn in the draft's bars; the view
+  keeps its place in the audio. Saving lanes carry `○ draft` after the chip; the clip-start line is
+  dashed and the marker flag hollow. The gist ends `· ○ draft`. Nothing is colored but state: teal
+  while writing, red for a failed write, amber for *Not saved*.
+- **Clip-start grip**: while the bar is open the notch is an 11×16 pennant that moves in whole bars
+  (tag `clip start · bar 64`, a dashed ghost at the old place); release sets the draft, Esc reverts.
+  A `role="slider"`; ←/→ move a bar, Shift four.
+- **Saving, Saved, Undo**: the bar folds into one teal-bordered line (`Saving to 4 stems · backing
+  each sidecar up, then writing`, `2 of 4`); then `Saved to 4 stems just now · Undo`, which stays
+  until the page is left. Undo runs the same way and is not itself undone.
+- **Not saved** (Live saved a stem since the draft began) disables Save until Revert; **Couldn't
+  save** (`role="alert"`) leaves the draft and every stem as it was.
+- **Leaving with a draft** asks in an `alertdialog` (*Stay* / *Leave without saving*, Esc is Stay);
+  a reload or closed tab gets the browser's own prompt.
+
 ## Track details
 
 Handoff 20, `Evidence` (#150). The section's head is `Why {key in full}` (17/600; `Why no key` for a
@@ -795,6 +823,15 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   analysis; lending would replace it within a minute anyway.
 - **"Putting the warp back"** reads *Live wrote a fresh file. crateside puts the warp back within a
   minute.* while it lasts; the worker puts warps back once a minute.
+
+### Editing the warp (handoff 24, #105)
+
+- **The bar phrase says "bar", not "grid"**: a saved lane reads *bar two beats later, +4 ms*, as
+  the handoff's own example does.
+- **While the grip is dragged the lanes' own flags do not move**; only the ghost, the tag and the
+  clip-start line follow the pointer, and the lanes redraw in the new bar on release.
+- **Peaks are sent to the player once** and reused across keypresses, so a draft redraw does not
+  resend audio data.
 
 ### README (handoff 04)
 

@@ -22,23 +22,64 @@
 @inject IOptions<JudgeOptions> Judge
 @inject IOptions<WarpOptions> WarpOptions
 @inject IJSRuntime Js
+@inject WarpEditor Editor
+@inject NavigationManager Nav
 
-@if (_group is { } group && (group.Stems.Count > 0 || (Row.HasUpload && Judge.Value.IsConfigured)))
+<NavigationLock OnBeforeInternalNavigation="OnLeavingAsync" ConfirmExternalNavigation="IsDirty" />
+
+@if (_leaveTo is not null)
 {
+    <div class="leave-scrim">
+        <div class="leave-dialog" role="alertdialog" aria-modal="true" aria-labelledby="leave-title" aria-describedby="leave-body" @onkeydown="LeaveKey">
+            <h2 id="leave-title">Leave without saving the warp?</h2>
+            <p id="leave-body">The draft (@WarpEditWording.Changes(_draft)) is not kept. The @("stem".ToQuantity(SavingCount, ShowQuantityAs.Words)) stay as they are on disk.</p>
+            <div class="leave-actions">
+                <button class="outline" @ref="_stay" @onclick="Stay">Stay</button>
+                <button class="danger" @onclick="LeaveAnyway">Leave without saving</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_group is { } disk && (disk.Stems.Count > 0 || (Row.HasUpload && Judge.Value.IsConfigured)))
+{
+    var group = Drawn(disk);
     var wording = Wording(group);
     var (from, to) = View(group);
     var selected = Selected(group);
 
-    <section class="warp" id="warp-view" @ref="_section" @onkeydown="OnKey">
+    <section class="warp" id="warp-view" @ref="_section" @onkeydown="OnKey"
+             data-editing="@(_editing ? "true" : "false")" data-asking="@(_asking is not Ask.None ? "true" : "false")">
         <div class="head">
             <span class="section-label">@(group.Stems.Count > 0 ? "Warp" : "Judge")</span>
             @if (group.Stems.Count > 0)
             {
                 <span class="group-line @(group.OnTheirOwn.Any() ? "loud" : null)">@GroupLine(group, wording)</span>
             }
-            @if (Row.HasUpload && Judge.Value.IsConfigured && _form is null && BarRun is not { IsRunning: true })
+            @if (Row.HasUpload && Judge.Value.IsConfigured && _form is null && BarRun is not { IsRunning: true } && _phase is Phase.Idle)
             {
-                <button class="outline small" @onclick="() => Open(group)">Judge again</button>
+                <button class="outline small" @onclick="() => RequestJudge(group)">Judge again</button>
+            }
+            @if (group.Stems.Count > 0 && !_editing && _phase is Phase.Idle)
+            {
+                @switch (_offer)
+                {
+                    case WarpSavePlan.Ready:
+                        <button class="outline small" @onclick="OpenEdit">Edit the warp</button>
+                        break;
+                    case WarpSavePlan.Disagree:
+                        <button class="outline small" disabled>Edit the warp</button>
+                        <span class="edit-why">the stems hold different warps; settle it in Live</span>
+                        break;
+                    case WarpSavePlan.Failed(var why):
+                        <button class="outline small" disabled>Edit the warp</button>
+                        <span class="edit-why">@why</span>
+                        break;
+                    default:
+                        <button class="outline small" disabled>Edit the warp</button>
+                        <span class="edit-why">warp it in Live first</span>
+                        break;
+                }
             }
             @if (group.Stems.Count > 0)
             {
@@ -163,6 +204,124 @@
             }
         }
 
+        @if (group.Stems.Count > 0 && _form is null)
+        {
+            @if (_phase is not Phase.Idle)
+            {
+                <div class="edit-saving" role="status">
+                    <span class="dot"></span>
+                    <span class="saving-text">@SavingText</span>
+                    @if (_phase is Phase.Saving)
+                    {
+                        <span class="mono saving-count">@Math.Min(_written, SavingCount) of @SavingCount</span>
+                    }
+                </div>
+            }
+            else if (_editing)
+            {
+                var cells = Cells(disk, group).ToList();
+                var asking = _asking is not Ask.None;
+                var ownWarp = disk.Lender?.Owner is WarpOwner.Yours;
+
+                <div class="edit-bar" role="region" aria-label="Edit the warp">
+                    <div class="edit-top">
+                        <span class="edit-label">EDIT THE WARP</span>
+                        <span class="edit-what">@Editing(group, wording)</span>
+                        @if (_draft.IsEmpty)
+                        {
+                            <span class="mono edit-state">as on disk</span>
+                        }
+                        else
+                        {
+                            <span class="mono edit-state draft">○ draft · not saved</span>
+                        }
+                    </div>
+                    @if (cells is [var barCell, var nudgeCell, var tempoCell, var clipCell])
+                    {
+                        <div class="edit-cells">
+                            <div class="edit-cell">
+                                <span class="cell-label">Bar</span>
+                                <span class="cell-read @(barCell.Changed ? "changed" : null)">@barCell.Text</span>
+                                <span class="cell-controls">
+                                    <button class="outline small" disabled="@asking" @onclick="() => Later(-1)">‹ a beat earlier</button>
+                                    <button class="outline small" disabled="@asking" @onclick="() => Later(1)">a beat later ›</button>
+                                </span>
+                            </div>
+                            <div class="edit-cell">
+                                <span class="cell-label">Nudge</span>
+                                <span class="cell-read @(nudgeCell.Changed ? "changed" : null)">@nudgeCell.Text</span>
+                                <span class="cell-controls">
+                                    <button class="outline step mono" disabled="@asking" aria-label="Nudge the grid earlier" @onclick="e => Nudge(-1, e)">−</button>
+                                    <button class="outline step mono" disabled="@asking" aria-label="Nudge the grid later" @onclick="e => Nudge(1, e)">+</button>
+                                    <span class="cell-hint">1 ms · Shift 5 ms</span>
+                                </span>
+                            </div>
+                            <div class="edit-cell">
+                                <span class="cell-label">Tempo</span>
+                                <span class="cell-read @(tempoCell.Changed ? "changed" : null)">@tempoCell.Text</span>
+                                <span class="cell-controls">
+                                    <button class="outline small mono" disabled="@asking" @onclick="() => Scale(0.5, disk)">/2</button>
+                                    <button class="outline small mono" disabled="@asking" @onclick="() => Scale(2, disk)">×2</button>
+                                    <span class="cell-hint">every stem, about the clip start</span>
+                                </span>
+                            </div>
+                            <div class="edit-cell">
+                                <span class="cell-label">Clip start</span>
+                                <span class="cell-read @(clipCell.Changed ? "changed" : null)">@clipCell.Text</span>
+                                <span class="cell-controls">
+                                    <button class="outline small" disabled="@asking" @onclick="() => ClipAtPlayheadAsync(group)">Clip start at the playhead's bar</button>
+                                </span>
+                            </div>
+                        </div>
+                    }
+                    @if (_notSaved is { } stale)
+                    {
+                        <div class="edit-note"><b>Not saved:</b> @NotSavedText(stale)</div>
+                    }
+                    @if (_failed is { } failure)
+                    {
+                        <div class="edit-failed" role="alert">Couldn't save: @failure.TrimEnd('.'). Nothing changed; every stem is as it was.</div>
+                    }
+                    <div class="edit-foot">
+                        <span class="saves-to">
+                            @foreach (var saves in SavesToLines())
+                            {
+                                <span>@saves</span>
+                            }
+                        </span>
+                        <span class="key-hint"><kbd>,</kbd> <kbd>.</kbd> a beat · <kbd>←</kbd> <kbd>→</kbd> 1 ms</span>
+                        @if (!asking)
+                        {
+                            <span class="actions">
+                                <button class="primary" disabled="@(_notSaved is not null || (_draft.IsEmpty && ownWarp))"
+                                        title="@(_draft.IsEmpty && ownWarp ? "nothing to change" : null)" @onclick="SaveAsync">Save the default clip</button>
+                                <button class="outline" disabled="@_draft.IsEmpty" @onclick="Revert">Revert</button>
+                                <button class="outline" @onclick="RequestClose">Close</button>
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="actions asking">
+                                <span class="ask">Close without saving the warp?</span>
+                                <button class="danger" @onclick="CloseWithoutSaving">Close without saving</button>
+                                <button class="outline" @ref="_keep" @onclick="KeepEditing">Keep editing</button>
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+            else if (_line is not null)
+            {
+                <div class="edit-result">
+                    <span>@_line@(_undo is not null ? $" {Clock.Ago(_lineAt)} · " : null)</span>
+                    @if (_undo is not null)
+                    {
+                        <button class="link" @onclick="UndoAsync">Undo</button>
+                    }
+                </div>
+            }
+        }
+
         @if (group.Stems.Count > 0)
         {
             <div class="grid">
@@ -198,7 +357,8 @@
                     }
                 </span>
                 <div class="ruler @(_form is not null ? "dragging" : null)"
-                     data-snaps="@(_form is null ? null : string.Join(',', SnapBounds(group, from, to).Select(F)))">
+                     data-snaps="@(_form is null ? null : string.Join(',', SnapBounds(group, from, to).Select(F)))"
+                     data-clip-snaps="@(_editing ? ClipSnaps(group, from, to) : null)">
                     @if (group.Lender is null)
                     {
                         @foreach (var at in TimeTicks(from, to))
@@ -232,8 +392,20 @@
                     }
                     @if (clipWord is var (clipX, toLeft))
                     {
-                        <span class="notch" style="left: @P(clipX)%"
-                              title="Clip start · @WarpWording.Time(group.Lender!.Clip.Start) · bar @StartBar(group)"></span>
+                        @if (_editing && _asking is Ask.None && _phase is Phase.Idle)
+                        {
+                            var clipBar = ClipBar(group);
+                            <span class="notch grip" role="slider" tabindex="0" style="left: @P(clipX)%"
+                                  data-bar="@clipBar" aria-label="Clip start" aria-orientation="horizontal"
+                                  aria-valuenow="@clipBar" aria-valuetext="bar @clipBar"
+                                  title="Clip start · @WarpWording.Time(group.Lender!.Clip.Start) · bar @StartBar(group)"
+                                  @onkeydown="e => NotchKey(e, group)" @onkeydown:stopPropagation="true"></span>
+                        }
+                        else
+                        {
+                            <span class="notch" style="left: @P(clipX)%"
+                                  title="Clip start · @WarpWording.Time(group.Lender!.Clip.Start) · bar @StartBar(group)"></span>
+                        }
                         <span class="mono clip-word @(toLeft ? "left" : null)" style="left: @P(clipX)%">clip start</span>
                     }
                     @if (_form is { } dragged)
@@ -261,7 +433,11 @@
                     var (figure, low, high, drifts) = TempoScale(group);
                     <span class="gutter tempo-gutter">
                         <span class="faint">Tempo from the markers</span>
-                        @if (Headline is { } headline)
+                        @if (DraftTempo(disk, group) is { } figureNow)
+                        {
+                            <span><span class="mono figure">@figureNow</span></span>
+                        }
+                        else if (Headline is { } headline)
                         {
                             <span><span class="mono figure">@headline.Text</span> <span class="note">@headline.Brief</span></span>
                         }
@@ -354,15 +530,23 @@
 
                 @foreach (var stem in group.Stems)
                 {
-                    var chip = Working(stem) ? new WarpChip("Writing", ChipStyle.Teal) : wording.Chip(stem);
+                    var writing = _phase is not Phase.Idle && IsSaving(stem);
+                    var onDraft = Drafted(stem);
+                    var chip = writing
+                        ? new WarpChip(_phase is Phase.Undoing ? "putting back…" : "writing…", ChipStyle.Teal)
+                        : Working(stem) ? new WarpChip("Writing", ChipStyle.Teal) : wording.Chip(stem);
                     var isSelected = stem == selected;
                     var parts = group.PartsFrom(stem);
 
-                    <div class="lane @(isSelected ? "selected" : null)" data-file="@Path.GetFileName(stem.Path)" @onclick="() => Select(stem)">
+                    <div class="lane @(isSelected ? "selected" : null) @(_editing && IsSaving(stem) ? "saving" : null)" data-file="@Path.GetFileName(stem.Path)" @onclick="() => Select(stem)">
                         <span class="gutter lane-gutter">
                             <svg class="speaker" data-speaker="@Path.GetFileName(stem.Path)" hidden width="14" height="14" viewBox="0 0 14 14" role="img" aria-label="Playing"><path d="M2 5h2.5L8 2v10L4.5 9H2z" fill="currentColor" /><path d="M10 4.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" /></svg>
                             <span class="name">@NameOf(stem.Path)</span>
-                            <span class="wchip @Style(chip.Style)">@chip.Label</span>
+                            <span class="wchip @Style(chip.Style) @(writing ? "writing" : null)">@chip.Label</span>
+                            @if (onDraft)
+                            {
+                                <span class="mono draft-mark">○ draft</span>
+                            }
                             <span class="sub">@(Working(stem) ? $"writing {wording.Name(group.Lender!.Path)}'s warp" : wording.Sub(stem))</span>
                         </span>
                         <div class="plot">
@@ -388,7 +572,7 @@
                                     if (x is < 0 or > 100)
                                         continue;
                                     <span class="marker-line @(flags ? null : "dense")" style="left: @P(x)%"></span>
-                                    <span class="@(flags ? "flag" : "flag-tick")" style="left: @P(x)%" title="@MarkerTitle(stem, i)"></span>
+                                    <span class="@(flags ? "flag" : "flag-tick") @(onDraft ? "draft" : null)" style="left: @P(x)%" title="@MarkerTitle(stem, i)"></span>
                                 }
 
                                 @if (IsZoomed(group))
@@ -400,7 +584,7 @@
 
                                 @if (X(stem.Clip.Start, from, to) is >= 0 and <= 100 and var stemClipX)
                                 {
-                                    <div class="clip-line" style="left: @P(stemClipX)%"></div>
+                                    <div class="clip-line @(onDraft ? "draft" : null)" style="left: @P(stemClipX)%"></div>
                                 }
                             }
                             @if (parts is { } parting && wording.Name(group.Lender!.Path) is var sibling)
@@ -639,7 +823,9 @@
 
     private void OnKey(KeyboardEventArgs key)
     {
-        if (key.Key is "Escape")
+        if (key.Key is "Escape" && _asking is not Ask.None)
+            _asking = Ask.None;
+        else if (key.Key is "Escape")
             _openWindow = null;
     }
 
@@ -883,12 +1069,14 @@
     /// <summary>The Off the grid row's content for the track's canonical warp, when it is a steady one the check ran on (#96).</summary>
     private OffGridRow? OffGrid(WarpGroup group) =>
         Row.Bpm is { Source: TempoSource.Warp, Warp.Shape: TempoShape.Steady } tempo
-        && _offGrid is { } report
+        && (IsDirty && ReferenceEquals(group, _drawn) ? _drawnOff : _offGrid) is { } report
         && Wording(group) is var wording
-            ? new OffGridRow(tempo, report, wording.CanTrueUp(tempo))
+            ? IsDirty && ReferenceEquals(group, _drawn)
+                ? new OffGridRow(tempo, report, false, Drafted: true)
+                : new OffGridRow(tempo, report, wording.CanTrueUp(tempo))
             : null;
 
-    private sealed record OffGridRow(TrackTempo Tempo, GridReport Report, bool CanTrueUp)
+    private sealed record OffGridRow(TrackTempo Tempo, GridReport Report, bool CanTrueUp, bool Drafted = false)
     {
         private const double ScaleMs = 30;
 
@@ -908,7 +1096,7 @@
             ];
 
         public string Figure =>
-            (Tempo.Off, Tempo.Unconfirmed, Report.Windows.Count) switch
+            (Drafted ? null : Tempo.Off, Drafted ? null : Tempo.Unconfirmed, Report.Windows.Count) switch
             {
                 ({ DriftMs: { } _ }, _, _) => $"{TempoFormat.ByTheEnd(Tempo)} by the end",
                 (_, { Reason: TrueUpReason.Steps }, _) => "steps in its grid",
@@ -917,7 +1105,7 @@
             };
 
         public string? Runs =>
-            Tempo.Off is { DriftMs: { } ms }
+            !Drafted && Tempo.Off is { DriftMs: { } ms }
                 ? $"runs {TempoFormat.Runs(Tempo)} · grid falls {(ms < 0 ? "behind" : "ahead")}"
                 : null;
     }
@@ -956,7 +1144,11 @@
     protected override void OnParametersSet()
     {
         if (_viewOf != Row.TrackKey)
+        {
             (_viewFrom, _viewTo, _viewOf) = (null, null, Row.TrackKey);
+            ResetEdit();
+            _offer = null;
+        }
 
         if (_openWindow >= (Run?.Readings.Count ?? 0))
             _openWindow = null;
@@ -969,7 +1161,7 @@
             _openRequestsSeen = OpenRequests;
 
             if (_group is { } group && _form is null && BarRun is not { IsRunning: true })
-                Open(group);
+                RequestJudge(group);
         }
 
         ReopenIfWithheld();
@@ -985,6 +1177,9 @@
         {
             if (_drag is not null)
                 await _drag.InvokeVoidAsync("dispose");
+
+            if (_editJs is not null)
+                await _editJs.InvokeVoidAsync("dispose");
 
             if (_engine is not null)
                 await _engine.InvokeVoidAsync("unmountView");
@@ -1016,10 +1211,24 @@
                 _engine = await playback.InvokeAsync<IJSObjectReference>("engine");
                 await _engine.InvokeVoidAsync("mountView", _section, _self);
                 _mountedSection = _section.Id;
+                _sentPeaks.Clear();
+                _liveGroup = null;
             }
 
-            if (_group is { } group)
+            if (_editJs is null)
+                _editJs = await (await Js.InvokeAsync<IJSObjectReference>("import", "./Components/WarpView.razor.js"))
+                    .InvokeAsync<IJSObjectReference>("editDrag", _section, _self);
+
+            if (_leaveTo is not null && _focusStay)
             {
+                _focusStay = false;
+                await _stay.FocusAsync();
+            }
+
+            if (_group is { } disk)
+            {
+                var group = Drawn(disk);
+
                 await _engine.InvokeVoidAsync("setGrid", GridOf(group), group.Seconds);
 
                 if (LiveOf(group, Bands(group)) is { } live)
@@ -1050,6 +1259,11 @@
         _stamp = stamp;
         _group = WarpGroup.Of([.. paths.Select(Reader.Read)]);
         _offGrid = _group.Lender is { } lender ? WarpTrueUp.Check(lender) : null;
+
+        if (!_editing && _phase is Phase.Idle)
+            _offer = OfferNow();
+
+        WatchPlan();
 
         return true;
     }
@@ -1218,7 +1432,10 @@
     {
         var stems = "stem".ToQuantity(group.Stems.Count);
 
-        return (group.OnTheirOwn.Select(stem => NameOf(stem.Path)).ToList(), group.Lender) switch
+        if (_offer is WarpSavePlan.Disagree { Stems: var held })
+            return $"{stems} · two warps · {held.Select(NameOf).Humanize()} differ";
+
+        var line = (group.OnTheirOwn.Select(stem => NameOf(stem.Path)).ToList(), group.Lender) switch
         {
             ([var one], _) => $"{stems} · {one} warped on its own",
             ({ Count: > 1 } several, _) => $"{stems} · {several.Humanize()} warped on their own",
@@ -1226,6 +1443,8 @@
                 $"{stems} · one warp · {"marker".ToQuantity(lender.Markers.Count)} · {WarpWording.Mode(mode)}",
             _ => $"{stems} · not warped yet",
         };
+
+        return IsDirty ? $"{line} · ○ draft" : line;
     }
 
     /// <summary>The window the browser holds, told as it moves; rows are drawn for it (ADR 0094).</summary>
@@ -1317,6 +1536,13 @@
 
     private (double Figure, double Low, double High, bool Drifts) TempoScale(WarpGroup group)
     {
+        if (IsDirty && ReferenceEquals(group, _drawn))
+        {
+            var now = group.Lender?.Sidecar?.Warp.TempoAt(group.Lender.Clip.Start) ?? 120;
+
+            return (now, now - 1, now + 1, false);
+        }
+
         if (Row.Bpm is { Source: TempoSource.Warp, Range: { } range } drifting)
             return (drifting.Value, TempoFormat.Edge(range.Low, up: false), TempoFormat.Edge(range.High, up: true), true);
 

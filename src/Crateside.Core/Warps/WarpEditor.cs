@@ -67,6 +67,7 @@ public sealed class WarpEditor(
         WarpSavePlan.Ready plan,
         WarpSiblings siblings,
         WarpDraft draft,
+        Action<int>? progress = null,
         CancellationToken ct = default
     )
     {
@@ -92,6 +93,7 @@ public sealed class WarpEditor(
                 WarpEdit.Apply(file, draft).Write(sidecar);
                 done.Add(new SavedStem(stamp.Path, backup, was, SidecarStamp.Of(stamp.Path)));
                 saved.Record(stamp.Path, edits, time.GetUtcNow());
+                progress?.Invoke(done.Count);
             }
         }
         catch (Exception ex)

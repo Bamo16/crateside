@@ -287,13 +287,17 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
     private string Lends(IReadOnlyList<string> lentTo) =>
         lentTo is { Count: > 0 } ? $" crateside lends it to {Names(lentTo)}." : string.Empty;
 
-    private static string WhatSaved(SavedEdits edits)
+    private static string WhatSaved(SavedEdits edits) =>
+        $"from {(edits.FromStarter ? "crateside's starter" : "the saved warp")}: {Changes(edits)}";
+
+    /// <summary>The edits in the edit bar's order: bar, nudge, tempo, clip start; "no edits" for none.</summary>
+    public static string Changes(SavedEdits edits)
     {
         List<string> changes = [];
 
         if (edits.BarShift is not 0)
             changes.Add(
-                $"grid {(Math.Abs(edits.BarShift) is 1 ? "a beat" : $"{Math.Abs(edits.BarShift).ToWords()} beats")} {(edits.BarShift > 0 ? "later" : "earlier")}"
+                $"bar {(Math.Abs(edits.BarShift) is 1 ? "a beat" : $"{Math.Abs(edits.BarShift).ToWords()} beats")} {(edits.BarShift > 0 ? "later" : "earlier")}"
             );
 
         if (edits.NudgeMs is not 0)
@@ -311,7 +315,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
         if (edits.ClipStartBar is { } bar)
             changes.Add($"clip start bar {bar}");
 
-        return $"from {(edits.FromStarter ? "crateside's starter" : "the saved warp")}: {(changes is [] ? "no edits" : string.Join(", ", changes))}";
+        return changes is [] ? "no edits" : string.Join(", ", changes);
     }
 
     private string FollowsUntil(StemWarp stem) =>

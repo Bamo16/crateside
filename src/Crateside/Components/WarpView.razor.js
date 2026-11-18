@@ -137,3 +137,143 @@ export function rulerDrag(section, server) {
         },
     };
 }
+
+// While the edit bar is open: the keys that move the draft, and the clip-start notch as a grip that
+// snaps to whole bars. Both tell the server once per gesture; the draft lives there.
+export function editDrag(section, server) {
+    let grab = null;
+
+    const typing = (target) =>
+        target instanceof Element && target.closest("input, select, textarea, [role=slider], .win, [contenteditable=true]");
+
+    const key = (event) => {
+        if (!section.isConnected || section.dataset.editing !== "true" || section.dataset.asking === "true")
+            return;
+
+        if (event.altKey || event.ctrlKey || event.metaKey || typing(event.target))
+            return;
+
+        if (![",", ".", "ArrowLeft", "ArrowRight"].includes(event.key))
+            return;
+
+        event.preventDefault();
+        server.invokeMethodAsync("EditKey", event.key, event.shiftKey);
+    };
+
+    const snaps = (ruler) =>
+        (ruler.dataset.clipSnaps ?? "")
+            .split(",")
+            .filter(Boolean)
+            .map((pair) => pair.split(":").map(Number));
+
+    const release = () => {
+        grab.tag.remove();
+        grab.ghost.remove();
+        grab.lines.forEach((line) => line.remove());
+        grab.notch.classList.remove("held");
+    };
+
+    const settle = () => {
+        if (!grab)
+            return;
+
+        release();
+        grab.notch.style.left = grab.home;
+        grab = null;
+    };
+
+    const down = (event) => {
+        const notch = event.target instanceof Element ? event.target.closest(".notch.grip") : null;
+        const ruler = notch?.closest(".ruler");
+
+        if (!notch || !ruler || event.button !== 0)
+            return;
+
+        const tag = document.createElement("span");
+        const ghost = document.createElement("span");
+
+        tag.className = "mono clip-tag";
+        ghost.className = "notch ghost";
+        ghost.style.left = notch.style.left;
+        ruler.append(tag, ghost);
+        notch.classList.add("held");
+        notch.setPointerCapture?.(event.pointerId);
+        grab = {
+            notch,
+            ruler,
+            tag,
+            ghost,
+            home: notch.style.left,
+            bars: snaps(ruler),
+            bar: Number(notch.dataset.bar),
+            lines: [...section.querySelectorAll(".lane.saving .plot")].map((plot) => {
+                const line = document.createElement("div");
+
+                line.className = "clip-line held";
+                line.style.left = notch.style.left;
+                plot.append(line);
+
+                return line;
+            }),
+        };
+        tag.style.left = notch.style.left;
+        tag.textContent = `clip start · bar ${grab.bar}`;
+        event.preventDefault();
+    };
+
+    const move = (event) => {
+        if (!grab || grab.bars.length === 0)
+            return;
+
+        const box = grab.ruler.getBoundingClientRect();
+        const at = Math.min(1, Math.max(0, (event.clientX - box.left) / box.width));
+        const [fraction, bar] = grab.bars.reduce((best, pair) => (Math.abs(pair[0] - at) < Math.abs(best[0] - at) ? pair : best));
+        const left = `${fraction * 100}%`;
+
+        grab.bar = bar;
+        grab.notch.style.left = left;
+        grab.tag.style.left = left;
+        grab.tag.textContent = `clip start · bar ${bar}`;
+        grab.lines.forEach((line) => (line.style.left = left));
+    };
+
+    const up = async () => {
+        if (!grab)
+            return;
+
+        const { bar, notch } = grab;
+        const changed = String(bar) !== notch.dataset.bar;
+
+        release();
+        grab = null;
+
+        // The server's render puts the notch where the draft says; until it does, it stays where it was let go.
+        if (changed)
+            await server.invokeMethodAsync("SetClipStartBar", bar);
+    };
+
+    const escape = (event) => {
+        if (grab && event.key === "Escape") {
+            event.stopPropagation();
+            settle();
+        }
+    };
+
+    document.addEventListener("keydown", key);
+    document.addEventListener("keydown", escape, true);
+    section.addEventListener("pointerdown", down);
+    section.addEventListener("pointermove", move);
+    section.addEventListener("pointerup", up);
+    section.addEventListener("pointercancel", settle);
+
+    return {
+        dispose() {
+            document.removeEventListener("keydown", key);
+            document.removeEventListener("keydown", escape, true);
+            section.removeEventListener("pointerdown", down);
+            section.removeEventListener("pointermove", move);
+            section.removeEventListener("pointerup", up);
+            section.removeEventListener("pointercancel", settle);
+        },
+    };
+}
