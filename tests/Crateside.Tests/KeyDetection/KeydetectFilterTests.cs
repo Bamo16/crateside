@@ -73,6 +73,31 @@ public sealed class KeydetectFilterTests : IDisposable
     }
 
     [Fact]
+    public void A_long_track_keeps_the_starts_of_the_chords_the_summary_still_lists()
+    {
+        string[] names = ["C", "G", "Am", "F"];
+        var events = Enumerable
+            .Range(0, 70)
+            .Select(i =>
+                $"[Parsed_keydetect_0 @ 0] t={i + 1}.00 chord={names[i % 4]} start={i}.50"
+            );
+        var listed = Enumerable.Range(6, 64).Select(i => names[i % 4]);
+        var stderr = string.Join(
+            '\n',
+            [
+                .. events,
+                "[Parsed_keydetect_0 @ 0] lavfi.keydetect.key=C",
+                $"[Parsed_keydetect_0 @ 0] lavfi.keydetect.chords={string.Join('-', listed)}",
+            ]
+        );
+
+        var read = Assert.IsType<KeydetectReading.Read>(KeydetectFilter.Parse(stderr));
+
+        Assert.Equal(64, read.Chords.Count);
+        Assert.Equal(Enumerable.Range(6, 64).Select(i => i + 0.5), read.ChordStarts);
+    }
+
+    [Fact]
     public void A_build_that_prints_no_starts_leaves_them_empty()
     {
         const string Stderr = """

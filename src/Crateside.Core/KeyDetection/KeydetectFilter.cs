@@ -162,14 +162,22 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, Func<string> 
             ? Collapsed(chordLine.Groups["Chords"].Value.Split('-'))
             : [];
 
-        // The filter prints one start per committed chord, so the two lists only line up when none was missed.
+        // The summary keeps only the last 64 chords while every change prints an event, so the list lines up with the events' tail.
         var starts =
-            ChordEvent.Matches(stderr) is { Count: > 0 } events && events.Count == chords.Count
+            chords.Count > 0
+            && ChordEvent.Matches(stderr) is { } events
+            && events.Count >= chords.Count
+            && events
+                .Skip(events.Count - chords.Count)
+                .Select(match => match.Groups["Chord"].Value)
+                .SequenceEqual(chords)
                 ?
                 [
-                    .. events.Select(match =>
-                        double.Parse(match.Groups["Start"].Value, CultureInfo.InvariantCulture)
-                    ),
+                    .. events
+                        .Skip(events.Count - chords.Count)
+                        .Select(match =>
+                            double.Parse(match.Groups["Start"].Value, CultureInfo.InvariantCulture)
+                        ),
                 ]
                 : (IReadOnlyList<double>)[];
 
