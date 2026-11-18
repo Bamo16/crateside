@@ -65,6 +65,9 @@ public sealed class SourceBackfill(
             if (ct.IsCancellationRequested)
                 break;
 
+            if (!TrackKeys.IsVideoId(trackKey))
+                continue;
+
             // First, so the janitor reads the folder as joined to the store and not as a judging run's.
             workingSet.Prepare(trackKey);
             workingSet.RecordLeftStaging(trackKey, time.GetUtcNow(), adHoc: true);

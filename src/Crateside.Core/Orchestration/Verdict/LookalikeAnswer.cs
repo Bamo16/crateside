@@ -11,9 +11,14 @@ public sealed class LookalikeAnswer(LedgerStore store, TrackInstructionStore ins
     /// nothing is judged or cut again. Null on success, else why not.
     /// </summary>
     public string? SameSong(string trackKey, LedgerRun song) =>
-        song.SourceTrackKey is { } judged
-            ? store.Restate(judged, $"https://music.youtube.com/watch?v={trackKey}").Refusal
-            : "The ledger does not say which upload that song was judged from.";
+        (TrackKeys.IsVideoId(trackKey), song.SourceTrackKey) switch
+        {
+            (false, _) => "An imported file has no YouTube upload to file under a song.",
+            (_, { } judged) => store
+                .Restate(judged, $"https://music.youtube.com/watch?v={trackKey}")
+                .Refusal,
+            _ => "The ledger does not say which upload that song was judged from.",
+        };
 
     /// <summary>Records that the track is a different song, which lets judging have it.</summary>
     public void DifferentSong(string trackKey, LedgerRun song) =>
