@@ -232,4 +232,42 @@ public sealed class TrackChipAndFilterTests
         Assert.Equal("Judged A minor, high confidence.", By(DecidedBy.Judge).Detail);
         Assert.Equal(DecidedBy.Person, By(DecidedBy.Person).DecidedBy);
     }
+
+    [Fact]
+    public void Each_verdict_source_has_a_filter_and_a_withheld_verdict_has_none()
+    {
+        static TrackRow By(DecidedBy decided, TonalCenter? center) =>
+            Base with
+            {
+                Verdict = new LedgerRun
+                {
+                    Timestamp = DateTimeOffset.Parse("2026-11-03T00:00:00+00:00"),
+                    Song = "rob dougan - furious angels",
+                    Confidence = center is null ? KeyConfidence.Withheld : KeyConfidence.High,
+                    Center = center,
+                    DecidedBy = decided,
+                },
+            };
+
+        TonalCenter aMinor = new("A", DiatonicMode.Aeolian);
+        List<TrackRow> rows =
+        [
+            By(DecidedBy.Judge, aMinor),
+            By(DecidedBy.Judge, aMinor),
+            By(DecidedBy.Rules, aMinor),
+            By(DecidedBy.Person, aMinor),
+            By(DecidedBy.Judge, null),
+            Base,
+        ];
+
+        Assert.Equal(
+            [2, 1, 1, 2],
+            [
+                rows.Count(TrackFilter.JudgedVerdict),
+                rows.Count(TrackFilter.RuledVerdict),
+                rows.Count(TrackFilter.PersonsVerdict),
+                rows.Count(TrackFilter.NoVerdict),
+            ]
+        );
+    }
 }

@@ -186,6 +186,9 @@ public sealed record TrackRow
     /// <summary>Who made the current verdict; null when there is none (ADR 0076).</summary>
     public DecidedBy? DecidedBy => Verdict?.DecidedBy;
 
+    /// <summary>Who made the verdict the row's key comes from; null when no key was given, as a withheld verdict gives none.</summary>
+    public DecidedBy? KeyedBy => Verdict is { Center: not null } ? Verdict.DecidedBy : null;
+
     /// <summary>The headline tempo: the finished warp's, else crateside's reading, else the ledger's estimate (ADR 0049).</summary>
     public TrackTempo? Bpm =>
         (Tempo, Beats, FullMixBeats) switch

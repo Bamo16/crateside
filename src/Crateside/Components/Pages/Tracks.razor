@@ -135,7 +135,7 @@
     </PageHeader>
 
     <div class="filters">
-        @foreach (var filter in Enum.GetValues<TrackFilter>().Where(filter => filter is not TrackFilter.ClipOffBarLine || Warps.Value.FlagClipOffBarLine))
+        @foreach (var filter in Enum.GetValues<TrackFilter>().Where(filter => (filter is not TrackFilter.ClipOffBarLine || Warps.Value.FlagClipOffBarLine) && (!filter.IsVerdictSource() || filter == Viewing)))
         {
             <button class="pill @(filter == Viewing ? "on " + Tone(filter) : "off")"
                     @onclick="() => ShowFilter(filter)">
@@ -487,7 +487,7 @@
                     }
                 </span>
 
-                <span class="mono conf @KeyText.ConfidenceTone(row.Confidence)" title="@(row.DecidedBy is { } by ? KeyText.Byline(by) : null)">@KeyText.Decided(row.DecidedBy, row.Confidence)</span>
+                <span class="mono conf @KeyText.ConfidenceTone(row.Confidence)" title="@(row.DecidedBy is { } by ? KeyText.Byline(by) : null)">@KeyText.Confidence(row.Confidence)</span>
 
                 <span class="mono bpm right @(row.State is TrackState.ReadyToWarp ? "ready" : null) @(bpm is null ? "none" : null) @(bpm?.IsApproximate is true ? "approx" : null) @(bpm?.IsEstimate is true ? "estimate" : null)" title="@bpm?.Note">@(bpm?.Text ?? "—")<span class="pad">@bpm?.Padding@if (bpm is { Mark: not OffMark.None })
                 {<OffMarkGlyph Mark="bpm.Mark" />}</span></span>
@@ -1399,6 +1399,10 @@
             TrackFilter.TempoDrifts => "Tempo drifts",
             TrackFilter.OffItsTempo => "Off its tempo",
             TrackFilter.ClipOffBarLine => "Clip off a bar line",
+            TrackFilter.JudgedVerdict => "Judged",
+            TrackFilter.RuledVerdict => "Ruled by crateside",
+            TrackFilter.PersonsVerdict => "Your call",
+            TrackFilter.NoVerdict => "No verdict",
             _ => filter.ToString(),
         };
 

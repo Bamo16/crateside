@@ -492,6 +492,11 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
   folds to the same genres with **Change** and a line saying where they came from (*looked up*,
   *from your answers for …*, *your call*); a genre crateside assigned is written, never drawn as a
   suggestion (ADR 0087, crateside tags every song).
+- **Confidence is the word alone**, on one line (`HIGH`, `MEDIUM`, `LOW`, `WITHHELD`, `—`). Who made
+  the verdict is not in the table: the dashboard's *Where verdicts come from* counts it, and the
+  track page's header says it (*your call*, *from the detectors, ruled by crateside*, or the
+  judge's own basis). The four verdict-source views (*Judged*, *Ruled by crateside*, *Your call*,
+  *No verdict*) open by link, `?filter=`, and are not in the tab loop.
 - A **Tempo drifts** filter (#75): tracks not warped yet whose tempo beatdetect reads drifting.
 - An **Off its tempo** filter (handoff 16, #96) beside it: steady warps whose grid falls away from
   the audio, the furthest first. Columns Song · Key · BPM · **Runs** (`0.017 slow`, mono 13
@@ -561,7 +566,8 @@ Tools · Settings**), at `/` and `/dashboard`; Tracks moved to `/tracks`. No wid
   equal columns under `--table-activity`.
 - **The library grid** is three columns at ≥ 2000px, two below, one below 1400px. Key detectors,
   Loudness adjustments and How the starter warps fared span two wherever there are two. Order: Key
-  detectors, Loudness adjustments, By key, By tempo, How the starter warps fared, By genre (with *What the sources called the rest* behind a dashed opener), By
+  detectors, Where verdicts come from (a teal bar table of Judged, Ruled by crateside, Your call and
+  No verdict, each count a link to that Tracks filter), Loudness adjustments, By key, By tempo, How the starter warps fared, By genre (with *What the sources called the rest* behind a dashed opener), By
   familiarity (with No key under it), By artist.
 - **The action band** (*Never judged*) sits at the top of *The library*.
 - **Top N · all.** Key shows 8 rows, artists 12, the all-three-wrong list 6.

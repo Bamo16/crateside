@@ -225,6 +225,25 @@
                         <div class="library">
                             <KeyDetectors Both="_keysBoth" High="_keysHigh" />
 
+                            <section id="p-verdicts">
+                                <h3>Where verdicts come from</h3>
+
+                                <table class="distribution">
+                                    <tbody>
+                                        @foreach (var (filter, name, tracks) in VerdictSources)
+                                        {
+                                            <tr class="@(tracks is 0 ? "empty-bucket" : null)">
+                                                <td class="wide-name-col"><a href="tracks?filter=@filter">@name</a></td>
+                                                <td class="bar-cell">
+                                                    <span class="bar" style="width: @Percent(tracks, VerdictSources.Max(source => source.Tracks))"></span>
+                                                </td>
+                                                <td class="numeric count-col">@tracks</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </section>
+
                             @if (_loudness is not null)
                             {
                                 <ClipGainSpread Spread="_loudness" />
@@ -516,6 +535,14 @@
     private LoudnessSpread? _loudness;
 
     private IReadOnlyList<TrackRow> _rows = [];
+
+    private IReadOnlyList<(TrackFilter Filter, string Name, int Tracks)> VerdictSources =>
+        [
+            (TrackFilter.JudgedVerdict, "Judged", _rows.Count(TrackFilter.JudgedVerdict)),
+            (TrackFilter.RuledVerdict, "Ruled by crateside", _rows.Count(TrackFilter.RuledVerdict)),
+            (TrackFilter.PersonsVerdict, "Your call", _rows.Count(TrackFilter.PersonsVerdict)),
+            (TrackFilter.NoVerdict, "No verdict", _rows.Count(TrackFilter.NoVerdict)),
+        ];
     private IReadOnlyList<TurnTile> _tiles = [];
     private JobHistory _history = JobHistory.From([], DateTimeOffset.Now);
     private ActivityFeed _feed = new([]);
@@ -586,6 +613,7 @@
             new(TimeId, "Over time", ThisWeek),
             new(LibraryId, "The library", _distribution.TrackCount),
             _keysBoth.Songs > 0 ? new("p-kdet", "Key detectors", _keysBoth.Songs, IsPanel: true) : null,
+            new("p-verdicts", "Where verdicts come from", _rows.Count - VerdictSources.Single(source => source.Filter is TrackFilter.NoVerdict).Tracks, IsPanel: true),
             new("p-key", "By key", Represented, IsPanel: true),
             LoudnessCounted > 0 ? new("p-loud", "Loudness adjustments", LoudnessCounted, IsPanel: true) : null,
             _tempo.Warped > 0 ? new("p-tempo", "By tempo", _tempo.Warped, IsPanel: true) : null,

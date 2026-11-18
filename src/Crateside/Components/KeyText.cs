@@ -15,15 +15,6 @@ public static class KeyText
     public static string Confidence(KeyConfidence confidence) =>
         confidence is KeyConfidence.Unknown ? "—" : confidence.ToString().ToUpperInvariant();
 
-    /// <summary>The confidence band, or who made the call where it was not the judge's (ADR 0076).</summary>
-    public static string Decided(DecidedBy? by, KeyConfidence confidence) =>
-        by switch
-        {
-            DecidedBy.Person => "your call",
-            DecidedBy.Rules => $"{Confidence(confidence)} · rules",
-            _ => Confidence(confidence),
-        };
-
     /// <summary>The song page's confidence tile: the band, or "your call", since the line under it names who decided.</summary>
     public static string Headline(DecidedBy? by, KeyConfidence confidence) =>
         by is DecidedBy.Person ? Byline(DecidedBy.Person) : Confidence(confidence);

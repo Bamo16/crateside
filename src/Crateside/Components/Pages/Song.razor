@@ -312,9 +312,11 @@
 
     /// <summary>What names the primary center's section: the sources that state its key for it, else the detectors and the judge.</summary>
     private string BasisOf(Section part) =>
-        _run?.SourcesNaming(part).Select(source => source.Host?.Replace("www.", string.Empty) ?? "a source").Distinct().ToList() switch
+        (Verdict?.DecidedBy, _run?.SourcesNaming(part).Select(source => source.Host?.Replace("www.", string.Empty) ?? "a source").Distinct().ToList()) switch
         {
-            [_, ..] hosts => $"named by {string.Join(" and ", hosts)}",
+            (DecidedBy.Person, _) => "your call",
+            (_, [_, ..] hosts) => $"named by {string.Join(" and ", hosts)}",
+            (DecidedBy.Rules, _) => "from the detectors, ruled by crateside",
             _ => "from the detectors and the judge's reading",
         };
 

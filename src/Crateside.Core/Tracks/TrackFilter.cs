@@ -28,6 +28,18 @@ public enum TrackFilter
     /// <summary>A default clip whose start is not on a bar line of Live's ruler (#177).</summary>
     ClipOffBarLine,
 
+    /// <summary>A verdict the judge made.</summary>
+    JudgedVerdict,
+
+    /// <summary>A verdict crateside's rules made, with no judge.</summary>
+    RuledVerdict,
+
+    /// <summary>A verdict the person gave on the song page.</summary>
+    PersonsVerdict,
+
+    /// <summary>No key yet: never judged, or the verdict was withheld.</summary>
+    NoVerdict,
+
     /// <summary>
     /// Every row there is, the finished library included. Answers "do I have this track in any
     /// shape or form", which is a search question.
@@ -63,6 +75,10 @@ public static class TrackFilters
             TrackFilter.TempoDrifts => row.TempoDrifts,
             TrackFilter.OffItsTempo => row.OffItsTempo,
             TrackFilter.ClipOffBarLine => row.ClipStartsOffBarLine,
+            TrackFilter.JudgedVerdict => row.KeyedBy is Ledger.DecidedBy.Judge,
+            TrackFilter.RuledVerdict => row.KeyedBy is Ledger.DecidedBy.Rules,
+            TrackFilter.PersonsVerdict => row.KeyedBy is Ledger.DecidedBy.Person,
+            TrackFilter.NoVerdict => row.KeyedBy is null,
             TrackFilter.All => true,
             _ => false,
         };
@@ -91,6 +107,14 @@ public static class TrackFilters
     /// <summary>Whether this row's familiarity, as it is tagged, is <paramref name="value"/>; every row when none is asked for.</summary>
     public static bool HasFamiliarity(this TrackRow row, string? value) =>
         value is null || row.Familiarity?.Written == value;
+
+    /// <summary>The filters the dashboard's verdict panel links to; the Tracks page shows a chip for one only while it is open.</summary>
+    public static bool IsVerdictSource(this TrackFilter filter) =>
+        filter
+            is TrackFilter.JudgedVerdict
+                or TrackFilter.RuledVerdict
+                or TrackFilter.PersonsVerdict
+                or TrackFilter.NoVerdict;
 
     /// <summary>How many rows are in each filter, over the whole list.</summary>
     public static int Count(this IEnumerable<TrackRow> rows, TrackFilter filter) =>
