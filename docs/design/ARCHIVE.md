@@ -28,7 +28,8 @@ Open any `.dc.html` in a browser. They need `support.js` beside them. Each is a 
 | `Crateside Partners By Notes.dc.html` | 1a · Partners pairs by notes: notes shared, the shift span, sections as a basis, tonic and mode by hand; live | Handoff 19 (#125). Supersedes 1d of Mode Beside Its Tag. |
 | `Crateside Evidence And Sharing.dc.html` | 1 · Track details: the evidence panel in two balanced columns (1a), the warp view as the track's timeline, with window drawers, the key strip and room for chords and playback (1b), the share card (1c); live | Handoff 20 (#150, #151, #152). The transport in the ruler's gutter (1b) is superseded by Playback (handoff 22); its playhead stays. |
 | `Crateside Activity Panel.dc.html` | 1 · the dashboard's Activity section: in place at 2000px, live, with filters, paging and opened rows (1a), every row state (1b), narrow, paged away, empty and folded (1c) | Handoff 21 (#189). Supersedes *Latest activity* in the Dashboard canvas's *Over time* row. |
-| `Crateside Playback.dc.html` | 1 · Track details with a header strip and a player: full width (1a), pinned (1b), at 56rem (1c) · 2 · the player's states, the header's variants, the upload card without its embed (2a) · 3 · the warp view with an always-on window: live (3a), every state of the window (3b), seeking (3c) | Handoff 22 (#105). The Design artifact keeps one file per artboard; here they are stacked in one file. |
+| `Crateside Playback.dc.html` | 1 · Track details with a header strip and a player: full width (1a), pinned (1b), at 56rem (1c) · 2 · the player's states, the header's variants, the upload card without its embed (2a) · 3 · the warp view with an always-on window: live (3a), every state of the window (3b), seeking (3c) | Handoff 22 (#105). The Design artifact keeps one file per artboard; here they are stacked in one file. The warp view's head line gains *Edit the warp* in Warp Editing (handoff 24). |
+| `Crateside Warp Editing.dc.html` | 1 · Track details with the edit bar open on a starter (1a), the head line offered and refused (1b) · 2 · the edit bar: each kind of edit, the maintainer's warp, Close's question, *Saves to* (2a), at 56rem (2b) · 3 · the ruler and lanes holding a draft, the clip-start notch dragged, `/2` (3a) · 4 · saving, saved with Undo, *Not saved*, a failed write, the lane detail (4a), the leave prompt (4b) | Handoff 24 (#105, #103). |
 | `Crateside Brand.dc.html` | 1 · five marks · 2 · fifteen more | **1a chosen** (interim). The rest are kept in case the brand is revisited. |
 
 ### `handoffs/`: what was sent to the implementing agent each time
@@ -61,6 +62,7 @@ The written spec for each canvas turn, in the order it was sent. The later ones 
 | `20-track-page.md` | Evidence And Sharing | #150, #151, #152 |
 | `21-activity.md` | Activity Panel | #189 |
 | `22-playback.md` | Playback | #105 |
+| `24-warp-editing.md` | Warp Editing | #105, #103 |
 
 ### `brand/`: the 1a assets
 `mark.svg` (header), `favicon.svg` plus PNG fallbacks (browser tab), `lockup.svg` (README), `mark-tile.svg` (app icon). Usage rules are in `handoffs/04-brand.md`.
