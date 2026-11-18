@@ -185,7 +185,8 @@ export function editDrag(section, server) {
         const notch = event.target instanceof Element ? event.target.closest(".notch.grip") : null;
         const ruler = notch?.closest(".ruler");
 
-        if (!notch || !ruler || event.button !== 0)
+        // The copy of the ruler drawn while the view moves carries a grip for show; its snaps are the old window's.
+        if (!notch || !ruler || ruler.classList.contains("live") || event.button !== 0)
             return;
 
         const tag = document.createElement("span");

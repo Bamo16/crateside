@@ -393,7 +393,7 @@
                     }
                     @if (clipWord is var (clipX, toLeft))
                     {
-                        @if (_editing && _asking is Ask.None && _phase is Phase.Idle)
+                        @if (HasClipGrip)
                         {
                             var clipBar = ClipBar(group);
                             <span class="notch grip" role="slider" tabindex="0" style="left: @P(clipX)%"

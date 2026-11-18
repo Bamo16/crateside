@@ -338,6 +338,9 @@ public partial class WarpView
         SetClip(ClipBar(group) + step * (key.ShiftKey ? 4 : 1));
     }
 
+    /// <summary>Whether the clip start is a draggable grip rather than a plain notch.</summary>
+    private bool HasClipGrip => _editing && _asking is Ask.None && _phase is Phase.Idle;
+
     private static int ClipBar(WarpGroup group) => group.Bars.BarAt(group.ClipStartBeat + 0.001);
 
     /// <summary>The whole bars in the view as <c>fraction:bar</c> pairs, for the notch grip to snap to.</summary>

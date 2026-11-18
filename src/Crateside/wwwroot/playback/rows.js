@@ -398,11 +398,18 @@ export const Rows = (Base) =>
             }
 
             if (clipX !== null) {
-                html.push(`<span ${scope} class="notch" style="left:${pct(clipX)}%" title="${escapeHtml(live.clip.title)}"></span>`);
+                html.push(this.notchHtml(scope, clipX, live.clip));
                 html.push(`<span ${scope} class="mono clip-word${toLeft ? " left" : ""}" style="left:${pct(clipX)}%">clip start</span>`);
             }
 
             return html.join("");
+        }
+
+        // WarpView.razor's clip-start notch: the grip while the edit bar is open, else a plain notch. Inert here; the real one is back when the view settles.
+        notchHtml(scope, x, clip) {
+            const [classes, extra] = clip.grip ? ["notch grip", ` data-bar="${clip.bar}"`] : ["notch", ""];
+
+            return `<span ${scope} class="${classes}" style="left:${pct(x)}%"${extra} title="${escapeHtml(clip.title)}"></span>`;
         }
 
         // WarpView.razor's GridBox: lines behind the rows, bars over beats over subdivisions, as many as stay at the density's spacing.

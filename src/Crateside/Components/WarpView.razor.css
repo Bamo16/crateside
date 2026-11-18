@@ -1524,6 +1524,11 @@ button.jtag:hover {
     cursor: grabbing;
 }
 
+/* The ruler's copy drawn while the view moves sits in the click-through field, and stands in for the hidden real grip. */
+.ruler.live .notch.grip {
+    pointer-events: auto;
+}
+
 /* A clip start at the ruler's left edge keeps its whole grip: the ruler clips a little past its edges, not a flag's half. */
 .ruler:has(.notch.grip) {
     overflow: clip;

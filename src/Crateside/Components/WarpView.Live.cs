@@ -27,7 +27,7 @@ public partial class WarpView
                     $"{band.Start}:{band.End}:{band.Tag}:{band.Style}:{band.Line}:{band.Window}"
                 )
             )
-            + $"|{_openWindow}|{SelectedSection}|{(Run is null ? 0 : RuntimeHelpers.GetHashCode(Run))}|{group.Seconds}";
+            + $"|{HasClipGrip}|{_openWindow}|{SelectedSection}|{(Run is null ? 0 : RuntimeHelpers.GetHashCode(Run))}|{group.Seconds}";
 
         if (ReferenceEquals(_liveGroup, group) && _liveKey == key)
             return null;
@@ -46,6 +46,8 @@ public partial class WarpView
                 {
                     start = lender.Clip.Start,
                     title = $"Clip start · {WarpWording.Time(lender.Clip.Start)} · bar {StartBar(group)}",
+                    grip = HasClipGrip,
+                    bar = ClipBar(group),
                 }
                 : null,
             loop = group.Lender?.Loop is { } loop
