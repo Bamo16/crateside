@@ -98,7 +98,7 @@ public static class StemTagReader
                     group => group.Key,
                     IReadOnlyList<string> (group) => [.. group.Select(file => file.FullName)]
                 )
-            : new Dictionary<string, IReadOnlyList<string>>();
+            : [];
 
     /// <summary>The tags crateside needs from a stem file; null if it is unreadable or unsupported.</summary>
     public static StemTags? Read(string path) => Read(path, new FileInfo(path));

@@ -22,7 +22,7 @@ public sealed class TuningPass(
     private const int Stretches = 5;
     private const double StretchSeconds = 30;
 
-    private readonly HashSet<string> _unread = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _unread = [with(StringComparer.Ordinal)];
 
     /// <summary>Decides every track not yet decided and writes what is decided; the tracks written to.</summary>
     public async Task<IReadOnlyList<string>> RunAsync(

@@ -444,9 +444,10 @@ public sealed record RenameBasis(
 /// <summary>Which files are in a set of folders, each folder listed once, on first use.</summary>
 public sealed class ExistingFiles
 {
-    private readonly Dictionary<string, HashSet<string>> _folders = new(
-        StringComparer.OrdinalIgnoreCase
-    );
+    private readonly Dictionary<string, HashSet<string>> _folders =
+    [
+        with(StringComparer.OrdinalIgnoreCase),
+    ];
 
     public bool Contains(string path)
     {
