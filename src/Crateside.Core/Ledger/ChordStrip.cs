@@ -19,7 +19,7 @@ public static class ChordStrip
         {
             // The whole track; the summary's chords keep only the last 64.
             { ChordTimeline: { Count: > 0 } timeline } => Bands(
-                timeline.Select(time => (time.Chord, time.Start)).ToList(),
+                [.. timeline.Select(time => (time.Chord, time.Start))],
                 seconds
             ),
             { Chords: var chords, ChordStarts: var starts } when starts.Count == chords.Count =>
