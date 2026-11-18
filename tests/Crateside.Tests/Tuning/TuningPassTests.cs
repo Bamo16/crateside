@@ -179,7 +179,7 @@ public sealed class TuningPassTests : IDisposable
             TimeSpan.FromMinutes(3)
         );
 
-    private TuningPass Pass(
+    private static TuningPass Pass(
         double[] readings,
         TuningStore? store = null,
         StageNotes? notes = null
@@ -203,7 +203,7 @@ public sealed class TuningPassTests : IDisposable
             notes
         );
 
-    private void Saved(params string[] samples)
+    private static void Saved(params string[] samples)
     {
         foreach (var sample in samples)
         {
