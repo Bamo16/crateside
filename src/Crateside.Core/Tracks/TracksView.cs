@@ -297,7 +297,7 @@ public sealed record TracksView
                 TagArtist = known.TagNames.GetValueOrDefault(primary.TrackKey)?.Artist,
                 TagTitle = known.TagNames.GetValueOrDefault(primary.TrackKey)?.Title,
                 GpuPosition = members.Min(seed =>
-                    gpuLine.TryGetValue(seed.TrackKey, out var position) ? position : (int?)null
+                    gpuLine.TryGetValue(seed.TrackKey, out var position) ? position : null
                 ),
                 RunningStage = progress.Running,
                 RunningSince = progress.RunningSince,
