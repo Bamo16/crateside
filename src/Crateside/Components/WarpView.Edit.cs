@@ -47,9 +47,7 @@ public partial class WarpView
     private bool _leaveBack;
     private bool _guarded;
     private bool _focusStay;
-    private bool _focusKeep;
     private ElementReference _stay;
-    private ElementReference _keep;
     private IJSObjectReference? _editJs;
     private WarpGroup? _drawnFrom;
     private WarpDraft? _drawnDraft;
@@ -57,8 +55,6 @@ public partial class WarpView
     private GridReport? _drawnOff;
 
     private bool IsDirty => _editing && !_draft.IsEmpty;
-
-    private bool IsDrafting => IsDirty && _plan is not null && _drawn is not null;
 
     /// <summary>The group the page draws: the warp on disk, or with the draft applied to the stems a save would write.</summary>
     private WarpGroup Drawn(WarpGroup disk)
@@ -170,7 +166,7 @@ public partial class WarpView
     {
         if (IsDirty)
         {
-            (_asking, _focusKeep) = (Ask.Close, true);
+            _asking = Ask.Close;
 
             return;
         }
@@ -214,7 +210,7 @@ public partial class WarpView
     {
         if (IsDirty)
         {
-            (_asking, _focusKeep) = (Ask.Judge, true);
+            _asking = Ask.Judge;
 
             return;
         }

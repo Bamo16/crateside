@@ -66,8 +66,7 @@ public sealed class EvidenceDrainerTests : IDisposable
                 paths,
                 new Microsoft.Extensions.Time.Testing.FakeTimeProvider()
             ),
-            jobs,
-            Options.Create(paths)
+            jobs
         );
     }
 

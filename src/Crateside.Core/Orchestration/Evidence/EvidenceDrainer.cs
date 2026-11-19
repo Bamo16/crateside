@@ -3,7 +3,6 @@ using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
-using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Orchestration.Evidence;
 
@@ -16,12 +15,9 @@ public sealed class EvidenceDrainer(
     EvidenceRunner runner,
     EvidenceSelector selector,
     DetectorBackfill backfill,
-    JobStore jobs,
-    IOptions<CratesidePaths> paths
+    JobStore jobs
 ) : IStageDrainer
 {
-    private readonly CratesidePaths _paths = paths.Value;
-
     public JobStage Stage => JobStage.Evidence;
 
     /// <summary>

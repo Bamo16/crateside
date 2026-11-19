@@ -113,7 +113,6 @@ public sealed class VerdictDrainerTests : IDisposable
             new EvidenceCompleter(_set, _sources, new FakeDetectors(() => _detectorsFail)),
             new DownloadRunner(_downloads),
             _paused,
-            Options.Create(new CratesidePaths()),
             judge,
             _time
         );

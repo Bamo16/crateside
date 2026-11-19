@@ -28,12 +28,10 @@ public sealed class VerdictDrainer(
     EvidenceCompleter completer,
     DownloadRunner downloads,
     PauseStore remembered,
-    IOptions<CratesidePaths> paths,
     IOptions<JudgeOptions> options,
     TimeProvider time
 ) : IStageDrainer, IBackfillJudge
 {
-    private readonly CratesidePaths _paths = paths.Value;
     private readonly bool _hasJudge = options.Value.IsConfigured;
     private readonly bool _spendsClaudeQuota = options.Value.SpendsClaudeQuota;
     private readonly SemaphoreSlim _oneAtATime = new(1, 1);

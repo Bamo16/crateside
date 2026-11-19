@@ -27,8 +27,6 @@ public sealed class UnreadablePlaylistTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private string PathIn(string name) => Path.Combine(_directory, name);
-
     private WorkListService Unreadable(IntakeStore intake, out CachedPlaylist playlist) =>
         UnreadableWorkLists.In(_directory, _ledger, intake, out playlist);
 

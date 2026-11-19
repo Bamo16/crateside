@@ -10,8 +10,6 @@ namespace Crateside.Tests.Warps;
 
 public sealed class HandoffSidecarsTests : IDisposable
 {
-    private const int Frames = 44_100;
-
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
         "crateside-tests",
@@ -21,7 +19,6 @@ public sealed class HandoffSidecarsTests : IDisposable
     private readonly CratesidePaths _paths;
     private readonly WrittenWarps _written = new();
     private readonly TransientOrigins _origins = new();
-    private readonly SidecarWriter _writer;
 
     public HandoffSidecarsTests()
     {
@@ -31,7 +28,6 @@ public sealed class HandoffSidecarsTests : IDisposable
             LibraryFolder = Path.Combine(_root, "Library"),
         };
         Directory.CreateDirectory(Path.Combine(_root, "working"));
-        _writer = new SidecarWriter(new SilenceDecoder(), new OneTransient(), _written, _origins);
     }
 
     public void Dispose()
@@ -80,18 +76,5 @@ public sealed class HandoffSidecarsTests : IDisposable
             "steady 1",
             _origins.Of(AnalysisFile.Read($"{staged}.asd").Audio.Transients, staged)?.Detector
         );
-    }
-
-    private sealed class SilenceDecoder : IAudioDecoder
-    {
-        public Task<DecodedAudio?> DecodeAsync(string path, CancellationToken ct = default) =>
-            Task.FromResult<DecodedAudio?>(new DecodedAudio(new float[Frames * 2], 2, 44_100));
-    }
-
-    private sealed class OneTransient : ITransientDetector
-    {
-        public string Version => "onsets test";
-
-        public IReadOnlyList<Transient> Detect(DecodedAudio audio) => [new(1_000, 1)];
     }
 }

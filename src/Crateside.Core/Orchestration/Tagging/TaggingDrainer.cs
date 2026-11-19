@@ -4,7 +4,6 @@ using Crateside.Core.Audit;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
-using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Orchestration.Tagging;
 
@@ -15,12 +14,9 @@ public sealed class TaggingDrainer(
     LedgerStore store,
     TaggingRunner runner,
     TaggingSelector selector,
-    JobStore jobs,
-    IOptions<CratesidePaths> paths
+    JobStore jobs
 ) : IStageDrainer
 {
-    private readonly CratesidePaths _paths = paths.Value;
-
     public JobStage Stage => JobStage.Tagging;
 
     public Task<StageTick> DrainOnceAsync(CancellationToken ct = default)

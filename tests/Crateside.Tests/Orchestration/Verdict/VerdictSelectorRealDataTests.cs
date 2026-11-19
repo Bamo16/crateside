@@ -12,7 +12,6 @@ public sealed class VerdictSelectorRealDataTests
 {
     private static readonly WorkingSet Set = new(new CratesidePaths());
     private static readonly JobStore Jobs = new(new CratesidePaths());
-    private static readonly CratesidePaths Paths = RealPaths.Create();
 
     private static WorkItem Item(string trackKey) =>
         new()
