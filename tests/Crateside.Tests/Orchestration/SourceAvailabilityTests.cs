@@ -143,7 +143,7 @@ public sealed class SourceAvailabilityTests
     }
 
     [Fact]
-    public async Task What_is_known_survives_a_restart()
+    public Task What_is_known_survives_a_restart()
     {
         var path = Path.Combine(
             Path.GetTempPath(),
@@ -166,6 +166,8 @@ public sealed class SourceAvailabilityTests
         {
             Directory.Delete(Path.GetDirectoryName(path)!, recursive: true);
         }
+
+        return Task.CompletedTask;
     }
 
     private sealed class Clients(SourceAvailabilityTests owner) : IHttpClientFactory

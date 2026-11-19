@@ -60,9 +60,7 @@ public sealed class WorkingSet(CratesidePaths paths, TimeProvider? time = null)
     /// <summary>What all working sets together are costing on disk.</summary>
     public long TotalBytes =>
         Directory.Exists(_root)
-            ? Directory
-                .EnumerateFiles(_root, "*", SearchOption.AllDirectories)
-                .Sum(f => TryLength(f))
+            ? Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories).Sum(TryLength)
             : 0;
 
     /// <summary>The folder for one track, created if it is not there yet.</summary>

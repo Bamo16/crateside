@@ -76,7 +76,7 @@ public sealed class WorkingSetJanitor(
         foreach (
             var trackKey in held.Except(discarded)
                 .Where(trackKey => MayBeJudgeOnly(trackKey, ledger))
-                .Where(trackKey => everywhere.Value.IsFullyProcessed(trackKey))
+                .Where(everywhere.Value.IsFullyProcessed)
                 .ToList()
         )
         {

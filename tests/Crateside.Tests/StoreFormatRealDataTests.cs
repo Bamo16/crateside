@@ -9,8 +9,6 @@ using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
-using Crateside.Core.Playlist;
-using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests;
 

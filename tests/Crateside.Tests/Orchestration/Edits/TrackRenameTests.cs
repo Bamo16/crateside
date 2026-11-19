@@ -6,10 +6,8 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
 using Crateside.Core.Orchestration.Edits;
-using Crateside.Core.Playlist;
 using Crateside.Core.Staging;
 using Crateside.Core.WorkLists;
-using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Edits;
 

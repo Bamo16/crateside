@@ -1265,7 +1265,7 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.True(result.IsSuccess, result.Error);
         Assert.Equal([(45.0, 67.0), (112.0, 133.0)], Detector.Asked);
 
-        var prompt = Assert.Single(Sessions.Requests).StandardInput!;
+        var prompt = Assert.Single(Sessions.Requests).StandardInput;
 
         Assert.Contains("\"Chorus\", 45–67 s", prompt);
         Assert.Contains("\"bars 82–97\", 112–133 s", prompt);

@@ -6,10 +6,8 @@ using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Plans;
-using Crateside.Core.Playlist;
 using Crateside.Core.Staging;
 using Crateside.Core.WorkLists;
-using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Edits;
 

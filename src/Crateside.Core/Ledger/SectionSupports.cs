@@ -132,7 +132,7 @@ internal static class SectionSupports
         );
 
     private static double EndOf(RunRecord run, Section section) =>
-        run.Sections.Where(other => other.Start > section.Start).Select(other => other.Start).Min()
+        run.Sections.Where(other => other.Start > section.Start).Min(other => other.Start)
         ?? double.MaxValue;
 
     public static IReadOnlyList<WindowReading> Readings(RunRecord run) =>

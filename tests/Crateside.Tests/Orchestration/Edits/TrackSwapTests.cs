@@ -4,11 +4,9 @@ using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Orchestration.Jobs;
-using Crateside.Core.Playlist;
 using Crateside.Core.Staging;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
-using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Edits;
 

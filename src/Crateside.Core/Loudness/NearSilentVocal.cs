@@ -34,6 +34,5 @@ public static class NearSilentVocal
     ) =>
         stems
             .Where(stem => stem.PresetId!.StartsWith(family, StringComparison.Ordinal))
-            .Select(stem => stem.Lufs)
-            .Max();
+            .Max(stem => stem.Lufs);
 }

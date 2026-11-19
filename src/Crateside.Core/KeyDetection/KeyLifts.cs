@@ -114,8 +114,7 @@ public static partial class KeyLifts
                                 && peak.Shift == copy.Shift
                                 && peak.S >= FitFloor
                             )
-                            .Select(peak => (double?)peak.S)
-                            .Max()
+                            .Max(peak => (double?)peak.S)
                     )
                 )
                 .Where(agreed => agreed.Fit is not null)

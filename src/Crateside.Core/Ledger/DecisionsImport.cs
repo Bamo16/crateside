@@ -6,7 +6,6 @@ using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
-using Microsoft.EntityFrameworkCore;
 
 namespace Crateside.Core.Ledger;
 

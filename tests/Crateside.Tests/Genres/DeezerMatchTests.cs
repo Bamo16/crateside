@@ -49,7 +49,7 @@ public sealed class DeezerMatchTests
         );
 
         Assert.Equal(
-            (5L, 700_000, (long?)55L),
+            (5L, 700_000, 55L),
             DeezerMatch.Match(search.RootElement, "Adele", "Hello")!.Value
         );
     }

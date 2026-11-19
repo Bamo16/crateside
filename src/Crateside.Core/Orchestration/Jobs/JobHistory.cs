@@ -34,7 +34,7 @@ public sealed record JobHistory(
             ? []
             : Enumerable
                 .Range(0, thisWeek.Index - finished.Keys.Min(week => week.Index) + 1)
-                .Select(offset => thisWeek.Minus(offset))
+                .Select(thisWeek.Minus)
                 .Reverse()
                 .TakeLast(WeeksShown)
                 .Select(week => new WeekFinished(

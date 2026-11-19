@@ -1,8 +1,6 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Plans;
-using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
-using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.WorkLists;
 
@@ -70,7 +68,7 @@ public sealed class PastedTrackTests
             StemPlan.Default.Adding(new AddedSource { TrackKey = "bbbbbbbbbbb", Label = "Live" })
         );
 
-        var json = _ledger.Query(context => context.TrackInstructions.Single().Plan)!;
+        var json = _ledger.Query(context => context.TrackInstructions.Single().Plan);
 
         Assert.DoesNotContain("isEmpty", json, StringComparison.Ordinal);
         Assert.DoesNotContain("watchUrl", json, StringComparison.Ordinal);

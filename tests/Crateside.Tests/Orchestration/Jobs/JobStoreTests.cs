@@ -20,7 +20,7 @@ public sealed class JobStoreTests : IDisposable
 
     public void Dispose()
     {
-        var directory = Path.GetDirectoryName(_path)!;
+        var directory = Path.GetDirectoryName(_path);
 
         if (Directory.Exists(directory))
             Directory.Delete(directory, recursive: true);

@@ -52,7 +52,7 @@ public sealed partial class BulkRename(TrackRename rename, ActionLog actions)
         // Two tracks under one name would end up with files that clash.
         var taken = lines
             .Where(line => line.NewName is not null)
-            .GroupBy(line => line.NewName!, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(line => line.NewName, StringComparer.OrdinalIgnoreCase)
             .Where(group => group.Count() > 1)
             .Select(group => group.Key)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);

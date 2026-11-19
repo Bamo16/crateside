@@ -19,7 +19,7 @@ public static class GenreByArtist
             .Where(artist =>
                 artist.Count() >= AnswersNeeded
                 // "None of these" is an answer too, and disagrees with every genre.
-                && artist.Select(answer => answer.Genre).Distinct().ToArray() is [{ } _]
+                && artist.Select(answer => answer.Genre).Distinct().ToArray() is [{ }]
             )
             .ToDictionary(
                 artist => artist.Key,

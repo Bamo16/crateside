@@ -4,7 +4,6 @@ using Crateside.Core.Audit;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
-using Humanizer;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Orchestration.Tagging;
@@ -40,7 +39,7 @@ public sealed class TaggingDrainer(
         // A stale write carries no strike, the same as a spent quota.
         var (status, error) = outcome switch
         {
-            TagWriteOutcome.Written => (JobStatus.Succeeded, (string?)null),
+            TagWriteOutcome.Written => (JobStatus.Succeeded, null),
             TagWriteOutcome.Stale(var stale) => (JobStatus.Canceled, stale),
             TagWriteOutcome.Rejected(var rejected) => (JobStatus.Failed, rejected),
             _ => throw new UnreachableException(),

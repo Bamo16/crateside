@@ -126,7 +126,7 @@ public sealed class LibraryKeyReader(
 
         var instrumentals = samples.Where(s => BeatReader.IsInstrumental(s.File, s.Tags)).ToList();
         var tempo = samples
-            .OrderByDescending(s => instrumentals.Contains(s))
+            .OrderByDescending(instrumentals.Contains)
             .Select(s => tempos.Read(s.File))
             .FirstOrDefault(read => read is not null);
         var reading = instrumentals

@@ -4,7 +4,6 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Naming;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using TagLib;
 using TagLib.Ogg;

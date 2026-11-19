@@ -1,13 +1,8 @@
 using AbleKit.Tags;
 using Crateside.Core.Ableton;
-using Crateside.Core.Beats;
-using Crateside.Core.Familiarity;
-using Crateside.Core.Genres;
 using Crateside.Core.Imports;
 using Crateside.Core.Ledger;
 using Crateside.Core.Loudness;
-using Crateside.Core.Marks;
-using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
@@ -15,7 +10,6 @@ using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Plans;
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
-using Crateside.Core.Warps;
 using Crateside.Core.WorkLists;
 
 namespace Crateside.Core.Tracks;
@@ -302,11 +296,9 @@ public sealed record TracksView
                 Release = known.Releases.GetValueOrDefault(primary.TrackKey),
                 TagArtist = known.TagNames.GetValueOrDefault(primary.TrackKey)?.Artist,
                 TagTitle = known.TagNames.GetValueOrDefault(primary.TrackKey)?.Title,
-                GpuPosition = members
-                    .Select(seed =>
-                        gpuLine.TryGetValue(seed.TrackKey, out var position) ? position : (int?)null
-                    )
-                    .Min(),
+                GpuPosition = members.Min(seed =>
+                    gpuLine.TryGetValue(seed.TrackKey, out var position) ? position : (int?)null
+                ),
                 RunningStage = progress.Running,
                 RunningSince = progress.RunningSince,
                 Deletions =

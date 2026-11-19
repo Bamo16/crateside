@@ -21,7 +21,7 @@ public sealed class WorkOrderTests : IDisposable
 
     public void Dispose()
     {
-        var directory = Path.GetDirectoryName(_ledgerPath)!;
+        var directory = Path.GetDirectoryName(_ledgerPath);
 
         if (Directory.Exists(directory))
             Directory.Delete(directory, recursive: true);

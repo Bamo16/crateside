@@ -3,12 +3,10 @@ using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Plans;
-using Crateside.Core.Playlist;
 using Crateside.Core.Samples;
 using Crateside.Core.Tracks;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
-using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Edits;
 

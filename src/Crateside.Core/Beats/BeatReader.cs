@@ -329,13 +329,13 @@ public sealed partial class BeatReader
             Candidates =
             [
                 .. Indexed(final, "candidate")
-                    .Select(value => BeatCandidate.TryParse(value))
+                    .Select(BeatCandidate.TryParse)
                     .OfType<BeatCandidate>(),
             ],
             Segments =
             [
                 .. Indexed(final, "tempo_segment")
-                    .Select(value => TempoSegment.TryParse(value))
+                    .Select(TempoSegment.TryParse)
                     .OfType<TempoSegment>(),
             ],
         };

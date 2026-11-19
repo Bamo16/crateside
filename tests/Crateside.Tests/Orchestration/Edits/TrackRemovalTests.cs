@@ -5,7 +5,6 @@ using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
 using Crateside.Core.Staging;
 using Crateside.Core.WorkLists;
-using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Edits;
 

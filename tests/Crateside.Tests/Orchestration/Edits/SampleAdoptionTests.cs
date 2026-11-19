@@ -2,11 +2,9 @@ using Crateside.Core;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Plans;
-using Crateside.Core.Playlist;
 using Crateside.Core.Samples;
 using Crateside.Core.Tracks;
 using Crateside.Core.WorkLists;
-using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Edits;
 

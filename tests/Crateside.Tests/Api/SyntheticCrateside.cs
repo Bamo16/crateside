@@ -15,7 +15,6 @@ using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Playback;
-using Crateside.Core.Playlist;
 using Crateside.Core.Tracks;
 using Crateside.Core.Warps;
 using Crateside.Core.WorkLists;
