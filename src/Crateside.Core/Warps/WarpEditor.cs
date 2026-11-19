@@ -20,9 +20,8 @@ public sealed class WarpEditor(
     {
         try
         {
-            var holders = siblings
-                .CutsOf(song)
-                .Where(cut => written.BorrowedFrom(cut.Path) is null)
+            var cuts = siblings.CutsOf(song).ToArray();
+            var holders = cuts.Where(cut => written.BorrowedFrom(cut.Path) is null)
                 .Select(cut => (Cut: cut, Analysis: Warped(cut.Path)))
                 .Where(stem => stem.Analysis is not null)
                 .ToArray();
@@ -48,7 +47,16 @@ public sealed class WarpEditor(
             return new WarpSavePlan.Ready(
                 reference.Path,
                 [.. sharing.Select(SidecarStamp.Of)],
-                [.. sharing.SelectMany(written.LentTo).Distinct(StringComparer.OrdinalIgnoreCase)],
+                // A copy is named by what its sidecar says, not by the lender's path, which moves.
+                [
+                    .. sharing
+                        .SelectMany(written.LentTo)
+                        .Concat(
+                            cuts.Where(cut => written.BorrowedFrom(cut.Path) is not null)
+                                .Select(cut => cut.Path)
+                        )
+                        .Distinct(StringComparer.OrdinalIgnoreCase),
+                ],
                 [
                     .. holders
                         .Select(stem => stem.Cut.Path)

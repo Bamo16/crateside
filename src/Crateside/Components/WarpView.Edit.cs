@@ -121,9 +121,13 @@ public partial class WarpView
 
     private (WarpSavePlan Plan, WarpSiblings Siblings) PlanNow(string lender)
     {
+        var guides = Directory.Exists(Paths.KeptWarpGuides)
+            ? Directory.EnumerateFiles(Paths.KeptWarpGuides)
+            : [];
         var siblings = WarpSiblings.Of(
             Row.Samples.Select(sample => sample.Path)
                 .Where(sample => sample is { Length: > 0 })
+                .Concat(guides)
                 .Where(file => !file.EndsWith(".asd", StringComparison.OrdinalIgnoreCase))
         );
 

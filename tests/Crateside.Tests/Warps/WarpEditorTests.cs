@@ -126,6 +126,35 @@ public sealed class WarpEditorTests : IDisposable
     }
 
     [Fact]
+    public async Task A_save_reaches_a_lent_drums_stem_after_the_instrumental_moved_to_the_library()
+    {
+        await StarterGroup();
+        _written.RecordBorrowed(Drums, Instrumental);
+        var moved = Path.Combine(_paths.LibraryFolder, Path.GetFileName(Instrumental));
+        File.Move(Instrumental, moved);
+        File.Move($"{Instrumental}.asd", $"{moved}.asd");
+        var siblings = WarpSiblings.Scan([_paths.StagingFolder, _paths.LibraryFolder]);
+        var editor = Editor();
+        var plan = Assert.IsType<WarpSavePlan.Ready>(
+            editor.Plan(siblings, WarpSiblings.Read(moved)!)
+        );
+        var before = AnalysisFile.Read($"{Drums}.asd");
+
+        await editor.SaveAsync(
+            plan,
+            siblings,
+            new WarpDraft().Later(4),
+            ct: TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(
+            before.Warp.Markers[0].Beat - 4,
+            AnalysisFile.Read($"{Drums}.asd").Warp.Markers[0].Beat,
+            9
+        );
+    }
+
+    [Fact]
     public async Task A_stem_saved_over_since_the_draft_began_stops_the_save_and_nothing_is_written()
     {
         var (editor, siblings, plan) = await StarterGroup();
