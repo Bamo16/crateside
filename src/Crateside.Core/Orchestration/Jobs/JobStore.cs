@@ -14,7 +14,6 @@ namespace Crateside.Core.Orchestration.Jobs;
 /// </param>
 public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, StageHub? hub = null)
 {
-    private readonly string _path = paths.JobsFile;
     private readonly TimeProvider _time = time ?? TimeProvider.System;
     private readonly Lock _gate = new();
 
@@ -24,7 +23,7 @@ public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, St
     private Dictionary<string, TrackJob>? _cached;
 
     /// <summary>Where the file lives, for diagnostics and for tests to assert against.</summary>
-    public string Path => _path;
+    public string Path { get; } = paths.JobsFile;
 
     /// <summary>Every job crateside knows about, most recently updated first.</summary>
     public IReadOnlyList<TrackJob> All()
@@ -180,13 +179,13 @@ public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, St
     {
         List<JobUpdate> updates = [];
 
-        if (!File.Exists(_path))
+        if (!File.Exists(Path))
             return updates;
 
         try
         {
             using var stream = new FileStream(
-                _path,
+                Path,
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.ReadWrite | FileShare.Delete
@@ -224,10 +223,10 @@ public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, St
 
     private void Append(JobUpdate update)
     {
-        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(_path)!);
+        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(Path)!);
 
         File.AppendAllText(
-            _path,
+            Path,
             JsonSerializer.Serialize(update, JobsJsonContext.Default.JobUpdate)
                 + Environment.NewLine
         );
