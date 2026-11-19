@@ -157,3 +157,7 @@ backer at `r` ≥ 0.80 96.8% to 96.2%), keydetect is right on 14 more songs, and
 having become a copy of it. Because `r` runs higher on 1.6.0, tier B's 0.80 now admits 318 songs
 instead of 252; raising it to 0.83 would hold coverage near the old count (241 fires, 237 right,
 98.3%) if that is wanted.
+
+## Adoption
+
+This note is the gate-3 record for adopting keydetect 1.6.0 under [ADR 0108](../adr/0108-a-new-detector-build-is-adopted-by-a-fixed-check.md), which pinned the build in `BuiltInBuilds` the same day. The check is now `scripts/keydetect_rules_check.py`.

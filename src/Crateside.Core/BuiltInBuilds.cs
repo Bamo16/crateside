@@ -36,11 +36,11 @@ public static class BuiltInBuilds
     [
         new(
             FfmpegFilter.Keydetect,
-            "v1.3.0",
-            "ffmpeg-9.0-NoMercy-keydetect-v1.3.0.zip",
-            "5f16f73e2e5b127fc3db0389d5c73265086f512168655660c21d1e7100670833",
+            "v1.6.0",
+            "ffmpeg-9.0-NoMercy-keydetect-v1.6.0.zip",
+            "87fe09e4e6d7af5a1a7e1097918902848041be8581ad181c391d499c3b36c25a",
             "ffmpeg-windows/ffmpeg.exe",
-            "28f445ee6e65c4337e8fca617763af9e3816af7f3920983edcf34b16a7173a96"
+            "5a918a37d7dd2c3991d3c8203cb12fff9117bafa0a70ad41db753952a47fe7b2"
         ),
         new(
             FfmpegFilter.Beatdetect,
@@ -56,11 +56,11 @@ public static class BuiltInBuilds
     [
         new(
             FfmpegFilter.Keydetect,
-            "v1.3.0",
-            "ffmpeg-9.0-NoMercy-keydetect-v1.3.0.zip",
-            "5f16f73e2e5b127fc3db0389d5c73265086f512168655660c21d1e7100670833",
+            "v1.6.0",
+            "ffmpeg-9.0-NoMercy-keydetect-v1.6.0.zip",
+            "87fe09e4e6d7af5a1a7e1097918902848041be8581ad181c391d499c3b36c25a",
             "ffmpeg-linux/ffmpeg",
-            "35a52f68b043f796c789baf54b21005b387d14f2c9687407d95235fa3d4b0ed8"
+            "3aefab570a6f3d07e971cc75039e552913d88d03d1dee00affdec66ef45ddde5"
         ),
         new(
             FfmpegFilter.Beatdetect,
