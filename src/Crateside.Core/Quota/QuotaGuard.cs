@@ -12,7 +12,7 @@ public sealed class QuotaGuard(
     IQuotaReader reader,
     TimeProvider time,
     IOptions<JudgeOptions>? judge = null
-)
+) : IDisposable
 {
     /// <summary>Weekly use, as a percentage, at which judging stops.</summary>
     public const double WeeklyLimit = 85;
@@ -96,6 +96,8 @@ public sealed class QuotaGuard(
 
         return Hold;
     }
+
+    public void Dispose() => _reading.Dispose();
 }
 
 /// <param name="Used">Weekly use when read, as a percentage, or null if it has not been read.</param>

@@ -30,7 +30,7 @@ public sealed class VerdictDrainer(
     PauseStore remembered,
     IOptions<JudgeOptions> options,
     TimeProvider time
-) : IStageDrainer, IBackfillJudge
+) : IStageDrainer, IBackfillJudge, IDisposable
 {
     private readonly bool _hasJudge = options.Value.IsConfigured;
     private readonly bool _spendsClaudeQuota = options.Value.SpendsClaudeQuota;
@@ -464,4 +464,6 @@ public sealed class VerdictDrainer(
             control.ReportIdle();
         }
     }
+
+    public void Dispose() => _oneAtATime.Dispose();
 }

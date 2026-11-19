@@ -10,7 +10,7 @@ namespace Crateside.Core.Orchestration.Separation;
 public sealed class PresetCatalogReader(
     IProcessRunner processes,
     string stemforge = "stemforge-cli"
-)
+) : IDisposable
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
 
@@ -93,4 +93,6 @@ public sealed class PresetCatalogReader(
             return PresetCatalog.Empty;
         }
     }
+
+    public void Dispose() => _gate.Dispose();
 }

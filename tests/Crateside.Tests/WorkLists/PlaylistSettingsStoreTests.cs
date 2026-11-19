@@ -5,9 +5,11 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.WorkLists;
 
-public sealed class PlaylistSettingsStoreTests
+public sealed class PlaylistSettingsStoreTests : IDisposable
 {
     private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
+
+    public void Dispose() => _ledger.Dispose();
 
     /// <summary>A new store over the same ledger is a restart.</summary>
     private PlaylistSettingsStore Playlist(string? configuredPlaylistId = null) =>

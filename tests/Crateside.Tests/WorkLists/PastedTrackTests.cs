@@ -5,11 +5,13 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.WorkLists;
 
 /// <summary>crateside's own record of a track the playlist does not hold (ADR 0010).</summary>
-public sealed class PastedTrackTests
+public sealed class PastedTrackTests : IDisposable
 {
     private const string Pasted = "aaaaaaaaaaa";
 
     private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
+
+    public void Dispose() => _ledger.Dispose();
 
     private TrackInstructionStore Store() => new(_ledger);
 

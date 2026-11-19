@@ -7,7 +7,7 @@ namespace Crateside.Core.Orchestration.Loop;
 /// The wake signal for every stage — for Separation and Verdict, the control each already waits
 /// on (ADR 0024).
 /// </summary>
-public sealed class StageSignals(DrainControl separation, VerdictControl verdict)
+public sealed class StageSignals(DrainControl separation, VerdictControl verdict) : IDisposable
 {
     private readonly Dictionary<JobStage, DrainSignal> _signals = new()
     {
@@ -36,5 +36,13 @@ public sealed class StageSignals(DrainControl separation, VerdictControl verdict
         foreach (var (each, signal) in _signals)
             if (each != stage)
                 signal.Wake();
+    }
+
+    /// <summary>Disposes the signals made here; the two controls belong to the container.</summary>
+    public void Dispose()
+    {
+        foreach (var signal in _signals.Values)
+            if (signal is not (DrainControl or VerdictControl))
+                signal.Dispose();
     }
 }

@@ -1,7 +1,7 @@
 namespace Crateside.Core.Orchestration.Loop;
 
 /// <summary>Ends a stage's idle wait early, so a change does not wait out the interval.</summary>
-public class DrainSignal
+public class DrainSignal : IDisposable
 {
     // One permit at most: a second would end the following wait for no reason.
     private readonly SemaphoreSlim _wake = new(0, 1);
@@ -26,4 +26,10 @@ public class DrainSignal
     /// <returns>True when woken, false when the delay simply elapsed.</returns>
     public Task<bool> WaitForWorkAsync(TimeSpan delay, CancellationToken ct = default) =>
         _wake.WaitAsync(delay, ct);
+
+    public void Dispose()
+    {
+        _wake.Dispose();
+        GC.SuppressFinalize(this);
+    }
 }

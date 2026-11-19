@@ -8,7 +8,7 @@ public sealed class TracksServiceSingleFlightTests
     [Fact]
     public async Task Workers_asking_for_fresh_rows_at_once_share_one_read()
     {
-        var reader = new GatedReader();
+        using var reader = new GatedReader();
         using var service = new TracksService(reader, new StageHub());
 
         var asks = Enumerable
@@ -31,7 +31,7 @@ public sealed class TracksServiceSingleFlightTests
     [Fact]
     public async Task A_refresh_during_a_read_waits_for_one_follow_up_read_shared_with_the_others()
     {
-        var reader = new GatedReader();
+        using var reader = new GatedReader();
         using var service = new TracksService(reader, new StageHub());
 
         var first = service.RefreshAsync(TestContext.Current.CancellationToken);
@@ -58,7 +58,7 @@ public sealed class TracksServiceSingleFlightTests
     [Fact]
     public async Task A_caller_that_gives_up_leaves_the_read_to_the_others()
     {
-        var reader = new GatedReader();
+        using var reader = new GatedReader();
         using var service = new TracksService(reader, new StageHub());
         using var cancel = new CancellationTokenSource();
 
@@ -80,7 +80,7 @@ public sealed class TracksServiceSingleFlightTests
 
     private static TimeSpan Wait => TimeSpan.FromSeconds(10);
 
-    private sealed class GatedReader : ITracksReader
+    private sealed class GatedReader : ITracksReader, IDisposable
     {
         private readonly SemaphoreSlim _release = new(0);
         private readonly SemaphoreSlim _started = new(0);
@@ -97,6 +97,12 @@ public sealed class TracksServiceSingleFlightTests
         }
 
         public void Finish() => _release.Release();
+
+        public void Dispose()
+        {
+            _release.Dispose();
+            _started.Dispose();
+        }
 
         public async Task Started(int count)
         {

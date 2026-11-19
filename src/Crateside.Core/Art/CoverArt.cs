@@ -21,7 +21,7 @@ public sealed record CoverImage(string Path, string ContentType, string ETag);
 /// Takes the picture attached to a track's audio file with ffmpeg and keeps it under
 /// <see cref="CratesidePaths.ArtFolder"/> until the file it came from changes (#159).
 /// </summary>
-public sealed class CoverArt(IProcessRunner runner, CratesidePaths paths)
+public sealed class CoverArt(IProcessRunner runner, CratesidePaths paths) : IDisposable
 {
     private const int SmallSide = 160;
     private const string FileName = "ffmpeg";
@@ -255,4 +255,11 @@ public sealed class CoverArt(IProcessRunner runner, CratesidePaths paths)
                     }
             )
             .ToString();
+
+    public void Dispose()
+    {
+        _running.Dispose();
+        foreach (var turn in _tracks.Values)
+            turn.Dispose();
+    }
 }

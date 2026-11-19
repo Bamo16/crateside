@@ -8,12 +8,14 @@ namespace Crateside.Tests.Playlist;
 /// <summary>
 /// What crateside keeps so it never has to ask the playlist again (ADR 0021).
 /// </summary>
-public sealed class IntakeStoreTests
+public sealed class IntakeStoreTests : IDisposable
 {
     private const string Track = "aaaaaaaaaaa";
     private const string Other = "bbbbbbbbbbb";
 
     private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
+
+    public void Dispose() => _ledger.Dispose();
 
     private IntakeStore Store() => new(_ledger);
 

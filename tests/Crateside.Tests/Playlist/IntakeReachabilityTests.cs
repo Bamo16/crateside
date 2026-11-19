@@ -5,12 +5,14 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Playlist;
 
 /// <summary>A track crateside has taken on stays reachable after the playlist lets it go (ADR 0021).</summary>
-public sealed class IntakeReachabilityTests
+public sealed class IntakeReachabilityTests : IDisposable
 {
     private const string Gone = "RzQRxV2XqFU";
     private const string Held = "x3U22KHsrqE";
 
     private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
+
+    public void Dispose() => _ledger.Dispose();
 
     private IntakeStore Store() => new(_ledger);
 

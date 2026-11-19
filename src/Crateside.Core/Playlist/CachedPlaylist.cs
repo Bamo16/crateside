@@ -10,7 +10,7 @@ public sealed class CachedPlaylist(
     PlaylistRemover remover,
     TimeProvider time,
     IOptions<PlaylistOptions>? options = null
-)
+) : IDisposable
 {
     private static readonly TimeSpan CacheFor = TimeSpan.FromMinutes(2);
 
@@ -130,4 +130,6 @@ public sealed class CachedPlaylist(
 
         return results;
     }
+
+    public void Dispose() => _readGate.Dispose();
 }

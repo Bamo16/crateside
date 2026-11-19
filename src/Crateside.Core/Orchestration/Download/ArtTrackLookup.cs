@@ -13,7 +13,7 @@ public sealed class ArtTrackLookup(
     CratesidePaths paths,
     TimeProvider time,
     string stemforge = "stemforge-cli"
-)
+) : IDisposable
 {
     /// <summary>How long "no song found" stands before the next look.</summary>
     public static readonly TimeSpan NothingFoundFor = TimeSpan.FromDays(14);
@@ -120,6 +120,8 @@ public sealed class ArtTrackLookup(
             // Kept in memory; a restart asks again.
         }
     }
+
+    public void Dispose() => _oneAtATime.Dispose();
 }
 
 /// <summary>The song upload that matches a video, and how far its length is from the video's.</summary>

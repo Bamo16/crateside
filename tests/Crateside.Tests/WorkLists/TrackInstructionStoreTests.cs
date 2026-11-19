@@ -4,9 +4,11 @@ using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.WorkLists;
 
-public sealed class TrackInstructionStoreTests
+public sealed class TrackInstructionStoreTests : IDisposable
 {
     private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
+
+    public void Dispose() => _ledger.Dispose();
 
     /// <summary>A new store over the same ledger is a restart.</summary>
     private TrackInstructionStore Instructions() => new(_ledger);
