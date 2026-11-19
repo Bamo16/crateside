@@ -3,6 +3,9 @@ using Crateside.Api;
 using Crateside.Components;
 using Crateside.Core;
 
+// The console logger writes in the console's code page otherwise, and non-ASCII titles show as ?.
+Console.OutputEncoding = System.Text.Encoding.UTF8;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
