@@ -48,7 +48,9 @@ public sealed class StagingReaderRealLibraryTests
     {
         var song = Staged()
             .SingleOrDefault(s =>
-                s.Stems.Any(stem => stem.FileName.StartsWith("Alan Gomez - Mission 15"))
+                s.Stems.Any(stem =>
+                    stem.FileName.StartsWith("Alan Gomez - Mission 15", StringComparison.Ordinal)
+                )
             );
 
         Assert.SkipWhen(song is null, "The Mission 15 stems are no longer staged.");

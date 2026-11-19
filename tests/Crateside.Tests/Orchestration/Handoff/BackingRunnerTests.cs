@@ -314,7 +314,10 @@ public sealed class BackingRunnerTests : IDisposable
         Assert.True(new FolderInfoReader().Read(_root).TryGet(stem, out var tags));
         Assert.Contains("Genres|Hip Hop", tags.Keywords);
         Assert.Contains("Genres|Funk", tags.Keywords);
-        Assert.DoesNotContain(tags.Keywords, keyword => keyword.StartsWith("Genre|"));
+        Assert.DoesNotContain(
+            tags.Keywords,
+            keyword => keyword.StartsWith("Genre|", StringComparison.Ordinal)
+        );
     }
 
     [Fact]

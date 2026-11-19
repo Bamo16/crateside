@@ -56,7 +56,10 @@ public sealed class PagesLinesTests
             "  - Chorus changes key inside the section: B minor from beat 1, then B dorian from beat 15",
             lines
         );
-        Assert.DoesNotContain(lines, line => line.StartsWith("  - Verse changes key"));
+        Assert.DoesNotContain(
+            lines,
+            line => line.StartsWith("  - Verse changes key", StringComparison.Ordinal)
+        );
     }
 
     [Fact]
@@ -67,8 +70,8 @@ public sealed class PagesLinesTests
         Assert.Contains(
             lines,
             line =>
-                line.StartsWith("  - Verse: i7 i43 i7 i64")
-                && line.EndsWith("(chords 85% filled in, melody 46%)")
+                line.StartsWith("  - Verse: i7 i43 i7 i64", StringComparison.Ordinal)
+                && line.EndsWith("(chords 85% filled in, melody 46%)", StringComparison.Ordinal)
         );
     }
 
