@@ -92,7 +92,8 @@ public static partial class LedgerVocabulary
 
     /// <summary>
     /// The mode named in <paramref name="text"/>, bare (<c>dorian</c>) or with its tonic
-    /// (<c>D Dorian</c>); <c>major</c> and <c>minor</c> are Ionian and Aeolian.
+    /// (<c>D Dorian</c>); <c>major</c> and <c>minor</c> alone are Ionian and Aeolian. A key such
+    /// as <c>A minor</c>, or a number, names no mode.
     /// </summary>
     public static DiatonicMode? ParseMode(string? text)
     {
@@ -107,9 +108,11 @@ public static partial class LedgerVocabulary
         {
             "major" => DiatonicMode.Ionian,
             "minor" => DiatonicMode.Aeolian,
-            var name => Enum.TryParse<DiatonicMode>(name, ignoreCase: true, out var mode)
-                ? mode
-                : null,
+            var name => Enum.GetValues<DiatonicMode>()
+                .Select(mode => (DiatonicMode?)mode)
+                .FirstOrDefault(mode =>
+                    string.Equals(mode.ToString(), name, StringComparison.OrdinalIgnoreCase)
+                ),
         };
     }
 

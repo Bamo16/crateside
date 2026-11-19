@@ -66,6 +66,8 @@ public sealed class LedgerVocabularyTests
     [InlineData("E Mixolydian throughout", DiatonicMode.Mixolydian)]
     [InlineData("major", DiatonicMode.Ionian)]
     [InlineData("Minor", DiatonicMode.Aeolian)]
+    [InlineData("LOCRIAN", DiatonicMode.Locrian)]
+    [InlineData("phrygian", DiatonicMode.Phrygian)]
     public void A_mode_is_read_bare_or_with_its_tonic(string text, DiatonicMode expected)
     {
         Assert.Equal(expected, LedgerVocabulary.ParseMode(text));
@@ -75,6 +77,11 @@ public sealed class LedgerVocabularyTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("banana")]
+    [InlineData("3")]
+    [InlineData("0")]
+    [InlineData("-1")]
+    [InlineData("A minor")]
+    [InlineData("Dorian,Lydian")]
     public void Text_naming_no_mode_has_none(string? text)
     {
         Assert.Null(LedgerVocabulary.ParseMode(text));
