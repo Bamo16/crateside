@@ -556,6 +556,31 @@ public sealed class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
+    public void A_finished_track_is_not_parked_over_a_poor_source_once_it_has_been_cut()
+    {
+        var row = Assert.Single(
+            Compose(
+                WorkListsView.Compose(
+                    [Item()],
+                    new HashSet<string> { Video },
+                    new HashSet<string>(),
+                    new HashSet<string>(),
+                    new Dictionary<string, TrackInstruction>()
+                ),
+                onDisk: Finished("Vocal - Full", "Instrumental - Full"),
+                ledger: LedgerWith("A minor", "HIGH", 120),
+                acquisitions: new Dictionary<string, Acquisition>(StringComparer.Ordinal)
+                {
+                    [Video] = new() { PremiumStatus = PremiumStatus.NoPremiumLadder },
+                }
+            )
+        );
+
+        Assert.Null(row.ParkedFor);
+        Assert.Equal(TrackState.Done, row.State);
+    }
+
+    [Fact]
     public void A_download_that_got_premium_audio_leaves_the_row_alone()
     {
         // Recorded on every download, so the outcome counts, not the record's presence.

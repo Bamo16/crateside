@@ -1,6 +1,7 @@
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Orchestration.Tagging;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Crateside.Tests.Orchestration.Jobs;
 
@@ -46,6 +47,30 @@ public sealed class StageProgressTests : IDisposable
         jobs.Record(Video, JobStage.Separation, JobStatus.Running, 4242, launched, adopted: true);
 
         Assert.Equal(launched, StageProgress.For(jobs, Video).RunningSince);
+    }
+
+    [Fact]
+    public void A_stage_given_up_on_is_cleared_by_a_later_stage_that_succeeded_after_it()
+    {
+        var time = new FakeTimeProvider(new DateTimeOffset(2026, 9, 30, 2, 0, 0, TimeSpan.Zero));
+        var jobs = new JobStore(_path, time);
+
+        for (var i = 0; i < 5; i++)
+        {
+            jobs.Record(Video, JobStage.Verdict, JobStatus.Failed, error: "no verdict");
+            time.Advance(TimeSpan.FromMinutes(1));
+        }
+
+        Assert.Equal(JobStage.Verdict, StageProgress.For(jobs, Video).GaveUpAt);
+
+        jobs.Record(Video, JobStage.Handoff, JobStatus.Succeeded);
+
+        Assert.Null(StageProgress.For(jobs, Video).GaveUpAt);
+
+        time.Advance(TimeSpan.FromMinutes(1));
+        jobs.Record(Video, JobStage.Verdict, JobStatus.Failed, error: "no verdict");
+
+        Assert.Equal(JobStage.Verdict, StageProgress.For(jobs, Video).GaveUpAt);
     }
 
     [Fact]

@@ -64,7 +64,7 @@ public sealed record StageProgress
 
             // Canceled never counts, whatever the strikes say — a track put back in line by
             // hand has not given up.
-            if (StageEligibility.HasGivenUp(job))
+            if (StageEligibility.HasGivenUp(job) && !IsPassedBeyond(jobs, ids, stage, job))
             {
                 gaveUpAt = stage;
                 gaveUpStrikes = job.Strikes;
@@ -83,6 +83,18 @@ public sealed record StageProgress
             AwaitingPerson = awaitingPerson,
         };
     }
+
+    /// <summary>A later stage succeeded after the failure, so the track went on without it, as a verdict carried over from another upload does.</summary>
+    private static bool IsPassedBeyond(
+        JobStore jobs,
+        IReadOnlyList<string> trackKeys,
+        JobStage stage,
+        TrackJob failed
+    ) =>
+        Stages
+            .Where(later => later > stage)
+            .Select(later => Latest(jobs, trackKeys, later))
+            .Any(job => job is { Status: JobStatus.Succeeded } && job.UpdatedAt > failed.UpdatedAt);
 
     private static TrackJob? Latest(
         JobStore jobs,

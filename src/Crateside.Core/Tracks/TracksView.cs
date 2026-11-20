@@ -282,7 +282,8 @@ public sealed record TracksView
                 // since the GPU has already been spent.
                 ParkedFor =
                     isParked && !isUnjudged ? ParkReason.NoKey
-                    : acquisition?.Stops is true ? ParkReason.PremiumShortfall
+                    : acquisition?.Stops is true && (isUnjudged || samples.Count is 0)
+                        ? ParkReason.PremiumShortfall
                     : null,
                 WaitingForJudge =
                     isParked
