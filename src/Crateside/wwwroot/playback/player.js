@@ -217,7 +217,17 @@ export const PlayerStrip = (Base) =>
                 return;
             }
 
-            if (event.key !== " " || event.ctrlKey || event.altKey || event.metaKey || !this.files.length)
+            // Space plays and stops, O toggles the metronome, Ctrl+L the loop: Ableton Live's keys for the same actions.
+            const action =
+                event.key === " " && !event.ctrlKey
+                    ? () => this.toggle()
+                    : (event.key === "o" || event.key === "O") && !event.ctrlKey && !event.shiftKey
+                      ? () => this.setClick(!this.clickOn)
+                      : (event.key === "l" || event.key === "L") && event.ctrlKey && !event.shiftKey
+                        ? () => this.setLoop(!this.loopOn)
+                        : null;
+
+            if (!action || event.altKey || event.metaKey || !this.files.length)
                 return;
 
             const target = event.target;
@@ -226,7 +236,7 @@ export const PlayerStrip = (Base) =>
                 return;
 
             event.preventDefault();
-            this.toggle();
+            action();
         }
 
         // The slim waveform: a click seeks, a press held and dragged scrubs without a sound until release.
