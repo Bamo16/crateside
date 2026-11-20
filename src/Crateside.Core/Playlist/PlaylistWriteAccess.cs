@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Crateside.Core.Playlist;
 
 /// <summary>
@@ -8,6 +10,11 @@ public sealed class PlaylistWriteAccess(TimeProvider time)
 {
     private readonly Lock _gate = new();
 
+    [SuppressMessage(
+        "Style",
+        "IDE0032",
+        Justification = "Read and written under the lock, so an auto-property would hide the locking."
+    )]
     private string? _reason;
     private DateTimeOffset? _lapsedAt;
     private DateTimeOffset? _toldAt;

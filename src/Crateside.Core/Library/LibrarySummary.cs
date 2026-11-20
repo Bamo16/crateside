@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Crateside.Core.Watching;
 
 namespace Crateside.Core.Library;
@@ -16,6 +17,11 @@ public sealed class LibrarySummary(
 
     private readonly Lock _gate = new();
 
+    [SuppressMessage(
+        "Style",
+        "IDE0032",
+        Justification = "Filled on demand under the lock, so an auto-property would hide the locking."
+    )]
     private KeyDistribution? _current;
     private long _readAtVersion;
 

@@ -24,7 +24,7 @@ public sealed partial class BeatReader
 
     private readonly IProcessRunner _processes;
     private readonly string? _path;
-    private readonly string _fileName;
+    private string FileName { get; }
     private readonly string _filter;
     private readonly KnownBuilds? _builds;
     private readonly ISourceLocator? _sources;
@@ -66,7 +66,7 @@ public sealed partial class BeatReader
     {
         _processes = processes;
         _path = path;
-        _fileName = fileName;
+        FileName = fileName;
         _filter = filter;
         _builds = builds;
         _sources = sources;
@@ -361,7 +361,7 @@ public sealed partial class BeatReader
             .OrderBy(line => int.Parse(line.Groups["Index"].Value, CultureInfo.InvariantCulture))
             .Select(line => line.Groups["Value"].Value);
 
-    private string PinnedFileName => _builds?.Pinned(FfmpegFilter.Beatdetect)?.Path ?? _fileName;
+    private string PinnedFileName => _builds?.Pinned(FfmpegFilter.Beatdetect)?.Path ?? FileName;
 
     private BeatEntry? Kept(string audioPath) => KeptFor(new FileInfo(audioPath));
 

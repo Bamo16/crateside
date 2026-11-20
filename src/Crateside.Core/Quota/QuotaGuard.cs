@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Crateside.Core.Orchestration.Verdict;
 using Microsoft.Extensions.Options;
 
@@ -25,6 +26,12 @@ public sealed class QuotaGuard(
 
     private QuotaSnapshot _last = QuotaSnapshot.Unknown;
     private DateTimeOffset _readAt;
+
+    [SuppressMessage(
+        "Style",
+        "IDE0032",
+        Justification = "Read and written under the lock, so an auto-property would hide the locking."
+    )]
     private string? _passedTrackKey;
 
     /// <summary>The one track the user let through the hold, held in memory only.</summary>

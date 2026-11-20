@@ -52,7 +52,7 @@ public sealed class StemEditor(
     /// <summary>The video whose title was last asked for.</summary>
     private string? _titleOf;
 
-    private string? _addTitle;
+    private string? AddTitle { get; set; }
     private bool _readingTitle;
 
     /// <summary>Raised after every change, on whatever thread made it.</summary>
@@ -94,7 +94,7 @@ public sealed class StemEditor(
 
     public string? TitleNote =>
         _readingTitle ? "Reading the upload's title…"
-        : _addTitle is not { } title ? null
+        : AddTitle is not { } title ? null
         : _addTypeChosen || AddType is null ? $"“{title}”"
         : $"“{title}”, so {AddType} is suggested";
 
@@ -346,7 +346,7 @@ public sealed class StemEditor(
         _addTypeChosen = false;
         _addLabelOffered = null;
         _titleOf = null;
-        _addTitle = null;
+        AddTitle = null;
         _readingTitle = false;
         Changed?.Invoke();
     }
@@ -543,7 +543,7 @@ public sealed class StemEditor(
     private async Task ReadTitleAsync(TrackRow row, string trackKey)
     {
         _titleOf = trackKey;
-        _addTitle = null;
+        AddTitle = null;
         _readingTitle = true;
 
         if (!_addTypeChosen)
@@ -565,7 +565,7 @@ public sealed class StemEditor(
             return;
 
         _readingTitle = false;
-        _addTitle = title;
+        AddTitle = title;
 
         if (!_addTypeChosen && SampleTypes.InferredFrom(title) is { } inferred)
             Offer(inferred);

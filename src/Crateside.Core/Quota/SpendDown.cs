@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Core.Quota;
@@ -28,6 +29,12 @@ public sealed class SpendDown(
     private bool _enabled = remembered.Read().Backfill;
     private SpendDownSettings _settings = store.Read();
     private QuotaSnapshot _last = QuotaSnapshot.Unknown;
+
+    [SuppressMessage(
+        "Style",
+        "IDE0032",
+        Justification = "Read and written under the lock, so an auto-property would hide the locking."
+    )]
     private SpendDownState? _state;
 
     /// <summary>Raised whenever the state changes, so a rendered page can catch up.</summary>

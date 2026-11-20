@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Crateside.Core.Orchestration.Loop;
 
 /// <summary>
@@ -11,6 +13,12 @@ public class DrainControl : DrainSignal
 
     private bool _paused;
     private string? _activity;
+
+    [SuppressMessage(
+        "Style",
+        "IDE0032",
+        Justification = "Read and written under the lock, so an auto-property would hide the locking."
+    )]
     private DateTimeOffset? _activitySince;
 
     /// <summary>Raised whenever the state changes, so a rendered page can catch up.</summary>
