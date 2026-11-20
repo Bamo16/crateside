@@ -1,6 +1,6 @@
 # Handoff 22: playback on Track details, and a view zoomed by its handles
 
-Brief 22, issue #105, ADR 0094 · built against `a235117`
+Brief 22, issue #105, ADR 0094 · built against `43acb81`
 Canvas: `Crateside Playback.dc.html`. **1a** is Track details at full width with the header strip and
 the player. **1b** is the page scrolled, the player pinned and the view zoomed to 8 bars with loop
 on. **1c** is both at 56rem. **2a** is the player's states, the header strip's variants and the

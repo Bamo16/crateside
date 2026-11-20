@@ -3,7 +3,7 @@
 *Note, 2026-10-16, frozen. The check for [#111](https://github.com/Bamo16/crateside/issues/111)
 (the judge rewrite) and [#112](https://github.com/Bamo16/crateside/issues/112) (pages fetched before
 the judge runs), cut from ten tracks to three by the maintainer to save quota; decides nothing
-itself. Run from an export of `master` at b565fe5: each track downloaded again, detected with the
+itself. Run from an export of `master` at 1c8c669: each track downloaded again, detected with the
 ported detectors (#113), judged by `VerdictRunner` on Sonnet into a throwaway ledger. The old
 sessions are the Claude runs that recorded each track's current verdict, through keytag's
 `/detect-key`.*
@@ -47,4 +47,4 @@ Input counts every token sent, cached or not; usage summed once per request ID.
   Only *Hot In Herre* was found, on Hooktheory and Musicnotes; Ultimate Guitar had none of the
   three.
 - **Musicnotes' key was missed** on *Hot In Herre*: that product page uses an older layout. Fixed
-  in 21b6a7e; the judge read the key from the page title instead.
+  in 9d78e7b; the judge read the key from the page title instead.

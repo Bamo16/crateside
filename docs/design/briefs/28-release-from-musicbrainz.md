@@ -5,7 +5,7 @@ Issue: #185 (fill release year, label and cover from MusicBrainz)
 For an implementing agent; Bamo reviews first. Terms (track key, source, stem) are in `CONTEXT.md`.
 ADRs touched: 0077 (`Release`, what a source says), 0088 and 0089 (genre and familiarity already
 call MusicBrainz), 0082/0083 (decisions in `ledger.db`). Feeds #159 (cover art, built from embedded
-art in 5513813).
+art in 2c85a52).
 
 ## Problem
 

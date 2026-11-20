@@ -1,6 +1,6 @@
 # Handoff 19: Partners pairs by notes
 
-Brief 19, issue #125, ADR 0056 · built against `500b721`
+Brief 19, issue #125, ADR 0056 · built against `6f953d5`
 Canvas: `Crateside Partners By Notes.dc.html` (1a, live). Its *Canvas state* pills switch between
 C major, A Dorian, A Dorian at −1 to +3 and at +3 to +5, A Dorian under Re-Pitch −1, a song with
 sections, a mixed verdict, and a key by hand. The shift chips, the section pills and the tonic

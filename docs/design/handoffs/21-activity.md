@@ -1,6 +1,6 @@
 # Handoff 21: Activity, a dashboard section of its own
 
-Brief 21, issue #189 · built against `43e9ef0`
+Brief 21, issue #189 · built against `279fafd`
 Canvas: `Crateside Activity Panel.dc.html`, live. **1a** is the dashboard at 2000px at 2:14 PM,
 with the section in place: the stage filters, *Failed or canceled*, the page size, the pager and
 opening a result all work. **1b** shows each state a row can be in, and a long result closed and

@@ -5,7 +5,7 @@
 [ADR 0001](https://github.com/Bamo16/keydetect-harness/blob/main/docs/adr/0001-ground-truth-is-a-tonal-center-scored-by-its-collapse.md)
 and [glossary](https://github.com/Bamo16/keydetect-harness/blob/main/GLOSSARY.md) (harness `7357c59`)
 bear on the Partners tool. Decides nothing. Each claim is tagged **MEASURED** (run against
-crateside's code at `ea4a049`), **READ** (traced in the code or docs, not run), **INFERRED** or
+crateside's code at `4e6a115`), **READ** (traced in the code or docs, not run), **INFERRED** or
 **GUESSED**. Written in a cloud session with no ledger, no Ableton roots and no AbleKit checkout,
 so nothing here was run against the real library; what that leaves open is listed at the end.*
 

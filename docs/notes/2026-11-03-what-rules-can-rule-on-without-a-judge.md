@@ -81,7 +81,7 @@ to find, so the lookup's recall matters.
 The fresh lookup of 120 songs first found only 33 of the 45 Hooktheory pages the judge had cited
 for them. The misses were all one bug: a song judged before was looked up by the ledger's title as
 stored, so a tail such as `(feat. Gwen Stefani)`, `(Remaster)` or `(7" Mix)` defeated the slug and
-the search match. Fixed in `ec5db11`; with it the lookup finds 42 of 45 (Musicnotes 11 of 12).
+the search match. Fixed in `e2eb449`; with it the lookup finds 42 of 45 (Musicnotes 11 of 12).
 
 On those 120 songs, with the fix:
 

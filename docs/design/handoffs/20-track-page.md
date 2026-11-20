@@ -1,6 +1,6 @@
 # Handoff 20: Track details around the judge's text, a key strip and sharing
 
-Brief 20, issue #150 (with #151 and #152), ADR 0064 · built against `43ca652`
+Brief 20, issue #150 (with #151 and #152), ADR 0064 · built against `e0691d9`
 Canvas: `Crateside Evidence And Sharing.dc.html`, live. **1a** is the evidence panel. Its pills
 switch between *Starry Eyed Surprise* (plain), *Takyon* (through judge's windows), an old verdict
 (one paragraph, no tonic check) and a WITHHELD with three keys open, and Share, *First pass*

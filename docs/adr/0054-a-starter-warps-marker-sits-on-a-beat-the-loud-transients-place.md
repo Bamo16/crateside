@@ -108,7 +108,7 @@ as no choice made, so appsettings applies. The maintainer may bring the mode bac
   while crateside runs and keeps the choice in `warp-settings.json`, which wins over appsettings. The
   default is *Tempo only*: the placement has been seen in Live on one track.
 
-**Amended 2026-10-30.** beatdetect 1.4.0 rescaled `downbeat_confidence`, so the gate is 0.6 on it (dd86fea, `StarterGrid.DownbeatSureAt`); the 0.03 above and its counts are 1.3.x's.
+**Amended 2026-10-30.** beatdetect 1.4.0 rescaled `downbeat_confidence`, so the gate is 0.6 on it (556b81e, `StarterGrid.DownbeatSureAt`); the 0.03 above and its counts are 1.3.x's.
 
 **Amended 2026-10-30: beatdetect's beat picks which 16th the marker goes on, and the fold places it
 within half a 16th of that beat.** The fold alone could land a whole 16th or 8th off: on omniboi –

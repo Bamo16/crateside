@@ -1,6 +1,6 @@
 # Handoff 24: finishing a warp on Track details
 
-Brief 24, issue #105 (with #103 folded in), ADR 0107 · built against `e02ecc3`
+Brief 24, issue #105 (with #103 folded in), ADR 0107 · built against `42656f8`
 Canvas: `Crateside Warp Editing.dc.html`. **1a** is Track details at full width with the edit bar
 open on a starter as it arrives. **1b** is the warp view's head line: offered, both refusals, and
 with each of the edit bar and the judge form open. **2a** is the edit bar at full width, numbered:

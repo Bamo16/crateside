@@ -70,7 +70,7 @@ public sealed record TaggingFacts(int Applied, string? Key) : JobFacts
             : $"tagged {"file".ToQuantity(Applied)} {Key}";
 }
 
-/// <summary>Judge summaries written before e88ca40 end in a dollar figure, which is not shown any more.</summary>
+/// <summary>Judge summaries written before a3d16b4 end in a dollar figure, which is not shown any more.</summary>
 internal static partial class LegacyJudgeText
 {
     public static string WithoutDollars(string text) => DollarClause.Replace(text, string.Empty);
