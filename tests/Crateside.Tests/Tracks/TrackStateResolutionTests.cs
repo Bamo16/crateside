@@ -221,6 +221,23 @@ public sealed class TrackStateResolutionTests
     }
 
     [Fact]
+    public void A_source_can_be_added_from_the_moment_the_track_has_a_verdict_whatever_separation_has_done()
+    {
+        var verdict = new Crateside.Core.Ledger.LedgerRun
+        {
+            Timestamp = DateTimeOffset.UnixEpoch,
+            Song = "song",
+        };
+        var parked = Row() with { ParkedFor = ParkReason.NoKey, Verdict = verdict };
+        var cutting = Row() with { RunningStage = JobStage.Separation, Verdict = verdict };
+
+        Assert.False(parked.CanChangePlan);
+        Assert.True(parked.CanAddSource);
+        Assert.True(cutting.CanAddSource);
+        Assert.False(Row().CanAddSource);
+    }
+
+    [Fact]
     public void A_stage_out_of_strikes_has_given_up()
     {
         var row = Row() with { GaveUpAt = JobStage.Tagging, GaveUpStrikes = 3 };

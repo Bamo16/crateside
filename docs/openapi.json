@@ -647,6 +647,12 @@
                 "$ref": "#/components/schemas/WrittenStarter"
               }
             ]
+          },
+          "warpOffBecause": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "description": "A sidecar sent to the Recycle Bin for Live to analyze again, and what to put back once it has."
@@ -4823,6 +4829,10 @@
             "type": "boolean",
             "description": "Whether the plan can still change, which is until separation starts — read off what has\r\nhappened, not TrackState TrackRow.State, since only ParkReason.NoKey follows the GPU."
           },
+          "canAddSource": {
+            "type": "boolean",
+            "description": "A source can be attached or a file adopted from the moment the track has a verdict: neither waits on separation."
+          },
           "isCutInFlight": {
             "type": "boolean",
             "description": "A change to this track's files is already being made, so the plan is not open to another."
@@ -5452,6 +5462,12 @@
           "written": {
             "type": "string",
             "format": "date-time"
+          },
+          "because": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "description": "A clip crateside saved with Warp off, so the stem arrives at its gain and color for the user to warp (ADR 0059)."
@@ -5818,6 +5834,13 @@
                 "$ref": "#/components/schemas/WrittenStarter"
               }
             ]
+          },
+          "warpOffBecause": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Why a clip with Warp off got no starter; null for anything else, and for clips written before this was kept."
           }
         },
         "description": "A sidecar crateside wrote: a sibling's warp, a starter warp, or a clip with Warp off."

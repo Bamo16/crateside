@@ -371,6 +371,9 @@ public sealed record TrackRow
         State is not (TrackState.Separating or TrackState.Staging or TrackState.Tagging)
         && this is { ParkedFor: not ParkReason.NoKey, HasWarpGuide: false, Samples.Count: 0 };
 
+    /// <summary>A source can be attached or a file adopted from the moment the track has a verdict: neither waits on separation.</summary>
+    public bool CanAddSource => HasUpload && Verdict is not null;
+
     /// <summary>
     /// A change to this track's files is already being made, so the plan is not open to another.
     /// </summary>

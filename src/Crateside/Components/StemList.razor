@@ -7,9 +7,11 @@
     var picker = Editor.PickerFor(Row);
     var picking = Editor.IsPicking(Row);
     var ticking = Row.CanChangePlan || picking;
+    var hasFiles = Row.Samples.Count > 0 || Row.HasWarpGuide;
+    var takesSources = ticking || Row.CanAddSource;
 }
 
-@if (ticking || Row.Samples.Count > 0 || Row.HasWarpGuide)
+@if (ticking || hasFiles || Row.CanAddSource)
 {
     <div class="stems @(ticking ? "ticking" : null)">
         @if (ticking && Headed)
@@ -31,13 +33,16 @@
             </div>
         }
 
-        <div class="stem-heads">
-            <span></span>
-            <span>Sample</span>
-            <span>Ableton key</span>
-            <span>Where it is</span>
-            <span></span>
-        </div>
+        @if (ticking || hasFiles)
+        {
+            <div class="stem-heads">
+                <span></span>
+                <span>Sample</span>
+                <span>Ableton key</span>
+                <span>Where it is</span>
+                <span></span>
+            </div>
+        }
 
         @* One list in both states: the lines on disk stay put, and the rest grow in around them (handoff 13b). *@
         @foreach (var band in Grouped(picker, Row))
@@ -118,7 +123,7 @@
 
             @if (band.TakesSources && Row.HasUpload)
             {
-                <div class="grow @(ticking ? "shown" : null)" @key="OpenersKey">
+                <div class="grow @(takesSources ? "shown" : null)" @key="OpenersKey">
                     <div class="grow-inner">
                         @if (!FormsBeside && SourceForms.IsOpen(Editor, Row))
                         {
@@ -131,13 +136,13 @@
 
                             <div class="source-openers">
                                 <button class="opener compact @(adding ? "open" : adopting ? "dimmed" : null)"
-                                        @onclick="() => Editor.StartAdding(Row)" disabled="@(!ticking || Editor.Working)"
+                                        @onclick="() => Editor.StartAdding(Row)" disabled="@(!takesSources || Editor.Working)"
                                         title="another file of this song · kept whole, never separated">
                                     <span class="mono">+</span>
                                     <span>@(adding ? "Adding a source →" : "Add a source")</span>
                                 </button>
                                 <button class="opener compact @(adopting ? "open" : adding ? "dimmed" : null)"
-                                        @onclick="() => Editor.StartAdopting(Row)" disabled="@(!ticking || Editor.Working)"
+                                        @onclick="() => Editor.StartAdopting(Row)" disabled="@(!takesSources || Editor.Working)"
                                         title="one you made by hand · taken in where it is">
                                     <span class="mono">+</span>
                                     <span>@(adopting ? "Adopting a file →" : "Adopt a file")</span>
@@ -149,7 +154,7 @@
             }
         }
 
-        @if (Row.HasUpload)
+        @if (Row.HasUpload && (ticking || hasFiles))
         {
         <div class="grow @(ticking ? null : "shown")" @key="OpenerKey">
             <div class="grow-inner">
