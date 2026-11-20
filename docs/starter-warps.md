@@ -133,6 +133,11 @@ replaces a lent warp or the maintainer's own.
 | too few transients to place a beat (under 32) | Warp off |
 | the maintainer already saved a warp | untouched |
 
+Every Warp-off clip records which row of this table sent it there (`warpOffBecause` in
+`written-warps.json`, shown on the stem's warp card and under `warp.written` in the API), so a
+clip written since [ADR 0110](adr/0110-a-warp-off-clip-says-why-and-a-later-stage-clears-an-earlier-parking.md)
+never leaves the question open. No gate reads beatdetect's confidence.
+
 About one steady track in eight fails the 10 ms check. On the library, 345 of 394 steady warps
 pass it (MEASURED, ADR 0048).
 
@@ -167,5 +172,7 @@ pass it (MEASURED, ADR 0048).
   no starter
 - [ADR 0091](adr/0091-a-saved-clip-with-warp-off-carries-the-marker-pair-live-writes.md): the Warp
   off clip carries Live's marker pair, or Live crashes (2026-11-10)
+- [ADR 0110](adr/0110-a-warp-off-clip-says-why-and-a-later-stage-clears-an-earlier-parking.md): a
+  Warp-off clip records its reason (2026-11-20)
 - [ADR 0065](adr/0065-the-starter-warps-beats-are-read-on-the-source.md): beatdetect reads the
   source, else the instrumental

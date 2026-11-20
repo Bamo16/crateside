@@ -118,7 +118,9 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
                 $"crateside copied {Name(from)}'s warp on {Day(written)}. Unchanged since.",
             WarpOwner.Starter =>
                 $"One marker at crateside's reading{StarterTempo(stem)}, so dropping it into an empty set sets the set's tempo. Not a finished warp: warp it in Live and press Save Default Clip.",
-            WarpOwner.Unwarped(var written) =>
+            WarpOwner.Unwarped(var written, { } because) =>
+                $"crateside saved its clip with Warp off on {Day(written)}, so it comes in at the loudness target in its color. It has no auto warp because {because}: warp it in Live and press Save Default Clip.",
+            WarpOwner.Unwarped(var written, _) =>
                 $"crateside saved its clip with Warp off on {Day(written)}, so it comes in at the loudness target in its color. One tempo does not hold on its beats, or it is not read yet, so it has no auto warp: warp it in Live and press Save Default Clip.",
             WarpOwner.LiveAnalysis =>
                 "Live has opened it, but no warp is saved. Live ignores these markers until you press Save Default Clip.",
@@ -331,6 +333,8 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
         warp switch
         {
             { From: { } from } => $"lent it {Name(from)}'s warp",
+            { IsUnwarped: true, WarpOffBecause: { } because } =>
+                $"saved its clip with Warp off ({because})",
             { IsUnwarped: true } => "saved its clip with Warp off",
             _ => "gave it an auto warp",
         };

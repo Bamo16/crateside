@@ -81,8 +81,9 @@ public sealed class SidecarWriter(
     public async Task<WarpOutcome> UnwarpAsync(
         string target,
         IReadOnlyList<string> sameKind,
-        CancellationToken ct = default
-    ) => Settle(await PrepareUnwarpedAsync(target, sameKind, ct), target);
+        CancellationToken ct = default,
+        string? because = null
+    ) => Settle(await PrepareUnwarpedAsync(target, sameKind, ct, because), target);
 
     /// <summary>Works out the sidecar <see cref="BorrowAsync"/> would write, without writing it.</summary>
     public Task<SidecarPlan> PrepareBorrowAsync(
@@ -234,14 +235,15 @@ public sealed class SidecarWriter(
     public async Task<SidecarPlan> PrepareUnwarpedAsync(
         string target,
         IReadOnlyList<string> sameKind,
-        CancellationToken ct = default
+        CancellationToken ct = default,
+        string? because = null
     )
     {
         try
         {
             return Own(target) is { IsUsers: true } || written.Of(target) is { IsStarter: false }
                 ? Refuse(new WarpOutcome.AlreadyWarped())
-                : await UnwarpedAsync(target, sameKind, null, null, ct);
+                : await UnwarpedAsync(target, sameKind, because, null, ct);
         }
         catch (Exception ex)
             when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
@@ -291,7 +293,7 @@ public sealed class SidecarWriter(
                 if (sidecar.From is { } lender)
                     written.RecordBorrowed(audioPath, lender);
                 else if (sidecar.IsUnwarped)
-                    written.RecordUnwarped(audioPath);
+                    written.RecordUnwarped(audioPath, sidecar.WarpOffBecause);
                 else
                     written.RecordStarter(audioPath, sidecar.Starter);
             }

@@ -38,6 +38,19 @@ public sealed record StarterGrid(double Bpm, double? BeatSeconds, double? Downbe
             }
             : null;
 
+    /// <summary>Why a reading gives no starter tempo, in a line for a clip with Warp off to carry.</summary>
+    public static string WhyNone(BeatReading? reading) =>
+        reading switch
+        {
+            null => "no tempo reading yet",
+            { Bpm: not > 0 } => "beatdetect read no tempo",
+            { Drifts: true, Drift: var drift } => string.Create(
+                System.Globalization.CultureInfo.InvariantCulture,
+                $"the tempo drifts: its 30 s windows spread {drift:0.00}% against a limit of {BeatReading.DriftsAt}%"
+            ),
+            _ => "no tempo reading yet",
+        };
+
     /// <summary>The beat a marker falls on within its bar of four, counting from a downbeat: 0 to 3.</summary>
     public static double BeatInBar(double markerSeconds, double downbeatSeconds, double bpm) =>
         (Math.Round((markerSeconds - downbeatSeconds) / (60 / bpm)) % BeatsPerBar + BeatsPerBar)

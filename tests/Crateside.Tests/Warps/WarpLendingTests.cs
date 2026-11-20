@@ -10,6 +10,8 @@ public sealed class WarpLendingTests : IDisposable
 {
     private const int Frames = 22_050;
     private const string Upload = "https://www.youtube.com/watch?v=abcdefghijk";
+    private const string NoTempoStem =
+        "no instrumental, kept source or karaoke stem to read a tempo from";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -188,17 +190,20 @@ public sealed class WarpLendingTests : IDisposable
     {
         var vocal = Stem(_paths.StagingFolder, "Song (Vocal - Full).flac", "Vocal - Full");
 
-        var loans = await Lending(new WarpOptions { StarterWarps = StarterWarps.OnTheGrid })
+        var written = new WrittenWarps();
+
+        var loans = await Lending(
+                new WarpOptions { StarterWarps = StarterWarps.OnTheGrid },
+                written: written
+            )
             .LendAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(
-            new WarpLoan(vocal, new WarpOutcome.Unwarped(null), "abcdefghijk"),
+            new WarpLoan(vocal, new WarpOutcome.Unwarped(null, NoTempoStem), "abcdefghijk"),
             Assert.Single(loans)
         );
-        Assert.Equal(
-            "Vocal - Full: Warp off: no tempo reading",
-            Assert.Single(_notes.All()).Summary
-        );
+        Assert.Equal($"Vocal - Full: Warp off: {NoTempoStem}", Assert.Single(_notes.All()).Summary);
+        Assert.Equal(NoTempoStem, written.Of(vocal)?.WarpOffBecause);
         Assert.False(AnalysisFile.Read($"{vocal}.asd").Warp.IsWarped);
     }
 

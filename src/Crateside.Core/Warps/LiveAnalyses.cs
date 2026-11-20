@@ -84,6 +84,8 @@ public sealed record AwaitedAnalysis(
 )
 {
     public WrittenStarter? Starter { get; init; }
+
+    public string? WarpOffBecause { get; init; }
 }
 
 [JsonSourceGenerationOptions(
@@ -200,6 +202,7 @@ public sealed class WarpActions(
                 )
                 {
                     Starter = crateside?.Starter,
+                    WarpOffBecause = crateside?.WarpOffBecause,
                 }
             );
 
@@ -249,7 +252,7 @@ public sealed class WarpActions(
                 else if (awaited.WasStarter)
                     written.RecordStarter(target, awaited.Starter);
                 else if (awaited.WasUnwarped)
-                    written.RecordUnwarped(target);
+                    written.RecordUnwarped(target, awaited.WarpOffBecause);
 
                 waiting.Forget(target);
                 putBack.Add(target);

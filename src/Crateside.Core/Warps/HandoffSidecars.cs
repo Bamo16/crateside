@@ -29,6 +29,7 @@ public sealed class HandoffSidecars(
         var siblings = WarpSiblings.Scan([paths.StagingFolder, paths.LibraryFolder]);
         var cuts = stems.Select(WarpSiblings.Read).OfType<SiblingFile>().ToList();
         StarterGrid? grid = null;
+        string? whyNoGrid = null;
         var measured = false;
         Dictionary<string, PreparedSidecar> prepared = [with(StringComparer.OrdinalIgnoreCase)];
 
@@ -58,7 +59,7 @@ public sealed class HandoffSidecars(
             {
                 if (!measured)
                 {
-                    grid = await StarterGridAsync(cuts, ct);
+                    (grid, whyNoGrid) = await StarterGridAsync(cuts, ct);
                     measured = true;
                 }
 
@@ -70,7 +71,7 @@ public sealed class HandoffSidecars(
                         WarpSiblings.TempoSources(cuts).FirstOrDefault()?.Path,
                         ct
                     )
-                    : await writer.PrepareUnwarpedAsync(cut.Path, sameKind, ct);
+                    : await writer.PrepareUnwarpedAsync(cut.Path, sameKind, ct, whyNoGrid);
             }
 
             if (plan is SidecarPlan.Ready(var sidecar))
@@ -93,10 +94,13 @@ public sealed class HandoffSidecars(
     }
 
     /// <summary>The starter grid of the upload's reference file when its tempo holds steady; a drifting one gets Warp off instead of a starter.</summary>
-    private async Task<StarterGrid?> StarterGridAsync(List<SiblingFile> cuts, CancellationToken ct)
+    private async Task<(StarterGrid? Grid, string? Why)> StarterGridAsync(
+        List<SiblingFile> cuts,
+        CancellationToken ct
+    )
     {
         if (WarpSiblings.TempoSources(cuts).FirstOrDefault() is not { } stem)
-            return null;
+            return (null, "no instrumental, kept source or karaoke stem to read a tempo from");
 
         if (beats.Build is null)
             await beats.RefreshBuildAsync(ct);
@@ -105,6 +109,8 @@ public sealed class HandoffSidecars(
             beats.ReadFor(stem.SourceTrackKey, stem.Path)
             ?? await beats.MeasureAsync(beats.ReferenceFor(stem.SourceTrackKey, stem.Path), ct);
 
-        return StarterGrid.Of(reading);
+        return StarterGrid.Of(reading) is { } grid
+            ? (grid, null)
+            : (null, StarterGrid.WhyNone(reading));
     }
 }

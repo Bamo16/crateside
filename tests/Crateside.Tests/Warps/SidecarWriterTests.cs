@@ -683,6 +683,23 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task A_clip_with_Warp_off_keeps_the_reason_it_was_written()
+    {
+        Audio(Target);
+
+        var outcome = await Leveling(lufs: -20)
+            .UnwarpAsync(
+                Target,
+                [],
+                TestContext.Current.CancellationToken,
+                because: "no tempo reading yet"
+            );
+
+        Assert.Equal(new WarpOutcome.Unwarped(null, "no tempo reading yet"), outcome);
+        Assert.Equal("no tempo reading yet", _written.Of(Target)?.WarpOffBecause);
+    }
+
+    [Fact]
     public async Task A_clip_with_Warp_off_never_lends()
     {
         Audio(Target);

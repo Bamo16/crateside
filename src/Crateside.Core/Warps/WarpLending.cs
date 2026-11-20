@@ -52,7 +52,14 @@ public sealed class WarpLending(
             if (_tried.TryGetValue(target.Path, out var tried) && tried == signature)
                 continue;
 
-            var outcome = await OutcomeAsync(target.Path, authorities, sameKind, tempo, ct);
+            var outcome = await OutcomeAsync(
+                target.Path,
+                authorities,
+                sameKind,
+                tempo,
+                siblings.CutsOf(target),
+                ct
+            );
 
             // A failure is a locked or half-written file, so it is tried again next time.
             if (outcome is WarpOutcome.Failed)
@@ -83,12 +90,18 @@ public sealed class WarpLending(
             ? (grid, source.From)
             : null;
 
+    private string WhyNoTempo(IEnumerable<SiblingFile> cuts) =>
+        WarpSiblings.TempoSources(cuts).FirstOrDefault() is { } source
+            ? starterGrids?.WhyNone(source) ?? StarterGrid.WhyNone(null)
+            : "no instrumental, kept source or karaoke stem to read a tempo from";
+
     /// <summary>A lent warp when a sibling holds one, else a starter, else Warp off; null when what applies is switched off.</summary>
     private async Task<WarpOutcome?> OutcomeAsync(
         string target,
         IReadOnlyList<string> authorities,
         IReadOnlyList<string> sameKind,
         (StarterGrid Grid, string From)? tempo,
+        IEnumerable<SiblingFile> cuts,
         CancellationToken ct
     )
     {
@@ -101,7 +114,7 @@ public sealed class WarpLending(
         {
             (StarterWarps.Off, _) => null,
             (_, var (grid, from)) => await writer.StartAsync(target, sameKind, grid, from, ct),
-            _ => await writer.UnwarpAsync(target, sameKind, ct),
+            _ => await writer.UnwarpAsync(target, sameKind, ct, because: WhyNoTempo(cuts)),
         };
     }
 

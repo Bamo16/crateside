@@ -78,18 +78,18 @@ public sealed class WrittenWarps
     }
 
     public void RecordBorrowed(string audioPath, string from) =>
-        Record(audioPath, from, unwarped: false, starter: null);
+        Record(audioPath, from, unwarped: false, starter: null, because: null);
 
     /// <param name="starter">Its grid and why its marker got its beat; null where that is not known.</param>
     public void RecordStarter(string audioPath, WrittenStarter? starter = null) =>
-        Record(audioPath, null, unwarped: false, starter);
+        Record(audioPath, null, unwarped: false, starter, because: null);
 
-    public void RecordUnwarped(string audioPath) =>
-        Record(audioPath, null, unwarped: true, starter: null);
+    public void RecordUnwarped(string audioPath, string? because = null) =>
+        Record(audioPath, null, unwarped: true, starter: null, because);
 
     /// <summary>Records a sidecar crateside rewrote as still being what it was.</summary>
     public void Rerecord(string audioPath, WrittenWarp was) =>
-        Record(audioPath, was.From, was.IsUnwarped, was.Starter);
+        Record(audioPath, was.From, was.IsUnwarped, was.Starter, was.WarpOffBecause);
 
     private WrittenWarp? Current(string audioPath)
     {
@@ -107,7 +107,13 @@ public sealed class WrittenWarps
         }
     }
 
-    private void Record(string audioPath, string? from, bool unwarped, WrittenStarter? starter)
+    private void Record(
+        string audioPath,
+        string? from,
+        bool unwarped,
+        WrittenStarter? starter,
+        string? because
+    )
     {
         var sidecar = new FileInfo(SidecarOf(audioPath));
 
@@ -118,7 +124,8 @@ public sealed class WrittenWarps
                 sidecar.Length,
                 sidecar.LastWriteTimeUtc,
                 unwarped,
-                starter
+                starter,
+                because
             );
 
             if (_path is not null)
@@ -151,12 +158,14 @@ public sealed class WrittenWarps
 /// <param name="Written">The sidecar's last write time (UTC) as written.</param>
 /// <param name="IsUnwarped">A clip with Warp off, for a stem that gets no starter: no warp at all (ADR 0059).</param>
 /// <param name="Starter">A starter's grid and why its marker got its beat; null for anything else, and for starters written before #176.</param>
+/// <param name="WarpOffBecause">Why a clip with Warp off got no starter; null for anything else, and for clips written before this was kept.</param>
 public sealed record WrittenWarp(
     string? From,
     long Length,
     DateTime Written,
     bool IsUnwarped = false,
-    WrittenStarter? Starter = null
+    WrittenStarter? Starter = null,
+    string? WarpOffBecause = null
 )
 {
     [JsonIgnore]
