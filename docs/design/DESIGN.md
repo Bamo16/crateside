@@ -110,6 +110,12 @@ fails if a page formats one itself. Summaries go through `Bin` and `Range` and c
 Handoff 14, `WarpView`. A **Warp** section in Track details' main column under the sample list,
 open, no fold, drawn when the track has samples.
 
+**Scope (2026-11-20).** The warp view adjusts a starter warp or an existing warp: the marker on the
+downbeat, the clip start, and saving the default clip. It does not add, move or remove warp markers
+beyond that. Warping a wandering or changing tempo happens in Ableton Live, and crateside does not
+try to match Live's warping tools. Because no future warp-marker editing will claim the waveform,
+the waveform is free for playback clicks.
+
 - **One time axis for the group**: the samples cut from the upload most of them share, in the
   sample list's order; the warp guide is left out. Grid of 200px gutter · 12px · the plot.
 - **Head line**: `WARP`, then `{n} stems · one warp · {markers} · {mode}`, or `{stem} warped on its
@@ -231,11 +237,16 @@ open, no fold, drawn when the track has samples.
   table of the stem's envelope (`WavePeaks`: one of Live's bins to a column, more past 65,536),
   sliced with the same arithmetic on both sides, and the transient ticks are one path with the
   same markup. A still view is the same pixels whichever drew it.
-- **Seeking** (narrowed 2026-11-17): only the ruler's bar-number row, its bottom 22px (`.seek-row`),
-  seeks. A click there plays from the start of the bar under the pointer (a faint 1px `--text` 30%
-  line shows where), exactly where the pointer is without a warp; playing carries on, paused stays
-  paused. The lanes, key bands, chord blocks and the rest of the ruler do not seek; a click on a lane
-  still selects it, and a key band still picks its section. A key band is a `<button>` titled
+- **Seeking** (after Live, 2026-11-20): two surfaces seek, both to the spot the player's **Click
+  lands** pick quantizes (below), and a faint 1px `--text` 30% line shows where.
+  - **The ruler**, its whole 49px height and the label lane with it (`.seek-row`, `pointer` cursor
+    across it): a click moves the playhead and, if paused, starts playback, as Live's scrub area does;
+    playing carries on from there. A jump is at once; it never waits for a grid line as Live does.
+  - **The waveform** (a lane's plot): a click moves the playhead and leaves play or pause as it was,
+    and still selects the lane.
+  - **Edit mode**: the grips (clip start, marker) win over both, so a drag still drags.
+  - Key bands, chord blocks, the tempo line and the gutters do not seek; a key band still picks its
+    section. A key band is a `<button>` titled
   `chorus · E minor · from 1:53`. The drawer's *Play
   window* seeks to the window's start and plays (with loop on it sets the braces to the window). A seek
   outside the window brings the window, at its width, to the bar that holds the spot. The overview
@@ -243,7 +254,7 @@ open, no fold, drawn when the track has samples.
   14px speaker glyph at its top right while its stem is what plays.
 - **Cursors** (the maintainer's, 2026-11-11): the handles wear a `[` (start) and `]` (end) with the
   hotspot on the vertical stroke and `ew-resize` behind it; the ruler, lanes, key bands and the slim
-  waveform wear a speaker, `default` behind it (2026-11-17: the speaker is on the ruler's bar-number row only, so the cursor and the click area are the same element); the body keeps `grab` and `grabbing`. Nothing a
+  waveform wear a speaker, `default` behind it (2026-11-20: the ruler, whole height, and the lanes' waveforms wear `pointer` instead, the same elements that click); the body keeps `grab` and `grabbing`. Nothing a
   drag acts on shows the hand.
 - **A lane**: flags (7×9 pennants) where every visible pair is ≥ 9px apart, else 9px ticks with
   faint lines; Live's overview at 42%, stereo as two channels; transients only when zoomed;
@@ -330,6 +341,11 @@ running totals, so a change is where the whole-song estimate flipped, not where 
   the old place until release. Release sets the draft and the lanes redraw then; Esc reverts.
   `rows.js`'s `notchHtml` draws the marker in the ruler's live copy, the same as `WarpView.razor` does.
   A `role="slider"`; ←/→ move a bar, Shift four.
+- **A clip start before the audio** (2026-11-20): a starter's clip starts on a bar line at or before
+  its marker, which is usually before the first sample, so it has no place on the ruler. Edit mode
+  still draws the grip, standing at the marker's bar (the left edge when that bar is before the
+  audio), dimmed with a dashed pennant and arrow and titled `Clip start not set`; dragging it to a
+  bar sets the clip start like any other. Outside edit mode nothing is drawn.
 - **Saving, Saved, Undo**: the bar folds into one teal-bordered line (`Saving to 4 stems · backing
   each sidecar up, then writing`, `2 of 4`); then `Saved to 4 stems just now · Undo`, which stays
   until the page is left. Undo runs the same way and is not itself undone.
@@ -418,7 +434,12 @@ Wood that plays the pick once, accent then beat; a kept sound no longer offered 
 clock, so a redraw that holds the page up drops none; **Loop**
 after a divider (titled `Loop between the braces over the ruler`); **volume** (a
 speaker, `Main` and a 72px range). Ranges are native with `accent-color: var(--text)`; volume, metronome level and sound are kept in
-the browser, the metronome and loop start off on every load. Playing is `--text`, never teal; teal appears
+the browser, the metronome and loop start off on every load. After Loop and a divider, **Click lands**
+(a small select, `None · 1/16 · 1/8 · 1/4 · 1 Bar`, default 1 Bar; titled `Where a click on the ruler or
+the waveform lands; the jump is always at once`) sets where a click in the warp view puts the playhead:
+the grid line at or before the spot, or exactly the spot with None or with no beat grid. A jump is
+always at once. It is kept in the browser and has no key, because Live's Ctrl+0–9 are Chrome's tab and
+zoom keys. The slim waveform below is not affected: it seeks to exactly the spot. Playing is `--text`, never teal; teal appears
 only while a file loads or downloads, red only for a load that failed.
 
 - **The slim waveform** (34px, 14px margins) is the whole file that is playing at `--text` 50%, the
@@ -725,8 +746,8 @@ time). Track details uses `--table-tracks`. The Tools column caps itself at
 
 Where the build departs from a canvas, by page. Clear an entry once a later design supersedes it.
 
-- **Warp view, click-to-seek** (2026-11-17): the canvas seeks from the ruler, lanes, key bands and chord
-  blocks; the build seeks from the ruler's bar-number row only, and draws the clip start once, as the
+- **Warp view, click-to-seek** (2026-11-20): the canvas seeks from the ruler, lanes, key bands and chord
+  blocks; the build seeks from the ruler and the lanes' waveforms only, and draws the clip start once, as the
   ruler's grip, with no line through the lanes.
 
 ### Playback (handoff 22, #105)
@@ -752,8 +773,8 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **The slim waveform borrows the overview strip's shape until the file is decoded**, then draws the
   decoded samples. Before a play it is the shape of the first stem with an overview, not of the file
   that will play.
-- **A click on a lane starts playback** from the spot on that stem; the handoff says it seeks and
-  switches. A click on the ruler or a key band keeps play or pause as it is.
+- **A click on a lane's waveform moves the playhead** and keeps play or pause as it is; the handoff
+  says it seeks and switches. A click on the ruler starts playback if paused (2026-11-20).
 - **A seek brings the window to the bar** only when the spot is outside it, and the window then keeps
   its width in bars; the new window is reported as any other.
 - **The header strip's foot row is a subgrid**: each cell holds its head and its foot, so the rows

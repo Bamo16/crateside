@@ -151,7 +151,8 @@ pass it (MEASURED, ADR 0048).
   *アカリがやってきたぞっ* (*Akari ga Yattekita zo*) (0.078 against 0.002), but over 42 kept drum
   stems it was less sure and no more often right (ADR 0054).
 - **A clip that starts before the audio** has not yet been opened in Live from a starter. The first
-  one written is to be checked there.
+  one written is to be checked there. The warp view has no place on its ruler for that clip start;
+  edit mode draws the grip anyway, dimmed, at the marker's bar (DESIGN.md, Editing the warp).
 
 ## History
 
