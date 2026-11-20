@@ -348,7 +348,7 @@
                     <span class="mono tip" hidden></span>
                 </div>
 
-                @{ var bands = Bands(group); var clipWord = ClipWord(group, from, to); var gridLines = GridLinesFor(group, from, to); }
+                @{ var bands = Bands(group); var clipMark = ClipMarkOf(group); var clipWord = ClipWord(clipMark, from, to); var gridLines = GridLinesFor(group, from, to); }
                 <span class="gutter faint ruler-gutter">
                     <span>@(group.Lender is null ? "Time" : "Bar")</span>
                     @if (_form is not null)
@@ -395,11 +395,11 @@
                     {
                         @if (HasClipGrip)
                         {
-                            var clipBar = ClipBar(group);
-                            <span class="notch grip" role="slider" tabindex="0" style="left: @P(clipX)%"
+                            var clipBar = clipMark!.Value.Bar;
+                            <span class="notch grip @(clipMark.Value.Unset ? "unset" : null)" role="slider" tabindex="0" style="left: @P(clipX)%"
                                   data-bar="@clipBar" aria-label="Clip start" aria-orientation="horizontal"
-                                  aria-valuenow="@clipBar" aria-valuetext="bar @clipBar"
-                                  title="Clip start · @WarpWording.Time(group.Lender!.Clip.Start) · bar @StartBar(group)"
+                                  aria-valuenow="@clipBar" aria-valuetext="@(clipMark.Value.Unset ? $"not set, bar {clipBar}" : $"bar {clipBar}")"
+                                  title="@ClipTitle(group, clipMark.Value)"
                                   @onkeydown="e => NotchKey(e, group)" @onkeydown:stopPropagation="true">
                                 <span class="mono clip-word @(toLeft ? "left" : null)">clip start</span>
                             </span>
@@ -407,7 +407,7 @@
                         else
                         {
                             <span class="notch" style="left: @P(clipX)%"
-                                  title="Clip start · @WarpWording.Time(group.Lender!.Clip.Start) · bar @StartBar(group)"></span>
+                                  title="@ClipTitle(group, clipMark!.Value)"></span>
                             <span class="mono clip-word @(toLeft ? "left" : null)" style="left: @P(clipX)%">clip start</span>
                         }
                     }
@@ -1708,9 +1708,14 @@
 
     private static string StartBar(WarpGroup group) => group.Bars.Position(group.ClipStartBeat);
 
+    private static string ClipTitle(WarpGroup group, ClipMark mark) =>
+        mark.Unset
+            ? $"Clip start not set, the clip starts before the audio · drag it to a bar · now bar {mark.Bar}"
+            : $"Clip start · {WarpWording.Time(mark.Seconds)} · bar {StartBar(group)}";
+
     /// <summary>Where the clip start's label goes: right of its notch, or left of it near the view's right edge.</summary>
-    private static (double X, bool ToLeft)? ClipWord(WarpGroup group, double from, double to) =>
-        group.Lender is { } lender && X(lender.Clip.Start, from, to) is >= 0 and <= 100 and var x
+    private static (double X, bool ToLeft)? ClipWord(ClipMark? mark, double from, double to) =>
+        mark is { Seconds: var seconds } && X(seconds, from, to) is >= 0 and <= 100 and var x
             ? (x, x > 100 - Px(72))
             : null;
 

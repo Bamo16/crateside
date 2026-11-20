@@ -412,7 +412,7 @@ export const Rows = (Base) =>
             if (!clip.grip)
                 return `<span ${scope} class="notch" style="left:${pct(x)}%" title="${title}"></span>${word} style="left:${pct(x)}%">clip start</span>`;
 
-            return `<span ${scope} class="notch grip" style="left:${pct(x)}%" data-bar="${clip.bar}" title="${title}">${word}>clip start</span></span>`;
+            return `<span ${scope} class="notch grip${clip.unset ? " unset" : ""}" style="left:${pct(x)}%" data-bar="${clip.bar}" title="${title}">${word}>clip start</span></span>`;
         }
 
         // WarpView.razor's GridBox: lines behind the rows, bars over beats over subdivisions, as many as stay at the density's spacing.

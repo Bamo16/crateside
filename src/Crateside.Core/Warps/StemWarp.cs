@@ -297,4 +297,22 @@ public sealed record WarpGroup(IReadOnlyList<StemWarp> Stems, StemWarp? Lender)
     public double ClipStartBeat => Lender?.Sidecar?.DefaultClip?.Start ?? 0;
 
     public BarRuler Bars => BarRuler.Of(Lender?.Sidecar?.Warp.TimeSignature);
+
+    /// <summary>The bar the clip starts in.</summary>
+    public int ClipBar => Bars.BarAt(ClipStartBeat + 0.001);
+
+    /// <summary>The clip start's marker on the ruler; while editing, a clip that starts before the audio is drawn at the first warp marker's bar, unset.</summary>
+    public ClipMark? ClipMarkFor(bool editing) =>
+        Lender is not { Clip.Start: var start } ? null
+        : start >= 0 ? new(start, ClipBar, false)
+        : editing && SharedMarkers is [{ Beat: var beat }, ..]
+            ? new(
+                Math.Max(0, SecondsAt(Bars.IndexAt(beat) * Bars.BeatsPerBar) ?? 0),
+                Bars.BarAt(beat + 0.001),
+                true
+            )
+        : null;
 }
+
+/// <summary>Where the clip start is drawn; <paramref name="Unset"/> when the clip starts before the audio, so the marker only stands at a bar to be dragged from.</summary>
+public readonly record struct ClipMark(double Seconds, int Bar, bool Unset);

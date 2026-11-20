@@ -41,13 +41,14 @@ public partial class WarpView
         {
             seconds = group.Seconds,
             timeRuler = group.Lender is null,
-            clip = group.Lender is { } lender
+            clip = ClipMarkOf(group) is { } mark
                 ? new
                 {
-                    start = lender.Clip.Start,
-                    title = $"Clip start · {WarpWording.Time(lender.Clip.Start)} · bar {StartBar(group)}",
+                    start = mark.Seconds,
+                    title = ClipTitle(group, mark),
                     grip = HasClipGrip,
-                    bar = ClipBar(group),
+                    bar = mark.Bar,
+                    unset = mark.Unset,
                 }
                 : null,
             loop = group.Lender?.Loop is { } loop
