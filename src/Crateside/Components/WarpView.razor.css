@@ -1545,29 +1545,34 @@ button.jtag:hover {
     outline: none;
 }
 
-.ruler ::deep .notch.ghost {
+/* The grip's arrow and label travel with its pennant. */
+.notch.grip::after {
+    content: "";
     position: absolute;
     bottom: 0;
-    width: 0;
-    height: 0;
+    left: 5px;
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
-    border-bottom: 5px dashed var(--text);
-    transform: translateX(-5px);
+    border-bottom: 5px solid var(--text);
+}
+
+.notch.grip .clip-word {
+    left: 10px;
+}
+
+/* What the grip left behind while held: the same marker, dashed, with its old bar. */
+.notch.grip.ghost {
+    pointer-events: none;
+    cursor: default;
     opacity: 0.5;
 }
 
-.ruler ::deep .clip-tag {
-    position: absolute;
-    top: -22px;
-    padding: 1px 6px;
-    border-radius: 3px;
-    background: var(--raised);
-    font-size: 11px;
-    white-space: nowrap;
-    color: var(--text);
-    transform: translateX(-50%);
-    pointer-events: none;
+.notch.grip.ghost::before {
+    background: repeating-linear-gradient(90deg, var(--text) 0 2px, transparent 2px 4px);
+}
+
+.notch.grip.ghost::after {
+    border-bottom-style: dashed;
 }
 
 /* Leaving with a draft. */

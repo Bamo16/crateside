@@ -166,10 +166,17 @@ export function editDrag(section, server) {
             .filter(Boolean)
             .map((pair) => pair.split(":").map(Number));
 
+    // The label reads the bar it would land on while held, "clip start" otherwise.
+    const word = (marker) => marker.querySelector(".clip-word");
+    const label = (marker, bar) => {
+        if (word(marker))
+            word(marker).textContent = bar === null ? "clip start" : `clip start ${bar}`;
+    };
+
     const release = () => {
-        grab.tag.remove();
         grab.ghost.remove();
         grab.notch.classList.remove("held");
+        label(grab.notch, null);
     };
 
     const settle = () => {
@@ -178,6 +185,7 @@ export function editDrag(section, server) {
 
         release();
         grab.notch.style.left = grab.home;
+        word(grab.notch)?.classList.toggle("left", grab.homeLeft);
         grab = null;
     };
 
@@ -189,26 +197,28 @@ export function editDrag(section, server) {
         if (!notch || !ruler || ruler.classList.contains("live") || event.button !== 0)
             return;
 
-        const tag = document.createElement("span");
-        const ghost = document.createElement("span");
+        const bar = Number(notch.dataset.bar);
+        const ghost = notch.cloneNode(true);
 
-        tag.className = "mono clip-tag";
-        ghost.className = "notch ghost";
-        ghost.style.left = notch.style.left;
-        ruler.append(tag, ghost);
+        // The ghost is the marker as it was, with its old bar, left where the grip started.
+        ghost.classList.add("ghost");
+        ghost.removeAttribute("role");
+        ghost.removeAttribute("tabindex");
+        ghost.setAttribute("aria-hidden", "true");
+        label(ghost, bar);
+        ruler.append(ghost);
+        label(notch, bar);
         notch.classList.add("held");
         notch.setPointerCapture?.(event.pointerId);
         grab = {
             notch,
             ruler,
-            tag,
             ghost,
             home: notch.style.left,
+            homeLeft: word(notch)?.classList.contains("left") ?? false,
             bars: snaps(ruler),
-            bar: Number(notch.dataset.bar),
+            bar,
         };
-        tag.style.left = notch.style.left;
-        tag.textContent = `clip start · bar ${grab.bar}`;
         event.preventDefault();
     };
 
@@ -219,12 +229,11 @@ export function editDrag(section, server) {
         const box = grab.ruler.getBoundingClientRect();
         const at = Math.min(1, Math.max(0, (event.clientX - box.left) / box.width));
         const [fraction, bar] = grab.bars.reduce((best, pair) => (Math.abs(pair[0] - at) < Math.abs(best[0] - at) ? pair : best));
-        const left = `${fraction * 100}%`;
 
         grab.bar = bar;
-        grab.notch.style.left = left;
-        grab.tag.style.left = left;
-        grab.tag.textContent = `clip start · bar ${bar}`;
+        grab.notch.style.left = `${fraction * 100}%`;
+        word(grab.notch)?.classList.toggle("left", (1 - fraction) * box.width < 72);
+        label(grab.notch, bar);
     };
 
     const up = async () => {

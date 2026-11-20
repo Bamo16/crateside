@@ -400,14 +400,16 @@
                                   data-bar="@clipBar" aria-label="Clip start" aria-orientation="horizontal"
                                   aria-valuenow="@clipBar" aria-valuetext="bar @clipBar"
                                   title="Clip start · @WarpWording.Time(group.Lender!.Clip.Start) · bar @StartBar(group)"
-                                  @onkeydown="e => NotchKey(e, group)" @onkeydown:stopPropagation="true"></span>
+                                  @onkeydown="e => NotchKey(e, group)" @onkeydown:stopPropagation="true">
+                                <span class="mono clip-word @(toLeft ? "left" : null)">clip start</span>
+                            </span>
                         }
                         else
                         {
                             <span class="notch" style="left: @P(clipX)%"
                                   title="Clip start · @WarpWording.Time(group.Lender!.Clip.Start) · bar @StartBar(group)"></span>
+                            <span class="mono clip-word @(toLeft ? "left" : null)" style="left: @P(clipX)%">clip start</span>
                         }
-                        <span class="mono clip-word @(toLeft ? "left" : null)" style="left: @P(clipX)%">clip start</span>
                     }
                     @if (_form is { } dragged)
                     {

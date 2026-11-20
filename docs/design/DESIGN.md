@@ -325,7 +325,10 @@ running totals, so a change is where the whole-song estimate flipped, not where 
 - **Clip-start grip**: while the bar is open the notch is an 11×16 pennant (in a 20px-wide hit area
   the ruler's full height, above the seek row, `grab`/`grabbing`; one grip for all stems, no line down
   the lanes; a press on it never seeks) that moves in whole bars
-  (tag `clip start · bar 64`, a dashed ghost at the old place); release sets the draft, Esc reverts.
+  with the pointer, the whole marker at once (pennant, arrow and the `clip start` label, which reads
+  the bar it would land on, `clip start 21`); a dashed ghost of the marker with its old bar stays at
+  the old place until release. Release sets the draft and the lanes redraw then; Esc reverts.
+  `rows.js`'s `notchHtml` draws the marker in the ruler's live copy, the same as `WarpView.razor` does.
   A `role="slider"`; ←/→ move a bar, Shift four.
 - **Saving, Saved, Undo**: the bar folds into one teal-bordered line (`Saving to 4 stems · backing
   each sidecar up, then writing`, `2 of 4`); then `Saved to 4 stems just now · Undo`, which stays

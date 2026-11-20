@@ -398,18 +398,21 @@ export const Rows = (Base) =>
             }
 
             if (clipX !== null) {
-                html.push(this.notchHtml(scope, clipX, live.clip));
-                html.push(`<span ${scope} class="mono clip-word${toLeft ? " left" : ""}" style="left:${pct(clipX)}%">clip start</span>`);
+                html.push(this.notchHtml(scope, clipX, live.clip, toLeft));
             }
 
             return html.join("");
         }
 
-        // WarpView.razor's clip-start notch: the grip while the edit bar is open, else a plain notch. Inert here; the real one is back when the view settles.
-        notchHtml(scope, x, clip) {
-            const [classes, extra] = clip.grip ? ["notch grip", ` data-bar="${clip.bar}"`] : ["notch", ""];
+        // WarpView.razor's clip-start marker: the grip (pennant, arrow and label in one piece) while the edit bar is open, else a plain notch and its label. Inert here; the real one is back when the view settles.
+        notchHtml(scope, x, clip, toLeft) {
+            const word = `<span ${scope} class="mono clip-word${toLeft ? " left" : ""}"`;
+            const title = escapeHtml(clip.title);
 
-            return `<span ${scope} class="${classes}" style="left:${pct(x)}%"${extra} title="${escapeHtml(clip.title)}"></span>`;
+            if (!clip.grip)
+                return `<span ${scope} class="notch" style="left:${pct(x)}%" title="${title}"></span>${word} style="left:${pct(x)}%">clip start</span>`;
+
+            return `<span ${scope} class="notch grip" style="left:${pct(x)}%" data-bar="${clip.bar}" title="${title}">${word}>clip start</span></span>`;
         }
 
         // WarpView.razor's GridBox: lines behind the rows, bars over beats over subdivisions, as many as stay at the density's spacing.
