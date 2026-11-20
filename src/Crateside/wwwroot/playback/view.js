@@ -1,6 +1,6 @@
 // The warp view's own parts: the playhead, seeking by click, the grid pick, the right-click menu and the zoom keys.
 
-import { ZOOM_STEP, clamp, clock, writeSettings } from "./shared.js";
+import { QUANTIZE, ZOOM_STEP, clamp, clock, writeSettings } from "./shared.js";
 
 export const View = (Base) =>
     class extends Base {
@@ -144,13 +144,10 @@ export const View = (Base) =>
             if (target.closest(".ruler.dragging, .jtag, .edge, .notch.grip"))
                 return this.hideSeekLine();
 
-            const row = target.closest(".ruler:not(.dragging) .seek-row");
+            const row = target.closest(".ruler:not(.dragging), .lane .plot");
 
             if (row) {
-                const at = this.plotTime(event, row);
-                const bar = this.grid ? this.snaps()[this.floorIndex(at)] : at;
-
-                this.showSeekLine(bar, 0, this.fieldBox?.height ?? 0);
+                this.showSeekLine(this.quantized(this.plotTime(event, row)), 0, this.fieldBox?.height ?? 0);
             } else {
                 this.hideSeekLine();
             }
@@ -222,13 +219,26 @@ export const View = (Base) =>
             if (target.closest(".jtag, .edge, .notch.grip, button, a, input, select"))
                 return;
 
-            const row = target.closest(".ruler:not(.dragging) .seek-row");
+            // The ruler plays from where it is clicked, as Live's scrub area does; the waveform only moves the playhead.
+            const ruler = target.closest(".ruler:not(.dragging)");
+            const row = ruler ?? target.closest(".lane .plot");
 
-            if (row) {
-                const at = this.plotTime(event, row);
+            if (row)
+                this.seek(this.quantized(this.plotTime(event, row)), { play: Boolean(ruler) });
+        }
 
-                this.seek(this.grid ? this.snaps()[this.floorIndex(at)] : at);
-            }
+        // The time a click at <at> lands on under the player's Click lands pick: the grid line at or before it, or exactly there with no grid.
+        quantized(at) {
+            const pick = this.settings.quantize in QUANTIZE ? this.settings.quantize : "bar";
+            const step = QUANTIZE[pick];
+
+            if (!this.grid || step === null)
+                return at;
+
+            if (step === "bar")
+                return this.snaps()[this.floorIndex(at)];
+
+            return Math.max(0, this.grid.secondsAt(Math.floor(this.grid.beatAt(at) / step + 1e-6) * step));
         }
 
         playWindow(button) {

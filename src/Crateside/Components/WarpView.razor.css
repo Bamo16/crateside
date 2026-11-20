@@ -264,12 +264,18 @@
     overflow: hidden;
 }
 
-/* The only part of the ruler that seeks. */
+/* The whole ruler, label lane included, is the click target; a drag-to-add form takes it over. */
 .seek-row {
     position: absolute;
-    inset: auto 0 0;
-    height: 22px;
-    cursor: url("/cursors/speaker.svg") 4 12, default;
+    inset: 0;
+}
+
+.ruler:not(.dragging) {
+    cursor: pointer;
+}
+
+.lane .plot {
+    cursor: pointer;
 }
 
 .ruler .tick,
@@ -1558,6 +1564,19 @@ button.jtag:hover {
 
 .notch.grip .clip-word {
     left: 10px;
+}
+
+/* A clip start not yet set: dashed and dimmed until dragged to a bar. */
+.notch.grip.unset {
+    opacity: 0.6;
+}
+
+.notch.grip.unset::before {
+    background: repeating-linear-gradient(90deg, var(--text) 0 2px, transparent 2px 4px);
+}
+
+.notch.grip.unset::after {
+    border-bottom-style: dashed;
 }
 
 /* What the grip left behind while held: the same marker, dashed, with its old bar. */

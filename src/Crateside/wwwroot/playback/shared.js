@@ -16,6 +16,8 @@ export const WHEEL_SETTLE_MS = 150;
 // The beat grid: the fewest pixels between two lines at each density (GridLines.MinPixels in C#).
 export const GRID_MIN_PIXELS = { wide: 64, medium: 36, narrow: 20 };
 export const DRAG_THRESHOLD = 3;
+// Where a click on the ruler or the waveform lands, in quarter-note beats; "bar" is a whole bar, null is exactly where clicked.
+export const QUANTIZE = { none: null, sixteenth: 0.25, eighth: 0.5, quarter: 1, bar: "bar" };
 // The overview's window is never drawn narrower than this: two handles with a body to grab between them.
 export const OVERVIEW_MIN_PIXELS = 28;
 export const SETTINGS_KEY = "crateside.playback";

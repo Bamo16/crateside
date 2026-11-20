@@ -17,7 +17,7 @@ import { SNAP, readSettings } from "./playback/shared.js";
 import { SOUNDS } from "./playback/sounds.js";
 
 class Playback extends View(Rows(Overview(Follow(Loop(Window(PlayerStrip(AudioEngine(class {})))))))) {
-    settings = { volume: 0.8, clickLevel: 0.6, sound: "classic", grid: "medium", follow: "page", ...readSettings() };
+    settings = { volume: 0.8, clickLevel: 0.6, sound: "classic", grid: "medium", follow: "page", quantize: "bar", ...readSettings() };
     trackKey = null;
     files = [];
 
