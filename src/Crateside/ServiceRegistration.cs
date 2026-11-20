@@ -411,6 +411,7 @@ public static class ServiceRegistration
         services.AddSingleton<PlaylistExpander>();
         services.AddSingleton<PlaylistUrlAdd>();
         services.AddSingleton<TrackRemoval>();
+        services.AddSingleton<LibraryMove>();
         services.AddSingleton<SampleAdoption>();
         services.AddSingleton<SourceAdd>();
         services.AddSingleton<StemRecut>();

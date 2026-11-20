@@ -155,4 +155,5 @@ public enum UserActionKind
     SourceRemoved,
     SourceRestored,
     Rejudged,
+    MovedToLibrary,
 }

@@ -1,6 +1,7 @@
 # 0003 — crateside may write Ableton's tag store
 
 - Status: Accepted; the library rule narrowed by [ADR 0039](0039-crateside-renames-in-the-library-and-warns-about-sets.md) on 2026-09-27 (renames may write it)
+- Amended by [ADR 0109](0109-a-move-to-the-library-button-makes-the-move-the-maintainer-makes-in-live.md) on 2026-11-19: crateside may move a finished track's files into `Mashup Samples` when the maintainer presses *Move to the library*
 - Date: 2026-08-14
 - Supersedes the first decision of keytag ADR 0001 ("do not write the Ableton XMP"),
   on measurement. That ADR's other decisions stand.

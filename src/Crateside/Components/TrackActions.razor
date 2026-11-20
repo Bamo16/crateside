@@ -14,6 +14,7 @@
 @inject JobStore Jobs
 @inject StageSignals Signals
 @inject TrackRemoval Removal
+@inject LibraryMove Move
 @inject TracksService Tracks
 @inject ActionLog Actions
 @inject QuotaGuard Quota
@@ -91,6 +92,12 @@ else if (Part is Parts.Queue && (ShowNextSentence || HasQueueButtons))
                 {
                     <button class="primary" @onclick="() => Editor.CutShortfallAsync(Row)" disabled="@(_working || Editor.Working)">
                         @(Editor.Working ? "Cutting…" : "Cut what is missing")
+                    </button>
+                }
+                @if (CanMove)
+                {
+                    <button class="primary" @onclick="MoveToLibrary" disabled="@_working">
+                        @(_working ? "Moving…" : "Move to the library")
                     </button>
                 }
                 @if (IsBumped)
@@ -198,8 +205,17 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
     /// <summary>Only while weekly use holds judging back, and only for a track headed for it.</summary>
     private bool CanPass => Row.IsAwaitingJudgment && Quota.Hold is not null;
 
+    /// <summary>Off outside Track details, where the move is offered (ADR 0109).</summary>
+    [Parameter]
+    public bool ShowMove { get; set; }
+
+    private bool CanMove =>
+        ShowMove
+        && Row.State is TrackState.ReadyToMove
+        && Row.Samples.Any(sample => !sample.IsInLibrary);
+
     private bool HasQueueButtons =>
-        Row is { GaveUpAt: not null } or { State: TrackState.Short } || IsBumped || CanBump || IsPassed || CanPass;
+        Row is { GaveUpAt: not null } or { State: TrackState.Short } || IsBumped || CanBump || IsPassed || CanPass || CanMove;
 
     public static bool HasRemove(TrackRow row, PlaylistAuthorizer authorizer) =>
         row is { PlaylistItemId: not null } && authorizer.IsAuthorized || row.CanForget;
@@ -264,6 +280,47 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
         Actions.Record(Row.TrackKey, UserActionKind.PassCleared);
 
         await Tracks.RefreshAsync(_circuit.Token);
+    }
+
+    private async Task MoveToLibrary()
+    {
+        _problem = null;
+        _working = true;
+
+        try
+        {
+            switch (Move.Apply(Row.Facts.Uploads))
+            {
+                case LibraryMoveOutcome.Moved moved:
+                    Actions.Record(
+                        Row.TrackKey,
+                        UserActionKind.MovedToLibrary,
+                        "sample".ToQuantity(moved.Samples)
+                    );
+
+                    break;
+                case LibraryMoveOutcome.Held held:
+                    _problem =
+                        $"{held.FileName} is open in Ableton Live, so nothing was moved. Close the set and press the button again.";
+
+                    break;
+                case LibraryMoveOutcome.Refused refused:
+                    _problem = refused.Reason;
+
+                    break;
+                case LibraryMoveOutcome.Stranded stranded:
+                    _problem = stranded.Message;
+
+                    break;
+            }
+
+            await Tracks.RefreshAsync(_circuit.Token);
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _working = false;
+        }
     }
 
     private async Task Retry()
