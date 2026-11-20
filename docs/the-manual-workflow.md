@@ -57,6 +57,11 @@ Often the next thing is to try the new vocal or instrumental against other sampl
 keys, since they are already loaded. When working through a batch quickly, the clips are deleted
 and the next track begins.
 
+**Tip: let Live find moved stems.** Add `Mashup Samples` and the drums folder to Live's Places.
+Live finds a moved file by its name in its Places and user-library folders and repairs a set's
+link itself, often without asking. crateside's *Move to the library* button relies on this and
+relinks no set ([ADR 0109](adr/0109-a-move-to-the-library-button-makes-the-move-the-maintainer-makes-in-live.md)).
+
 ## The import signal
 
 The four closing steps — delete the drum stem, save the default clip, check the tags, move to

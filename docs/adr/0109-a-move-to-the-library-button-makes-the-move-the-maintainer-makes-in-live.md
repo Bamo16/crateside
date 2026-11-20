@@ -44,8 +44,17 @@ crateside may do the same move for him from Track details.
   and the same answer is given. A rollback that itself fails is named in the answer, with each
   file's place.
 - **No tag is written** and none is removed. The Staging tag store keeps its entries for the
-  departed files, as it does after Live's move (ADR 0007's corroboration); sets that point at
-  a staged file are not relinked, as Live's own move does not relink them either.
+  departed files, as it does after Live's move (ADR 0007's corroboration).
+- **Sets are not relinked** (decided 2026-11-20). The button moves files and touches no set.
+  - Live finds a moved file by its name, in its Places and user-library folders, and repairs the
+    link itself, often without asking. The move leaves the stems' names alone, so Live can find
+    them.
+  - A rename changes the name, so Live cannot find the file; that is why `TrackRename` relinks and
+    this button does not.
+  - Other people may not want crateside touching their sets, may keep sets in many places (some
+    offline), or may not have told crateside where their sets are.
+  - The tip that makes it work, for the manual workflow: add `Mashup Samples` and the drums folder
+    to Live's Places.
 - **Where the button sits:** on Track details, in the Next group, labelled *Move to the library*.
   It shows only while the track is `ReadyToMove`. Pressing it asks nothing first: the move is
   undone by moving the files back, and nothing is deleted. The press is recorded in the actions
