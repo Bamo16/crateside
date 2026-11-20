@@ -502,6 +502,7 @@ public static class ServiceRegistration
         services.AddSingleton<TrackDetailsReader>();
         services.AddSingleton<IStagesReader, StagesReader>();
         services.AddSingleton<IRejudgeRequests, RejudgeRequests>();
+        services.AddSingleton<ITrackMarkRequests, TrackMarkRequests>();
         services.AddSingleton<StemDetailsReader>();
         services.AddSingleton<FiledRecordsReader>();
 

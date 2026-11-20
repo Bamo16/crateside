@@ -657,6 +657,20 @@ A judge that is not configured is a 409 and an unknown track a 404. Each is a ju
 37k tokens, so an agent asks only when the maintainer has OK'd re-judging that track, or the track's
 earlier judging had a real flaw it can name.
 
+## `PUT` and `DELETE /api/tracks/{trackKey}/marks/{mark}`
+
+Sets or clears one of the song page's marks, `ChangesKey` or `OddBars` (any casing), through the store
+the page's mark strip uses. The body names who asked, as `rejudge` does; it is recorded in the song's
+activity and `actions.jsonl` (`by`) as a `MarkSet` or `MarkCleared`.
+
+```json
+{ "requestedBy": "agent: coordination" }
+```
+
+- **`requestedBy`** is required free text; blank is a 400, and so is a mark that is not one of the two.
+- The answer (200) gives the track's `videoId`, its `song` and every mark it now has. Asking for the
+  state it already has changes and records nothing. An unknown track is a 404.
+
 ## `GET /art/{trackKey}`
 
 A track's cover as an image, outside the JSON schema and the OpenAPI document. `size=small` (the

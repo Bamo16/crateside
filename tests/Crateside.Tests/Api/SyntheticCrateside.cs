@@ -69,6 +69,8 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
 
     public ActionLog Actions { get; private set; } = null!;
 
+    public TrackMarkStore Marks { get; private set; } = null!;
+
     public RecordingBarRuns BarRuns { get; } = new();
 
     public static async Task<SyntheticCrateside> StartAsync()
@@ -318,6 +320,8 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
                 time
             )
         );
+        Marks = marks;
+        builder.Services.AddSingleton<ITrackMarkRequests>(new TrackMarkRequests(marks, Actions));
         builder.Services.AddSingleton(new MeasuringExclusionsReader(_tracks, exclusions));
         builder.Services.AddSingleton(
             new CoverArt(

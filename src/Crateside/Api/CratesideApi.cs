@@ -68,6 +68,15 @@ public static class CratesideApi
                 "Queue a re-judge of a track, or judge chosen stretches of it now, recorded under who asked."
             );
 
+        tracks
+            .MapPut("/{trackKey}/marks/{mark}", SetMarkAsync)
+            .WithName("SetTrackMark")
+            .WithSummary("Mark a track (ChangesKey or OddBars), recorded under who asked.");
+        tracks
+            .MapDelete("/{trackKey}/marks/{mark}", ClearMarkAsync)
+            .WithName("ClearTrackMark")
+            .WithSummary("Clear a track's mark, recorded under who asked.");
+
         endpoints
             .MapGet("/api/stages", ReadStagesAsync)
             .WithTags("Stages")
@@ -126,6 +135,73 @@ public static class CratesideApi
             ),
             _ => throw new UnreachableException(),
         };
+    }
+
+    private static Task<
+        Results<Ok<MarkChanged>, NotFound<ProblemDetails>, ProblemHttpResult>
+    > SetMarkAsync(
+        [Description("The track key, as in /song/{trackKey}.")] string trackKey,
+        [Description("ChangesKey or OddBars.")] string mark,
+        [FromBody] MarkRequest request,
+        TracksService tracks,
+        ITrackMarkRequests marks,
+        CancellationToken ct
+    ) => ChangeMarkAsync(trackKey, mark, marked: true, request, tracks, marks, ct);
+
+    private static Task<
+        Results<Ok<MarkChanged>, NotFound<ProblemDetails>, ProblemHttpResult>
+    > ClearMarkAsync(
+        [Description("The track key, as in /song/{trackKey}.")] string trackKey,
+        [Description("ChangesKey or OddBars.")] string mark,
+        [FromBody] MarkRequest request,
+        TracksService tracks,
+        ITrackMarkRequests marks,
+        CancellationToken ct
+    ) => ChangeMarkAsync(trackKey, mark, marked: false, request, tracks, marks, ct);
+
+    private static async Task<
+        Results<Ok<MarkChanged>, NotFound<ProblemDetails>, ProblemHttpResult>
+    > ChangeMarkAsync(
+        string trackKey,
+        string mark,
+        bool marked,
+        MarkRequest request,
+        TracksService tracks,
+        ITrackMarkRequests marks,
+        CancellationToken ct
+    )
+    {
+        await tracks.EnsureFreshAsync(Freshness, ct);
+
+        if (
+            tracks.Current?.Rows.FirstOrDefault(row =>
+                row.TrackKey.Equals(trackKey, StringComparison.Ordinal)
+            )
+            is not { } found
+        )
+            return TypedResults.NotFound(
+                new ProblemDetails
+                {
+                    Status = StatusCodes.Status404NotFound,
+                    Title = $"crateside has no track for {trackKey}",
+                }
+            );
+
+        switch (marks.Change(found, mark, marked, request))
+        {
+            case MarkOutcome.Changed(var result):
+                await tracks.RefreshAsync(ct);
+
+                return TypedResults.Ok(result);
+            case MarkOutcome.Refused(var status, var why):
+                return TypedResults.Problem(
+                    why,
+                    statusCode: status,
+                    title: "The mark was not changed"
+                );
+            default:
+                throw new UnreachableException();
+        }
     }
 
     private static async Task<Ok<StagesView>> ReadStagesAsync(

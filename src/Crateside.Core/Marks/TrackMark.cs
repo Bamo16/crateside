@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 
 namespace Crateside.Core.Marks;
@@ -11,4 +12,15 @@ public enum TrackMark
 
     /// <summary>The track is not consistent 4/4 (#86).</summary>
     OddBars,
+}
+
+public static class TrackMarkWording
+{
+    public static string Label(this TrackMark mark) =>
+        mark switch
+        {
+            TrackMark.ChangesKey => "Changes key",
+            TrackMark.OddBars => "Odd bars",
+            _ => throw new UnreachableException(),
+        };
 }

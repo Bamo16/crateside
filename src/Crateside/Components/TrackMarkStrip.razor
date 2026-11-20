@@ -1,4 +1,3 @@
-@using System.Diagnostics
 @using Crateside.Core.Marks
 @using Crateside.Core.Orchestration.Jobs
 @using Crateside.Core.Tracks
@@ -22,13 +21,7 @@
     // From the store, not the row, which is a rescan behind.
     private bool Marked => Marks.Of(Row.Song).Contains(Mark);
 
-    private string Label =>
-        Mark switch
-        {
-            TrackMark.ChangesKey => "Changes key",
-            TrackMark.OddBars => "Odd bars",
-            _ => throw new UnreachableException(),
-        };
+    private string Label => Mark.Label();
 
     private void Toggle()
     {

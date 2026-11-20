@@ -189,6 +189,126 @@
           }
         }
       }
+    },
+    "/api/tracks/{trackKey}/marks/{mark}": {
+      "put": {
+        "tags": [
+          "Tracks"
+        ],
+        "summary": "Mark a track (ChangesKey or OddBars), recorded under who asked.",
+        "operationId": "SetTrackMark",
+        "parameters": [
+          {
+            "name": "trackKey",
+            "in": "path",
+            "description": "The track key, as in /song/{trackKey}.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mark",
+            "in": "path",
+            "description": "ChangesKey or OddBars.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkChanged"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Tracks"
+        ],
+        "summary": "Clear a track's mark, recorded under who asked.",
+        "operationId": "ClearTrackMark",
+        "parameters": [
+          {
+            "name": "trackKey",
+            "in": "path",
+            "description": "The track key, as in /song/{trackKey}.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mark",
+            "in": "path",
+            "description": "ChangesKey or OddBars.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarkChanged"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1938,6 +2058,41 @@
           "Unreachable",
           "NotLookedUp"
         ]
+      },
+      "MarkChanged": {
+        "required": [
+          "videoId",
+          "song",
+          "marks"
+        ],
+        "type": "object",
+        "properties": {
+          "videoId": {
+            "type": "string"
+          },
+          "song": {
+            "type": "string"
+          },
+          "marks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackMark"
+            }
+          }
+        },
+        "description": "The track's marks once the request has been applied."
+      },
+      "MarkRequest": {
+        "type": "object",
+        "properties": {
+          "requestedBy": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Who is asking, as free text: `agent: coordination`, `maintainer`."
+          }
+        }
       },
       "MeasuringExclusion": {
         "required": [
