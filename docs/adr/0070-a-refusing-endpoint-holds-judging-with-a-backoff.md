@@ -60,7 +60,7 @@ nothing wrong, and each was resumed once for a second session before failing.
 From 2026-11-03 the endpoint refused every session for days. **Measured** in `jobs.jsonl`: the
 judge retried at 30-minute intervals all night, about 30 refusals, while the Track page said only
 "waiting to be judged". The reason on record was "refused its key", which sent the maintainer to
-check an API key that was fine; the endpoint's own error read "OtherLLM rejected every saved
+check an API key that was fine; the endpoint's own error read "The endpoint rejected every saved
 login. Log in and connect again." (the account was suspended). The 30-minute hold also outlived
 the fix, because only a served session cleared it.
 

@@ -276,7 +276,7 @@ public sealed class VerdictDrainerTests : IDisposable
     {
         Hold(FullEvidence, withSource: false);
         _sessions.Output =
-            """{"type":"result","subtype":"success","is_error":true,"num_turns":1,"duration_ms":412,"api_error_status":429,"result":"API Error: Request rejected (429) · OtherLLM rate limit: Messages too frequent. Try again later."}""";
+            """{"type":"result","subtype":"success","is_error":true,"num_turns":1,"duration_ms":412,"api_error_status":429,"result":"API Error: Request rejected (429) · Endpoint rate limit: Messages too frequent. Try again later."}""";
 
         var first = await JudgeBackfillAsync();
 
@@ -308,7 +308,7 @@ public sealed class VerdictDrainerTests : IDisposable
     {
         Hold(FullEvidence, withSource: false);
         _sessions.Output =
-            """{"type":"result","subtype":"success","is_error":true,"num_turns":1,"api_error_status":401,"result":"Failed to authenticate. API Error: 401 OtherLLM rejected every saved login. Log in and connect again."}""";
+            """{"type":"result","subtype":"success","is_error":true,"num_turns":1,"api_error_status":401,"result":"Failed to authenticate. API Error: 401 Endpoint rejected every saved login. Log in and connect again."}""";
 
         foreach (var _ in Enumerable.Range(0, JudgeBackoff.PauseAfter))
         {
@@ -320,7 +320,7 @@ public sealed class VerdictDrainerTests : IDisposable
 
         Assert.True(_control.IsPausedByRefusals);
         Assert.Equal(JudgeBackoff.PauseAfter, _sessions.Prompts.Count);
-        Assert.Contains("OtherLLM rejected every saved login", _control.Backoff.Last?.Reason);
+        Assert.Contains("Endpoint rejected every saved login", _control.Backoff.Last?.Reason);
 
         var stopped = await JudgeBackfillAsync();
 

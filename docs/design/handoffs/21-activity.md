@@ -9,7 +9,7 @@ folded summary line.
 
 The rows are real `jobs.jsonl` records from 2026-11-08 and real tracks from the source index, with
 the times shifted to one afternoon. The running texts (*1 of 3 files written*, *turn 4 on
-OtherLLM-web*), the judge line's token tail, the older generated rows and every count are invented.
+the endpoint*), the judge line's token tail, the older generated rows and every count are invented.
 
 **The rule:** one row per action, joined on the job id and ordered by when it started, in a table
 with fixed columns, so the track name always starts at the same x. Nothing is newly colored: teal
@@ -94,7 +94,7 @@ the name in `aria-label`.
 | canceled | `–` `--text-40` | plain | `canceled: ` + the reason, `--text-50` | duration |
 
 - **Running text**: what the app already knows. A separation: *1 of 3 files written* from
-  `expectedOutputs` and the files on disk. A judging session: *turn 4 on OtherLLM-web* if the turn
+  `expectedOutputs` and the files on disk. A judging session: *turn 4 on the endpoint* if the turn
   is known. Anything else: *running*. If none of it is cheap, *running* everywhere is fine.
 - **The green check lasts while the row is in Last 10 minutes**, then turns grey. There is no
   other highlight and no fade.

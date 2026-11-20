@@ -4,7 +4,7 @@
 nothing itself. A repeat of
 [the run without search](2026-10-15-a-non-claude-judge-on-ten-judged-tracks.md) on the same ten
 tracks, same runner, prompt and flags, after the endpoint gained an implementation of Anthropic's
-server-side `web_search` tool backed by OtherLLM's own search. One run per track. Agreement with
+server-side `web_search` tool backed by the provider's own search. One run per track. Agreement with
 Claude, not accuracy.*
 
 ## Result

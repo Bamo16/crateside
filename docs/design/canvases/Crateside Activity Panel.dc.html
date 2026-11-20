@@ -290,7 +290,7 @@ class Component extends DCLogic {
     if (this._data) return this._data;
     const NOW = 51260;
     const hand = [
-      { id: 'a1', t: 51220, stage: 'Judging', track: 'Yoko Shimomura – Barrel Volcano', key: 'file~12a07a83ad847305', status: 'running', text: 'turn 4 on OtherLLM-web' },
+      { id: 'a1', t: 51220, stage: 'Judging', track: 'Yoko Shimomura – Barrel Volcano', key: 'file~12a07a83ad847305', status: 'running', text: 'turn 4 on the endpoint' },
       { id: 'a2', t: 51062, stage: 'Separation', track: 'The Prototypes, Lowes – Reason', key: '4-FRF5obguQ', status: 'running', text: '1 of 3 files written' },
       { id: 'a3', t: 51058, stage: 'Detection', track: 'The Prototypes, Lowes – Reason', key: '4-FRF5obguQ', status: 'ok', text: 'keydetect F minor (r 0.91), madmom F minor, edma F minor', dur: 3 },
       { id: 'a4', t: 51044, stage: 'Download', track: 'The Prototypes, Lowes – Reason', key: '4-FRF5obguQ', status: 'ok', text: 'downloaded flac 258 kbps (format 141)', dur: 14 },
@@ -324,7 +324,7 @@ class Component extends DCLogic {
       const steps = [
         ['Tagging', 'tagged 3 files ' + k, 0], ['Handoff', 'staged 3 stems', 3],
         ['Separation', 'cut vocal_full, instrumental_full and a drum guide (3 files)', 290 + (i * 13) % 60],
-        ['Judging', k + ', MEDIUM, ' + (i % 3) + (i % 3 === 1 ? ' section' : ' sections') + '; ' + turns + ' turns on OtherLLM-web, ' + secs + ' s', secs + 4],
+        ['Judging', k + ', MEDIUM, ' + (i % 3) + (i % 3 === 1 ? ' section' : ' sections') + '; ' + turns + ' turns on the endpoint, ' + secs + ' s', secs + 4],
         ['Detection', 'keydetect ' + k + ' (r 0.' + (78 + i) + '), madmom ' + k + ', edma ' + k, 3],
         ['Download', 'downloaded flac 258 kbps (format 141)', 12 + i % 6]
       ];

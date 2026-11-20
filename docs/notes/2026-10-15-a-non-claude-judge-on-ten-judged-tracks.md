@@ -3,9 +3,9 @@
 *Note, 2026-10-15, frozen. For [#108](https://github.com/Bamo16/crateside/issues/108); decides
 nothing itself. Measured on this machine: the verdict runner's exact
 prompt, flags and tool list, pointed by environment variables at an Anthropic-compatible endpoint
-serving OtherLLM's chat model, run from a copy of the keytag checkout with no git and with each
-track's existing ledger lines removed first. Which OtherLLM model answered is not reported by the
-endpoint, so this is not a result for OtherLLM's official API.*
+serving a non-Claude chat model, run from a copy of the keytag checkout with no git and with each
+track's existing ledger lines removed first. Which model answered is not reported by the
+endpoint, so this is not a result for that model's official API.*
 
 ## What the endpoint could and could not do
 
@@ -13,7 +13,7 @@ endpoint, so this is not a result for OtherLLM's official API.*
   round-trip, `/detect-key` resolves, and the recorder writes a valid ledger line.
 - **`WebSearch` fails on every call** with `400 Invalid or unsupported text/tool request`
   (*measured*). It is a server-side tool: the API provider runs the search, so any endpoint that
-  does not implement it refuses it. OtherLLM's API documentation says its OpenAI-format Responses
+  does not implement it refuses it. That provider's API documentation says its OpenAI-format Responses
   API ignores built-in web search (*owned, from the docs*); its Anthropic-format endpoint was not
   tried.
 - **`WebFetch` works** (*measured*, outside the runner, which does not grant it): the page is

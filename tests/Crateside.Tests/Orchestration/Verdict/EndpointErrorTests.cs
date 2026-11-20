@@ -22,8 +22,8 @@ public sealed class EndpointErrorTests
 
     [Theory]
     [InlineData("Failed to authenticate. API Error: 401 Invalid API key.", "Invalid API key.")]
-    [InlineData("API Error: 401 OtherLLM session expired.", "OtherLLM session expired.")]
-    [InlineData("OtherLLM session expired.", "OtherLLM session expired.")]
+    [InlineData("API Error: 401 Endpoint session expired.", "Endpoint session expired.")]
+    [InlineData("Endpoint session expired.", "Endpoint session expired.")]
     [InlineData(
         """API Error: 401 {"type":"error","error":{"message":"Log in again."}}""",
         "Log in again."

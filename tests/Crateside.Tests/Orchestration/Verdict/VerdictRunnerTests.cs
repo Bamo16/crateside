@@ -921,16 +921,16 @@ public sealed class VerdictRunnerTests : IDisposable
 
     [Theory]
     [InlineData(
-        "Failed to authenticate. API Error: 401 OtherLLM rejected every saved login. Log in and connect again.",
-        "refused the session: OtherLLM rejected every saved login. Log in and connect again."
+        "Failed to authenticate. API Error: 401 Endpoint rejected every saved login. Log in and connect again.",
+        "refused the session: Endpoint rejected every saved login. Log in and connect again."
     )]
     [InlineData(
-        "Failed to authenticate. API Error: 401 {\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"authentication_error\\\",\\\"message\\\":\\\"OtherLLM session expired. Connect again.\\\"}}",
-        "refused the session: OtherLLM session expired. Connect again."
+        "Failed to authenticate. API Error: 401 {\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"authentication_error\\\",\\\"message\\\":\\\"Endpoint session expired. Connect again.\\\"}}",
+        "refused the session: Endpoint session expired. Connect again."
     )]
     [InlineData(
-        "API Error: 401 OtherLLM session expired. Connect again.",
-        "refused the session: OtherLLM session expired. Connect again."
+        "API Error: 401 Endpoint session expired. Connect again.",
+        "refused the session: Endpoint session expired. Connect again."
     )]
     [InlineData(
         "Failed to authenticate. API Error: 401 Invalid API key.",
@@ -959,7 +959,7 @@ public sealed class VerdictRunnerTests : IDisposable
 
     [Theory]
     [InlineData(
-        """{"type":"result","subtype":"success","is_error":true,"num_turns":1,"duration_ms":412,"api_error_status":429,"result":"API Error: Request rejected (429) · OtherLLM rate limit: Messages too frequent. Try again later."}""",
+        """{"type":"result","subtype":"success","is_error":true,"num_turns":1,"duration_ms":412,"api_error_status":429,"result":"API Error: Request rejected (429) · Endpoint rate limit: Messages too frequent. Try again later."}""",
         "reported its rate limit"
     )]
     [InlineData(

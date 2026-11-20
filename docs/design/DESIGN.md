@@ -945,7 +945,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 ### Activity (handoff 21, #189)
 
 - **Running text is just *running*.** The design's *1 of 3 files written* and *turn 4 on
-  OtherLLM-web* need the files on disk and the judge session, which the job record does not carry.
+  the endpoint* need the files on disk and the judge session, which the job record does not carry.
 - **Held and waiting-for-you rows** (judging held by the endpoint, a verdict awaiting the person)
   have no state in the design. They are drawn like a cancellation (grey –) with `held: <reason>` or
   *waiting for you*, and *Failed or canceled* leaves them out. A held judging that repeats its
