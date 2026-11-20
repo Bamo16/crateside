@@ -217,22 +217,19 @@ export const PlayerStrip = (Base) =>
                 return;
             }
 
-            // Space plays and stops, O toggles the metronome, Ctrl+L the loop: Ableton Live's keys for the same actions.
+            // Space plays and stops, O toggles the metronome: Ableton Live's keys for the same actions.
             const action =
                 event.key === " " && !event.ctrlKey
                     ? () => this.toggle()
                     : (event.key === "o" || event.key === "O") && !event.ctrlKey && !event.shiftKey
                       ? () => this.setClick(!this.clickOn)
-                      : (event.key === "l" || event.key === "L") && event.ctrlKey && !event.shiftKey
-                        ? () => this.setLoop(!this.loopOn)
-                        : null;
+                      : null;
 
             if (!action || event.altKey || event.metaKey || !this.files.length)
                 return;
 
-            const target = event.target;
-
-            if (target.closest?.("input:not([type=range]), textarea, select, [contenteditable], [role=listbox], [role=slider], [data-click-menu]"))
+            // A brace or handle keeps focus after a drag (role=slider), and these keys mean nothing to it.
+            if (event.target.closest?.("input:not([type=range]), textarea, select, [contenteditable], [role=listbox], [data-click-menu]"))
                 return;
 
             event.preventDefault();

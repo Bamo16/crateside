@@ -396,7 +396,7 @@ tracks whose entry is in the Review state in `tuning.json`; a page for it is not
 ### Keys (Ableton Live's, where Live has the same action)
 
 Never while typing in a text field, a select or an open list; each is on its control's tooltip.
-**Space** play/pause · **O** metronome · **Ctrl+L** loop · **+** / **-** zoom (the view) · in edit
+**Space** play/pause · **O** metronome · **+** / **-** zoom (the view) · in edit
 mode `,` `.` a beat, `←` `→` 1 ms, `Esc` reverts a drag or says Stay. Skipped, no exact counterpart or
 a clash: Live's Ctrl+Shift+F (Follow is three modes here, not a toggle), Ctrl+Z (undo is the
 button after a save), Z / X (zoom to a selection), Home (move the insert marker), Shift+Space.
