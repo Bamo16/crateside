@@ -47,7 +47,9 @@ public partial class WarpView
     private bool _leaveBack;
     private bool _guarded;
     private bool _focusStay;
+    private bool _focusKeep;
     private ElementReference _stay;
+    private ElementReference _keep;
     private IJSObjectReference? _editJs;
     private WarpGroup? _drawnFrom;
     private WarpDraft? _drawnDraft;
@@ -170,7 +172,7 @@ public partial class WarpView
     {
         if (IsDirty)
         {
-            _asking = Ask.Close;
+            (_asking, _focusKeep) = (Ask.Close, true);
 
             return;
         }
@@ -214,7 +216,7 @@ public partial class WarpView
     {
         if (IsDirty)
         {
-            _asking = Ask.Judge;
+            (_asking, _focusKeep) = (Ask.Judge, true);
 
             return;
         }
