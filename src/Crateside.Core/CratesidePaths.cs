@@ -175,6 +175,13 @@ public sealed class CratesidePaths
         set;
     }
 
+    /// <summary>What measuring each added source against its mix found (ADR 0111).</summary>
+    public string SourceOffsetsFile
+    {
+        get => field ?? Roaming("source-offsets.json");
+        set;
+    }
+
     /// <summary>The sidecars crateside retyped, so it knows which retypes still stand.</summary>
     public string RetypedWarpsFile
     {

@@ -26,6 +26,7 @@ using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Playback;
 using Crateside.Core.Playlist;
 using Crateside.Core.Quota;
+using Crateside.Core.SourceOffsets;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
 using Crateside.Core.Tuning;
@@ -166,6 +167,7 @@ public static class ServiceRegistration
             .AddLedger()
             .AddLibrary()
             .AddLoudness()
+            .AddSourceOffsets()
             .AddMarks()
             .AddNaming()
             .AddOrchestration()
@@ -292,6 +294,16 @@ public static class ServiceRegistration
         services.AddSingleton<TuningTracks>();
         services.AddSingleton<TuningPass>();
         services.AddHostedService<TuningWorker>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddSourceOffsets(this IServiceCollection services)
+    {
+        services.AddSingleton<SourceOffsetStore>();
+        services.AddSingleton<SourceOffsetPass>();
+        // Unattended: the correlation is arithmetic on the CPU (ADR 0111).
+        services.AddHostedService<SourceOffsetWorker>();
 
         return services;
     }
