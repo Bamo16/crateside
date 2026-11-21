@@ -14,6 +14,7 @@ export const View = (Base) =>
             this.layoutField();
             this.paintWindow();
             this.paintFollow();
+            this.paintViewControls();
             this.paintLanes();
             this.copyShape();
 
@@ -195,6 +196,9 @@ export const View = (Base) =>
             if (target.closest("[data-loop-view]"))
                 return this.loopTheView();
 
+            if (target.closest("[data-loop]"))
+                return this.setLoop(!this.loopOn);
+
             if (target.closest("[data-brace]"))
                 return;
 
@@ -227,7 +231,7 @@ export const View = (Base) =>
                 this.seek(this.quantized(this.plotTime(event, row)), { play: Boolean(ruler) });
         }
 
-        // The time a click at <at> lands on under the player's Click lands pick: the grid line at or before it, or exactly there with no grid.
+        // The time a click at <at> lands on under the Snap pick: the grid line at or before it, or exactly there with no grid.
         quantized(at) {
             const pick = this.settings.quantize in QUANTIZE ? this.settings.quantize : "bar";
             const step = QUANTIZE[pick];
@@ -264,6 +268,34 @@ export const View = (Base) =>
                 this.begin(start);
             else
                 this.play();
+        }
+
+        // Snap and Loop live in the warp view's toolbar; their state is painted from the engine's.
+        paintViewControls() {
+            const root = this.view?.root;
+
+            if (!root)
+                return;
+
+            const snap = root.querySelector("[data-quantize]");
+            const loop = root.querySelector("[data-loop]");
+
+            if (snap)
+                snap.value = this.settings.quantize in QUANTIZE ? this.settings.quantize : "bar";
+
+            if (loop) {
+                loop.disabled = this.files.length === 0;
+                loop.setAttribute("aria-pressed", String(this.loopOn));
+                loop.classList.toggle("on", this.loopOn);
+            }
+        }
+
+        onViewInput(event) {
+            if (!event.target.matches("[data-quantize]"))
+                return;
+
+            this.settings.quantize = event.target.value;
+            writeSettings(this.settings);
         }
 
         // The grid's density, remembered like the player's settings; the server redraws its rows, a drag's live rows follow.

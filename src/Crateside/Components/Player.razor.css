@@ -367,16 +367,6 @@ input[type="range"] {
     width: 60px;
 }
 
-.quantize {
-    font: inherit;
-    font-size: 12px;
-    color: var(--text);
-    background: var(--raised);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 3px 6px;
-}
-
 .slider-name {
     font-size: 12px;
     color: var(--text-60);

@@ -1,6 +1,6 @@
 // The player strip: its controls, the position readout and the slim waveform.
 
-import { QUANTIZE, clamp, clock, writeSettings } from "./shared.js";
+import { clamp, clock, writeSettings } from "./shared.js";
 
 export const PlayerStrip = (Base) =>
     class extends Base {
@@ -41,6 +41,8 @@ export const PlayerStrip = (Base) =>
         }
 
         syncPlayer() {
+            this.paintViewControls();
+
             const root = this.player?.root;
 
             if (!root)
@@ -76,12 +78,6 @@ export const PlayerStrip = (Base) =>
             set("[data-click-sound] .snd-name", (element) => (element.textContent = this.settings.sound[0].toUpperCase() + this.settings.sound.slice(1)));
             set("[data-click-level]", (input) => (input.value = String(this.settings.clickLevel)));
             set("[data-volume]", (input) => (input.value = String(this.settings.volume)));
-            set("[data-quantize]", (select) => (select.value = QUANTIZE[this.settings.quantize] === undefined ? "bar" : this.settings.quantize));
-            set("[data-loop]", (button) => {
-                button.disabled = !hasFiles;
-                button.setAttribute("aria-pressed", String(this.loopOn));
-                button.classList.toggle("on", this.loopOn);
-            });
             set("[data-click-menu]", (menu) => {
                 for (const item of menu.querySelectorAll("[data-sound]"))
                     item.classList.toggle("on", item.dataset.sound === this.settings.sound);
@@ -168,9 +164,6 @@ export const PlayerStrip = (Base) =>
             if (target.closest("[data-click]"))
                 return this.setClick(!this.clickOn);
 
-            if (target.closest("[data-loop]"))
-                return this.setLoop(!this.loopOn);
-
             if (target.closest("[data-click-sound]")) {
                 this.els.menu.hidden = !this.els.menu.hidden;
 
@@ -201,8 +194,6 @@ export const PlayerStrip = (Base) =>
             if (input.matches("[data-volume]")) {
                 this.settings.volume = Number(input.value);
                 this.master && (this.master.gain.value = this.settings.volume);
-            } else if (input.matches("[data-quantize]")) {
-                this.settings.quantize = input.value;
             } else if (input.matches("[data-click-level]")) {
                 this.settings.clickLevel = Number(input.value);
                 this.clickBus && (this.clickBus.gain.value = this.settings.clickLevel);

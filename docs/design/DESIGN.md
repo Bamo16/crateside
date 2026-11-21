@@ -121,7 +121,9 @@ the waveform is free for playback clicks.
   follows zoom and scroll, is not selectable and takes no edits. A refused or unmeasured source
   has none.
 - **One time axis for the group**: the samples cut from the upload most of them share, in the
-  sample list's order; the warp guide is left out. Grid of 200px gutter · 12px · the plot.
+  sample list's order, then **the warp guide whenever it is on disk**, last among the track's own
+  lanes: labelled `Drums`, with `warp guide` beside it in `--text-50` as its role, not the file name.
+  Grid of 200px gutter · 12px · the plot.
 - **Head line**: `WARP`, then `{n} stems · one warp · {markers} · {mode}`, or `{stem} warped on its
   own` at `--text` (the only loud thing; not colored). No zoom pills (handoff 22). At the right, the
   readout in mono at `--text` (`bars 17–24 · 1:11–1:40`, one bar `bar 24 · …`, the whole track
@@ -130,6 +132,10 @@ the waveform is free for playback clicks.
   by half its width (whole bars, at least one); *Go to the playhead · bar 31* (`.outline` small)
   sits left of the readout while the playhead is outside the window. Left of the buttons, a **Grid**
   pick: `Off · Wide · Medium · Narrow` (default Medium; kept in the browser with the player's settings).
+  After Grid and **Follow**, the toolbar holds **Snap** and **Loop** (moved from the player, 2026-11-21):
+  Snap is a small select, `None · 1/16 · 1/8 · 1/4 · 1 Bar` (default 1 Bar, titled `Where a click on the
+  ruler or a waveform lands; the jump is always at once`), and Loop is an `.outline` small toggle
+  (pressed while on, titled `Loop between the braces over the ruler`), disabled with no file.
 - **Zooming without the handles**: one step is ×1.5 of the window's width, on whole bars, never under
   one bar (a view without a warp, 4 s) nor over the whole track. **Ctrl + wheel** over the view zooms
   about the bar under the pointer, or about the playhead while Follow holds it in view during
@@ -242,7 +248,7 @@ the waveform is free for playback clicks.
   sliced with the same arithmetic on both sides, and the transient ticks are one path with the
   same markup. A still view is the same pixels whichever drew it.
 - **Seeking** (after Live, 2026-11-20): two surfaces seek, both to the spot the player's **Click
-  lands** pick quantizes (below), and a faint 1px `--text` 30% line shows where.
+  lands** pick (now **Snap**, in the warp view's toolbar) snaps to, and a faint 1px `--text` 30% line shows where.
   - **The ruler**, its whole 49px height and the label lane with it (`.seek-row`, `pointer` cursor
     across it): a click moves the playhead and, if paused, starts playback, as Live's scrub area does;
     playing carries on from there. A jump is at once; it never waits for a grid line as Live does.
@@ -435,12 +441,13 @@ dots of which the lit one swaps side on every beat and is larger on a bar's firs
 audio clock each click is scheduled at, less the output's latency), **Sound** (`Classic ▾`, a two-row list of Classic ·
 Wood that plays the pick once, accent then beat; a kept sound no longer offered plays as Classic) and the metronome level
 (60px, labelled `Metronome`; it changes the clicks already queued). Clicks are queued 1.2 s ahead on the audio
-clock, so a redraw that holds the page up drops none; **Loop**
-after a divider (titled `Loop between the braces over the ruler`); **volume** (a
+clock, so a redraw that holds the page up drops none; **volume** (a
 speaker, `Main` and a 72px range). Ranges are native with `accent-color: var(--text)`; volume, metronome level and sound are kept in
-the browser, the metronome and loop start off on every load. After Loop and a divider, **Click lands**
-(a small select, `None · 1/16 · 1/8 · 1/4 · 1 Bar`, default 1 Bar; titled `Where a click on the ruler or
-the waveform lands; the jump is always at once`) sets where a click in the warp view puts the playhead:
+the browser, the metronome and loop start off on every load. **Loop** and **Snap** are not in the player: they sit in the warp
+view's toolbar beside Grid and Follow (2026-11-21). **Snap** (formerly *Click lands*; Ableton's "snap to grid", not
+"Quantization", which in Live waits for the bar line before playback starts; a small select,
+`None · 1/16 · 1/8 · 1/4 · 1 Bar`, default 1 Bar; titled `Where a click on the ruler or
+a waveform lands; the jump is always at once`) sets where a click in the warp view puts the playhead:
 the grid line at or before the spot, or exactly the spot with None or with no beat grid. A jump is
 always at once. It is kept in the browser and has no key, because Live's Ctrl+0–9 are Chrome's tab and
 zoom keys. The slim waveform below is not affected: it seeks to exactly the spot. Playing is `--text`, never teal; teal appears

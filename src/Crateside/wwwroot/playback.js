@@ -116,6 +116,7 @@ class Playback extends View(Rows(Overview(Follow(Loop(Window(PlayerStrip(AudioEn
         const { signal } = this.view.abort;
 
         root.addEventListener("click", (event) => this.onViewClick(event), { signal });
+        root.addEventListener("input", (event) => this.onViewInput(event), { signal });
         root.addEventListener("pointermove", (event) => this.onViewMove(event), { signal });
         root.addEventListener("pointerleave", () => this.hideSeekLine(), { signal });
         root.addEventListener("pointerdown", (event) => this.onOverviewDown(event), { signal });
