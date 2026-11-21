@@ -345,6 +345,7 @@
                 @{ var whole = group.Stems.FirstOrDefault(stem => stem.Sidecar is not null); }
                 <span class="gutter view-gutter">
                     <span class="view-name">View</span>
+                    <span class="mono readout" data-readout></span>
                     <span class="view-hint" data-view-hint></span>
                 </span>
                 <div class="ov" data-overview>
@@ -413,7 +414,7 @@
                         @if (HasClipGrip)
                         {
                             var clipBar = clipMark!.Value.Bar;
-                            <span class="notch grip @(clipMark.Value.Unset ? "unset" : null)" role="slider" tabindex="0" style="left: @P(clipX)%"
+                            <span class="notch grip" role="slider" tabindex="0" style="left: @P(clipX)%"
                                   data-bar="@clipBar" aria-label="Clip start" aria-orientation="horizontal"
                                   aria-valuenow="@clipBar" aria-valuetext="@(clipMark.Value.Unset ? $"not set, bar {clipBar}" : $"bar {clipBar}")"
                                   title="@ClipTitle(group, clipMark.Value)"
@@ -561,13 +562,9 @@
                     <div class="lane @(isSelected ? "selected" : null) @(_editing && IsSaving(stem) ? "saving" : null)" data-file="@Path.GetFileName(stem.Path)" @onclick="() => Select(stem)">
                         <span class="gutter lane-gutter">
                             <svg class="speaker" data-speaker="@Path.GetFileName(stem.Path)" hidden width="14" height="14" viewBox="0 0 14 14" role="img" aria-label="Playing"><path d="M2 5h2.5L8 2v10L4.5 9H2z" fill="currentColor" /><path d="M10 4.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" /></svg>
-                            <span class="name">@NameOf(stem.Path)@if (IsGuide(stem.Path)) {<text> </text><span class="role">warp guide</span>}</span>
+                            <span class="name">@NameOf(stem.Path)@if (IsGuide(stem.Path)) {<span class="role">warp guide</span>}</span>
                             <span class="wchip @Style(chip.Style) @(writing ? "writing" : null)">@chip.Label</span>
-                            @if (onDraft)
-                            {
-                                <span class="mono draft-mark">○ draft</span>
-                            }
-                            <span class="sub">@(Working(stem) ? $"writing {wording.Name(group.Lender!.Path)}'s warp" : wording.Sub(stem))</span>
+                            <span class="sub @(onDraft && !Working(stem) ? "draft-sub" : null)">@(Working(stem) ? $"writing {wording.Name(group.Lender!.Path)}'s warp" : onDraft ? "draft · not saved" : wording.Sub(stem))</span>
                         </span>
                         <div class="plot">
                             @GridBox(gridLines, from, to)

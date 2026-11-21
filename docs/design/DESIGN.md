@@ -116,8 +116,8 @@ beyond that. Warping a wandering or changing tempo happens in Ableton Live, and 
 try to match Live's warping tools. Because no future warp-marker editing will claim the waveform,
 the waveform is free for playback clicks.
 
-- **An aligned added source has a read-only lane** (ADR 0111) below the stems: a dashed edge, its
-  label, *shifted +441.5 ms*, and its waveform drawn at the measured offset under the mix. It
+- **An aligned added source has a read-only lane** (ADR 0111) below the stems: an edge like the
+  stems' own, its label, *shifted +0:00:441* (Live's duration format), and its waveform drawn at the measured offset under the mix. It
   follows zoom and scroll, is not selectable and takes no edits. A refused or unmeasured source
   has none.
 - **One time axis for the group**: the samples cut from the upload most of them share, in the
@@ -126,16 +126,18 @@ the waveform is free for playback clicks.
   Grid of 200px gutter · 12px · the plot.
 - **Head line**: `WARP`, then `{n} stems · one warp · {markers} · {mode}`, or `{stem} warped on its
   own` at `--text` (the only loud thing; not colored). No zoom pills (handoff 22). At the right, the
-  readout in mono at `--text` (`bars 17–24 · 1:11–1:40`, one bar `bar 24 · …`, the whole track
-  `whole track · 2:49` at `--text-75`), `−` `+` (zoom out and in about the playhead) and
+  `−` `+` (zoom out and in about the playhead) and
   `‹ ›`, disabled at the track's ends, which move the window
   by half its width (whole bars, at least one); *Go to the playhead · bar 31* (`.outline` small)
-  sits left of the readout while the playhead is outside the window. Left of the buttons, a **Grid**
+  sits left of the buttons while the playhead is outside the window. The readout is in the View row's
+  gutter under `View` (mono, `--text`: `bars 17–24 · 1:11–1:40`, one bar `bar 24 · …`, the whole track
+  `whole track · 2:49` at `--text-75`). Left of the buttons, a **Grid**
   pick: `Off · Wide · Medium · Narrow` (default Medium; kept in the browser with the player's settings).
-  After Grid and **Follow**, the toolbar holds **Snap** and **Loop** (moved from the player, 2026-11-21):
-  Snap is a small select, `None · 1/16 · 1/8 · 1/4 · 1 Bar` (default 1 Bar, titled `Where a click on the
-  ruler or a waveform lands; the jump is always at once`), and Loop is an `.outline` small toggle
-  (pressed while on, titled `Loop between the braces over the ruler`), disabled with no file.
+  After Grid and **Follow**, the toolbar holds **Loop** and **Snap** (moved from the player, 2026-11-21):
+  Loop is an `.outline` small toggle (pressed while on, titled `Loop between the braces over the
+  ruler`), disabled with no file, and Snap is a small select beside the zoom buttons, `None · 1/4 ·
+  1 bar · 2 bars · 4 bars · 8 bars` (default 1 bar, titled `Where a click on the ruler or a waveform
+  lands; the jump is always at once`); bar steps count from bar 1.
 - **Zooming without the handles**: one step is ×1.5 of the window's width, on whole bars, never under
   one bar (a view without a warp, 4 s) nor over the whole track. **Ctrl + wheel** over the view zooms
   about the bar under the pointer, or about the playhead while Follow holds it in view during
@@ -340,7 +342,7 @@ running totals, so a change is where the whole-song estimate flipped, not where 
   in a text field, a slider or the view's window.
 - **The draft on the lanes**: ruler, grid, tempo line (`64.00 was 128.00`), Off the grid (recomputed),
   flags, the click and the player readout are drawn in the draft's bars; the view
-  keeps its place in the audio. Saving lanes carry `○ draft` after the chip; the marker flag is
+  keeps its place in the audio. A lane with a draft says `draft · not saved` in place of its status line, so no lane changes height; the marker flag is
   hollow. The gist ends `· ○ draft`. Nothing is colored but state: teal
   while writing, red for a failed write, amber for *Not saved*.
 - **Clip-start grip**: while the bar is open the notch is an 11×16 pennant (in a 20px-wide hit area
@@ -354,7 +356,7 @@ running totals, so a change is where the whole-song estimate flipped, not where 
 - **A clip start before the audio** (2026-11-20): a starter's clip starts on a bar line at or before
   its marker, which is usually before the first sample, so it has no place on the ruler. Edit mode
   still draws the grip, standing at the marker's bar (the left edge when that bar is before the
-  audio), dimmed with a dashed pennant and arrow and titled `Clip start not set`; dragging it to a
+  audio), drawn as the normal grip and titled `Clip start not set`; dragging it to a
   bar sets the clip start like any other. Outside edit mode nothing is drawn.
 - **Saving, Saved, Undo**: the bar folds into one teal-bordered line (`Saving to 4 stems · backing
   each sidecar up, then writing`, `2 of 4`); then `Saved to 4 stems just now · Undo`, which stays
@@ -436,8 +438,8 @@ page; `Play (Space)` / `Pause (Space)`; Space toggles anywhere except a text fie
 open list); **the position** in mono 14 (`bar 19.3.1` at 600 · `1:20.80` at 75% · `/ 2:49` at 40%,
 27ch wide; without a warp `1:20.80 / 2:49`); **the picker** (an `.outline` button 210px wide opening a
 400px listbox of 34px rows, the file playing wearing the chosen-row style); **Metronome** (a pill toggle
-that is the chosen pill when on; while it ticks, its icon gives way to a **beat light**, two 5px
-dots of which the lit one swaps side on every beat and is larger on a bar's first, timed from the
+that is the chosen pill when on; its icon is always the **beat light**, two 5px
+dots, both empty while it stands still (off, or not playing), and while it ticks the lit one swaps side on every beat and is larger on a bar's first, timed from the
 audio clock each click is scheduled at, less the output's latency), **Sound** (`Classic ▾`, a two-row list of Classic ·
 Wood that plays the pick once, accent then beat; a kept sound no longer offered plays as Classic) and the metronome level
 (60px, labelled `Metronome`; it changes the clicks already queued). Clicks are queued 1.2 s ahead on the audio
@@ -570,8 +572,8 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
 - **An added source's alignment** (ADR 0111) is one strip, a cell per 5 s window across the added
   file. Green is the windows that settle the offset (done); a match elsewhere in the mix is solid
   grey and a window not in the mix is a dashed outline, so the three read without color; a silent
-  window is a thin line. Each cell's tooltip says time, offset and PSR; a one-line legend sits
-  below it.
+  window is a thin line. Each cell's tooltip says time, offset and PSR, and the spans only in this file or only in the
+  mix that the window covers; a one-line legend sits below it. The summary line is the only text.
 
 ## Tracks table
 

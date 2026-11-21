@@ -296,7 +296,7 @@
     cursor: pointer;
 }
 
-/* The Metronome button's icon gives its place to the beat light while the click sounds. */
+/* The Metronome button's icon is the beat light: two empty dots, which swap as the click sounds. */
 .tick {
     position: relative;
     display: inline-flex;
@@ -310,14 +310,6 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-}
-
-.beat[hidden] {
-    display: none;
-}
-
-.beat:not([hidden]) + svg {
-    visibility: hidden;
 }
 
 .beat i {

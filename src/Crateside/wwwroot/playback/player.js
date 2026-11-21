@@ -98,11 +98,12 @@ export const PlayerStrip = (Base) =>
 
             const shown = this.playing && this.clickOn && Boolean(this.session);
 
-            if (beat.hidden === shown)
-                beat.hidden = !shown;
+            if (!shown) {
+                delete beat.dataset.side;
+                beat.classList.remove("down");
 
-            if (!shown)
                 return;
+            }
 
             const heard = this.ctx.currentTime - (this.ctx.outputLatency || 0) - (this.ctx.baseLatency || 0);
             const { beats } = this.session;

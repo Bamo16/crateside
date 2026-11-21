@@ -48,7 +48,6 @@ public partial class WarpView
                     title = ClipTitle(group, mark),
                     grip = HasClipGrip,
                     bar = mark.Bar,
-                    unset = mark.Unset,
                 }
                 : null,
             loop = group.Lender?.Loop is { } loop
