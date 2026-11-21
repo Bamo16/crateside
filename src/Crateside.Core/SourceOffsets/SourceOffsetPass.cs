@@ -90,8 +90,17 @@ public sealed class SourceOffsetPass(
         )
             return false;
 
-        if (store.Of(pair.SourceKey) is { } kept && kept.Mix == mix && kept.Source == source)
+        if (
+            store.Of(pair.SourceKey) is { } kept
+            && kept.Mix.IsSameFileAs(mix)
+            && kept.Source.IsSameFileAs(source)
+        )
+        {
+            if (kept.Mix != mix || kept.Source != source)
+                store.Save(pair.SourceKey, kept with { Mix = mix, Source = source });
+
             return false;
+        }
 
         lock (_lock)
         {

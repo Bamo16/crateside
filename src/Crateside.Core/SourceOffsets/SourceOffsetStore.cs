@@ -37,6 +37,16 @@ public sealed class SourceOffsetStore
         }
     }
 
+    /// <summary>Whether a standing measurement refuses the source: an edit, a drift, or not the same recording (ADR 0111).</summary>
+    public bool IsRefused(string sourceKey) =>
+        Of(sourceKey)
+            is {
+                IsUsable: true,
+                Reading.Verdict: OffsetVerdict.Edit
+                    or OffsetVerdict.Drift
+                    or OffsetVerdict.NotTheSameRecording
+            };
+
     public void Save(string sourceKey, SourceOffsetRecord record)
     {
         lock (_lock)
@@ -61,6 +71,16 @@ public sealed record FileStamp(string Path, long Length, DateTime Written)
             : null;
 
     public bool Holds => Of(Path) == this;
+
+    /// <summary>Whether <paramref name="other"/> is this file wherever it now sits: same name, size and modified time.</summary>
+    public bool IsSameFileAs(FileStamp other) =>
+        Length == other.Length
+        && Written == other.Written
+        && string.Equals(
+            System.IO.Path.GetFileName(Path),
+            System.IO.Path.GetFileName(other.Path),
+            StringComparison.OrdinalIgnoreCase
+        );
 }
 
 /// <param name="Mix">The track's full mix, the reference.</param>

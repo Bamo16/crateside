@@ -23,7 +23,11 @@ public sealed class AddedSourcesRealLibraryTests : IDisposable
 
     private readonly FakeTimeProvider _time = new(new(2026, 11, 20, 9, 0, 0, TimeSpan.Zero));
 
-    public void Dispose() => Directory.Delete(_root, recursive: true);
+    public void Dispose()
+    {
+        if (Directory.Exists(_root))
+            Directory.Delete(_root, recursive: true);
+    }
 
     [Fact]
     public Task Both_official_cuts_of_Pop_Lock_and_Drop_It_are_shifted_by_their_measured_offsets() =>
