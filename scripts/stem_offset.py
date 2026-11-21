@@ -15,17 +15,18 @@ import argparse
 
 import numpy as np
 import soundfile as sf
-from scipy import fft
+from scipy import fft, signal
 
 MIN_PSR = 12.0  # a window whose peak is under this many noise widths is unmatched content
 MIN_CONFIDENT = 3  # fewer confident windows than this: not the same recording
 MIN_SHARE = 0.25  # a smaller share of the added source's windows confident: not the same recording
-AGREE = 20  # samples within which two windows count as the same offset
+AGREE_MS = 0.5  # two offsets within this many milliseconds are the same offset
 STEADY_SHARE = 0.90  # share of confident windows on one offset for a steady verdict
 RUN = 2  # consecutive windows an offset elsewhere in the mix needs to count as an edit
-DRIFT_SAMPLES = 40  # offsets moving this far along a straight line is a drift
+DRIFT_MS = 1.0  # offsets moving this far along a straight line is a drift
 DRIFT_WINDOWS = 4  # windows a line needs before it can be called a drift
-JOIN_SAMPLES = 2000  # consecutive windows this close in offset belong to one run
+JOIN_MS = 45.0  # consecutive windows this close in offset belong to one run
+SPEED_FACTORS = ((1000, 1001), (1001, 1000), (24, 25), (25, 24))  # known speed changes, tried before refusing
 NEAR_SECONDS = 1.0  # a window looks this far around the global offset first (loops repeat exactly)
 SILENT_RMS = 1e-4
 LOW_HZ, HIGH_HZ = 100, 10000
@@ -123,11 +124,15 @@ def measure(added, ref, seconds, d0):
         if row.near[1] >= MIN_PSR:
             row.kind = "near"
 
-    mark_edits(rows)
+    mark_edits(rows, rate)
     return rows
 
 
-def mark_edits(rows):
+def samples_of(ms, rate):
+    return ms * rate / 1000
+
+
+def mark_edits(rows, rate):
     """A weak run whose best peak elsewhere in the mix repeats is an edit, unless the main offset resumes
     after it: then the mix repeats that material, and the run is unmatched content."""
     awake = [r for r in rows if not r.silent]
@@ -143,7 +148,7 @@ def mark_edits(rows):
             j + 1 < len(awake)
             and awake[j + 1].kind == "weak"
             and awake[j + 1].far[1] >= MIN_PSR
-            and abs(awake[j + 1].far[0] - awake[j].far[0]) <= AGREE
+            and abs(awake[j + 1].far[0] - awake[j].far[0]) <= samples_of(AGREE_MS, rate)
         ):
             j += 1
         bracketed = (
@@ -155,11 +160,11 @@ def mark_edits(rows):
         i = j + 1
 
 
-def segments(live):
-    """Consecutive confident windows whose offsets stay within JOIN_SAMPLES of the previous one."""
+def segments(live, rate):
+    """Consecutive confident windows whose offsets stay within JOIN_MS of the previous one."""
     found = []
     for row in live:
-        if found and abs(row.offset - found[-1][-1].offset) <= JOIN_SAMPLES:
+        if found and abs(row.offset - found[-1][-1].offset) <= samples_of(JOIN_MS, rate):
             found[-1].append(row)
         else:
             found.append([row])
@@ -168,24 +173,27 @@ def segments(live):
 
 def drift_of(live, rate):
     """(ppm, samples per second) of the first segment lying on a line that moves; else None."""
-    for seg in segments(live):
+    for seg in segments(live, rate):
         if len(seg) < DRIFT_WINDOWS:
             continue
 
         times = np.array([r.start for r in seg])
         ds = np.array([r.offset for r in seg], dtype=float)
         slope, icpt = np.polyfit(times, ds, 1)
-        onto = np.abs(ds - (slope * times + icpt)) <= AGREE
-        if onto.mean() >= STEADY_SHARE and abs(slope) * (times.max() - times.min()) >= DRIFT_SAMPLES:
+        onto = np.abs(ds - (slope * times + icpt)) <= samples_of(AGREE_MS, rate)
+        if (
+            onto.mean() >= STEADY_SHARE
+            and abs(slope) * (times.max() - times.min()) >= samples_of(DRIFT_MS, rate)
+        ):
             return slope / rate * 1e6, slope
     return None
 
 
-def clusters(live):
+def clusters(live, rate):
     """Confident windows sharing one offset, biggest first: (offset, windows)."""
     found = []
     for row in sorted(live, key=lambda r: r.offset):
-        if found and row.offset - found[-1][-1].offset <= AGREE:
+        if found and row.offset - found[-1][-1].offset <= samples_of(AGREE_MS, rate):
             found[-1].append(row)
         else:
             found.append([row])
@@ -231,7 +239,7 @@ def verdict(rows, rate, seconds):
         ppm, slope = drift
         return "DRIFT", live, None, f"{counted}; {ppm:+.0f} ppm ({slope:+.1f} samples/s)"
 
-    groups = clusters(live)
+    groups = clusters(live, rate)
     top, members = groups[0]
     if len(members) / len(live) >= STEADY_SHARE:
         return "STEADY", members, top, f"{counted}, {len(members)} on {top}"
@@ -255,6 +263,14 @@ def fmt_spans(spans):
     return ", ".join(f"{a:g}-{b:g} s" for a, b in spans) or "none"
 
 
+def analyse(added, mix, rate, seconds):
+    d0 = global_offset(added, Reference(mix, rate, len(added)))
+    rows = measure(added, Reference(mix, rate, int(seconds * rate)), seconds, d0)
+    name, voters, offset, why = verdict(rows, rate, seconds)
+
+    return d0, rows, name, voters, offset, why
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("mix")
@@ -268,10 +284,20 @@ def main():
     if rate != rate2:
         raise SystemExit(f"sample rates differ: {rate} and {rate2}")
 
-    d0 = global_offset(added, Reference(mix, rate, len(added)))
-    ref = Reference(mix, rate, int(args.window * rate))
-    rows = measure(added, ref, args.window, d0)
-    name, voters, offset, why = verdict(rows, rate, args.window)
+    d0, rows, name, voters, offset, why = analyse(added, mix, rate, args.window)
+    if name in ("NOT THE SAME RECORDING", "EDIT"):
+        for up, down in SPEED_FACTORS:
+            stretched = signal.resample_poly(added, up, down).astype(np.float32)
+            d1, rows1, name1, voters1, offset1, _ = analyse(stretched, mix, rate, args.window)
+            if name1 == "STEADY":
+                pace = "fast" if up > down else "slow"
+                d0, rows, voters, offset = d1, rows1, voters1, offset1
+                name = "DRIFT"
+                why = (
+                    f"runs {abs(up / down - 1) * 100:.2f}% {pace} against the mix "
+                    f"(resampled by {up}/{down} it reads steady at {offset}); use the audio release"
+                )
+                break
 
     print(f"mix {len(mix) / rate:.3f} s  added {len(added) / rate:.3f} s  rate {rate}  global offset {d0}")
     if args.table:
