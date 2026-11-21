@@ -10,13 +10,18 @@ public sealed class VerdictRulesTests
         string? keydetect,
         string? madmom,
         string? essentia,
-        double r = 0.9
+        double r = 0.9,
+        double? madmomConfidence = null
     ) =>
         $$"""
             {
               "algorithms": {
                 "ffmpeg_keydetect": {{Reading(keydetect, r)}},
-                "madmom": {{Reading(madmom)}},
+                "madmom": {{(
+                madmom is not null && madmomConfidence is { } confidence
+                    ? $$"""{ "key": "{{madmom}}", "confidence": {{confidence.ToString(CultureInfo.InvariantCulture)}} }"""
+                    : Reading(madmom)
+            )}},
                 "essentia_edma": {{Reading(essentia)}}
               },
               "chords": ["Am", "E7"]
@@ -316,6 +321,34 @@ public sealed class VerdictRulesTests
     public void Keydetect_and_one_backer_just_under_point_eight_wait_for_the_person()
     {
         Assert.Null(Rule(Evidence("A minor", "A minor", "C major", r: 0.79)));
+    }
+
+    [Fact]
+    public void A_confident_madmom_dissent_sends_a_keydetect_and_backer_ruling_to_the_judge()
+    {
+        var evidence = Evidence("C major", "C minor", "C major", r: 0.82, madmomConfidence: 0.81);
+
+        Assert.Null(Rule(evidence));
+        Assert.Equal(
+            "C major from keydetect and Essentia; C minor from madmom. Keydetect (r 0.82) and Essentia name C major, but madmom dissents: C minor at 0.81, so the judge decides.",
+            WhyOpen(evidence)
+        );
+    }
+
+    [Fact]
+    public void A_madmom_dissent_under_point_eight_still_rules()
+    {
+        Assert.NotNull(
+            Rule(Evidence("C major", "C minor", "C major", r: 0.82, madmomConfidence: 0.79))
+        );
+    }
+
+    [Fact]
+    public void An_Essentia_dissent_does_not_stop_a_keydetect_and_madmom_ruling()
+    {
+        Assert.NotNull(
+            Rule(Evidence("D# minor", "D# minor", "G# minor", r: 0.9, madmomConfidence: 0.95))
+        );
     }
 
     [Fact]

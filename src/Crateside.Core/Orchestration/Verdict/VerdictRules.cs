@@ -12,6 +12,9 @@ internal static class VerdictRules
     /// <summary>keydetect's correlation from which one backer is enough for a ruling.</summary>
     public const double ConfidentKeydetect = 0.80;
 
+    /// <summary>madmom's confidence from which a different key stops a keydetect-and-backer ruling (ADR 0076).</summary>
+    public const double ConfidentMadmom = 0.80;
+
     private const string Keydetect = "keydetect";
     private const string NoPageLine = "no Hooktheory or Musicnotes page states a key.";
 
@@ -101,7 +104,12 @@ internal static class VerdictRules
                 $"{entry.Key.LedgerName} from {Named([.. entry.Detectors, .. entry.Pages])}"
             );
 
-        var tail = stated is []
+        var tail = stated is [] && Dissent(root, readings) is var (dissentKey, dissentR, backers, madmom, confidence)
+            ? string.Create(
+                CultureInfo.InvariantCulture,
+                $"Keydetect (r {dissentR:0.00}) and {Named(backers)} name {dissentKey.LedgerName}, but madmom dissents: {madmom.LedgerName} at {confidence:0.00}, so the judge decides."
+            )
+            : stated is []
             ? string.Create(
                 CultureInfo.InvariantCulture,
                 $"No Hooktheory or Musicnotes page states a key. Without one, all three detectors must name one key, or keydetect and one more with r of at least {ConfidentKeydetect:0.00}{(Correlation(root) is { } r ? $" (here {r:0.00})" : null)}."
@@ -123,7 +131,8 @@ internal static class VerdictRules
             ),
             [{ Detector: Keydetect, Key: var key }, .. var rest]
                 when Correlation(root) is >= ConfidentKeydetect and var correlation
-                    && rest.FirstOrDefault(reading => reading.Key == key) is { } backer => Rule(
+                    && rest.FirstOrDefault(reading => reading.Key == key) is { } backer
+                    && MadmomDissent(root, key) is null => Rule(
                 key,
                 KeyConfidence.Medium,
                 readings,
@@ -135,6 +144,34 @@ internal static class VerdictRules
             ),
             _ => null,
         };
+
+    private static (MusicKey Key, double Confidence)? MadmomDissent(JsonObject root, MusicKey key) =>
+        root["algorithms"]?["madmom"] is JsonObject madmom
+        && madmom["key"] is JsonValue text
+        && text.TryGetValue<string>(out var spelled)
+        && RecordTimeCheck.KeyOf(spelled) is { } named
+        && named != key
+        && madmom["confidence"] is JsonValue value
+        && value.TryGetValue<double>(out var confidence)
+        && confidence >= ConfidentMadmom
+            ? (named, confidence)
+            : null;
+
+    /// <summary>The keydetect-and-backer reading a confident madmom dissent stopped, else null.</summary>
+    private static (
+        MusicKey Key,
+        double R,
+        List<string> Backers,
+        MusicKey Madmom,
+        double Confidence
+    )? Dissent(JsonObject root, List<Reading> readings) =>
+        readings is [{ Detector: Keydetect, Key: var key }, .. var rest]
+        && Correlation(root) is >= ConfidentKeydetect and var r
+        && rest.Where(reading => reading.Key == key).Select(reading => reading.Detector).ToList()
+            is [_, ..] backers
+        && MadmomDissent(root, key) is var (madmom, confidence)
+            ? (key, r, backers, madmom, confidence)
+            : null;
 
     private static Ruling BackedByPages(MusicKey key, List<Reading> readings, List<Stated> stated)
     {

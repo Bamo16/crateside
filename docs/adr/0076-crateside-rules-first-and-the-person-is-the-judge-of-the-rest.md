@@ -191,3 +191,22 @@ has a Mode choice beside it: major or minor by default, or Dorian, Phrygian, Lyd
 Locrian on the key's tonic. A choice with a mode is recorded as a judge's verdict with a mode is: the
 center is the tonic with that mode, the Ear source states the collapsed key and the mode, and the tag
 follows the center's major or minor (`TonalCenter.Collapsed`).
+
+## A confident madmom dissent stops a tier B ruling, 2026-11-20
+
+Tier B (keydetect at r of at least 0.80 plus one backer, no page) does not rule when **madmom names a
+different key at a confidence of at least 0.80**. The track goes to the judge, as a track the rules
+cannot decide does, and the reason shows where the other reasons do: "Keydetect (r 0.82) and Essentia
+name C major, but madmom dissents: C minor at 0.81, so the judge decides." Tier A (a page agrees) is
+unchanged, and so are Essentia's and keydetect's dissents. Verdicts already recorded are not
+re-decided; only new rulings use the rule.
+
+It rests on a measurement of the rules against 179 tracks with a trusted key:
+
+- Tier B was right 98% of the time with no confident dissenter, but on 2 of 6 tracks with one.
+- A confident madmom dissent was right 4 of 4 times on the trusted set and 4 of 6 on the wider set.
+- A confident Essentia dissent was right 0 of 2 and 2 of 10, so it earns no stop.
+- The rule sends about 1-2% of tier B rulings to the judge, at about 37k tokens each.
+
+The cells are small, most under 5. The 0.80 threshold and the choice of madmom alone are to be
+revisited when the trusted set grows.
