@@ -561,7 +561,7 @@
                     <div class="lane @(isSelected ? "selected" : null) @(_editing && IsSaving(stem) ? "saving" : null)" data-file="@Path.GetFileName(stem.Path)" @onclick="() => Select(stem)">
                         <span class="gutter lane-gutter">
                             <svg class="speaker" data-speaker="@Path.GetFileName(stem.Path)" hidden width="14" height="14" viewBox="0 0 14 14" role="img" aria-label="Playing"><path d="M2 5h2.5L8 2v10L4.5 9H2z" fill="currentColor" /><path d="M10 4.5a3.5 3.5 0 0 1 0 5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" /></svg>
-                            <span class="name">@NameOf(stem.Path)</span>
+                            <span class="name">@NameOf(stem.Path)@if (IsGuide(stem.Path)) {<text> </text><span class="role">warp guide</span>}</span>
                             <span class="wchip @Style(chip.Style) @(writing ? "writing" : null)">@chip.Label</span>
                             @if (onDraft)
                             {
@@ -1297,9 +1297,13 @@
     {
         var paths = StemWarpReader.LanePaths(Row);
         var stamp = Stamp(paths) + AddedStamp();
+        var undoMoved = _undo is { HasMoved: true };
+
+        if (undoMoved)
+            _undo = null;
 
         if (!force && stamp == _stamp)
-            return false;
+            return undoMoved;
 
         _stamp = stamp;
         var stems = paths.Select(Reader.Read).ToList();
@@ -1348,7 +1352,10 @@
 
     private string NameOf(string path) =>
         Row.Samples.FirstOrDefault(sample => string.Equals(sample.Path, path, StringComparison.OrdinalIgnoreCase))?.Label
-        ?? Path.GetFileNameWithoutExtension(path);
+        ?? (IsGuide(path) ? "Drums" : Path.GetFileNameWithoutExtension(path));
+
+    private bool IsGuide(string path) =>
+        string.Equals(path, Row.WarpGuidePath, StringComparison.OrdinalIgnoreCase);
 
     private StemWarp? Selected(WarpGroup group) =>
         group.Stems.FirstOrDefault(stem => string.Equals(stem.Path, SelectedPath, StringComparison.OrdinalIgnoreCase))

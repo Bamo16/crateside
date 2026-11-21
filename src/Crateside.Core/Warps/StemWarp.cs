@@ -157,15 +157,17 @@ public sealed class StemWarpReader(
     /// <summary>The track's lanes on one time axis, as the warp view draws them.</summary>
     public WarpGroup GroupOf(TrackRow row) => WarpGroup.Of([.. LanePaths(row).Select(Read)]);
 
-    /// <summary>The samples cut from the upload most of the track's samples share, in the sample list's order.</summary>
+    /// <summary>The samples cut from the upload most of the track's samples share, in the sample list's order, then the warp guide when it is on disk.</summary>
     public static List<string> LanePaths(TrackRow row)
     {
+        string[] guide = row.WarpGuidePath is { Length: > 0 } path ? [path] : [];
+
         // Only added sources: they are drawn as their own lanes, and the mix's timeline is the warp guide's (ADR 0111, rule 24).
         if (
             row.Samples is { Count: > 0 } samples
             && samples.All(sample => row.IsAddedSource(sample.SourceTrackKey))
         )
-            return row.WarpGuidePath is { Length: > 0 } guide ? [guide] : [];
+            return [.. guide];
 
         var upload = row
             .Samples.GroupBy(sample => sample.SourceTrackKey)
@@ -180,6 +182,7 @@ public sealed class StemWarpReader(
                     sample.SourceTrackKey == upload && sample.Path is { Length: > 0 }
                 )
                 .Select(sample => sample.Path),
+            .. guide,
         ];
     }
 

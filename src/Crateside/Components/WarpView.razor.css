@@ -478,6 +478,12 @@
     font-weight: 600;
 }
 
+.lane-gutter .name .role {
+    font-size: 11.5px;
+    font-weight: 400;
+    color: var(--text-50);
+}
+
 .lane-gutter .sub {
     font-size: 11.5px;
     color: var(--text-50);
