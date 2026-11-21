@@ -114,6 +114,16 @@
     color: var(--text-40);
 }
 
+/* A title is prose and can be long: it wraps, and the video ID is on hover. */
+.upload:has(.upload-title) {
+    white-space: normal;
+}
+
+.upload .upload-title {
+    margin-left: 6px;
+    color: var(--text-60);
+}
+
 .upload.current {
     color: var(--text-75);
 }

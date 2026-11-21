@@ -29,6 +29,10 @@ public static class OffsetWording
             .. reading.OnlyInMix.Select(span => $"only in the mix: {Span(span)}"),
         ];
 
+    /// <summary>What the added source's lane in the warp view says beside its label.</summary>
+    public static string Lane(OffsetReading reading) =>
+        $"shifted {Signed(reading.OffsetMilliseconds)} ms";
+
     /// <summary>The line the warp view's save lists for an added source.</summary>
     public static string Saves(AddedSourcePlan plan) =>
         plan switch

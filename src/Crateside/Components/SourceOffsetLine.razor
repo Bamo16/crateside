@@ -20,22 +20,17 @@ else if (Store.Of(SourceKey) is { Stands: true, Reading: var reading })
                 }
             </p>
         }
-        <table class="windows mono">
-            <thead>
-                <tr><th>from</th><th>offset</th><th>PSR</th><th></th></tr>
-            </thead>
-            <tbody>
-                @foreach (var window in reading.Windows)
-                {
-                    <tr class="@window.State.ToString().ToLowerInvariant()">
-                        <td>@window.Start.ToString("0.#", CultureInfo.InvariantCulture) s</td>
-                        <td>@(window.State is WindowState.Silent ? "—" : window.Offset.ToString(CultureInfo.InvariantCulture))</td>
-                        <td>@(window.State is WindowState.Silent ? "—" : window.Psr.ToString("0.0", CultureInfo.InvariantCulture))</td>
-                        <td>@Say(window.State)</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <div class="strip" role="img" aria-label="@($"The added file's {reading.Windows.Count} windows, in order")">
+            @foreach (var window in reading.Windows)
+            {
+                <span class="cell @window.State.ToString().ToLowerInvariant()" title="@Tip(window)"></span>
+            }
+        </div>
+        <p class="legend">
+            <span class="key voting"></span>on the offset
+            <span class="key elsewhere"></span>matches elsewhere in the mix
+            <span class="key unmatched"></span>not in the mix
+        </p>
     </details>
 }
 else
@@ -49,6 +44,13 @@ else
 
     private static string Tone(OffsetReading reading) =>
         reading.Verdict is OffsetVerdict.Aligned ? "aligned" : "refused";
+
+    private static string Tip(OffsetWindow window) =>
+        window.State is WindowState.Silent
+            ? $"{Seconds(window.Start)} · silent"
+            : $"{Seconds(window.Start)} · offset {window.Offset.ToString(CultureInfo.InvariantCulture)} samples · PSR {window.Psr.ToString("0.0", CultureInfo.InvariantCulture)} · {Say(window.State)}";
+
+    private static string Seconds(double start) => $"{start.ToString("0.#", CultureInfo.InvariantCulture)} s";
 
     private static string Say(WindowState state) =>
         state switch

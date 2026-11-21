@@ -23,7 +23,7 @@ public sealed class SourceOffsetLineTests : IDisposable
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
     [Fact]
-    public async Task An_aligned_source_shows_its_shift_the_unmatched_spans_and_each_window()
+    public async Task An_aligned_source_shows_its_shift_the_unmatched_spans_and_a_strip_of_its_windows()
     {
         Save(
             new OffsetReading
@@ -47,8 +47,16 @@ public sealed class SourceOffsetLineTests : IDisposable
         Assert.Contains("Aligned to the mix: &#x2B;441.5 ms", html);
         Assert.Contains("only in this file: 5-10 s", html);
         Assert.Contains("only in the mix: 257.8-263.3 s", html);
-        Assert.Contains(">21.5</td>", html);
-        Assert.Contains("not in the mix", html);
+        Assert.DoesNotContain("<table", html);
+        Assert.Matches(
+            "class=\"cell voting\"[^>]*title=\"0 s [^\"]*offset 19470 samples[^\"]*PSR 21.5",
+            html
+        );
+        Assert.Matches(
+            "class=\"cell unmatched\"[^>]*title=\"5 s [^\"]*offset 0 samples[^\"]*PSR 3.2",
+            html
+        );
+        Assert.Contains("matches elsewhere in the mix", html);
     }
 
     [Theory]

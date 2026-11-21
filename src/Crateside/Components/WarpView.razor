@@ -6,12 +6,14 @@
 @using Crateside.Core.Ledger
 @using Crateside.Core.Orchestration.Verdict
 @using Crateside.Core.Quota
+@using Crateside.Core.SourceOffsets
 @using Crateside.Core.Tempo
 @using Crateside.Core.Tracks
 @using Crateside.Core.Warps
 @using Microsoft.Extensions.Options
 @implements IAsyncDisposable
 @inject StemWarpReader Reader
+@inject SourceOffsetStore Offsets
 @inject WarpActions Actions
 @inject WarpTrueUp TrueUp
 @inject LiveAnalyses Waiting
@@ -610,6 +612,22 @@
                     </div>
                 }
 
+                @foreach (var added in _added)
+                {
+                    <div class="lane added" data-added="@Path.GetFileName(added.Warp.Path)">
+                        <span class="gutter lane-gutter">
+                            <span class="name">@added.Label</span>
+                            <span class="sub">@OffsetWording.Lane(added.Reading)</span>
+                        </span>
+                        <div class="plot" title="@($"{added.Label}: read-only, drawn where it plays under the mix; its warp is derived when the mix's warp is saved")">
+                            @GridBox(gridLines, from, to)
+                            <svg class="overview" viewBox="0 0 @Columns 45" preserveAspectRatio="none">
+                                <path d="@Wave(added.Warp, from, to, 45, mono: false, shift: added.Shift)" />
+                            </svg>
+                        </div>
+                    </div>
+                }
+
                 @if (Run is not null)
                 {
                     <KeyLane Run="Run" Seconds="group.Seconds" From="from" To="to" Bands="BandsIn(bands, from, to, tags: false)"
@@ -1124,6 +1142,7 @@
     }
 
     private WarpGroup? _group;
+    private IReadOnlyList<AddedLane> _added = [];
     private string? _stamp;
     private double? _viewFrom;
     private double? _viewTo;
@@ -1276,13 +1295,14 @@
     private bool Reload(bool force)
     {
         var paths = StemWarpReader.LanePaths(Row);
-        var stamp = Stamp(paths);
+        var stamp = Stamp(paths) + AddedStamp();
 
         if (!force && stamp == _stamp)
             return false;
 
         _stamp = stamp;
         _group = WarpGroup.Of([.. paths.Select(Reader.Read)]);
+        _added = AddedLanesNow();
         _offGrid = _group.Lender is { } lender ? WarpTrueUp.Check(lender) : null;
 
         if (!_editing && _phase is Phase.Idle)
@@ -1611,9 +1631,9 @@
     }
 
     /// <summary>Each channel's envelope as one filled shape per channel, Left above Right.</summary>
-    private string Wave(StemWarp stem, double from, double to, double height, bool mono)
+    private string Wave(StemWarp stem, double from, double to, double height, bool mono, double shift = 0)
     {
-        var channels = Peaks(stem).Envelope(from, to, Columns);
+        var channels = Peaks(stem).Envelope(from - shift, to - shift, Columns);
 
         if (channels is [])
             return string.Empty;

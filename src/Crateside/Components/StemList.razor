@@ -309,7 +309,7 @@ else
             { Kind: StemKind.Unrecognized } => line.Description,
             { State: StemState.Kept } when row.HasSeveralUploads => string.Join(
                 " · ",
-                line.Uploads
+                line.Uploads.Select(upload => UploadTitles.Name(row, upload))
             ),
             { State: StemState.Kept } => "kept",
             // A preset's description is nine lines of wrapped text across the panel; it reads
@@ -410,9 +410,9 @@ else
         var added = Row.IsAddedSource(sample.SourceTrackKey);
         var current = sample.SourceTrackKey == Row.TrackKey;
 
-        return @<span class="upload @(added ? "added" : current ? "current" : "superseded")">
+        return @<span class="upload @(added ? "added" : current ? "current" : "superseded")" title="@sample.SourceTrackKey">
             @(added ? "added source" : current ? "new upload" : "old upload")
-            <span class="mono">@sample.SourceTrackKey</span>
+            <span class="@(UploadTitles.Of(Row, sample.SourceTrackKey!) is null ? "mono" : "upload-title")">@UploadTitles.Name(Row, sample.SourceTrackKey!)</span>
         </span>;
     }
 

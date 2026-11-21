@@ -143,6 +143,37 @@ public partial class WarpView
         );
     }
 
+    /// <summary>The lanes of the added sources that align to the mix, read when the sidecars are (ADR 0111, rule 22).</summary>
+    private IReadOnlyList<AddedLane> AddedLanesNow() =>
+        [
+            .. AddedFiles()
+                .Select(file =>
+                    Offsets.Of(file.SourceKey)
+                        is {
+                            Stands: true,
+                            Reading: { Verdict: OffsetVerdict.Aligned, Offset: not null } reading,
+                        }
+                    && Reader.Read(file.Path) is { Sidecar: not null } warp
+                        ? new AddedLane(warp, file.Label, reading)
+                        : null
+                )
+                .OfType<AddedLane>(),
+        ];
+
+    private string AddedStamp() =>
+        string.Concat(
+            AddedFiles()
+                .Select(file =>
+                    $"{Stamp([file.Path])}{Offsets.Of(file.SourceKey)?.MeasuredAt.Ticks}{Offsets.Of(file.SourceKey)?.Stands}"
+                )
+        );
+
+    private sealed record AddedLane(StemWarp Warp, string Label, OffsetReading Reading)
+    {
+        /// <summary>Where the file's first sample falls on the mix's time axis.</summary>
+        public double Shift => (double)Reading.Offset.GetValueOrDefault() / Reading.SampleRate;
+    }
+
     private IReadOnlyList<AddedSourceFile> AddedFiles() =>
         [
             .. Row

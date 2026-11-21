@@ -18,6 +18,20 @@ public sealed class OffsetWordingTests
         ];
 
     [Fact]
+    public void A_lane_says_how_far_the_file_is_shifted_against_the_mix()
+    {
+        var reading = new OffsetReading
+        {
+            Verdict = OffsetVerdict.Aligned,
+            SampleRate = Rate,
+            WindowSeconds = 5,
+            Offset = 19_470,
+        };
+
+        Assert.Equal("shifted +441.5 ms", OffsetWording.Lane(reading));
+    }
+
+    [Fact]
     public void An_aligned_line_gives_the_shift_in_milliseconds_and_samples_and_the_window_count()
     {
         var reading = new OffsetReading

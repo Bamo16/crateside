@@ -19,20 +19,58 @@
     margin: 4px 0;
 }
 
-.offset .windows {
-    margin-top: 6px;
-    border-collapse: collapse;
+/* One cell per window across the added file. Green is the windows that settle the offset (done);
+   the rest is monochrome: solid for a match elsewhere in the mix, dashed for nothing in it. */
+.offset .strip {
+    display: flex;
+    gap: 2px;
+    margin: 6px 0 4px;
+}
+
+.offset .cell {
+    flex: 1 1 0;
+    min-width: 3px;
+    height: 16px;
+    border-radius: 2px;
+    box-sizing: border-box;
+}
+
+.offset .cell.voting,
+.offset .key.voting {
+    background: var(--ok);
+}
+
+.offset .cell.elsewhere,
+.offset .key.elsewhere {
+    background: var(--text-50);
+}
+
+.offset .cell.unmatched,
+.offset .key.unmatched {
+    border: 1px dashed var(--text-50);
+}
+
+.offset .cell.silent {
+    height: 2px;
+    align-self: center;
+    background: var(--text-30);
+}
+
+.offset .legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 8px;
+    margin: 0;
     font-size: 0.85em;
+    color: var(--text-60);
 }
 
-.offset .windows th,
-.offset .windows td {
-    padding: 1px 12px 1px 0;
-    text-align: left;
-    font-weight: normal;
-}
-
-.offset .windows tr.unmatched,
-.offset .windows tr.silent {
-    opacity: 0.55;
+.offset .key {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: -2px;
+    border-radius: 2px;
+    box-sizing: border-box;
 }

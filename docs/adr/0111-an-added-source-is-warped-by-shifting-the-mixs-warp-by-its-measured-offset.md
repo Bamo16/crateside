@@ -218,7 +218,12 @@ confident, sharing no offset) and reads *not the same recording*, which is refus
 ### Where it shows
 
 21. **On Track details, on the added source's line among the track's samples**, one line per
-    verdict, with a folded list of the windows (time, offset, PSR) beneath it:
+    verdict, and for an aligned source a folded strip of its windows beneath it: one cell per 5 s
+    window across the added file, coloured by what the window found (on the offset, matches the
+    mix elsewhere, not in the mix; a silent window is a thin line), each cell's time, offset and PSR
+    in its tooltip, and a one-line legend. The unmatched spans stay as text above it. The upload
+    is named by its YouTube title (the tag of the files cut from it), with its video ID in a
+    tooltip, and by the ID alone where no file carries a title:
     - aligned: *Aligned to the mix: +441.5 ms (19 470 samples), 51 of 52 windows*, then the
       unmatched spans, each said as "only in this file: 0-5 s" or "only in the mix: 257.8-263.3 s";
     - edit: *Cut differently from the mix: +16.55 s up to 50 s, +32.41 s from 65 s to 165 s; not
@@ -229,7 +234,11 @@ confident, sharing no offset) and reads *not the same recording*, which is refus
 
     While it waits or measures the line says so. (The Tracks list has no per-row source count, so
     nothing is marked there.)
-22. **In the warp view**, the Save confirmation lists each added source it will write, with its
+22. **In the warp view**, each aligned added source has a read-only lane below the track's own
+    stems, labelled with its label and *shifted +441.5 ms*, its waveform drawn at its measured
+    offset so it sits under the mix where it plays. It follows the view's zoom and scroll and takes
+    no edits: its warp is derived on save. A refused source, one not measured yet, or one with no
+    analysis file has no lane. The Save confirmation lists each added source it will write, with its
     offset, and each it will not and why (edit, drift, not the same recording, has its own warp,
     measuring). After a save, the added source's warp card reads *Shifted from the mix's warp by
     +441.5 ms*, and says when a clip start moved (17).

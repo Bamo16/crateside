@@ -116,6 +116,10 @@ beyond that. Warping a wandering or changing tempo happens in Ableton Live, and 
 try to match Live's warping tools. Because no future warp-marker editing will claim the waveform,
 the waveform is free for playback clicks.
 
+- **An aligned added source has a read-only lane** (ADR 0111) below the stems: a dashed edge, its
+  label, *shifted +441.5 ms*, and its waveform drawn at the measured offset under the mix. It
+  follows zoom and scroll, is not selectable and takes no edits. A refused or unmeasured source
+  has none.
 - **One time axis for the group**: the samples cut from the upload most of them share, in the
   sample list's order; the warp guide is left out. Grid of 200px gutter · 12px · the plot.
 - **Head line**: `WARP`, then `{n} stems · one warp · {markers} · {mode}`, or `{stem} warped on its
@@ -553,6 +557,14 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
 - *Add a source* and *Adopt a file* are compact dashed lines in the Sources band. In the row the
   form opens in the side column and its opener turns amber (*Adding a source →*); on Track details
   it opens inline in the band. `StemList FormsBeside` in the row.
+- **An upload is named by its title**, never by its video ID alone: the YouTube title (the tag of
+  the files cut from it) with the ID on hover, and the ID in mono only where no file carries a
+  title. Applies to the *where it is* note and to the side stack's upload cards.
+- **An added source's alignment** (ADR 0111) is one strip, a cell per 5 s window across the added
+  file. Green is the windows that settle the offset (done); a match elsewhere in the mix is solid
+  grey and a window not in the mix is a dashed outline, so the three read without color; a silent
+  window is a thin line. Each cell's tooltip says time, offset and PSR; a one-line legend sits
+  below it.
 
 ## Tracks table
 

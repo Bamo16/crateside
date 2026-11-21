@@ -83,7 +83,7 @@
                         <span class="stack-label">@(uploads.Count is 1 ? "Upload" : "Uploads")</span>
                         @foreach (var (id, role) in uploads)
                         {
-                            <UploadCard @key="id" TrackKey="@id" Role="@role" />
+                            <UploadCard @key="id" TrackKey="@id" Role="@role" Title="@UploadTitles.Of(Row, id)" />
                         }
                     </div>
                 }

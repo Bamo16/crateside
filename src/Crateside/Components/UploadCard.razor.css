@@ -31,3 +31,8 @@
 .id {
     color: var(--text-75);
 }
+
+.title {
+    color: var(--text-75);
+    overflow-wrap: anywhere;
+}
