@@ -1,29 +1,34 @@
-"""Measure where an added source sits against a track's mix or stem.
+"""Align an added source to a track's mix by their shared audio, as multicam sync does.
 
     uv run --no-project --with numpy --with scipy --with soundfile python scripts/stem_offset.py \
-        <mix-or-stem> <added-source> [--window 10]
+        <mix> <added-source> [--window 5] [--table]
 
 Offset d means added[n] matches mix[n + d]: d > 0 says the mix has d more samples before the same
-sound. The whole-file offset is the peak of a whitened (PHAT) cross-correlation over both files.
-Each window of the added source is then searched against the whole mix, so an edit of any size
-shows up as a jump rather than as a miss, and the windows' offsets give the verdict: steady,
-drift, edit or no match (the rules of the added-source offset ADR). r is the Pearson correlation
-of the aligned audio, kept as a hint of how alike the masters are; it does not decide anything.
-Reads only.
+sound. The reference is always the mix: no stem is needed, and none helps. Each non-silent window of
+the added source is whitened-cross-correlated (PHAT) against the whole mix, and its confidence is the
+peak's height over that window's own correlation noise (peak-to-sidelobe ratio, PSR). A window under MIN_PSR is unmatched content: reported, never
+disagreement. Only confident windows vote, and they give the verdict: steady, edit, drift (refused)
+or not the same recording (refused). Reads only.
 """
 
 import argparse
 
 import numpy as np
 import soundfile as sf
-from scipy import signal
+from scipy import fft
 
-DRIFT_SAMPLES = 10  # the offset moving this far along a straight line is a drift
-MIN_BAND_R = 0.30  # best band's r below this: the files are not the same recording
-BANDS = ((100, 1000), (1000, 4000), (4000, 12000))
-
-AGREE = 3  # samples within which two windows count as the same offset
-STEADY_SHARE = 0.75  # share of windows that must agree for a single offset
+MIN_PSR = 12.0  # a window whose peak is under this many noise widths is unmatched content
+MIN_CONFIDENT = 3  # fewer confident windows than this: not the same recording
+MIN_SHARE = 0.25  # a smaller share of the added source's windows confident: not the same recording
+AGREE = 20  # samples within which two windows count as the same offset
+STEADY_SHARE = 0.90  # share of confident windows on one offset for a steady verdict
+RUN = 2  # consecutive windows an offset elsewhere in the mix needs to count as an edit
+DRIFT_SAMPLES = 40  # offsets moving this far along a straight line is a drift
+DRIFT_WINDOWS = 4  # windows a line needs before it can be called a drift
+JOIN_SAMPLES = 2000  # consecutive windows this close in offset belong to one run
+NEAR_SECONDS = 1.0  # a window looks this far around the global offset first (loops repeat exactly)
+SILENT_RMS = 1e-4
+LOW_HZ, HIGH_HZ = 100, 10000
 
 
 def load_mono(path):
@@ -31,114 +36,231 @@ def load_mono(path):
     return data.mean(axis=1), rate
 
 
-def phat(a, b, rate):
-    """Lags and whitened correlation of a against b; lag d means a[n] matches b[n + d]."""
-    size = 1 << int(np.ceil(np.log2(len(a) + len(b))))
-    cross = np.fft.rfft(b, size) * np.conj(np.fft.rfft(a, size))
-    cross /= np.abs(cross) + 1e-9 * np.abs(cross).max() + 1e-20
-    freqs = np.fft.rfftfreq(size, 1 / rate)
-    cross[(freqs < 100) | (freqs > 10000)] = 0
-    corr = np.fft.irfft(cross, size)
-    lags = np.arange(size)
-    lags[lags > len(b) - 1] -= size
-    return lags, corr
+class Reference:
+    """The mix, transformed once so each window costs one more transform."""
+
+    def __init__(self, mix, rate, longest):
+        self.rate = rate
+        self.length = len(mix)
+        self.size = fft.next_fast_len(len(mix) + longest, real=True)
+        self.spectrum = fft.rfft(mix, self.size, workers=-1)
+        freqs = np.fft.rfftfreq(self.size, 1 / rate)
+        self.band = (freqs >= LOW_HZ) & (freqs <= HIGH_HZ)
+
+    def correlate(self, seg):
+        """Lags and PHAT correlation; lag d means seg[n] matches mix[n + d]."""
+        cross = self.spectrum * np.conj(fft.rfft(seg, self.size, workers=-1))
+        cross /= np.abs(cross) + 1e-9 * np.abs(cross).max() + 1e-20
+        cross[~self.band] = 0
+        corr = fft.irfft(cross, self.size, workers=-1)
+        lags = np.arange(self.size)
+        lags[lags > self.length - 1] -= self.size
+        valid = (lags > -len(seg)) & (lags < self.length)
+        return lags[valid], corr[valid]
 
 
-def peak(lags, corr):
+def psr(corr, index):
+    """Peak height over the correlation's own noise: median and MAD-scaled width of every lag."""
+    noise = np.median(corr)
+    width = 1.4826 * np.median(np.abs(corr - noise)) + 1e-30
+
+    return float((corr[index] - noise) / width)
+
+
+def best(lags, corr, centre=None, reach=0):
+    """Index of the highest peak, within `reach` of `centre` when given."""
+    if centre is None:
+        return int(np.argmax(corr))
+    inside = np.flatnonzero(np.abs(lags - centre) <= reach)
+    if len(inside) == 0:
+        return int(np.argmax(corr))
+
+    return int(inside[np.argmax(corr[inside])])
+
+
+def global_offset(added, ref):
+    lags, corr = ref.correlate(added)
     return int(lags[int(np.argmax(corr))])
 
 
-def pearson(a, b, d):
-    """Pearson r of a[n] against b[n + d] over their overlap."""
-    start = max(0, -d)
-    end = min(len(a), len(b) - d)
-    if end - start < 4410:
-        return float("nan")
+class Window:
+    def __init__(self, start):
+        self.start = start  # seconds into the added source
+        self.silent = False
+        self.near = (0, 0.0)  # offset and PSR of the best peak around the global offset
+        self.far = (0, 0.0)  # the same for the best peak anywhere in the mix
+        self.kind = "weak"  # near, edit, weak, silent
 
-    return float(np.corrcoef(a[start:end], b[start + d : end + d])[0, 1])
+    @property
+    def offset(self):
+        return self.far[0] if self.kind == "edit" else self.near[0]
 
-
-def band_r(added, mix, rate, d):
-    """Pearson r of the aligned files in each band; masters that differ in EQ still agree in one."""
-    out = []
-    for lo, hi in BANDS:
-        sos = signal.butter(4, [lo, hi], btype="band", fs=rate, output="sos")
-        out.append(pearson(signal.sosfilt(sos, added), signal.sosfilt(sos, mix), d))
-    return out
+    @property
+    def confident(self):
+        return self.kind in ("near", "edit")
 
 
-def windows(added, mix, rate, seconds, d0, near=1.0):
-    """Each window looks within `near` s of d0 first, and the whole mix only when that misses.
-
-    A loop repeats exactly, so a whole-mix search alone lands on another repeat of it.
-    """
+def measure(added, ref, seconds, d0):
+    rate = ref.rate
     size = int(seconds * rate)
     rows = []
-    for start in range(0, len(added) - size // 2, size):
+    starts = list(range(0, max(1, len(added) - size + 1), size))
+    if len(added) > size and starts[-1] + size < len(added):
+        starts.append(len(added) - size)
+    for start in starts:
+        row = Window(start / rate)
+        rows.append(row)
         seg = added[start : start + size]
-        if np.sqrt(np.mean(seg**2)) < 1e-4:
-            rows.append((start / rate, None, None))
+        if np.sqrt(np.mean(seg**2)) < SILENT_RMS:
+            row.silent, row.kind = True, "silent"
             continue
 
-        reach = int(near * rate)
-        lo = max(0, start + d0 - reach)
-        lag = peak(*phat(seg, mix[lo : start + d0 + len(seg) + reach], rate)) + lo
-        if abs(lag - start - d0) > AGREE:
-            lag = peak(*phat(seg, mix, rate))
+        lags, corr = ref.correlate(seg)
+        near = best(lags, corr, start + d0, int(NEAR_SECONDS * rate))
+        far = best(lags, corr)
+        row.near = (int(lags[near]) - start, psr(corr, near))
+        row.far = (int(lags[far]) - start, psr(corr, far))
+        if row.near[1] >= MIN_PSR:
+            row.kind = "near"
 
-        rows.append((start / rate, lag - start, pearson(seg, mix, lag)))
+    mark_edits(rows)
     return rows
 
 
-def clusters(rows):
-    """Windows sharing one offset, biggest first: (offset, first s, last s, count)."""
-    found = []
-    for t, d, _ in sorted((r for r in rows if r[1] is not None), key=lambda r: r[1]):
-        if found and d - found[-1][-1][1] <= AGREE:
-            found[-1].append((t, d))
-        else:
-            found.append([(t, d)])
-    out = [
-        (int(np.median([d for _, d in c])), min(t for t, _ in c), max(t for t, _ in c), len(c))
-        for c in found
-    ]
-    return sorted(out, key=lambda c: -c[3])
+def mark_edits(rows):
+    """A weak run whose best peak elsewhere in the mix repeats is an edit, unless the main offset resumes
+    after it: then the mix repeats that material, and the run is unmatched content."""
+    awake = [r for r in rows if not r.silent]
+    i = 0
+    while i < len(awake):
+        row = awake[i]
+        if row.kind != "weak" or row.far[1] < MIN_PSR:
+            i += 1
+            continue
 
-
-def verdict(rows, rate):
-    live = [(t, d) for t, d, _ in rows if d is not None]
-    if len(live) < 3:
-        return "too little audio to judge"
-
-    best = clusters(rows)[0]
-    if best[3] / len(live) >= STEADY_SHARE:
-        gaps = [t for t, d in live if abs(d - best[0]) > AGREE]
-        note = f"; no match at {', '.join(f'{t:g}s' for t in gaps)}" if gaps else ""
-        return f"STEADY at {best[0]} samples ({best[3]} of {len(live)} windows){note}"
-
-    times = np.array([t for t, _ in live])
-    ds = np.array([d for _, d in live], dtype=float)
-    near = np.abs(ds - np.median(ds)) < rate  # a stray far peak must not bend the line
-    slope, icpt = np.polyfit(times[near], ds[near], 1) if near.sum() >= 3 else (0.0, 0.0)
-    onto = np.abs(ds - (slope * times + icpt)) <= AGREE
-    span = abs(slope) * (times.max() - times.min())
-    if len(live) >= 6 and onto.mean() >= STEADY_SHARE and span >= DRIFT_SAMPLES:
-        return f"DRIFT {slope:.3f} samples/s ({slope / rate * 1e6:.1f} ppm), {icpt:.0f} samples at 0 s"
-
-    runs = [c for c in clusters(rows) if c[3] >= 2]
-    if len(runs) >= 2 and sum(c[3] for c in runs) / len(live) >= STEADY_SHARE:
-        return "EDIT: " + "; ".join(
-            f"{c[0]} samples over {c[1]:g}-{c[2]:g}s" for c in sorted(runs, key=lambda c: c[1])
+        j = i
+        while (
+            j + 1 < len(awake)
+            and awake[j + 1].kind == "weak"
+            and awake[j + 1].far[1] >= MIN_PSR
+            and abs(awake[j + 1].far[0] - awake[j].far[0]) <= AGREE
+        ):
+            j += 1
+        bracketed = (
+            i > 0 and awake[i - 1].kind == "near" and j + 1 < len(awake) and awake[j + 1].kind == "near"
         )
+        if j - i + 1 >= RUN and not bracketed:
+            for member in awake[i : j + 1]:
+                member.kind = "edit"
+        i = j + 1
 
-    return f"NO MATCH: the best offset, {best[0]} samples, holds in {best[3]} of {len(live)} windows"
+
+def segments(live):
+    """Consecutive confident windows whose offsets stay within JOIN_SAMPLES of the previous one."""
+    found = []
+    for row in live:
+        if found and abs(row.offset - found[-1][-1].offset) <= JOIN_SAMPLES:
+            found[-1].append(row)
+        else:
+            found.append([row])
+    return found
+
+
+def drift_of(live, rate):
+    """(ppm, samples per second) of the first segment lying on a line that moves; else None."""
+    for seg in segments(live):
+        if len(seg) < DRIFT_WINDOWS:
+            continue
+
+        times = np.array([r.start for r in seg])
+        ds = np.array([r.offset for r in seg], dtype=float)
+        slope, icpt = np.polyfit(times, ds, 1)
+        onto = np.abs(ds - (slope * times + icpt)) <= AGREE
+        if onto.mean() >= STEADY_SHARE and abs(slope) * (times.max() - times.min()) >= DRIFT_SAMPLES:
+            return slope / rate * 1e6, slope
+    return None
+
+
+def clusters(live):
+    """Confident windows sharing one offset, biggest first: (offset, windows)."""
+    found = []
+    for row in sorted(live, key=lambda r: r.offset):
+        if found and row.offset - found[-1][-1].offset <= AGREE:
+            found[-1].append(row)
+        else:
+            found.append([row])
+    out = [(int(np.median([r.offset for r in c])), sorted(c, key=lambda r: r.start)) for c in found]
+    return sorted(out, key=lambda c: -len(c[1]))
+
+
+def spans_of(rows, seconds, total, wanted):
+    spans = []
+    for row in rows:
+        if wanted(row):
+            end = min(row.start + seconds, total)
+            if spans and row.start <= spans[-1][1] + 1e-6:
+                spans[-1][1] = max(spans[-1][1], end)
+            else:
+                spans.append([row.start, end])
+    return [(a, b) for a, b in spans]
+
+
+def mix_gaps(live, seconds, rate, added_seconds, mix_seconds):
+    """Spans of the mix with no confident window of the added source on them."""
+    covered = sorted(
+        (r.start + r.offset / rate, min(r.start + seconds, added_seconds) + r.offset / rate) for r in live
+    )
+    spans, at = [], 0.0
+    for a, b in covered:
+        if a - at > 0.5:
+            spans.append((at, a))
+        at = max(at, b)
+    if mix_seconds - at > 0.5:
+        spans.append((at, mix_seconds))
+    return spans
+
+
+def verdict(rows, rate, seconds):
+    live = [r for r in rows if r.confident]
+    awake = [r for r in rows if not r.silent]
+    counted = f"{len(live)} of {len(awake)} windows confident"
+    if len(live) < MIN_CONFIDENT or len(live) / max(1, len(awake)) < MIN_SHARE:
+        return "NOT THE SAME RECORDING", live, None, counted
+
+    if (drift := drift_of(live, rate)) is not None:
+        ppm, slope = drift
+        return "DRIFT", live, None, f"{counted}; {ppm:+.0f} ppm ({slope:+.1f} samples/s)"
+
+    groups = clusters(live)
+    top, members = groups[0]
+    if len(members) / len(live) >= STEADY_SHARE:
+        return "STEADY", members, top, f"{counted}, {len(members)} on {top}"
+
+    spans = []
+    for row in live:
+        key = next(o for o, c in groups if row in c)
+        if spans and spans[-1][2] == key:
+            spans[-1][1] = row.start
+            spans[-1][3] += 1
+        else:
+            spans.append([row.start, row.start, key, 1])
+    if len({s[2] for s in spans if s[3] >= RUN}) >= 2:
+        text = "; ".join(f"{s[2]} over {s[0]:g}-{s[1] + seconds:g} s" for s in spans if s[3] >= RUN)
+        return "EDIT", live, None, f"{counted}: {text}"
+
+    return "NOT THE SAME RECORDING", live, None, f"{counted}, sharing no offset, run or line"
+
+
+def fmt_spans(spans):
+    return ", ".join(f"{a:g}-{b:g} s" for a, b in spans) or "none"
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("mix")
     parser.add_argument("added")
-    parser.add_argument("--window", type=float, default=10)
+    parser.add_argument("--window", type=float, default=5)
+    parser.add_argument("--table", action="store_true", help="also print every window")
     args = parser.parse_args()
 
     mix, rate = load_mono(args.mix)
@@ -146,17 +268,41 @@ def main():
     if rate != rate2:
         raise SystemExit(f"sample rates differ: {rate} and {rate2}")
 
-    d0 = peak(*phat(added, mix, rate))
-    print(f"mix {len(mix) / rate:.3f}s  added {len(added) / rate:.3f}s  rate {rate}")
-    print(f"whole-file offset {d0} samples ({d0 / rate * 1000:.3f} ms)  r {pearson(added, mix, d0):+.3f}")
-    bands = band_r(added, mix, rate, d0)
-    print("band r " + "  ".join(f"{lo}-{hi} Hz {r:+.3f}" for (lo, hi), r in zip(BANDS, bands)))
-    print(f"best band r {max(bands):+.3f}: {'enough' if max(bands) >= MIN_BAND_R else 'too low'} (needs {MIN_BAND_R})")
-    rows = windows(added, mix, rate, args.window, d0)
-    for t, d, r in rows:
-        print(f"  {t:7.1f}s  silent" if d is None else f"  {t:7.1f}s  d {d:9d}  ({d - d0:+7d})  r {r:+.3f}")
+    d0 = global_offset(added, Reference(mix, rate, len(added)))
+    ref = Reference(mix, rate, int(args.window * rate))
+    rows = measure(added, ref, args.window, d0)
+    name, voters, offset, why = verdict(rows, rate, args.window)
 
-    print(verdict(rows, rate))
+    print(f"mix {len(mix) / rate:.3f} s  added {len(added) / rate:.3f} s  rate {rate}  global offset {d0}")
+    if args.table:
+        for r in rows:
+            if r.silent:
+                print(f"  {r.start:7.1f} s  silent")
+                continue
+
+            print(
+                f"  {r.start:7.1f} s  near d {r.near[0]:9d} psr {r.near[1]:6.1f}"
+                f"  far d {r.far[0]:9d} psr {r.far[1]:6.1f}  {r.kind}"
+            )
+
+    strong = [r.near[1] for r in rows if r.kind == "near"]
+    weak = [r.near[1] for r in rows if r.kind == "weak"]
+    print(
+        f"psr: weakest confident {min(strong, default=float('nan')):.1f}, "
+        f"strongest unmatched (at the offset) {max(weak, default=float('nan')):.1f}, threshold {MIN_PSR:g}"
+    )
+    if offset is not None:
+        print(f"{name} at {offset} samples ({offset / rate * 1000:+.3f} ms): {why}")
+    else:
+        print(f"{name}: {why}")
+    total = len(added) / rate
+    print(f"unmatched in added: {fmt_spans(spans_of(rows, args.window, total, lambda r: r.kind == 'weak'))}")
+    elsewhere = [r for r in rows if r.confident and r not in voters]
+    if name == "STEADY" and elsewhere:
+        spans = spans_of(elsewhere, args.window, total, lambda r: True)
+        print(f"also matching elsewhere in the mix (repeated material, not voting): {fmt_spans(spans)}")
+    if name in ("STEADY", "EDIT"):
+        print(f"mix not covered: {fmt_spans(mix_gaps(voters, args.window, rate, total, len(mix) / rate))}")
 
 
 if __name__ == "__main__":
