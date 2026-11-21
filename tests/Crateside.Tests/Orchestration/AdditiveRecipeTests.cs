@@ -67,6 +67,57 @@ public sealed class AdditiveRecipeTests
     }
 
     [Fact]
+    public void A_plan_of_only_added_sources_still_cuts_the_drums_guide_for_markers()
+    {
+        var plan = new StemPlan
+        {
+            Presets = [],
+            AddedSources =
+            [
+                new AddedSource { TrackKey = "bbbbbbbbbbb", Label = "Official Instrumental" },
+            ],
+        };
+
+        var recipe = SeparationRecipe.For(plan, Inventory());
+
+        Assert.Empty(recipe.Presets);
+        Assert.True(recipe.ExtractDrums);
+        Assert.True(recipe.CutsOwnSource);
+    }
+
+    [Fact]
+    public void A_plan_of_only_added_sources_cuts_no_guide_while_stems_are_on_disk_to_warp_on()
+    {
+        var plan = new StemPlan
+        {
+            Presets = [],
+            AddedSources =
+            [
+                new AddedSource { TrackKey = "bbbbbbbbbbb", Label = "Official Instrumental" },
+            ],
+        };
+
+        Assert.False(SeparationRecipe.For(plan, Inventory("Vocal - Full")).ExtractDrums);
+    }
+
+    [Fact]
+    public void A_plan_of_only_added_sources_cuts_no_second_guide_when_one_is_on_disk()
+    {
+        var plan = new StemPlan
+        {
+            Presets = [],
+            AddedSources =
+            [
+                new AddedSource { TrackKey = "bbbbbbbbbbb", Label = "Official Instrumental" },
+            ],
+        };
+
+        var recipe = SeparationRecipe.For(plan, Inventory("Drums - htdemucs_ft"));
+
+        Assert.False(recipe.ExtractDrums);
+    }
+
+    [Fact]
     public void A_source_already_kept_is_not_copied_again()
     {
         var kept = StemInventory.Of(

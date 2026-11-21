@@ -321,6 +321,10 @@ public sealed record TracksView
                         samples.Select(sample => (sample.PresetId, lufsOf(sample.Path)))
                     ),
                 HasWarpGuide = songs.Any(song => song.WarpGuides.Count > 0),
+                WarpGuidePath = songs
+                    .SelectMany(song => song.WarpGuides)
+                    .Select(guide => guide.Path)
+                    .FirstOrDefault(),
                 AuditNote = songs.Any(song => song.StaleTaggedStems.Count > 0)
                     ? "tag disagrees"
                     : null,

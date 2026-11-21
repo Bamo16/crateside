@@ -24,6 +24,12 @@ public sealed record StemWarp
     /// <summary>Whose transients the sidecar holds: Live's unless crateside wrote them.</summary>
     public TransientOrigin? TransientOrigin { get; init; }
 
+    /// <summary>Seconds the file's own waveform and transients sit later on the group's axis; set for the lane that stands for the mix (ADR 0111, rule 23).</summary>
+    public double Shift { get; init; }
+
+    /// <summary>Whether this lane stands for the mix, taken from an added source's warp.</summary>
+    public bool IsMixLane { get; init; }
+
     /// <summary>Whether its sibling's warp is the track's: an instrumental, karaoke or the kept source.</summary>
     public bool IsAuthority { get; init; }
 
@@ -65,7 +71,7 @@ public sealed record StemWarp
     /// <summary>Each transient's start in seconds.</summary>
     public IReadOnlyList<double> TransientTimes =>
         Sidecar is { Audio.Transients: var transients }
-            ? [.. transients.Select(transient => (double)transient.Position / SampleRate)]
+            ? [.. transients.Select(transient => (double)transient.Position / SampleRate + Shift)]
             : [];
 
     /// <summary>The first time this stem's markers part from <paramref name="shared"/>, or null when they match.</summary>
@@ -154,6 +160,13 @@ public sealed class StemWarpReader(
     /// <summary>The samples cut from the upload most of the track's samples share, in the sample list's order.</summary>
     public static List<string> LanePaths(TrackRow row)
     {
+        // Only added sources: they are drawn as their own lanes, and the mix's timeline is the warp guide's (ADR 0111, rule 24).
+        if (
+            row.Samples is { Count: > 0 } samples
+            && samples.All(sample => row.IsAddedSource(sample.SourceTrackKey))
+        )
+            return row.WarpGuidePath is { Length: > 0 } guide ? [guide] : [];
+
         var upload = row
             .Samples.GroupBy(sample => sample.SourceTrackKey)
             .OrderByDescending(cut => cut.Count())
@@ -169,6 +182,18 @@ public sealed class StemWarpReader(
                 .Select(sample => sample.Path),
         ];
     }
+
+    /// <summary>The lane that stands for the mix when no stem does: an added source's warp on the mix's timeline, its waveform drawn where it plays (ADR 0111, rule 23).</summary>
+    public StemWarp? MixLaneOf(MixLane lane) =>
+        Read(lane.Source.Path) is { Sidecar: not null } source
+            ? source with
+            {
+                Sidecar = lane.Mix,
+                Shift = lane.Shift,
+                Seconds = source.Seconds + lane.Shift,
+                IsMixLane = true,
+            }
+            : null;
 
     public StemWarp Read(string audioPath)
     {

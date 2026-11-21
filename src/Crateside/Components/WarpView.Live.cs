@@ -155,7 +155,10 @@ public partial class WarpView
     private WavePeaks Peaks(StemWarp stem) =>
         _peaks.GetValue(
             (object?)stem.Sidecar?.Audio ?? stem,
-            _ => WavePeaks.Of(stem.Sidecar?.Audio.Overview, stem.SampleRate, PeakColumnsCap)
+            _ =>
+                WavePeaks
+                    .Of(stem.Sidecar?.Audio.Overview, stem.SampleRate, PeakColumnsCap)
+                    .Shifted(stem.Shift)
         );
 
     private object PeaksOf(StemWarp stem)

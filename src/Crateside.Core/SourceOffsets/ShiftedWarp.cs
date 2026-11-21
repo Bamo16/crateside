@@ -66,6 +66,26 @@ public static class ShiftedWarp
         );
     }
 
+    /// <summary>The warp an added source holds, put back on the mix's timeline (ADR 0111, rule 23).</summary>
+    public static AnalysisFile OnMixTimeline(AnalysisFile source, int offsetSamples, int sampleRate)
+    {
+        var shift = (double)offsetSamples / sampleRate;
+
+        return source with
+        {
+            Warp = source.Warp with
+            {
+                Markers =
+                [
+                    .. source.Warp.Markers.Select(marker => new WarpMarker(
+                        marker.Seconds + shift,
+                        marker.Beat
+                    )),
+                ],
+            },
+        };
+    }
+
     private static (double Start, int? WasBar, int? NowBar) MovedStart(
         Warp mix,
         BarRuler ruler,

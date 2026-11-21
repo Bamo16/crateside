@@ -4790,6 +4790,13 @@
             "type": "boolean",
             "description": "A warp guide is still on disk, so warping is outstanding; its absence claims nothing (ADR 0004)."
           },
+          "warpGuidePath": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The warp guide on disk, which a track kept only as added sources is warped on."
+          },
           "folder": {
             "type": [
               "null",

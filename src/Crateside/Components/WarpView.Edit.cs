@@ -77,6 +77,7 @@ public partial class WarpView
         var touched = plan
             .Stems.Select(stem => stem.Path)
             .Concat(plan.Lent)
+            .Concat(plan.MixWarp is null ? [] : [plan.Reference])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         StemWarp[] stems =
         [
@@ -108,6 +109,7 @@ public partial class WarpView
         && (
             plan.Stems.Any(held => PathIs(held.Path, stem.Path))
             || plan.Lent.Any(lent => PathIs(lent, stem.Path))
+            || (plan.MixWarp is not null && PathIs(plan.Reference, stem.Path))
         );
 
     private bool Drafted(StemWarp stem) => IsDirty && IsSaving(stem);
@@ -125,6 +127,9 @@ public partial class WarpView
 
     private (WarpSavePlan Plan, WarpSiblings Siblings) PlanNow(string lender)
     {
+        if (_group is { Lender.IsMixLane: true })
+            return (Editor.PlanFromAdded(AddedFiles()), WarpSiblings.Of([]));
+
         var guides = Directory.Exists(Paths.KeptWarpGuides)
             ? Directory.EnumerateFiles(Paths.KeptWarpGuides)
             : [];
@@ -132,6 +137,7 @@ public partial class WarpView
             Row.Samples.Select(sample => sample.Path)
                 .Where(sample => sample is { Length: > 0 })
                 .Concat(guides)
+                .Concat(Row.WarpGuidePath is { Length: > 0 } guide ? [guide] : [])
                 .Where(file => !file.EndsWith(".asd", StringComparison.OrdinalIgnoreCase))
         );
 
@@ -148,9 +154,10 @@ public partial class WarpView
         [
             .. AddedFiles()
                 .Select(file =>
-                    Offsets.Of(file.SourceKey)
+                    !PathIs(file.Path, _mixLane?.Source.Path ?? string.Empty)
+                    && Offsets.Of(file.SourceKey)
                         is {
-                            Stands: true,
+                            IsUsable: true,
                             Reading: { Verdict: OffsetVerdict.Aligned, Offset: not null } reading,
                         }
                     && Reader.Read(file.Path) is { Sidecar: not null } warp
@@ -164,7 +171,7 @@ public partial class WarpView
         string.Concat(
             AddedFiles()
                 .Select(file =>
-                    $"{Stamp([file.Path])}{Offsets.Of(file.SourceKey)?.MeasuredAt.Ticks}{Offsets.Of(file.SourceKey)?.Stands}"
+                    $"{Stamp([file.Path])}{Offsets.Of(file.SourceKey)?.MeasuredAt.Ticks}{Offsets.Of(file.SourceKey)?.IsUsable}"
                 )
         );
 
@@ -185,7 +192,10 @@ public partial class WarpView
                 .Select(sample => new AddedSourceFile(
                     sample.Path,
                     sample.SourceTrackKey!,
-                    sample.Label
+                    sample.Label,
+                    Row.Plan.AddedSources.FirstOrDefault(added =>
+                        added.TrackKey.Equals(sample.SourceTrackKey, StringComparison.Ordinal)
+                    )?.Type
                 )),
         ];
 

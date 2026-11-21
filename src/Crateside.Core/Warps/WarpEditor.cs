@@ -33,6 +33,10 @@ public sealed class WarpEditor(
                 .ToArray();
             var authorities = holders.Where(stem => stem.Cut.IsAuthority).ToArray();
 
+            // A track kept only as added sources has no authority: the warp guide, placed in Live, stands in (ADR 0111, rule 24).
+            if (authorities is [] && added is { Count: > 0 })
+                authorities = holders;
+
             if (authorities is [])
                 return new WarpSavePlan.NoWarp();
 
@@ -41,7 +45,10 @@ public sealed class WarpEditor(
             )
                 return new WarpSavePlan.Disagree([.. authorities.Select(stem => stem.Cut.Path)]);
 
-            var reference = WarpSiblings.TempoSources(authorities.Select(stem => stem.Cut)).First();
+            var reference = WarpSiblings
+                .TempoSources(authorities.Select(stem => stem.Cut))
+                .Concat(authorities.Select(stem => stem.Cut))
+                .First();
             var markers = authorities.First(stem => stem.Cut == reference).Analysis!.Warp.Markers;
             var sharing = holders
                 .Where(stem =>
@@ -83,6 +90,60 @@ public sealed class WarpEditor(
         }
     }
 
+    /// <summary>
+    /// A save for a track with no stem to hold the warp: the first aligned added source's warp, put back on the mix's
+    /// timeline, is what the draft edits, and every aligned added source is written from it (ADR 0111, rule 23).
+    /// </summary>
+    public WarpSavePlan PlanFromAdded(IReadOnlyList<AddedSourceFile> added)
+    {
+        if (offsets is null)
+            return new WarpSavePlan.NoWarp();
+
+        var plans = AddedSourcePlan.Of(added, offsets, written);
+
+        if (MixLaneOf(added, offsets) is not { } lane)
+            return new WarpSavePlan.NoWarp();
+
+        return new WarpSavePlan.Ready(lane.Source.Path, [], [], [])
+        {
+            Added = plans,
+            MixWarp = lane.Mix,
+        };
+    }
+
+    /// <summary>The added source the warp is read from and its sidecar on the mix's timeline: an instrumental before an acappella, then plan order.</summary>
+    public static MixLane? MixLaneOf(
+        IReadOnlyList<AddedSourceFile> added,
+        SourceOffsetStore offsets
+    )
+    {
+        foreach (var file in added.OrderBy(file => file.Type is SampleType.Instrumental ? 0 : 1))
+        {
+            if (
+                offsets.Of(file.SourceKey)
+                    is not {
+                        IsUsable: true,
+                        Reading: { Verdict: OffsetVerdict.Aligned, Offset: not null } reading
+                    }
+                || !AnalysisFile.TryRead(StemFileName.AnalysisFor(file.Path), out var sidecar)
+                || sidecar
+                    is not {
+                        IsDefaultClipSaved: true,
+                        Warp: { IsWarped: true, Markers.Count: > 1 }
+                    }
+            )
+                continue;
+
+            return new MixLane(
+                file,
+                ShiftedWarp.OnMixTimeline(sidecar, reading.Offset.Value, reading.SampleRate),
+                reading
+            );
+        }
+
+        return null;
+    }
+
     public async Task<WarpSaveOutcome> SaveAsync(
         WarpSavePlan.Ready plan,
         WarpSiblings siblings,
@@ -120,7 +181,7 @@ public sealed class WarpEditor(
                 progress?.Invoke(done.Count);
             }
 
-            shifted.AddRange(ShiftAddedSources(plan));
+            shifted.AddRange(ShiftAddedSources(plan, draft));
         }
         catch (Exception ex)
             when (ex
@@ -169,14 +230,16 @@ public sealed class WarpEditor(
     }
 
     /// <summary>Derives each added source's sidecar from the mix's warp as saved, backing each up first (ADR 0111, rules 14 to 20).</summary>
-    private List<SavedStem> ShiftAddedSources(WarpSavePlan.Ready plan)
+    private List<SavedStem> ShiftAddedSources(WarpSavePlan.Ready plan, WarpDraft draft)
     {
         List<SavedStem> shifted = [];
+        var mix =
+            plan.MixWarp is { } onMixTimeline ? WarpEdit.Apply(onMixTimeline, draft)
+            : AnalysisFile.TryRead(StemFileName.AnalysisFor(plan.Reference), out var onDisk)
+                ? onDisk
+            : null;
 
-        if (
-            !plan.Added.Any(item => item.IsWritten)
-            || !AnalysisFile.TryRead(StemFileName.AnalysisFor(plan.Reference), out var mix)
-        )
+        if (mix is null || !plan.Added.Any(item => item.IsWritten))
             return shifted;
 
         try
@@ -186,7 +249,7 @@ public sealed class WarpEditor(
                     item
                         is {
                             IsWritten: true,
-                            Record: { Stands: true, Reading: { Offset: not null } }
+                            Record: { IsUsable: true, Reading: { Offset: not null } }
                         }
                 )
             )
@@ -315,6 +378,9 @@ public abstract record WarpSavePlan
     {
         /// <summary>Every added source of the track and whether this save writes it (ADR 0111).</summary>
         public IReadOnlyList<AddedSourcePlan> Added { get; init; } = [];
+
+        /// <summary>Set when no stem holds the warp: the reference added source's warp, on the mix's timeline.</summary>
+        public AnalysisFile? MixWarp { get; init; }
     }
 
     /// <summary>No stem the track is warped by holds a saved warp.</summary>
@@ -362,3 +428,10 @@ public sealed record WarpSaved(
 /// <param name="Was">What crateside had recorded of it then, put back by Undo; null when it held the user's own.</param>
 /// <param name="After">The sidecar as the save left it.</param>
 public sealed record SavedStem(string Path, string Backup, WrittenWarp? Was, SidecarStamp After);
+
+/// <summary>The added source a track kept only as added sources is warped from, with its warp on the mix's timeline.</summary>
+public sealed record MixLane(AddedSourceFile Source, AnalysisFile Mix, OffsetReading Reading)
+{
+    /// <summary>Where the file's first sample falls on the mix's time axis, in seconds.</summary>
+    public double Shift => (double)Reading.Offset.GetValueOrDefault() / Reading.SampleRate;
+}

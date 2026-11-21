@@ -236,7 +236,8 @@ public static class OffsetMeasurer
             .Select(i => far[i].Lag - starts[i])
             .Where(offset => Math.Abs(offset - global) <= CoarseStep * 4)
             .Order()
-            .ToList() is { Count: > 0 } near
+            .ToList()
+            is { Count: > 0 } near
             ? near[near.Count / 2]
             : global;
 
@@ -251,7 +252,11 @@ public static class OffsetMeasurer
         public Coarse(float[] mix, int rate, int longest)
         {
             _longest = longest / CoarseStep;
-            _mix = new MixCorrelator(Resampler.Resample(mix, 1, CoarseStep), rate / CoarseStep, _longest);
+            _mix = new MixCorrelator(
+                Resampler.Resample(mix, 1, CoarseStep),
+                rate / CoarseStep,
+                _longest
+            );
         }
 
         public int OffsetOf(float[] source)

@@ -94,5 +94,38 @@ public sealed class WavePeaks
         return drawn;
     }
 
+    /// <summary>The envelope moved later by <paramref name="seconds"/> (earlier when negative), to a whole column.</summary>
+    public WavePeaks Shifted(double seconds)
+    {
+        var by = Columns is 0 ? 0 : (int)Math.Round(seconds / SecondsPerColumn);
+
+        if (by is 0)
+            return this;
+
+        var columns = Math.Max(Columns + by, 0);
+        var bytes = new byte[Channels * columns * 2];
+
+        for (var channel = 0; channel < Channels; channel++)
+        {
+            for (var column = 0; column < columns; column++)
+            {
+                var from = column - by;
+
+                if (from < 0 || from >= Columns)
+                    continue;
+
+                Array.Copy(
+                    Bytes,
+                    (channel * Columns + from) * 2,
+                    bytes,
+                    (channel * columns + column) * 2,
+                    2
+                );
+            }
+        }
+
+        return new(columns, Channels, SecondsPerColumn, bytes);
+    }
+
     private static byte Magnitude(float sample) => (byte)Math.Round(Math.Clamp(sample, 0, 1) * 255);
 }

@@ -7,6 +7,7 @@ using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Plans;
 using Crateside.Core.Samples;
+using Crateside.Core.SourceOffsets;
 using Crateside.Core.Staging;
 using Crateside.Core.WorkLists;
 
@@ -94,8 +95,47 @@ public sealed class StemRecutTests : IDisposable
         return path;
     }
 
-    private StemRecut Recut(TrackInstructionStore? settings = null) =>
-        new(settings ?? Settings(), WorkingSetWithSource(), Staged(), TimeProvider.System);
+    private StemRecut Recut(
+        TrackInstructionStore? settings = null,
+        SourceOffsetStore? offsets = null
+    ) =>
+        new(
+            settings ?? Settings(),
+            WorkingSetWithSource(),
+            Staged(),
+            TimeProvider.System,
+            offsets: offsets
+        );
+
+    private SourceOffsetStore Measured(string key, OffsetVerdict verdict)
+    {
+        var mix = Path.Combine(_root, "mix.flac");
+        var source = Path.Combine(_root, $"{key}.flac");
+
+        File.WriteAllText(mix, "mix");
+        File.WriteAllText(source, "source");
+
+        var store = new SourceOffsetStore();
+
+        store.Save(
+            key,
+            new SourceOffsetRecord(
+                key,
+                FileStamp.Of(mix)!,
+                FileStamp.Of(source)!,
+                new OffsetReading
+                {
+                    Verdict = verdict,
+                    SampleRate = 44_100,
+                    WindowSeconds = 5,
+                    Offset = verdict is OffsetVerdict.Aligned ? 19_470 : null,
+                },
+                TimeProvider.System.GetUtcNow()
+            )
+        );
+
+        return store;
+    }
 
     [Fact]
     public void It_refuses_when_nothing_of_the_track_is_staged()
@@ -235,21 +275,84 @@ public sealed class StemRecutTests : IDisposable
             Type = SampleType.Instrumental,
         };
 
+    private static readonly StemPlan OnlyOfficial = new()
+    {
+        Presets = [],
+        AddedSources = [Official("bbbbbbbbbbb")],
+    };
+
     [Fact]
-    public void A_plan_keeping_only_added_sources_is_refused_and_says_to_keep_the_source_or_a_stem()
+    public void A_plan_keeping_only_added_sources_is_accepted_when_one_lines_up_with_the_mix()
     {
         Stage("Vocal - Full");
 
-        var plan = Recut()
-            .PlanFor(
-                Video,
-                new StemPlan { Presets = [], AddedSources = [Official("bbbbbbbbbbb")] },
-                Catalog
-            );
+        var plan = Recut(offsets: Measured("bbbbbbbbbbb", OffsetVerdict.Aligned))
+            .PlanFor(Video, OnlyOfficial, Catalog);
+
+        Assert.True(plan.IsPossible);
+        Assert.Single(plan.Removing);
+    }
+
+    [Theory]
+    [InlineData(OffsetVerdict.Edit)]
+    [InlineData(OffsetVerdict.Drift)]
+    [InlineData(OffsetVerdict.NotTheSameRecording)]
+    public void A_plan_keeping_only_added_sources_is_refused_when_none_lines_up_with_the_mix(
+        OffsetVerdict verdict
+    )
+    {
+        Stage("Vocal - Full");
+
+        var plan = Recut(offsets: Measured("bbbbbbbbbbb", verdict))
+            .PlanFor(Video, OnlyOfficial, Catalog);
 
         Assert.False(plan.IsPossible);
-        Assert.Contains("keep the Source", plan.Refusal);
-        Assert.Contains("take their warp from the mix's", plan.Refusal);
+        Assert.Equal(
+            "The official files must line up with the mix before the stems can go.",
+            plan.Refusal
+        );
+    }
+
+    [Fact]
+    public void A_plan_keeping_only_added_sources_is_refused_while_they_are_not_measured()
+    {
+        Stage("Vocal - Full");
+
+        var plan = Recut().PlanFor(Video, OnlyOfficial, Catalog);
+
+        Assert.False(plan.IsPossible);
+        Assert.Contains("must line up with the mix", plan.Refusal);
+    }
+
+    [Fact]
+    public void Applying_a_plan_of_only_added_sources_removes_the_stems_and_records_the_plan()
+    {
+        var vocal = Stage("Vocal - Full");
+        var settings = Settings();
+
+        var outcome = Recut(settings, Measured("bbbbbbbbbbb", OffsetVerdict.Aligned))
+            .Apply(Video, OnlyOfficial, Catalog);
+
+        Assert.True(outcome.Succeeded);
+        Assert.Equal(1, outcome.Removed);
+        Assert.False(File.Exists(vocal));
+        Assert.True(
+            settings
+                .Read()
+                .Single(track => track.TrackKey == Video)
+                .Plan?.AsksTheSameAs(OnlyOfficial)
+        );
+    }
+
+    [Fact]
+    public void A_plan_with_nothing_at_all_is_still_refused_even_with_offsets_measured()
+    {
+        Stage("Vocal - Full");
+
+        var plan = Recut(offsets: Measured("bbbbbbbbbbb", OffsetVerdict.Aligned))
+            .PlanFor(Video, new StemPlan { Presets = [] }, Catalog);
+
+        Assert.Equal("A track has to keep something.", plan.Refusal);
     }
 
     [Fact]

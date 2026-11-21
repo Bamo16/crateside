@@ -319,6 +319,9 @@ public sealed record TrackRow
     /// </summary>
     public bool HasWarpGuide { get; init; }
 
+    /// <summary>The warp guide on disk, which a track kept only as added sources is warped on.</summary>
+    public string? WarpGuidePath { get; init; }
+
     /// <summary>
     /// The folder holding this track's files, staging first, or null when none are on disk yet.
     /// </summary>

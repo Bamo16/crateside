@@ -156,6 +156,11 @@ public sealed record SeparationRecipe
                         plan is { Presets.Count: 0, KeepSource: true }
                         && inventory is { Presets.Count: 0, IsFinished: false }
                     )
+                    // Only added sources are kept and nothing of the track's own is on disk to warp on: the guide is what the mix's markers are placed on (ADR 0111, rule 24).
+                    || (
+                        plan is { Presets.Count: 0, KeepSource: false, AddedSources.Count: > 0 }
+                        && inventory is { Presets.Count: 0, HasSource: false, IsFinished: false }
+                    )
                 ),
             KeepSource = shortfall.KeepSource,
             AddedGuides = inventory.GuidesOwed(plan),

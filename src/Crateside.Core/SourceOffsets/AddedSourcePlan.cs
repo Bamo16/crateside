@@ -5,7 +5,12 @@ using Crateside.Core.Warps;
 namespace Crateside.Core.SourceOffsets;
 
 /// <summary>An added source of the track whose mix's warp is being saved.</summary>
-public sealed record AddedSourceFile(string Path, string SourceKey, string Label);
+public sealed record AddedSourceFile(
+    string Path,
+    string SourceKey,
+    string Label,
+    SampleType? Type = null
+);
 
 /// <summary>Why an added source is not written with the mix's warp (ADR 0111, rules 14 and 19).</summary>
 public enum AddedSkip
@@ -58,7 +63,7 @@ public sealed record AddedSourcePlan(
     {
         AddedSourcePlan Skipped(AddedSkip skip) => new(file, skip, null, record);
 
-        if (record is not { Stands: true })
+        if (record is not { IsUsable: true })
             return Skipped(AddedSkip.Measuring);
 
         switch (record.Reading.Verdict)

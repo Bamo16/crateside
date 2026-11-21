@@ -76,6 +76,10 @@ public sealed record SourceOffsetRecord(
     /// <summary>Whether both files are as they were when measured.</summary>
     [JsonIgnore]
     public bool Stands => Mix.Holds && Source.Holds;
+
+    /// <summary>Whether the offset can still be relied on: the source is as it was, and the mix is as it was or has gone from disk (ADR 0111, rule 27).</summary>
+    [JsonIgnore]
+    public bool IsUsable => Source.Holds && (Mix.Holds || !File.Exists(Mix.Path));
 }
 
 [JsonSourceGenerationOptions(

@@ -243,6 +243,45 @@ confident, sharing no offset) and reads *not the same recording*, which is refus
     measuring). After a save, the added source's warp card reads *Shifted from the mix's warp by
     +441.5 ms*, and says when a clip start moved (17).
 
+### A track kept only as added sources (2026-11-21)
+
+On the maintainer's word, for Huey - *Pop, Lock & Drop It* (`zOmccz4mCBQ`): "These are the only
+things I intend to keep in my library." This reverses the first version of Change what is cut,
+which refused a plan that unticked every stem and the Source while added sources stayed ticked
+(commit 09cc59fd). Rules 14 to 20 are unchanged.
+
+23. **With no stem to hold the warp, the first aligned added source holds it**: an instrumental
+    before an acappella, else plan order, and only one whose offset stands and whose sidecar holds
+    a saved warp. The warp view reads that sidecar with the offset undone (every marker's time plus
+    `d / sampleRate`; beats and clip are unchanged), so it shows the mix-timeline warp again. The
+    lane draws that file's waveform and transients where it plays, moved by `d` to a whole peak
+    column. A marker rule 17 put at the file's first sample reads back as a marker on the mix's
+    own line at `d`; it is on the warp, not new. The draft edits this lane like any other, and
+    its save writes no stem.
+24. **The save writes the draft, applied to that mix-timeline warp, into each aligned added source**
+    by rules 14 to 20; with no stem there is nothing else to write. The source the warp was read
+    from is written again like the others, unless it holds a warp the maintainer saved (rule 19).
+    While the warp guide is on disk and holds a warp, the guide is the stem the draft is made on
+    and the added sources are shifted from it as from a stem. A plan of only added sources
+    cuts the drums guide when nothing of the track's own is on disk and the track is not
+    finished, so the maintainer has a guide to place markers on; it is deleted after warping, as
+    before. While stems are on disk, they are what the warp is placed on, so warp first and cut
+    afterwards.
+25. **A plan of only added sources is accepted when at least one of them is aligned** (a record
+    that stands, verdict *aligned*). If none is (edit, drift, not the same recording, not measured
+    yet) it is refused: *The official files must line up with the mix before the stems can go.* A
+    plan with no stem, no Source and no added source is still refused: *A track has to keep
+    something.*
+26. **Measured, not guessed**: the round trip (a sidecar written by rule 14 read back by rule 23
+    and written again with no change) returns every marker's time to within one sample
+    (`WarpEditorTests`). That a marker placed by rule 17 differs from the original head marker is
+    by construction (see 23).
+
+27. **The offset is relied on while the added source is as measured and the mix is as measured
+    or no longer on disk** (the working set prunes it): a mix that is gone cannot have changed,
+    and the shift needs only the offset. Rules 14, 23 and 25 read it so; the worker still
+    measures again only while both files exist and one changed.
+
 ## Consequences
 
 - A refusal is the common safe answer, and it is the one the maintainer has always had: line it up

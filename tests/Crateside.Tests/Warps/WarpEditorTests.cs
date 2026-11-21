@@ -477,6 +477,142 @@ public sealed class WarpEditorTests : IDisposable
 
     private WarpSavePlan.Ready _plan = null!;
 
+    private readonly SourceOffsetStore _offsets = new();
+
+    private AddedSourceFile[] OnlyAdded =>
+        [new(Extra, "added", "Official Instrumental", Core.Samples.SampleType.Instrumental)];
+
+    [Fact]
+    public async Task With_only_an_added_source_the_warp_is_read_back_on_the_mix_timeline_to_the_sample()
+    {
+        var (editor, siblings) = await AddedGroup(OffsetVerdict.Aligned, mixIsSource: true);
+
+        await editor.SaveAsync(
+            _plan,
+            siblings,
+            new WarpDraft().Later(1),
+            ct: TestContext.Current.CancellationToken
+        );
+        var mix = AnalysisFile.Read($"{Source}.asd");
+        var lane = Assert.IsType<MixLane>(WarpEditor.MixLaneOf(OnlyAdded, _offsets));
+
+        Assert.Equal(Extra, lane.Source.Path);
+        Assert.Equal(ExtraShift, lane.Shift, 1e-9);
+
+        foreach (var beat in new double[] { 4, 8, 16, 33.5 })
+        {
+            Assert.Equal(
+                mix.Warp.SecondsAt(beat)!.Value,
+                lane.Mix.Warp.SecondsAt(beat)!.Value,
+                1.0 / 44_100
+            );
+        }
+    }
+
+    [Fact]
+    public async Task Saving_with_only_an_added_source_writes_each_aligned_one_shifted_and_nothing_else()
+    {
+        var (first, siblings) = await AddedGroup(OffsetVerdict.Aligned, mixIsSource: true);
+
+        Assert.IsType<WarpSaveOutcome.Saved>(
+            await first.SaveAsync(
+                _plan,
+                siblings,
+                new WarpDraft().Later(1),
+                ct: TestContext.Current.CancellationToken
+            )
+        );
+        var lane = WarpEditor.MixLaneOf(OnlyAdded, _offsets)!;
+        var editor = EditorWith(_offsets);
+        var plan = Assert.IsType<WarpSavePlan.Ready>(editor.PlanFromAdded(OnlyAdded));
+
+        Assert.Empty(plan.Stems);
+        Assert.Equal(Extra, plan.Reference);
+
+        File.Delete(Source);
+        File.Delete($"{Source}.asd");
+
+        var saved = Assert
+            .IsType<WarpSaveOutcome.Saved>(
+                await editor.SaveAsync(
+                    plan,
+                    WarpSiblings.Of([]),
+                    new WarpDraft().Later(2),
+                    ct: TestContext.Current.CancellationToken
+                )
+            )
+            .Save;
+        var after = AnalysisFile.Read($"{Extra}.asd");
+        var edited = WarpEdit.Apply(lane.Mix, new WarpDraft().Later(2)).Warp.SecondsAt(12)!.Value;
+
+        Assert.Empty(saved.Stems);
+        Assert.Equal(Extra, Assert.Single(saved.Shifted).Path);
+        Assert.Equal(edited - ExtraShift, after.Warp.SecondsAt(12)!.Value, 1.0 / 44_100);
+        Assert.NotEqual(
+            lane.Mix.Warp.SecondsAt(12)!.Value - ExtraShift,
+            after.Warp.SecondsAt(12)!.Value,
+            1.0 / 44_100
+        );
+    }
+
+    [Fact]
+    public async Task Saving_with_only_an_added_source_and_no_change_leaves_its_warp_as_it_was()
+    {
+        var (_, siblings) = await AddedGroup(OffsetVerdict.Aligned, mixIsSource: true);
+
+        Assert.IsType<WarpSaveOutcome.Saved>(
+            await Editor()
+                .SaveAsync(
+                    _plan,
+                    siblings,
+                    new WarpDraft().Later(1),
+                    ct: TestContext.Current.CancellationToken
+                )
+        );
+        var was = AnalysisFile.Read($"{Extra}.asd").Warp;
+        var editor = EditorWith(_offsets);
+
+        File.Delete(Source);
+        File.Delete($"{Source}.asd");
+        await editor.SaveAsync(
+            Assert.IsType<WarpSavePlan.Ready>(editor.PlanFromAdded(OnlyAdded)),
+            WarpSiblings.Of([]),
+            new WarpDraft(),
+            ct: TestContext.Current.CancellationToken
+        );
+        var now = AnalysisFile.Read($"{Extra}.asd").Warp;
+
+        foreach (var beat in new double[] { 4, 8, 16, 33.5 })
+            Assert.Equal(was.SecondsAt(beat)!.Value, now.SecondsAt(beat)!.Value, 1.0 / 44_100);
+    }
+
+    [Theory]
+    [InlineData(OffsetVerdict.Edit)]
+    [InlineData(OffsetVerdict.Drift)]
+    [InlineData(OffsetVerdict.NotTheSameRecording)]
+    public async Task With_only_an_added_source_that_does_not_line_up_there_is_no_warp_to_save(
+        OffsetVerdict verdict
+    )
+    {
+        await AddedGroup(verdict, mixIsSource: true);
+
+        Assert.IsType<WarpSavePlan.NoWarp>(EditorWith(_offsets).PlanFromAdded(OnlyAdded));
+    }
+
+    private WarpEditor EditorWith(SourceOffsetStore offsets)
+    {
+        var backups = new SidecarBackups(Path.Combine(_root, "backups"), _time);
+
+        return new(
+            _written,
+            _saved,
+            backups,
+            new WarpActions(_writer, _written, new LiveAnalyses(), backups, _time),
+            _time,
+            offsets
+        );
+    }
+
     private string Extra => Path.Combine(_paths.StagingFolder, "Song (Official Instrumental).flac");
 
     /// <summary>Plans a save with one added source whose measurement said <paramref name="verdict"/> (null: not measured).</summary>
@@ -496,7 +632,7 @@ public sealed class WarpEditorTests : IDisposable
         if (recorded)
             _written.RecordStarter(Extra);
 
-        var offsets = new SourceOffsetStore();
+        var offsets = _offsets;
 
         if (verdict is { } measured)
             offsets.Save(

@@ -2,6 +2,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Plans;
 using Crateside.Core.Samples;
+using Crateside.Core.SourceOffsets;
 using Crateside.Core.Staging;
 using Crateside.Core.Warps;
 using Crateside.Core.WorkLists;
@@ -18,7 +19,8 @@ public sealed class StemRecut(
     TimeProvider time,
     DeletionLog? deletions = null,
     KeptWarps? keptWarps = null,
-    ISetLinks? setLinks = null
+    ISetLinks? setLinks = null,
+    SourceOffsetStore? offsets = null
 )
 {
     private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
@@ -65,13 +67,17 @@ public sealed class StemRecut(
             Sets = SetsUsing(removing, staging),
             InLibrary = removing.Count(stem => !staging.Contains(stem.File.Path)),
             WillRefetch = !workingSet.TryGetSource(trackKey, out _),
+            CutsGuideForAddedSources =
+                recipe.ExtractDrums
+                && wanted is { Presets.Count: 0, KeepSource: false, AddedSources.Count: > 0 },
             Refusal = RefusalFor(
                 catalog,
                 wanted,
                 everywhere,
                 recipe,
                 removing,
-                wanted.AsksTheSameAs(stored)
+                wanted.AsksTheSameAs(stored),
+                AnyAligned(wanted)
             ),
         };
     }
@@ -160,13 +166,21 @@ public sealed class StemRecut(
             IsAdopted = stem.IsAdopted,
         };
 
+    private bool AnyAligned(StemPlan wanted) =>
+        offsets is not null
+        && wanted.AddedSources.Any(source =>
+            offsets.Of(source.TrackKey)
+                is { IsUsable: true, Reading.Verdict: OffsetVerdict.Aligned }
+        );
+
     private static string? RefusalFor(
         PresetCatalog catalog,
         StemPlan wanted,
         StemInventory everywhere,
         SeparationRecipe recipe,
         IReadOnlyList<ClassifiedStem> removing,
-        bool isStoredPlan
+        bool isStoredPlan,
+        bool anyAddedAligned
     ) =>
         (catalog, wanted, everywhere, removing) switch
         {
@@ -175,11 +189,10 @@ public sealed class StemRecut(
             ({ IsEmpty: true }, _, _, _) =>
                 "The separator could not be asked what it can make, so crateside cannot tell "
                     + "which of these files this track already has.",
-            // An added source takes its warp from the mix's (ADR 0111), so it cannot carry it alone.
-            (_, { IsEmpty: true, AddedSources.Count: > 0 }, _, _) =>
-                "The official files take their warp from the mix's, so keep the Source (the mix "
-                    + "itself, no separation) or a stem.",
-            (_, { IsEmpty: true }, _, _) => "A track has to keep something.",
+            // Only an added source that lines up with the mix can carry the warp alone (ADR 0111, rule 24).
+            (_, { IsEmpty: true, AddedSources.Count: > 0 }, _, _) when !anyAddedAligned =>
+                "The official files must line up with the mix before the stems can go.",
+            (_, { IsEmpty: true, AddedSources.Count: 0 }, _, _) => "A track has to keep something.",
             (_, _, { Files.Count: 0 }, _) => "Nothing of this track is in Staging or the library.",
             _ when recipe is { Presets.Count: 0, KeepSource: false }
                     && removing.Count is 0
@@ -212,7 +225,11 @@ public sealed record RecutPlan
     public bool IsAdditive => Removing.Count is 0;
 
     /// <summary>Something new is made, so the pipeline has work to do.</summary>
-    public bool MakesSomething => Recipe is { Presets.Count: > 0 } or { KeepSource: true };
+    public bool MakesSomething =>
+        Recipe is { Presets.Count: > 0 } or { KeepSource: true } || CutsGuideForAddedSources;
+
+    /// <summary>The plan keeps only added sources and still owes the drums guide their markers are placed on (ADR 0111, rule 24).</summary>
+    public bool CutsGuideForAddedSources { get; init; }
 
     /// <summary>The sentence about the audio, said either way.</summary>
     public string AudioDetail =>
