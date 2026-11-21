@@ -84,6 +84,34 @@ public sealed class AbletonSetLinksTests : IDisposable
         Assert.Equal(set, AbletonSession.SetFromTitle(title));
     }
 
+    [Fact]
+    public void A_set_is_named_for_a_library_file_given_with_backslashes()
+    {
+        Set("Mashup One Project/Mashup One.als", "C:/Samples/A (Vocal - Full).flac");
+        var links = new AbletonSetLinks(
+            new CratesidePaths { AbletonProjects = _root },
+            TimeProvider.System
+        );
+
+        Assert.Equal(["Mashup One"], links.Using([@"C:\Samples\A (Vocal - Full).flac"]));
+    }
+
+    [Fact]
+    public void Bye_Bye_Byes_vocal_is_named_by_the_mashup_that_uses_it()
+    {
+        var paths = RealPaths.Create();
+        var vocal = Path.Combine(RealPaths.Library(), "NSYNC - Bye Bye Bye (Vocal - Full).flac");
+        Assert.SkipUnless(
+            File.Exists(vocal) && Directory.Exists(paths.AbletonProjects),
+            "Bye Bye Bye's vocal or the projects folder is not on this machine."
+        );
+
+        Assert.Contains(
+            "Nineteen Ninety-Bye (1995 x NSYNC)",
+            new AbletonSetLinks(paths, TimeProvider.System).Using([vocal])
+        );
+    }
+
     private void Set(string relative, string sample)
     {
         var path = Path.Combine(_root, relative);

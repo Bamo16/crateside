@@ -234,6 +234,50 @@ public sealed class StemRecutTests : IDisposable
         Assert.Equal(0, plan.InLibrary);
     }
 
+    [Fact]
+    public void Dropping_Bye_Bye_Byes_vocal_names_the_mashup_that_uses_it()
+    {
+        var paths = RealPaths.Create();
+        var library = RealPaths.Library();
+        var vocal = Path.Combine(library, "NSYNC - Bye Bye Bye (Vocal - Full).flac");
+        var instrumental = Path.Combine(library, "NSYNC - Bye Bye Bye (Instrumental - Full).flac");
+        Assert.SkipUnless(
+            File.Exists(vocal) && File.Exists(instrumental),
+            "Bye Bye Bye's stems are not in the library."
+        );
+        var known = StemInventory.Of(
+            [
+                new StemOnDisk
+                {
+                    Path = instrumental,
+                    Root = library,
+                    Preset = "Instrumental - Full",
+                    SourceTrackKey = "fxHjlCBHuzA",
+                },
+                new StemOnDisk
+                {
+                    Path = vocal,
+                    Root = library,
+                    Preset = "Vocal - Full",
+                    SourceTrackKey = "fxHjlCBHuzA",
+                },
+            ],
+            Catalog,
+            library
+        );
+
+        var plan = new StemRecut(
+            Settings(),
+            WorkingSetWithSource(),
+            new ListedStagedFiles(() => []),
+            TimeProvider.System,
+            setLinks: new AbletonSetLinks(paths, TimeProvider.System)
+        ).PlanFor("fxHjlCBHuzA", new StemPlan { Presets = ["instrumental_full"] }, Catalog, known);
+
+        Assert.Equal(vocal, Assert.Single(plan.Removing).File.Path);
+        Assert.Contains("Nineteen Ninety-Bye (1995 x NSYNC)", plan.Sets);
+    }
+
     private sealed class SetsNamed(params string[] names) : ISetLinks
     {
         public IReadOnlyList<string> Using(IReadOnlyCollection<string> samples) =>
