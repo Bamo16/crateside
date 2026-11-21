@@ -263,6 +263,10 @@ by hand; everything below describes candidates against it.
   saves over the file
   ([ADR 0043](docs/adr/0043-a-borrowed-warp-is-finished-and-says-where-it-came-from.md),
   [ADR 0045](docs/adr/0045-a-recut-takes-its-warp-from-its-own-kind-first.md)).
+- **Shifted warp** — the mix's warp written onto an **added source** that lines up with it by one
+  measured offset: the mix's markers moved by that offset, its tempo and beats unchanged. Only an
+  aligned source gets one; an edit, a drift, another recording or a warp the user saved is left
+  alone ([ADR 0111](docs/adr/0111-an-added-source-is-warped-by-shifting-the-mixs-warp-by-its-measured-offset.md)).
 - **Pinned build** — for each of beatdetect and keydetect, the one build of those crateside knows
   for that filter (#102) that makes new readings; the ffmpeg on PATH is not involved. A beatdetect
   reading keeps the build that made it, and one from an older build than the pin stays in use until

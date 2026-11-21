@@ -53,7 +53,7 @@ full-mix download (source index), the added source the file as staged or in the 
 | Ayatsuno Yuni - *SUPADOPA* (`1JZk8V95PI8`), the raw official instrumental (`gSnbWAQ4J0E`) | steady | -273 (-6.19 ms) | 31 of 31 | 23.8 | none | none |
 | the same, the library's corrected copy of that instrumental | steady | 0 | 31 of 31 | 23.8 | none | none |
 | Polo & Pan - *Ani Kuni*: the music video (`ootQs7sVulY`) against the art track `3rQLRRFFEWk` | **edit** | +729680 (+16.55 s) over 0-50 s; +1429449 (+32.41 s) over 65-165 s; +1429394 over 165-201.5 s | 41 of 41 | 25.1 | none | 0-16.5 s, 66.5-82.4 s, 234.0-277.5 s |
-| DJ Fresh - *How Love Begins*: the official video (`1SVlqcTVQdk`) against the art track `jE46h-AenT0` | not the same recording | none | 9 of 40, no common offset | 12.3 | most of the file | not given |
+| DJ Fresh - *How Love Begins*: the official video (`1SVlqcTVQdk`) against the art track `jE46h-AenT0` | not the same recording | none | 10 of 40, no common offset, also after the speed retry | 12.1 | most of the file | not given |
 | *Gucci Gucci* karaoke (`dnSNWoFEZHU`, re-recorded) against the real mix | not the same recording | none | 0 of 38 | none | 5-195 s | not given |
 | unrelated: the *SUPADOPA* mix against the *Gucci Gucci* acapella | not the same recording | none | 0 of 39 | none | all | not given |
 | unrelated: the *Pop, Lock & Drop It* mix against the *Ani Kuni* video | not the same recording | none | 0 of 41 | none | all | not given |
@@ -101,13 +101,14 @@ confident, sharing no offset) and reads *not the same recording*, which is refus
   (the drumless outro) that the video lacks. The first and the last shift nothing: the part after
   them is on one offset. The middle one shifts everything after it, from +16.55 s to +32.41 s.
   Between 65-165 s and 165-201.5 s the offset steps by 55 samples (1.2 ms), a third run.
-- ***How Love Begins*'s video does not align to its art track** (9 of 40 windows, all weak, no
-  common offset; the best window is 20.5). The art track and the video are two different
-  masters or mixes: the offsets of the confident windows slide by about 45 samples a second, but
-  the cause was not established. That slide is about 1000 ppm, the size of video's 1000/1001
-  speed change, but the video was resampled in one direction only (5 of 40 windows); rule 12's
-  speed retry settles it. It does not show the section the maintainer expected, so that claim is
-  **not measured**; *Ani Kuni* is the measured edit.
+- ***How Love Begins*'s video is not the same recording as its art track, retry included**
+  (10 of 40 windows confident, no common offset; the best window is 20.5). The offsets of the
+  confident windows slide by about 45 samples a second, about 1000 ppm, the size of video's
+  1000/1001 speed change, so rule 12's retry was run on it: resampled by 1000/1001, 1001/1000,
+  24/25 and 25/24, it still reads 10 of 40 sharing no offset, in both the script and the C#
+  worker. The two files are 197.5 s and 199.1 s long, a 0.8% difference no known speed change
+  explains, so they are two different masters or mixes. It does not show the section the
+  maintainer expected, so that claim is **not measured**; *Ani Kuni* is the measured edit.
 - **A karaoke that is a re-recording does not align; two that are the original instrumental
   do.** The *Gucci Gucci* karaoke reads 0 of 38 windows. Two uploads sold as *Pop, Lock & Drop It*
   karaoke (`2UczgbKeo_0`, `BF6oneKfvMM`) aligned steady, to -5.13 s and -6.60 s, at 52 of 53 and 50
@@ -173,8 +174,9 @@ confident, sharing no offset) and reads *not the same recording*, which is refus
     unmatched. A section **in the middle** that one file lacks moves everything after it, and is
     an edit (*Ani Kuni*). It is not a mismatch: the runs are the same recording.
 12. **Not the same recording**: too few confident windows (7), or confident windows that share no
-    single offset, run or line. **Before reading this, the added source is measured again
-    resampled by each known speed change**: 1000/1001 and 1001/1000 (video frame rates), 24/25 and
+    single offset, run or line. **Before reading this, and before reading an edit (a
+    1000/1001 slide makes confident windows on many offsets, which reads as one), the added source
+    is measured again resampled by each known speed change**: 1000/1001 and 1001/1000 (video frame rates), 24/25 and
     25/24 (film shown on European TV). If one reads aligned, the verdict is *drift* with that
     factor (*Runs 0.1% fast against the mix; use the audio release*), and refused as in 10.
 13. A refused source keeps whatever warp it has and is listed, with its reason, so the
@@ -236,9 +238,11 @@ confident, sharing no offset) and reads *not the same recording*, which is refus
 
 - A refusal is the common safe answer, and it is the one the maintainer has always had: line it up
   by hand. Edit has no writer, since it would need a split clip. Drift has none by choice (10).
-- The measurement is Python today (`scripts/stem_offset.py`). The record in 3 is what the C#
-  worker will write once it is built; the worker's results are checked against that script on the
-  pairs in the table.
+- The measurement is built in C# (`Crateside.Core.SourceOffsets`), and `scripts/stem_offset.py` stays
+  as its reference: on every pair in the table the worker reads the same verdict and offset, and
+  a confident-window count within one of the script's. A measurement takes 15 to 95 s on a normal
+  pair; a source that reads as an edit or as not the same recording is read five times (the speed
+  retry), 6 minutes for *Ani Kuni*.
 - The verdict rests on what is counted, and says so: how many windows were confident and which
   spans are unmatched. The threshold of 12 has a narrow window-level margin (10.4 against 12.2) and
   rests on a handful of pairs; a pair that lands between the two is a finding to add here.
