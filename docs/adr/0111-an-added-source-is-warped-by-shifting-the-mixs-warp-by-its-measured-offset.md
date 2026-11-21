@@ -6,7 +6,7 @@
   (an added source), [ADR 0103](0103-a-library-file-can-be-deleted-and-a-recut-keeps-the-saved-warp.md)
   (an added instrumental) and [ADR 0107](0107-a-warp-saved-in-crateside-is-the-maintainers-own.md)
   (a warp saved in crateside writes the whole group).
-- Approved in idea by the maintainer on 2026-11-20. The measurements are in *Evidence*;
+- Approved by the maintainer on 2026-11-20. The measurements are in *Evidence*;
   `scripts/stem_offset.py` makes them.
 
 ## Context
@@ -14,14 +14,20 @@
 A few songs have official stems released beside the mix. Live's warp needs every file of a song
 sample-aligned, and an official instrumental or acapella is not: it starts at another point, has
 another length, and may hold only part of the song. Until now the maintainer lined them up by hand,
-or had padded copies made (*SUPADOPA (Official Instrumental)* in the library is one: its length
-equals the mix's to the sample).
+or had corrected copies made. *SUPADOPA (Official Instrumental)* in the library is one: as
+released it starts 6 ms before the mix and has a different length, and the library's copy was
+edited to start and end where the mix does, to the sample.
 
 The model is multicam audio sync, as Premiere's "synchronize by audio" does it. Several recordings
 of one event, each covering part of it, are lined up by their shared audio. Here the **mix is the
 reference**, and an added source is lined up to it by the audio they share. The question is *does
 it align?*, never *is it the same version?*: a stretch of one file that the other lacks is
 **unmatched content**, reported and never counted as disagreement.
+
+The mix is the reference for two reasons. It is the only file that holds everything the others
+hold in part: an instrumental and an acapella share almost no audio with each other, but each
+shares its half with the mix. And the warp is saved on the mix, so every shift is relative to it
+anyway.
 
 crateside finds each added source's offset to the mix; when the mix's warp is saved (ADR 0107), it
 writes that warp into the added source's own `.asd`, shifted by the offset. No padded copy is made
@@ -45,7 +51,7 @@ full-mix download (source index), the added source the file as staged or in the 
 | Kreayshawn - *Gucci Gucci* (`luP5bpqhrcE`), acapella `glF85prh3e4` | steady | -2812 (-63.8 ms) | 35 of 39 | 20.4 | 75-85 s, 150-160 s | 74.9-84.9 s, 149.9-159.9 s |
 | Lil Wayne - *A Milli* (`xX-N3B8ulnI`), the "A Cappella" the maintainer downloaded (`C_DIhh3sWO0`) | steady | +251414 (+5701.0 ms) | 41 of 43 | 25.9 | 5-10 s, 210-215 s | 0-5.7 s, 10.7-15.7 s, 215.7-223.0 s |
 | Ayatsuno Yuni - *SUPADOPA* (`1JZk8V95PI8`), the raw official instrumental (`gSnbWAQ4J0E`) | steady | -273 (-6.19 ms) | 31 of 31 | 23.8 | none | none |
-| the same, the library's padded copy of that instrumental | steady | 0 | 31 of 31 | 23.8 | none | none |
+| the same, the library's corrected copy of that instrumental | steady | 0 | 31 of 31 | 23.8 | none | none |
 | Polo & Pan - *Ani Kuni*: the music video (`ootQs7sVulY`) against the art track `3rQLRRFFEWk` | **edit** | +729680 (+16.55 s) over 0-50 s; +1429449 (+32.41 s) over 65-165 s; +1429394 over 165-201.5 s | 41 of 41 | 25.1 | none | 0-16.5 s, 66.5-82.4 s, 234.0-277.5 s |
 | DJ Fresh - *How Love Begins*: the official video (`1SVlqcTVQdk`) against the art track `jE46h-AenT0` | not the same recording | none | 9 of 40, no common offset | 12.3 | most of the file | not given |
 | *Gucci Gucci* karaoke (`dnSNWoFEZHU`, re-recorded) against the real mix | not the same recording | none | 0 of 38 | none | 5-195 s | not given |
@@ -79,14 +85,16 @@ confident, sharing no offset) and reads *not the same recording*, which is refus
   instrumental (the *Instrumental - Full* stem carries them and *Vocal - Full* is silent there), so
   the official file is shorter by an early cut, not by trimmed silence, and the mix does not
   have padding at its end.
-- **Gucci's window at 150-160 s is unmatched, as the maintainer described, and so is 75-85 s.**
-  Both windows of the acapella sit at PSR 4 to 5 against the mix at their place, and each matches
-  the mix's own hook at 13 to 24 s at a PSR of 160 to 173 (the *Gucci Gucci Louie Louie* take). The
-  mix at 150-160 s holds other material there; the acapella carries the hook for the whole chorus.
-  The vocal stem's level at those places is as high as anywhere else, so it cannot tell them apart,
-  and the match is the evidence. Every other window agrees to within 1 sample of -2812.
+- **Gucci's acapella sings a different chorus, and its windows at 75-85 s and 150-160 s are
+  unmatched.** In the mix, "One big room, full of bad bitches" runs through each chorus and the
+  "Gucci Gucci, Louis Louis" hook joins only in its second half. The acapella drops "One big room"
+  and sings the hook throughout. So in the chorus's first half the acapella has the hook where the
+  mix has the other line: those windows sit at PSR 4 to 5 against the mix at their place, and
+  match the mix's hook at 13 to 24 s instead (PSR 160 to 173). The vocal stem is as loud there as
+  anywhere, so it cannot tell them apart; the match is the evidence. Every other window agrees to
+  within 1 sample of -2812.
 - ***SUPADOPA*'s raw official instrumental starts 6.19 ms before the mix** (-273 samples), as the
-  maintainer remembered it: tiny. The library's padded copy sits at exactly 0 in 31 of 31
+  maintainer remembered it: tiny. The library's corrected copy sits at exactly 0 in 31 of 31
   windows, the finished alignment.
 - ***Ani Kuni* is an edit, with three sections one file lacks.** The art track has 16.5 s before
   where the video's audio begins, 15.9 s at 66.5-82.4 s that the video lacks, and 43.5 s at its end
@@ -96,17 +104,19 @@ confident, sharing no offset) and reads *not the same recording*, which is refus
 - ***How Love Begins*'s video does not align to its art track** (9 of 40 windows, all weak, no
   common offset; the best window is 20.5). The art track and the video are two different
   masters or mixes: the offsets of the confident windows slide by about 45 samples a second, but
-  the cause was not established (the video resampled by 1000/1001 did not align either, 5 of 40
-  windows). It does not show the section the maintainer expected, so that claim is **not
-  measured**; *Ani Kuni* is the measured edit.
+  the cause was not established. That slide is about 1000 ppm, the size of video's 1000/1001
+  speed change, but the video was resampled in one direction only (5 of 40 windows); rule 12's
+  speed retry settles it. It does not show the section the maintainer expected, so that claim is
+  **not measured**; *Ani Kuni* is the measured edit.
 - **A karaoke that is a re-recording does not align; two that are the original instrumental
   do.** The *Gucci Gucci* karaoke reads 0 of 38 windows. Two uploads sold as *Pop, Lock & Drop It*
   karaoke (`2UczgbKeo_0`, `BF6oneKfvMM`) aligned steady, to -5.13 s and -6.60 s, at 52 of 53 and 50
   of 53 windows (measured with a threshold of 15): they are the original backing track with a
   different start, so they are not examples of a different recording.
 - **Offsets wander by up to 10 samples inside a real match.** *A Milli*'s acapella reads 251404 to
-  251414 across its first 100 s (vocal-dominated windows) and 251414 after it. A tolerance of 20
-  samples (0.45 ms) holds every real pair; the 55-sample step in *Ani Kuni* stays a separate run.
+  251414 across its first 100 s (vocal-dominated windows) and 251414 after it. A tolerance of
+  0.5 ms (22 samples) holds every real pair; the 55-sample (1.25 ms) step in *Ani Kuni* stays a
+  separate run.
 - **A repeated hook is not an edit.** Windows that match the mix at another place appear in four
   real pairs: *Gucci Gucci* at 75-85 s and 150-160 s (the main offset resumes on both sides), *Pop,
   Lock & Drop It*'s acapella at its last 13 s (a run at the end that matches the mix's first
@@ -135,7 +145,8 @@ confident, sharing no offset) and reads *not the same recording*, which is refus
 5. **Only confident windows vote.** A window under 12 is **unmatched content**: it is listed by
    its span ("not in the mix: 75-85 s") and never counts as disagreement. The mix's own spans that
    no confident window lands on are listed the same way ("not in this file: 257.8-263.3 s").
-6. **Two offsets are the same offset within 20 samples.**
+6. **Two offsets are the same offset within 0.5 ms.** Tolerances are in time, not samples, so
+   they hold at any sample rate; offsets are still stored in samples.
 7. **A source must have at least 3 confident windows and at least a quarter of its windows
    confident**, or it is *not the same recording* (the non-matching pairs have none; the real
    ones have 90% or more).
@@ -150,18 +161,22 @@ confident, sharing no offset) and reads *not the same recording*, which is refus
    median of those windows, in whole samples. Unmatched spans of either file, a section at the head
    or the tail that one file lacks (*Huey*'s instrumental ends 5.4 s early, *SUPADOPA*'s raw
    starts 6 ms early), and material the mix repeats do not change it.
-10. **Drift** (four or more consecutive confident windows lie on a line, within 20 samples, that
-    moves 40 samples or more): **refused.** A single shift would sit on the beat at one end of
-    the song and off it at the other, and Live's warp has no way to carry a different speed here.
-    Supporting a different tempo is not intended. A speed difference too large to hold windows on
-    a line (300 ppm in the test above) reads as *not the same recording*, and is refused too.
+10. **Drift** (four or more consecutive confident windows lie on a line, within 0.5 ms, that
+    moves 1 ms or more): **refused.** A single shift would sit on the beat at one end of the song
+    and off it at the other. A constant speed factor could be written (scale every marker's time,
+    then shift), but sources that need it are rare and should be swapped for the audio release, so
+    it is not built. A speed difference too large to hold windows on a line (300 ppm in the test
+    above) falls to rule 12's retry.
 11. **Edit** (two or more runs of at least two windows each, on distinct offsets): **refused.**
     One shift fits only one run. A section **at the head or the tail** that one file has and the
     other lacks is not an edit: it shifts nothing after it, and reads *aligned* with that span
     unmatched. A section **in the middle** that one file lacks moves everything after it, and is
     an edit (*Ani Kuni*). It is not a mismatch: the runs are the same recording.
 12. **Not the same recording**: too few confident windows (7), or confident windows that share no
-    single offset, run or line.
+    single offset, run or line. **Before reading this, the added source is measured again
+    resampled by each known speed change**: 1000/1001 and 1001/1000 (video frame rates), 24/25 and
+    25/24 (film shown on European TV). If one reads aligned, the verdict is *drift* with that
+    factor (*Runs 0.1% fast against the mix; use the audio release*), and refused as in 10.
 13. A refused source keeps whatever warp it has and is listed, with its reason, so the
     maintainer lines it up by hand as before.
 
@@ -206,7 +221,8 @@ confident, sharing no offset) and reads *not the same recording*, which is refus
       unmatched spans, each said as "only in this file: 0-5 s" or "only in the mix: 257.8-263.3 s";
     - edit: *Cut differently from the mix: +16.55 s up to 50 s, +32.41 s from 65 s to 165 s; not
       written. Split the clip in Live where the cut is*;
-    - drift: *Runs at another speed than the mix: +20 ppm; not written*;
+    - drift: *Runs at another speed than the mix: +20 ppm; not written*, or with a known factor
+      as in 12;
     - not the same recording: *Does not line up with the mix: 0 of 38 windows; not written*.
 
     While it waits or measures the line says so. A source that is not the same recording is also
@@ -219,8 +235,7 @@ confident, sharing no offset) and reads *not the same recording*, which is refus
 ## Consequences
 
 - A refusal is the common safe answer, and it is the one the maintainer has always had: line it up
-  by hand. Drift and edit have no writer: a clip carries one shift, and an edit would need a split
-  clip.
+  by hand. Edit has no writer, since it would need a split clip. Drift has none by choice (10).
 - The measurement is Python today (`scripts/stem_offset.py`). The record in 3 is what the C#
   worker will write once it is built; the worker's results are checked against that script on the
   pairs in the table.
