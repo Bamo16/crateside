@@ -68,7 +68,7 @@
           {
             "name": "search",
             "in": "query",
-            "description": "Matches a name, key or video ID across every track, ignoring the filter, as the page's search does.",
+            "description": "Matches names (any order, ignoring case, accents and punctuation) or a video ID across every track, ignoring the filter, as the page's search does; near matches when nothing matches exactly, with nearMatches true.",
             "schema": {
               "type": "string"
             }
@@ -5075,6 +5075,10 @@
             "items": {
               "$ref": "#/components/schemas/TrackRow"
             }
+          },
+          "nearMatches": {
+            "type": "boolean",
+            "description": "True when the rows answer a search that matched nothing exactly: the ones closest in spelling to what was typed (#230)."
           },
           "readAt": {
             "type": [

@@ -107,6 +107,9 @@ public sealed record TrackRow
     /// <summary>What the source said about the release this track is from; null for a playlist track.</summary>
     public Release? Release { get; init; }
 
+    /// <summary>The names the search compares, folded when the row is built; null reads them on demand.</summary>
+    internal SearchNames? SearchNames { get; init; }
+
     /// <summary>The artist the file's own tags give; null for a playlist track and for a file without one.</summary>
     public string? TagArtist { get; init; }
 

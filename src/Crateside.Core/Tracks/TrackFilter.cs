@@ -99,7 +99,7 @@ public static class TrackFilters
     )
     {
         if (!string.IsNullOrWhiteSpace(search))
-            return rows.Where(row => row.Matches(search));
+            return rows.Search(search).Rows;
 
         var shown = rows.Where(row => row.Matches(filter) && row.HasFamiliarity(familiarity));
 
@@ -123,20 +123,6 @@ public static class TrackFilters
     /// <summary>How many rows are in each filter, over the whole list.</summary>
     public static int Count(this IEnumerable<TrackRow> rows, TrackFilter filter) =>
         rows.Count(row => row.Matches(filter));
-
-    /// <summary>
-    /// Whether a row answers a search: the name the list shows it under, the name it arrived
-    /// with, its key, and its video ID. An empty search matches everything.
-    /// </summary>
-    public static bool Matches(this TrackRow row, string? search) =>
-        search?.Trim() is not { Length: > 0 } term
-        || Contains(row.DerivedTitle, term)
-        || Contains(row.Title, term)
-        || Contains(row.Verdict?.Key, term)
-        || Contains(row.TrackKey, term);
-
-    private static bool Contains(string? value, string term) =>
-        value?.Contains(term, StringComparison.OrdinalIgnoreCase) is true;
 }
 
 /// <summary>How a state chip is drawn. Four colors, each meaning one thing.</summary>

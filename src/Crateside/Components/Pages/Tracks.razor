@@ -412,6 +412,11 @@
     }
     else
     {
+        @if (Searching && Searched.NearMatches)
+        {
+            <p class="notice">No exact match for <strong>@_search</strong>; showing near matches.</p>
+        }
+
         <Virtualize Items="shown" Context="row" ItemSize="RowHeight" OverscanCount="12">
             @{
                 var open = _expanded == row.TrackKey;
@@ -1030,8 +1035,13 @@
 
     private IReadOnlyList<TrackRow> Rows => _view?.Rows ?? [];
 
-    /// <summary>Everything answering the search, before the filter narrows it.</summary>
-    private IEnumerable<TrackRow> Found => Rows.Where(row => row.Matches(_search));
+    private (IReadOnlyList<TrackRow> Rows, string Search, TrackSearchResult Result)? _searched;
+
+    /// <summary>What the search finds, kept while neither the rows nor the text change: near matches cost more than a keystroke should repeat.</summary>
+    private TrackSearchResult Searched =>
+        _searched is { } kept && ReferenceEquals(kept.Rows, Rows) && kept.Search == _search
+            ? kept.Result
+            : (_searched = (Rows, _search, Rows.Search(_search))).Value.Result;
 
     private bool Searching => !string.IsNullOrWhiteSpace(_search);
 
@@ -1042,7 +1052,7 @@
         : _filter;
 
     private IEnumerable<TrackRow> Shown =>
-        Rows.Narrow(Viewing, _search, _familiarity);
+        Searching ? Searched.Rows : Rows.Narrow(Viewing, _search, _familiarity);
 
     private async Task ShowFamiliarity(string value)
     {

@@ -146,6 +146,22 @@ public sealed class CratesideApiTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_misspelt_search_lists_near_matches_and_says_so()
+    {
+        var exact = await GetAsync("/api/tracks?search=filed song");
+        var near = await GetAsync("/api/tracks?search=fild+sogn");
+        var none = await GetAsync("/api/tracks?search=xqzv");
+
+        Assert.False(exact["nearMatches"]!.GetValue<bool>());
+        Assert.True(near["nearMatches"]!.GetValue<bool>());
+        Assert.Equal(
+            [SyntheticCrateside.Filed],
+            await TrackKeysAsync("/api/tracks?search=fild+sogn")
+        );
+        Assert.Empty(none["rows"]!.AsArray());
+    }
+
+    [Fact]
     public async Task A_filter_the_page_does_not_have_is_refused()
     {
         using var response = await _crateside.Client.GetAsync(

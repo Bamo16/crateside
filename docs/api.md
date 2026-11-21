@@ -34,8 +34,12 @@ The Tracks page's rows, narrowed by the page's own filters:
 | query | means |
 |---|---|
 | `filter` | `Unfinished` (when not given), `InStaging`, `AutoWarp`, `InFlight`, `NeedsAttention`, `TempoDrifts`, `OffItsTempo`, `ClipOffBarLine` or `All`, spelled exactly so; any other value is a 400 |
-| `search` | a name, key or video ID; like the page's search, it looks through every track and ignores `filter` and `familiarity` |
+| `search` | names or a video ID; like the page's search, it looks through every track and ignores `filter` and `familiarity`. Case, accents and punctuation do not matter (`jay z` finds JAŸ-Z), spaces do not matter between words (`poplock`), and words match in any order across a track's names (`huey lock`). A video ID or a pasted YouTube link puts that track first, and a name holding the whole search as words in order comes before one with the words scattered. A key is not searched |
 | `familiarity` | only rows whose familiarity is tagged as this |
+
+When no track matches a `search` exactly, `rows` are the closest in spelling (at most 20, best first;
+a track's upload titles are not compared) and `nearMatches` is `true`; it is `false` for exact hits
+and for any request without a `search`.
 
 `decidedBy` says who made a row's verdict: `Judge`, `Rules` (crateside's own rules) or `Person`
 (chosen on the song page); `waitingForPerson` is true for a track the rules left open while no judge
@@ -237,6 +241,7 @@ track, the same state the API's tests stand on. Each row is the whole `TrackRow`
       "retryNote": null
     }
   ],
+  "nearMatches": false,
   "readAt": "2026-10-01T12:00:00+00:00",
   "playlistProblem": null
 }

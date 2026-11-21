@@ -225,7 +225,7 @@ public static class CratesideApi
         [Description("The Tracks page's view: Unfinished when not given.")]
             TrackFilter filter = TrackFilter.Unfinished,
         [Description(
-            "Matches a name, key or video ID across every track, ignoring the filter, as the page's search does."
+            "Matches names (any order, ignoring case, accents and punctuation) or a video ID across every track, ignoring the filter, as the page's search does; near matches when nothing matches exactly, with nearMatches true."
         )]
             string? search = null,
         [Description("Only rows tagged with this familiarity.")] string? familiarity = null,
@@ -236,10 +236,18 @@ public static class CratesideApi
 
         return tracks.Current is { } view
             ? TypedResults.Ok(
-                view with
-                {
-                    Rows = [.. view.Rows.Narrow(filter, search, familiarity)],
-                }
+                string.IsNullOrWhiteSpace(search)
+                    ? view with
+                    {
+                        Rows = [.. view.Rows.Narrow(filter, familiarity: familiarity)],
+                    }
+                : view.Rows.Search(search) is var found
+                    ? view with
+                    {
+                        Rows = found.Rows,
+                        NearMatches = found.NearMatches,
+                    }
+                : view
             )
             : TypedResults.Problem(
                 tracks.LastError,

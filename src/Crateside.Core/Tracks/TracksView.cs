@@ -22,6 +22,9 @@ public sealed record TracksView
 {
     public required IReadOnlyList<TrackRow> Rows { get; init; }
 
+    /// <summary>True when the rows answer a search that matched nothing exactly: the ones closest in spelling to what was typed (#230).</summary>
+    public bool NearMatches { get; init; }
+
     /// <summary>
     /// When the playlist behind these rows was last fetched, set by the caller. Null if it never
     /// has been.
@@ -260,7 +263,7 @@ public sealed record TracksView
                 )
                 .ToList();
 
-            return new TrackRow
+            var built = new TrackRow
             {
                 TrackKey = primary.TrackKey,
                 PlaylistItemId = primary.Item?.PlaylistItemId,
@@ -350,6 +353,12 @@ public sealed record TracksView
                     finishedRoot,
                     read.IsSourceRefused
                 ),
+            };
+
+            // Folded here, once, so a keystroke in the search folds only the query (#230).
+            return built with
+            {
+                SearchNames = TrackSearch.Build(built),
             };
         }
     }

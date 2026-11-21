@@ -425,6 +425,8 @@ by hand; everything below describes candidates against it.
   right now?": what is in **Staging**, plus the tracks still in flight or
   stopped. Entirely derived — it holds no state of its own and nothing on it is
   marked done by hand.
+- **Near match** — a row shown because nothing matched the search exactly, close in spelling to what
+  was typed.
 - **Cover** — the picture StemForge embeds in a track's audio, shown beside the track on Tracks, the
   song page and the dashboard. It is taken from the track's own file (a sample in Staging or the
   library, else the working set's source) the first time it is asked for, kept under
