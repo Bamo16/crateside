@@ -104,16 +104,18 @@ internal static class VerdictRules
                 $"{entry.Key.LedgerName} from {Named([.. entry.Detectors, .. entry.Pages])}"
             );
 
-        var tail = stated is [] && Dissent(root, readings) is var (dissentKey, dissentR, backers, madmom, confidence)
-            ? string.Create(
-                CultureInfo.InvariantCulture,
-                $"Keydetect (r {dissentR:0.00}) and {Named(backers)} name {dissentKey.LedgerName}, but madmom dissents: {madmom.LedgerName} at {confidence:0.00}, so the judge decides."
-            )
+        var tail =
+            stated is []
+            && Dissent(root, readings) is var (dissentKey, dissentR, backers, madmom, confidence)
+                ? string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"Keydetect (r {dissentR:0.00}) and {Named(backers)} name {dissentKey.LedgerName}, but madmom dissents: {madmom.LedgerName} at {confidence:0.00}, so the judge decides."
+                )
             : stated is []
-            ? string.Create(
-                CultureInfo.InvariantCulture,
-                $"No Hooktheory or Musicnotes page states a key. Without one, all three detectors must name one key, or keydetect and one more with r of at least {ConfidentKeydetect:0.00}{(Correlation(root) is { } r ? $" (here {r:0.00})" : null)}."
-            )
+                ? string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"No Hooktheory or Musicnotes page states a key. Without one, all three detectors must name one key, or keydetect and one more with r of at least {ConfidentKeydetect:0.00}{(Correlation(root) is { } r ? $" (here {r:0.00})" : null)}."
+                )
             : "Tier A needs two detectors and the pages on one key.";
 
         return $"{string.Join("; ", named)}. {tail}";
@@ -145,7 +147,10 @@ internal static class VerdictRules
             _ => null,
         };
 
-    private static (MusicKey Key, double Confidence)? MadmomDissent(JsonObject root, MusicKey key) =>
+    private static (MusicKey Key, double Confidence)? MadmomDissent(
+        JsonObject root,
+        MusicKey key
+    ) =>
         root["algorithms"]?["madmom"] is JsonObject madmom
         && madmom["key"] is JsonValue text
         && text.TryGetValue<string>(out var spelled)
