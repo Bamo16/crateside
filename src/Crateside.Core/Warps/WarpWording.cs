@@ -82,11 +82,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
     public WarpChip Chip(StemWarp stem) =>
         stem.Owner switch
         {
-            WarpOwner.Yours => new("Your warp", ChipStyle.Filled),
-            WarpOwner.Borrowed(var from, _) => new(
-                $"Borrowed from {Name(from)}",
-                ChipStyle.Outlined
-            ),
+            WarpOwner.Yours or WarpOwner.Borrowed => new("Your warp", ChipStyle.Filled),
             WarpOwner.Shifted => new("Shifted from the mix", ChipStyle.Outlined),
             WarpOwner.Starter => new("Auto warp", ChipStyle.Auto),
             WarpOwner.Unwarped => new("Warp off", ChipStyle.Dashed),
@@ -112,7 +108,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             WarpOwner.Yours(var saved, { Count: > 0 } lentTo, _) =>
                 $"saved {Day(saved)} · lent to {Names(lentTo)}{Differs(stem)}",
             WarpOwner.Yours(var saved, _, _) => $"saved {Day(saved)}{Differs(stem)}",
-            WarpOwner.Borrowed(_, var written) => $"unchanged since {Day(written)}",
+            WarpOwner.Borrowed(_, var written) => $"saved {Day(written)}",
             WarpOwner.Shifted(var written, var shift) =>
                 $"{Offset(shift.Milliseconds)} · {Day(written)}",
             WarpOwner.Starter => "one marker · not finished",

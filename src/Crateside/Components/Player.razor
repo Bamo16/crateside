@@ -290,7 +290,8 @@
     private ListRow MixRow(MixState mix, bool onDisk, string cutFrom) =>
         mix switch
         {
-            MixState.InLibrary => new(PlayableFiles.MixId, "Mix", "in the library", false, false, null, null),
+            MixState.KeptAsSource(var inLibrary) =>
+                new(PlayableFiles.MixId, "Mix", $"kept as Source · {(inLibrary ? "Library" : "Staging")}", false, false, null, null),
             MixState.Held(var until, var forever) =>
                 new(
                     PlayableFiles.MixId,
@@ -300,11 +301,11 @@
                     : "kept while crateside works on it",
                     false,
                     false,
-                    TrackKeys.IsVideoId(cutFrom) ? new("Keep in the library", () => KeepAsync()) : null,
+                    TrackKeys.IsVideoId(cutFrom) ? new("Keep as Source", () => KeepAsync()) : null,
                     null
                 ),
             MixState.Imported => new(PlayableFiles.MixId, "Mix", "imported file", false, false, null, null),
-            MixState.Keeping => new(PlayableFiles.MixId, "Mix", "● copying to the library…", !onDisk, true, null, null),
+            MixState.Keeping => new(PlayableFiles.MixId, "Mix", "● keeping as Source…", !onDisk, true, null, null),
             MixState.Fetching =>
                 new(PlayableFiles.MixId, "Mix", "● downloading…", true, true, null, "it will appear here when it lands"),
             MixState.Gone(var canFetch) =>

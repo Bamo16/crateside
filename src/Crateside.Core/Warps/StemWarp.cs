@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using AbleKit.Analysis;
 using Crateside.Core.Ableton;
+using Crateside.Core.Plans;
 using Crateside.Core.Samples;
 using Crateside.Core.Tracks;
 
@@ -157,7 +158,7 @@ public sealed class StemWarpReader(
     /// <summary>The track's lanes on one time axis, as the warp view draws them.</summary>
     public WarpGroup GroupOf(TrackRow row) => WarpGroup.Of([.. LanePaths(row).Select(Read)]);
 
-    /// <summary>The samples cut from the upload most of the track's samples share, in the sample list's order, then the warp guide when it is on disk.</summary>
+    /// <summary>The samples cut from the upload most of the track's samples share, the Source first and the rest in the sample list's order, then the warp guide when it is on disk.</summary>
     public static List<string> LanePaths(TrackRow row)
     {
         string[] guide = row.WarpGuidePath is { Length: > 0 } path ? [path] : [];
@@ -181,6 +182,7 @@ public sealed class StemWarpReader(
                 .Samples.Where(sample =>
                     sample.SourceTrackKey == upload && sample.Path is { Length: > 0 }
                 )
+                .OrderBy(sample => sample.Kind is StemKind.Source ? 0 : 1)
                 .Select(sample => sample.Path),
             .. guide,
         ];

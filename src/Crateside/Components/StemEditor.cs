@@ -286,7 +286,7 @@ public sealed class StemEditor(
                     actions.Record(
                         row.TrackKey,
                         UserActionKind.Recut,
-                        "kept the mix in the library",
+                        "kept the mix as Source",
                         JobStage.Separation
                     );
 

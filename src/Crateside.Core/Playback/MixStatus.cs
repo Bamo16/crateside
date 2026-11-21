@@ -9,8 +9,8 @@ public abstract record MixState
 {
     private MixState() { }
 
-    /// <summary>A sample the library holds, which also has a lane.</summary>
-    public sealed record InLibrary : MixState;
+    /// <summary>Kept as the track's Source sample, in Staging or the library, which also has a lane.</summary>
+    public sealed record KeptAsSource(bool InLibrary) : MixState;
 
     /// <summary>On disk in the working set; <paramref name="Until"/> is null when retention is forever or its clock has not started.</summary>
     public sealed record Held(DateTimeOffset? Until, bool Forever) : MixState;
@@ -22,7 +22,7 @@ public abstract record MixState
 
     public sealed record Fetching : MixState;
 
-    /// <summary>The plan keeps it, and the library does not hold it yet.</summary>
+    /// <summary>The plan keeps it, and no Source sample holds it yet.</summary>
     public sealed record Keeping : MixState;
 }
 
@@ -41,13 +41,18 @@ public sealed class MixStatus(
         if (uploads.Any(fetches.IsFetching))
             return new MixState.Fetching();
 
+        if (
+            row.Samples.FirstOrDefault(sample =>
+                sample.Kind is StemKind.Source && !row.IsAddedSource(sample.SourceTrackKey)
+            ) is
+            { } kept
+        )
+            return new MixState.KeptAsSource(kept.IsInLibrary);
+
         if (files.MixPathOf(row) is not { } path)
             return row.Plan.KeepSource && row.HasUpload
                 ? new MixState.Keeping()
                 : new MixState.Gone(row.HasUpload && TrackKeys.IsVideoId(uploads[0]));
-
-        if (row.Samples.Any(sample => sample is { Kind: StemKind.Source, IsInLibrary: true }))
-            return new MixState.InLibrary();
 
         if (row.Plan.KeepSource)
             return new MixState.Keeping();

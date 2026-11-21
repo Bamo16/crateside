@@ -46,8 +46,9 @@ labels and decoration only, never a sentence.
 
 A thing that is none of these is monochrome. The evidence's source-kind badges are the example:
 filled for authoritative, outlined for corroborating, dashed for algorithmic and chords-only.
-The warp view's provenance chips are the second: filled for the user's warp, outlined for one
-borrowed from a sibling, dashed for Live's unsaved analysis or no warp yet; amber only
+The warp view's provenance chips are the second: filled for the user's warp, also on a sibling crateside copied it to
+(it reads *Your warp*, `saved 21 Nov`; only the file card says whose warp was copied, #232),
+outlined for one shifted from the mix, dashed for Live's unsaved analysis or no warp yet; amber only
 while waiting on Live, teal only while crateside writes. The starter warp's chip reads *Auto warp*
 (the UI's name for it) in its own lilac, `--lilac`, which no state color shares; the Tracks page
 shows the same word as a small lilac badge on a row where any stem's warp is a starter, and an
@@ -121,7 +122,7 @@ the waveform is free for playback clicks.
   follows zoom and scroll, is not selectable and takes no edits. A refused or unmeasured source
   has none.
 - **One time axis for the group**: the samples cut from the upload most of them share, in the
-  sample list's order, then **the warp guide whenever it is on disk**, last among the track's own
+  sample list's order except that a kept **Source** comes first, labelled `Source` (#232), then **the warp guide whenever it is on disk**, last among the track's own
   lanes: labelled `Drums`, with `warp guide` beside it in `--text-50` as its role, not the file name.
   Grid of 200px gutter · 12px · the plot.
 - **Head line**: `WARP`, then `{n} stems · one warp · {markers} · {mode}`, or `{stem} warped on its
@@ -471,10 +472,11 @@ only while a file loads or downloads, red only for a load that failed.
   try again in a moment.`, and **Try again**).
 - **The picker** lists **Mix**, then each stem by its name, only files on disk, with a status at 12
   `--text-50` and at most one small `.outline` action at the row's right that does not pick the row.
-  The mix in the working set reads `kept until Thu 2:00 PM` with **Keep in the library**; in the
-  library, `in the library`; gone, greyed with `not on disk`, **Get the mix again** and `a download,
+  The mix in the working set reads `kept until Thu 2:00 PM` with **Keep as Source**; once a Source
+  sample holds it, `kept as Source · Staging` or `kept as Source · Library`, wherever the track's
+  stems are (#232); gone, greyed with `not on disk`, **Get the mix again** and `a download,
   no GPU · kept at least a day`; downloading, greyed with a teal `● downloading…` and `it will appear
-  here when it lands`; being kept, a teal `● copying to the library…`. *Keep in the library* makes the
+  here when it lands`; being kept, a teal `● keeping as Source…`. *Keep as Source* makes the
   separation source a keeper in the stem plan and asks for the re-cut that copies it.
 
 ## State chips
@@ -808,7 +810,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **A mix held with no clock yet reads `kept while crateside works on it`**: retention counts from
   the moment the last stem leaves staging, which a track mid-pipeline has not reached.
 - **`● in line to be copied` is not built.** ADR 0094 leaves open whether the re-cut that copies a
-  kept source waits for the GPU; the row says `● copying to the library…` until the library holds it.
+  kept source waits for the GPU; the row says `● keeping as Source…` until a Source sample holds it.
 
 ### Partners by notes (handoff 19, #125)
 

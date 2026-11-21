@@ -1,3 +1,4 @@
+using Crateside.Core.Plans;
 using Crateside.Core.Tracks;
 using Crateside.Core.Warps;
 
@@ -38,6 +39,29 @@ public sealed class LanePathsTests
 
         Assert.Equal(3, paths.Count);
         Assert.Equal(Guide, paths[^1]);
+    }
+
+    [Fact]
+    public void The_Source_is_the_first_lane()
+    {
+        const string source = @"D:\Library\Song.flac";
+        var row = Row(Guide);
+        row = row with
+        {
+            Samples =
+            [
+                .. row.Samples,
+                new TrackSample
+                {
+                    Label = "Source",
+                    Path = source,
+                    Kind = StemKind.Source,
+                    SourceTrackKey = "aaaaaaaaaaa",
+                },
+            ],
+        };
+
+        Assert.Equal(source, StemWarpReader.LanePaths(row)[0]);
     }
 
     [Fact]

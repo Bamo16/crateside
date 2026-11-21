@@ -48,7 +48,8 @@ public sealed class WarpWordingTests
         var vocal = Stem(Vocal, new WarpOwner.Borrowed(Instrumental, Saved), Shared);
         var wording = Wording(Lender(), vocal);
 
-        Assert.Equal("Borrowed from Instrumental - Clean", wording.Chip(vocal).Label);
+        Assert.Equal(new WarpChip("Your warp", ChipStyle.Filled), wording.Chip(vocal));
+        Assert.StartsWith("saved ", wording.Sub(vocal));
         Assert.False(wording.CanReapply(vocal));
         Assert.Equal(
             "Nothing to re-apply: it is still Instrumental - Clean's warp, unchanged.",

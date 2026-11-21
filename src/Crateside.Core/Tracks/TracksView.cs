@@ -530,7 +530,7 @@ public sealed record TracksView
         return new TrackSample
         {
             Path = file.Path,
-            Label = classified.DisplayName ?? "source",
+            Label = classified.DisplayName ?? "Source",
             Kind = classified.Kind,
             PresetId = classified.PresetId,
             // What the file says it was cut from, which is the seed only where it says nothing.

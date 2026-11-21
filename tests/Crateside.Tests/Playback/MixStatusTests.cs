@@ -125,7 +125,56 @@ public sealed class MixStatusTests : IDisposable
             }
         );
 
-        Assert.IsType<MixState.InLibrary>(Status.Of(row));
+        Assert.Equal(new MixState.KeptAsSource(InLibrary: true), Status.Of(row));
+    }
+
+    [Fact]
+    public void A_mix_kept_as_the_Source_sample_in_Staging_is_kept_rather_than_still_copying()
+    {
+        HoldMix(Left);
+        var kept = Path.Combine(Paths.StagingFolder, "Song.flac");
+        Directory.CreateDirectory(Paths.StagingFolder);
+        File.WriteAllBytes(kept, [1]);
+
+        var row = Row(
+            StemPlan.Default with
+            {
+                KeepSource = true,
+            },
+            new TrackSample
+            {
+                Path = kept,
+                Label = "Source",
+                Kind = StemKind.Source,
+                SourceTrackKey = TrackKey,
+            }
+        );
+
+        Assert.Equal(new MixState.KeptAsSource(InLibrary: false), Status.Of(row));
+    }
+
+    [Fact]
+    public void An_added_source_is_not_the_kept_mix()
+    {
+        HoldMix(Left);
+        var added = new AddedSource { TrackKey = "abcdefghijk", Label = "Official Instrumental" };
+
+        var row = Row(
+            StemPlan.Default with
+            {
+                KeepSource = true,
+                AddedSources = [added],
+            },
+            new TrackSample
+            {
+                Path = Path.Combine(Paths.StagingFolder, "Song (Official Instrumental).flac"),
+                Label = "Official Instrumental",
+                Kind = StemKind.Source,
+                SourceTrackKey = added.TrackKey,
+            }
+        );
+
+        Assert.IsType<MixState.Keeping>(Status.Of(row));
     }
 
     [Fact]
