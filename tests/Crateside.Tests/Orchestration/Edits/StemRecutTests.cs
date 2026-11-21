@@ -6,6 +6,7 @@ using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Plans;
+using Crateside.Core.Samples;
 using Crateside.Core.Staging;
 using Crateside.Core.WorkLists;
 
@@ -224,6 +225,52 @@ public sealed class StemRecutTests : IDisposable
 
         Assert.False(plan.IsPossible);
         Assert.Contains("keep something", plan.Refusal);
+    }
+
+    private static AddedSource Official(string key) =>
+        new()
+        {
+            TrackKey = key,
+            Label = "Official Instrumental",
+            Type = SampleType.Instrumental,
+        };
+
+    [Fact]
+    public void A_plan_keeping_only_added_sources_is_refused_and_says_to_keep_the_source_or_a_stem()
+    {
+        Stage("Vocal - Full");
+
+        var plan = Recut()
+            .PlanFor(
+                Video,
+                new StemPlan { Presets = [], AddedSources = [Official("bbbbbbbbbbb")] },
+                Catalog
+            );
+
+        Assert.False(plan.IsPossible);
+        Assert.Contains("keep the Source", plan.Refusal);
+        Assert.Contains("take their warp from the mix's", plan.Refusal);
+    }
+
+    [Fact]
+    public void A_plan_keeping_the_source_and_added_sources_is_accepted()
+    {
+        Stage("Vocal - Full");
+        Stage("Instrumental - Full");
+
+        var plan = Recut()
+            .PlanFor(
+                Video,
+                new StemPlan
+                {
+                    Presets = [],
+                    KeepSource = true,
+                    AddedSources = [Official("bbbbbbbbbbb")],
+                },
+                Catalog
+            );
+
+        Assert.True(plan.IsPossible);
     }
 
     [Fact]

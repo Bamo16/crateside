@@ -175,6 +175,10 @@ public sealed class StemRecut(
             ({ IsEmpty: true }, _, _, _) =>
                 "The separator could not be asked what it can make, so crateside cannot tell "
                     + "which of these files this track already has.",
+            // An added source takes its warp from the mix's (ADR 0111), so it cannot carry it alone.
+            (_, { IsEmpty: true, AddedSources.Count: > 0 }, _, _) =>
+                "The official files take their warp from the mix's, so keep the Source (the mix "
+                    + "itself, no separation) or a stem.",
             (_, { IsEmpty: true }, _, _) => "A track has to keep something.",
             (_, _, { Files.Count: 0 }, _) => "Nothing of this track is in Staging or the library.",
             _ when recipe is { Presets.Count: 0, KeepSource: false }

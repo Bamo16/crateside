@@ -412,6 +412,69 @@ public sealed class WarpEditorTests : IDisposable
 
     private const double ExtraShift = 0.1;
 
+    private string Source => Path.Combine(_paths.StagingFolder, "Song.flac");
+
+    [Fact]
+    public async Task A_track_kept_as_its_source_alone_writes_the_mix_warp_to_it_and_shifts_the_added_source_from_it()
+    {
+        var (editor, siblings) = await AddedGroup(OffsetVerdict.Aligned, mixIsSource: true);
+        var before = File.ReadAllBytes($"{Extra}.asd");
+
+        Assert.Equal(Source, _plan.Reference);
+
+        var save = Assert
+            .IsType<WarpSaveOutcome.Saved>(
+                await editor.SaveAsync(
+                    _plan,
+                    siblings,
+                    new WarpDraft().Later(1),
+                    ct: TestContext.Current.CancellationToken
+                )
+            )
+            .Save;
+        var mix = AnalysisFile.Read($"{Source}.asd");
+        var shifted = AnalysisFile.Read($"{Extra}.asd");
+
+        Assert.Contains(save.Stems, stem => stem.Path == Source);
+        Assert.Equal(Extra, Assert.Single(save.Shifted).Path);
+        Assert.Equal(
+            mix.Warp.SecondsAt(8)!.Value - ExtraShift,
+            shifted.Warp.SecondsAt(8)!.Value,
+            1e-6
+        );
+        Assert.NotEqual(before, File.ReadAllBytes($"{Extra}.asd"));
+    }
+
+    private async Task<(
+        WarpEditor Editor,
+        WarpSiblings Siblings,
+        WarpSavePlan.Ready Plan
+    )> SourceGroup()
+    {
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), Source);
+
+        using (var file = TagLib.File.Create(Source))
+        {
+            file.Tag.Comment = $"stemforge/0.4.0.0 | source: {Upload}";
+            file.Save();
+        }
+
+        var lending = new WarpLending(
+            _paths,
+            _writer,
+            Options.Create(new WarpOptions { StarterWarps = StarterWarps.OnTheGrid }),
+            new Grids(new StarterGrid(120, null, null))
+        );
+        await lending.LendAsync(TestContext.Current.CancellationToken);
+
+        var siblings = WarpSiblings.Scan([_paths.StagingFolder]);
+        var plan = Assert.IsType<WarpSavePlan.Ready>(
+            Editor().Plan(siblings, WarpSiblings.Read(Source)!)
+        );
+
+        return (Editor(), siblings, plan);
+    }
+
     private WarpSavePlan.Ready _plan = null!;
 
     private string Extra => Path.Combine(_paths.StagingFolder, "Song (Official Instrumental).flac");
@@ -419,14 +482,16 @@ public sealed class WarpEditorTests : IDisposable
     /// <summary>Plans a save with one added source whose measurement said <paramref name="verdict"/> (null: not measured).</summary>
     private async Task<(WarpEditor Editor, WarpSiblings Siblings)> AddedGroup(
         OffsetVerdict? verdict,
-        bool recorded = true
+        bool recorded = true,
+        bool mixIsSource = false
     )
     {
-        var (editor, siblings, _) = await StarterGroup();
+        var (editor, siblings, _) = mixIsSource ? await SourceGroup() : await StarterGroup();
+        var mix = mixIsSource ? Source : Instrumental;
         var asd = $"{Extra}.asd";
 
         File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), Extra);
-        (AnalysisFile.Read($"{Instrumental}.asd") with { IsDefaultClipSaved = true }).Write(asd);
+        (AnalysisFile.Read($"{mix}.asd") with { IsDefaultClipSaved = true }).Write(asd);
 
         if (recorded)
             _written.RecordStarter(Extra);
@@ -438,7 +503,7 @@ public sealed class WarpEditorTests : IDisposable
                 "added",
                 new SourceOffsetRecord(
                     "main",
-                    FileStamp.Of(Instrumental)!,
+                    FileStamp.Of(mix)!,
                     FileStamp.Of(Extra)!,
                     new OffsetReading
                     {
@@ -465,7 +530,7 @@ public sealed class WarpEditorTests : IDisposable
         _plan = Assert.IsType<WarpSavePlan.Ready>(
             withOffsets.Plan(
                 siblings,
-                WarpSiblings.Read(Instrumental)!,
+                WarpSiblings.Read(mix)!,
                 [new AddedSourceFile(Extra, "added", "Official Instrumental")]
             )
         );
