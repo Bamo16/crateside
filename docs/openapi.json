@@ -4900,6 +4900,13 @@
           "videoId": {
             "type": "string"
           },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the track is called, which an added source's file name starts with."
+          },
           "song": {
             "type": [
               "null",

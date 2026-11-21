@@ -156,13 +156,24 @@ public sealed record TracksView
                 : null;
 
             // The upload the row speaks for: the one still in the playlist, else the one the
-            // ledger's latest run was cut from, else whichever came first.
+            // ledger's latest run was cut from, else whichever came first. Never an upload some
+            // member's plan adds as a source, which a song folded in still has an entry for (ADR 0111).
+            var attached = members
+                .SelectMany(seed =>
+                    instructions.GetValueOrDefault(seed.TrackKey)?.Plan?.AddedSources ?? []
+                )
+                .Select(source => source.TrackKey)
+                .ToHashSet(StringComparer.Ordinal);
+            var own = members.Where(seed => !attached.Contains(seed.TrackKey)).ToArray()
+                is [_, ..] owned
+                ? owned
+                : members;
             var primary =
-                members.FirstOrDefault(seed => seed.Item is not null)
-                ?? members.FirstOrDefault(seed =>
+                own.FirstOrDefault(seed => seed.Item is not null)
+                ?? own.FirstOrDefault(seed =>
                     seed.TrackKey.Equals(verdict?.SourceTrackKey, StringComparison.Ordinal)
                 )
-                ?? members[0];
+                ?? own[0];
 
             var songs = members
                 .Select(seed => staged.GetValueOrDefault(seed.TrackKey))

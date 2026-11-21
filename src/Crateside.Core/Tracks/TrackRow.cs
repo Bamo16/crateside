@@ -388,6 +388,7 @@ public sealed record TrackRow
         new()
         {
             TrackKey = TrackKey,
+            Name = Title,
             Song = Verdict?.Song,
             Key = Key,
             Plan = Plan,

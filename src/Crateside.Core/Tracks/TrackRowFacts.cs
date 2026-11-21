@@ -9,6 +9,9 @@ public sealed record TrackRowFacts
     [JsonPropertyName("videoId")]
     public required string TrackKey { get; init; }
 
+    /// <summary>What the track is called, which an added source's file name starts with.</summary>
+    public string? Name { get; init; }
+
     /// <summary>The ledger identity every upload of this track resolves to.</summary>
     public string? Song { get; init; }
 

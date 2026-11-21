@@ -460,6 +460,10 @@ it. The two run types below are named after which of **evidence** and **verdict*
 - **Separation source** — the one source a track's stems are cut from, and the one
   *Swap source* changes. Every other source is an **added source**: downloaded or
   copied, tagged and staged like anything else, but never separated.
+- **Fold** — attaching, as an added source, an upload the ledger had judged as a song of
+  its own. The upload then belongs to this track's song; the other song's runs stay in
+  the ledger and decide nothing
+  ([ADR 0111](docs/adr/0111-an-added-source-is-warped-by-shifting-the-mixs-warp-by-its-measured-offset.md), rules 31-36).
 - **Detection source** — the source the **evidence run** measured. Usually the
   separation source and not necessarily: a swap moves the latter and leaves the
   former where it was. Nothing lets the user choose it.

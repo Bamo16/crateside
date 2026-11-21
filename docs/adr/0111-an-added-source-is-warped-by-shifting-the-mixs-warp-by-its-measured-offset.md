@@ -303,6 +303,43 @@ which refused a plan that unticked every stem and the Source while added sources
     `playback/rows.js`, so it holds during a drag. Added-source lanes are redrawn there as well
     (#228), from the file's own envelope shifted by `d`.
 
+### Folding a judged song in (2026-11-21, #224)
+
+An upload the ledger already has as a song of its own used to be refused as an added source. A
+song that is really another file of a track (Kreayshawn – *Gucci Gucci*'s acapella `glF85prh3e4`,
+judged three times as `kreayshawn - gucci gucci (acapella)`, beside the mix `luP5bpqhrcE`) then
+had no way to be attached.
+
+31. **"Add a source" offers to fold the other song in instead of refusing.** The form names the
+    song and says what folding does; its button is "Fold it in". A track with no verdict yet has
+    no song to fold into, and is refused.
+32. **The fold is a restatement, nothing more in the ledger.** The track's latest run is restated
+    with the folded upload's URL, as any added source is (ADR 0014). The latest run naming an
+    upload decides its song, so from then on `SongFor` gives the track's song, and the Tracks
+    page, which groups by `SongFor`, draws one row. The folded song's runs are not touched: they
+    stay as history, its latest still reads as its verdict, and none of them decides anything,
+    since no upload resolves to that song any more (`KeyLedger.UploadsOf` is empty). Nothing is
+    judged again, on either song.
+33. **The folded upload's own track state ends**: its instruction (accepted upload, backfill,
+    added by URL) and its intake record are forgotten, as removing a track does, and its song
+    leaves the re-judge queue once no upload is left to it. A re-judge of it would record a run
+    naming the upload and take it back. The job store needs nothing: stages pick work from the
+    work lists, which no longer hold the upload as a track of its own.
+34. **The row never speaks for an upload some member's plan adds as a source**, even one still
+    in the playlist; the primary is chosen among the other members, so the row keeps the mix's
+    verdict, plan and name.
+35. **A whole-source file already on disk becomes the added source's file, and is never
+    downloaded again.** The upload's files in Staging and the library whose provenance names no
+    preset, model or adoption are its whole audio; with one there, the upload is not probed and
+    the download stage finds the source present. Alignment (rules 1-3) then measures it like any
+    other.
+36. **A file whose name does not fit is renamed** to the added source's name, `<track name>
+    (<label>)`, with its analysis file, its Ableton tags and the sets that use it (the track
+    rename's move). The rename comes first, so one stopped by an open set or a locked file changes
+    nothing else and is finished by folding again. The form offers the label already in the
+    file's name (*Acapella*), so a file that fits keeps its name. Stems cut from the folded
+    upload, if any, are left as they are and show among the row's files as any other upload's do.
+
 ## Consequences
 
 - A refusal is the common safe answer, and it is the one the maintainer has always had: line it up

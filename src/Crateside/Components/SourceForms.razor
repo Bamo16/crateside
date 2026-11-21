@@ -41,6 +41,10 @@
                     that is what would land in your library.
                 </text>
             }
+            else if (Editor.AddPlan is { Fold: { } fold, IsPossible: true })
+            {
+                @StemEditor.FoldNote(fold, Editor.AddLabel)
+            }
             else
             {
                 @(Editor.AddPlan?.Refusal ?? StemEditor.AddNote(Row))
@@ -59,7 +63,7 @@
             {
                 <button class="primary" disabled="@(Editor.Working || Editor.AddPlan?.IsPossible is not true)"
                         @onclick="() => Editor.ConfirmAddAsync(Row)">
-                    @(Editor.Working ? "Checking…" : "Add source")
+                    @(Editor.Working ? "Checking…" : Editor.AddPlan?.Fold is null ? "Add source" : "Fold it in")
                 </button>
             }
             <button class="outline" @onclick="Editor.CancelAdding" disabled="@Editor.Working">

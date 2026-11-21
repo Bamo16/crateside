@@ -397,7 +397,9 @@ public sealed class StemEditor(
                 actions.Record(
                     row.TrackKey,
                     UserActionKind.SourceAdded,
-                    $"{AddLabel} · {AddUrl}",
+                    outcome.Fold is { } fold
+                        ? $"{AddLabel} · {AddUrl} · folded in {fold.DisplayName}"
+                        : $"{AddLabel} · {AddUrl}",
                     JobStage.Download
                 );
                 CancelPicking();
@@ -585,8 +587,36 @@ public sealed class StemEditor(
         _addLabelOffered = AddLabel;
     }
 
-    private void Replan(TrackRow row) =>
+    /// <summary>A fold whose file is on disk is offered the label in its name, so the file keeps it.</summary>
+    private void Replan(TrackRow row)
+    {
         AddPlan = sources.PlanFor(row.Facts, AddUrl, AddLabel, AddType);
+
+        if (
+            AddPlan.Fold is not { FileLabel: { } kept }
+            || kept == AddLabel
+            || (AddLabel.Length > 0 && AddLabel != _addLabelOffered)
+        )
+            return;
+
+        AddLabel = _addLabelOffered = kept;
+        AddPlan = sources.PlanFor(row.Facts, AddUrl, AddLabel, AddType);
+    }
+
+    /// <summary>What folding the other song in does, said before it is done (ADR 0111).</summary>
+    public static string FoldNote(SongFold fold, string label) =>
+        $"The ledger has this video as {fold.DisplayName}. Folding it in ends it as a track of its "
+        + "own: its verdicts stay in the ledger but no longer decide anything, and neither song is "
+        + "judged again. "
+        + fold switch
+        {
+            { Files: [] } => $"Its audio is downloaded as this track's {label}.",
+            { Renaming: [var move, ..] } =>
+                $"{Path.GetFileName(move.From)} becomes this track's {label}, renamed {Path.GetFileName(move.To)}.",
+            { Files: [var file, ..] } =>
+                $"{Path.GetFileName(file)} is already on disk and becomes this track's {label} as it is.",
+        }
+        + " No quota, no GPU.";
 
     private async Task WorkAsync(Func<Task> work)
     {

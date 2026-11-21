@@ -56,6 +56,20 @@ public sealed class RejudgeQueue
         }
     }
 
+    /// <summary>Takes a song off the queue; one not on it is a skip.</summary>
+    public void Remove(string song)
+    {
+        lock (_gate)
+        {
+            var entries = Load();
+
+            if (entries.RemoveAll(entry => Same(entry.Song, song)) is 0)
+                return;
+
+            Save(entries);
+        }
+    }
+
     /// <summary>The latest run of each queued song that has no run from its cutoff on, in queue order; the person's verdict is never owed one, and a ruled one only when someone asked (ADR 0076).</summary>
     public IReadOnlyList<LedgerRun> Pending(KeyLedger ledger) =>
         [

@@ -155,6 +155,29 @@ public sealed class TrackRename(
     public RenameOutcome Revert(string trackKey, string derivedName) =>
         Rename(trackKey, derivedName, stored: null);
 
+    /// <summary>Why these files cannot take these names, or null when they can.</summary>
+    public string? RefusalFor(IReadOnlyList<FileMove> moves) =>
+        moves.FirstOrDefault(move =>
+            !PathsMatch(move.From, move.To)
+            && (File.Exists(move.To) || File.Exists(StemFileName.AnalysisFor(move.To)))
+        )
+            is { } clash
+            ? $"{Path.GetFileName(clash.To)} is already in {Path.GetFileName(Path.GetDirectoryName(clash.To))}."
+            : Check([.. moves.Select(move => move.From)]).Refusal;
+
+    /// <summary>Gives files the names given, taking their warp markers, Ableton tags and sets with them.</summary>
+    public RenameOutcome Rename(IReadOnlyList<FileMove> moves) =>
+        RefusalFor(moves) is { } refusal
+            ? new RenameOutcome { Problem = refusal }
+            : Moved(
+                [
+                    .. moves
+                        .Where(move => !PathsMatch(move.From, move.To))
+                        .Select(move => new Move(move.From, move.To, RootOf(move.From))),
+                ],
+                name: null
+            );
+
     /// <summary>
     /// Stores the instruction, then moves the files — in that order, so a rename stopped half way
     /// is finished by pressing again.
@@ -170,14 +193,26 @@ public sealed class TrackRename(
         if (!SourcelessSongs.IsKey(trackKey))
             instructions.SetName(trackKey, stored);
 
-        var held = Hold(plan.Renaming);
+        return Moved(
+            [
+                .. plan.Renaming.Select(from => new Move(
+                    from,
+                    StemFileName.Renamed(from, plan.Name),
+                    RootOf(from)
+                )),
+            ],
+            plan.Name
+        );
+    }
+
+    private RenameOutcome Moved(IReadOnlyList<Move> moves, string? name)
+    {
+        var held = Hold([.. moves.Select(move => move.From)]);
         List<Move> done = [];
         List<string> markersLost = [];
 
-        foreach (var from in plan.Renaming)
+        foreach (var move in moves)
         {
-            var move = new Move(from, StemFileName.Renamed(from, plan.Name), RootOf(from));
-
             try
             {
                 File.Move(move.From, move.To);
@@ -192,10 +227,10 @@ public sealed class TrackRename(
 
                 return new RenameOutcome
                 {
-                    Name = plan.Name,
+                    Name = name,
                     Renamed = done.Count,
                     Problem =
-                        $"{Path.GetFileName(from)} could not be renamed — it is probably open in Ableton. "
+                        $"{Path.GetFileName(move.From)} could not be renamed — it is probably open in Ableton. "
                         + "Close it and try again.",
                 };
             }
@@ -207,7 +242,7 @@ public sealed class TrackRename(
 
         return new RenameOutcome
         {
-            Name = plan.Name,
+            Name = name,
             Renamed = done.Count,
             Note = Note(MoveTags(done, held), markersLost, relink?.Failed ?? []),
         };
@@ -432,6 +467,9 @@ public sealed class TrackRename(
 
     private sealed record Move(string From, string To, string Root);
 }
+
+/// <summary>One file and the name it is to take.</summary>
+public sealed record FileMove(string From, string To);
 
 /// <summary>A track's files and the sets using them, as <see cref="TrackRename.BasisOf"/> read them.</summary>
 /// <param name="Existing">What is on disk, listed once; null looks at the disk each time.</param>

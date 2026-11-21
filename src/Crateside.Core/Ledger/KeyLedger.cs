@@ -52,6 +52,12 @@ public sealed class KeyLedger
     /// </summary>
     public string? SongFor(string trackKey) => _songByTrackKey.GetValueOrDefault(trackKey);
 
+    /// <summary>Every video ID that resolves to this song; none once each was folded into another (ADR 0111).</summary>
+    public IEnumerable<string> UploadsOf(string song) =>
+        _songByTrackKey
+            .Where(upload => upload.Value.Equals(song, StringComparison.OrdinalIgnoreCase))
+            .Select(upload => upload.Key);
+
     public bool TryGetLatestByTrackKey(string trackKey, [NotNullWhen(true)] out LedgerRun? run)
     {
         run = null;
