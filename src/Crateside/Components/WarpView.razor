@@ -1792,27 +1792,21 @@
         );
 
     /// <summary>A lane's dimmed stretches before its clip starts and after its file ends, so the clip reads as a block on the grid (mirrored in playback/rows.js).</summary>
-    private RenderFragment OutsideClip((double Start, double End) span, double from, double to) =>
-        builder =>
-        {
-            var (left, right) = (Math.Clamp(X(span.Start, from, to), 0, 100), Math.Clamp(X(span.End, from, to), 0, 100));
+    private RenderFragment OutsideClip((double Start, double End) span, double from, double to)
+    {
+        var (left, right) = (Math.Clamp(X(span.Start, from, to), 0, 100), Math.Clamp(X(span.End, from, to), 0, 100));
 
-            if (left > 0)
+        return @<text>
+            @if (left > 0)
             {
-                builder.OpenElement(0, "div");
-                builder.AddAttribute(1, "class", "outside before");
-                builder.AddAttribute(2, "style", $"width: {P(left)}%");
-                builder.CloseElement();
+                <div class="outside before" style="width: @P(left)%"></div>
             }
-
-            if (right < 100)
+            @if (right < 100)
             {
-                builder.OpenElement(3, "div");
-                builder.AddAttribute(4, "class", "outside after");
-                builder.AddAttribute(5, "style", $"left: {P(right)}%");
-                builder.CloseElement();
+                <div class="outside after" style="left: @P(right)%"></div>
             }
-        };
+        </text>;
+    }
 
     private static double X(double seconds, double from, double to) => (seconds - from) / (to - from) * 100;
 
