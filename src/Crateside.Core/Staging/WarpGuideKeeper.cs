@@ -1,20 +1,26 @@
 using Crateside.Core.Samples;
+using Crateside.Core.WorkLists;
 
 namespace Crateside.Core.Staging;
 
 /// <summary>
 /// Moves a warp guide and its sidecar out of staging, out of Ableton's sight, once the rest of
-/// its track is in the library (#87, ADR 0046).
+/// its track is in the library, an added source counting for the track it was added to (#87, #234, ADR 0046).
 /// </summary>
-public sealed class WarpGuideKeeper(CratesidePaths paths, TimeProvider time)
+public sealed class WarpGuideKeeper(
+    CratesidePaths paths,
+    TimeProvider time,
+    TrackInstructionStore? instructions = null
+)
 {
     public IReadOnlyList<GuideKeeping> Keep()
     {
         if (!Directory.Exists(paths.StagingFolder))
             return [];
 
-        var staged = Cuts(paths.StagingFolder);
-        var filed = Cuts(paths.LibraryFolder)
+        var tracks = TracksOfAddedSources();
+        var staged = Cuts(paths.StagingFolder, tracks);
+        var filed = Cuts(paths.LibraryFolder, tracks)
             .Select(cut => cut.TrackKey)
             .ToHashSet(StringComparer.Ordinal);
         List<GuideKeeping> kept = [];
@@ -87,7 +93,17 @@ public sealed class WarpGuideKeeper(CratesidePaths paths, TimeProvider time)
     private static bool IsFree(string path) =>
         !File.Exists(path) && !File.Exists(StemFileName.AnalysisFor(path));
 
-    private static List<Cut> Cuts(string root) =>
+    private Dictionary<string, string> TracksOfAddedSources() =>
+        (instructions?.Read() ?? [])
+            .SelectMany(track =>
+                (track.Plan?.AddedSources ?? []).Select(added =>
+                    (added.TrackKey, Track: track.TrackKey)
+                )
+            )
+            .DistinctBy(pair => pair.TrackKey, StringComparer.Ordinal)
+            .ToDictionary(pair => pair.TrackKey, pair => pair.Track, StringComparer.Ordinal);
+
+    private static List<Cut> Cuts(string root, Dictionary<string, string> tracks) =>
         Directory.Exists(root)
             ?
             [
@@ -100,7 +116,10 @@ public sealed class WarpGuideKeeper(CratesidePaths paths, TimeProvider time)
                     )
                     .Select(file => new Cut(
                         file.Path,
-                        file.Provenance!.SourceTrackKey!,
+                        tracks.GetValueOrDefault(
+                            file.Provenance!.SourceTrackKey!,
+                            file.Provenance.SourceTrackKey!
+                        ),
                         StagedFile.IsWarpGuidePreset(
                             file.Provenance.Preset ?? StemFileName.PresetOf(file.Path)
                         )

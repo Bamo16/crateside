@@ -1,7 +1,10 @@
 using Crateside.Core;
 using Crateside.Core.Library;
 using Crateside.Core.Orchestration.Edits;
+using Crateside.Core.Plans;
 using Crateside.Core.Staging;
+using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Crateside.Tests.Orchestration.Edits;
@@ -19,6 +22,7 @@ public sealed class LibraryMoveTests : IDisposable
 
     private readonly CratesidePaths _paths;
     private readonly List<StagedFile> _staged = [];
+    private readonly TrackInstructionStore _instructions = new(TestLedger.Store());
     private readonly LibraryMove _move;
 
     public LibraryMoveTests()
@@ -38,7 +42,8 @@ public sealed class LibraryMoveTests : IDisposable
             new LibraryFiles(_paths),
             new WarpGuideKeeper(
                 _paths,
-                new FakeTimeProvider(new DateTimeOffset(2026, 11, 19, 12, 0, 0, TimeSpan.Zero))
+                new FakeTimeProvider(new DateTimeOffset(2026, 11, 19, 12, 0, 0, TimeSpan.Zero)),
+                _instructions
             )
         );
     }
@@ -93,6 +98,32 @@ public sealed class LibraryMoveTests : IDisposable
             [3],
             File.ReadAllBytes(Path.Combine(_paths.KeptWarpGuides, "Song (Drums).flac.asd"))
         );
+    }
+
+    [Fact]
+    public void A_guide_goes_when_only_added_sources_cut_from_their_own_uploads_were_moved()
+    {
+        const string added = "zyxwvutsrqp";
+        _instructions.SetPlan(
+            Key,
+            StemPlan.Default with
+            {
+                Presets = [],
+                AddedSources = [new AddedSource { TrackKey = added, Label = "Official Acappella" }],
+            }
+        );
+        Stage(
+            "Song (Official Acappella).flac",
+            "Official Acappella",
+            [1],
+            upload: $"https://www.youtube.com/watch?v={added}"
+        );
+        var guide = Stage("Song (Drums).flac", "Drums - htdemucs_ft", [3], warped: false);
+
+        Assert.IsType<LibraryMoveOutcome.Moved>(_move.Apply([Key, added]));
+
+        Assert.False(File.Exists(guide));
+        Assert.True(File.Exists(Path.Combine(_paths.KeptWarpGuides, "Song (Drums).flac")));
     }
 
     [Fact]
@@ -157,9 +188,15 @@ public sealed class LibraryMoveTests : IDisposable
         Assert.Empty(Directory.GetFiles(_paths.LibraryFolder));
     }
 
-    private string Stage(string name, string preset, byte[] sidecar, bool warped = true)
+    private string Stage(
+        string name,
+        string preset,
+        byte[] sidecar,
+        bool warped = true,
+        string upload = Upload
+    )
     {
-        var path = Tagged(Path.Combine(_paths.StagingFolder, name), preset);
+        var path = Tagged(Path.Combine(_paths.StagingFolder, name), preset, upload);
         File.WriteAllBytes($"{path}.asd", sidecar);
         _staged.Add(
             new StagedFile
@@ -174,12 +211,12 @@ public sealed class LibraryMoveTests : IDisposable
         return path;
     }
 
-    private static string Tagged(string path, string preset)
+    private static string Tagged(string path, string preset, string upload = Upload)
     {
         File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), path);
 
         using var file = TagLib.File.Create(path);
-        file.Tag.Comment = $"stemforge/0.4.0.0 | preset: {preset} | source: {Upload}";
+        file.Tag.Comment = $"stemforge/0.4.0.0 | preset: {preset} | source: {upload}";
         file.Save();
 
         return path;
