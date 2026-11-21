@@ -319,6 +319,21 @@
                         <button class="link" @onclick="UndoAsync">Undo</button>
                     }
                 </div>
+                @if (_undo is { Shifted: { Count: > 0 } shiftedSources })
+                {
+                    <div class="shifted-sources">
+                        @foreach (var shiftedSource in shiftedSources)
+                        {
+                            var sourceWarp = Reader.Read(shiftedSource.Path);
+
+                            <div class="shifted-source">
+                                <span class="chip">@wording.Chip(sourceWarp).Label</span>
+                                <b>@wording.Name(shiftedSource.Path)</b>
+                                <span>@wording.Sentence(sourceWarp)</span>
+                            </div>
+                        }
+                    </div>
+                }
             }
         }
 

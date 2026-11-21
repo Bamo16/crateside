@@ -117,6 +117,11 @@
                                 <span class="stem-note">@Upload(extra)</span>
                             </div>
                         }
+
+                        @if (!ticking && line is { AddedSource: { } addedSource, IsOnDisk: true })
+                        {
+                            <SourceOffsetLine SourceKey="@addedSource.TrackKey" />
+                        }
                     </div>
                 </div>
             }

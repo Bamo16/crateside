@@ -1,3 +1,5 @@
+using Crateside.Core.Plans;
+using Crateside.Core.SourceOffsets;
 using Crateside.Core.Tempo;
 using Crateside.Core.Warps;
 using Humanizer;
@@ -135,11 +137,26 @@ public partial class WarpView
 
         return (
             WarpSiblings.Read(lender) is { } song
-                ? Editor.Plan(siblings, song)
+                ? Editor.Plan(siblings, song, AddedFiles())
                 : new WarpSavePlan.Failed("its tags do not say which upload it was cut from"),
             siblings
         );
     }
+
+    private IReadOnlyList<AddedSourceFile> AddedFiles() =>
+        [
+            .. Row
+                .Samples.Where(sample =>
+                    sample
+                        is { Kind: StemKind.Source, Path: { Length: > 0 }, SourceTrackKey: { } key }
+                    && Row.IsAddedSource(key)
+                )
+                .Select(sample => new AddedSourceFile(
+                    sample.Path,
+                    sample.SourceTrackKey!,
+                    sample.Label
+                )),
+        ];
 
     private void OpenEdit()
     {
@@ -401,7 +418,8 @@ public partial class WarpView
             case WarpSaveOutcome.Saved(var save):
                 CloseEdit();
                 (_undo, _lineAt) = (save, save.At);
-                _line = $"Saved to {"stem".ToQuantity(save.Stems.Count + save.Lent.Count)}";
+                _line =
+                    $"Saved to {"stem".ToQuantity(save.Stems.Count + save.Lent.Count + save.Shifted.Count)}";
                 break;
             case WarpSaveOutcome.Changed(var stem):
                 _notSaved = stem;
@@ -424,7 +442,10 @@ public partial class WarpView
         await InvokeAsync(StateHasChanged);
 
         var outcome = await Task.Run(() => Editor.Undo(save));
-        var count = "stem".ToQuantity(save.Stems.Count + save.Lent.Count, ShowQuantityAs.Words);
+        var count = "stem".ToQuantity(
+            save.Stems.Count + save.Lent.Count + save.Shifted.Count,
+            ShowQuantityAs.Words
+        );
 
         _phase = Phase.Idle;
         _undo = null;
@@ -447,11 +468,14 @@ public partial class WarpView
     private string NotSavedText(string path) =>
         $"Live saved {Possessive(path)} warp since you started. Revert to load it, then redo the edits.";
 
-    private int SavingCount => _plan is { } plan ? plan.Stems.Count + plan.Lent.Count : 0;
+    private int SavingCount =>
+        _plan is { } plan
+            ? plan.Stems.Count + plan.Lent.Count + plan.Added.Count(added => added.IsWritten)
+            : 0;
 
     private string SavingText =>
         _phase is Phase.Undoing
-            ? $"Putting {"stem".ToQuantity(_undo is { } save ? save.Stems.Count + save.Lent.Count : 0)} back…"
+            ? $"Putting {"stem".ToQuantity(_undo is { } save ? save.Stems.Count + save.Lent.Count + save.Shifted.Count : 0)} back…"
             : $"Saving to {"stem".ToQuantity(SavingCount)} · backing each sidecar up, then writing";
 
     /// <summary>Re-plans when a stem the save writes changed on disk while the draft is open.</summary>
@@ -536,11 +560,14 @@ public partial class WarpView
 
     private IReadOnlyList<string> SavesToLines() =>
         _plan is { } plan
-            ? WarpEditWording.SavesTo(
-                [.. plan.Stems.Select(stem => NameOf(stem.Path))],
-                [.. plan.KeepsOwn.Select(NameOf)],
-                [.. plan.Lent.Select(NameOf)]
-            )
+            ? WarpEditWording
+                .SavesTo(
+                    [.. plan.Stems.Select(stem => NameOf(stem.Path))],
+                    [.. plan.KeepsOwn.Select(NameOf)],
+                    [.. plan.Lent.Select(NameOf)]
+                )
+                .Concat(plan.Added.Select(OffsetWording.Saves))
+                .ToList()
             : [];
 
     /// <summary>What the edit bar is editing, in the lane chips' words.</summary>
