@@ -327,12 +327,27 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
     {
         List<JobStage> forgiven = [];
 
-        foreach (var stage in Enum.GetValues<JobStage>())
-            if (Jobs.TryGet(Row.TrackKey, stage, out var job) && job is { Status: JobStatus.Failed })
-            {
-                Jobs.Forgive(Row.TrackKey, stage);
-                forgiven.Add(stage);
-            }
+        // The row's give-up can sit on any upload or added source it is read from (StageProgress),
+        // so each of them is forgiven, not only the row's own key.
+        string[] keys =
+        [
+            .. new[] { Row.TrackKey }
+                .Concat(Row.Uploads.Select(upload => upload.TrackKey))
+                .Concat(Row.Plan.AddedSources.Select(source => source.TrackKey))
+                .Distinct(StringComparer.Ordinal),
+        ];
+
+        foreach (var key in keys)
+        {
+            foreach (var stage in Enum.GetValues<JobStage>())
+                if (Jobs.TryGet(key, stage, out var job) && job is { Status: JobStatus.Failed })
+                {
+                    Jobs.Forgive(key, stage);
+                    forgiven.Add(stage);
+                }
+        }
+
+        forgiven = [.. forgiven.Distinct()];
 
         if (forgiven.Count > 0)
             Actions.Record(
