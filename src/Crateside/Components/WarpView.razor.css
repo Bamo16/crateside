@@ -555,6 +555,24 @@
     vector-effect: non-scaling-stroke;
 }
 
+.outside {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+}
+
+.outside.before {
+    left: 0;
+    border-right: 1px solid var(--text-40);
+}
+
+.outside.after {
+    right: 0;
+    border-left: 1px solid var(--text-40);
+}
+
 .differs {
     position: absolute;
     top: 1px;

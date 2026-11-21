@@ -582,6 +582,7 @@
                                 <svg class="overview" viewBox="0 0 @Columns 45" preserveAspectRatio="none">
                                     <path d="@Wave(stem, from, to, 45, mono: false)" />
                                 </svg>
+                                @OutsideClip(group.ClipSpan(stem), from, to)
 
                                 var markers = stem.Markers;
                                 var flags = FlagsFit(markers, from, to);
@@ -624,6 +625,7 @@
                             <svg class="overview" viewBox="0 0 @Columns 45" preserveAspectRatio="none">
                                 <path d="@Wave(added.Warp, from, to, 45, mono: false, shift: added.Shift)" />
                             </svg>
+                            @OutsideClip(group.ClipSpan(added.Warp, added.Shift), from, to)
                         </div>
                     </div>
                 }
@@ -1791,6 +1793,29 @@
                 .Where(x => x is >= 0 and <= 100)
                 .Select(x => $"M{P(x * Columns / 100)},58v5")
         );
+
+    /// <summary>A lane's dimmed stretches before its clip starts and after its file ends, so the clip reads as a block on the grid (mirrored in playback/rows.js).</summary>
+    private RenderFragment OutsideClip((double Start, double End) span, double from, double to) =>
+        builder =>
+        {
+            var (left, right) = (Math.Clamp(X(span.Start, from, to), 0, 100), Math.Clamp(X(span.End, from, to), 0, 100));
+
+            if (left > 0)
+            {
+                builder.OpenElement(0, "div");
+                builder.AddAttribute(1, "class", "outside before");
+                builder.AddAttribute(2, "style", $"width: {P(left)}%");
+                builder.CloseElement();
+            }
+
+            if (right < 100)
+            {
+                builder.OpenElement(3, "div");
+                builder.AddAttribute(4, "class", "outside after");
+                builder.AddAttribute(5, "style", $"left: {P(right)}%");
+                builder.CloseElement();
+            }
+        };
 
     private static double X(double seconds, double from, double to) => (seconds - from) / (to - from) * 100;
 

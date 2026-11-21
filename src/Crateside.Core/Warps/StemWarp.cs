@@ -284,6 +284,16 @@ public sealed record WarpGroup(IReadOnlyList<StemWarp> Stems, StemWarp? Lender)
     public double? PartsFrom(StemWarp stem) =>
         Lender is null || stem == Lender || !stem.IsWarped ? null : stem.PartsFrom(SharedMarkers);
 
+    /// <summary>
+    /// The stretch of the axis a lane's clip covers: from the mix's clip start (or the file's first sample, if later)
+    /// to the file's end; <paramref name="shift"/> is where an added source's file starts on the axis (ADR 0111).
+    /// </summary>
+    public (double Start, double End) ClipSpan(StemWarp stem, double shift = 0) =>
+        (
+            Math.Max(Math.Max(Lender?.Clip.Start ?? 0, 0), stem.Shift + shift),
+            (stem.Seconds > 0 ? stem.Seconds : Seconds) + shift
+        );
+
     public IEnumerable<StemWarp> OnTheirOwn => Stems.Where(stem => PartsFrom(stem) is not null);
 
     /// <summary>

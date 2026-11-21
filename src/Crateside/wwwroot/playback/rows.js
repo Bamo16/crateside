@@ -116,7 +116,7 @@ export const Rows = (Base) =>
             cover(grid.querySelector(":scope > .off-line"), "off");
 
             for (const row of grid.querySelectorAll(":scope > .lane")) {
-                const lane = live.lanes.find((candidate) => candidate.file === row.dataset.file);
+                const lane = live.lanes.find((candidate) => candidate.file === (row.dataset.file ?? row.dataset.added));
 
                 if (lane?.covered)
                     cover(row.querySelector(":scope > .plot"), "lane", lane);
@@ -551,12 +551,22 @@ export const Rows = (Base) =>
             const html = [];
 
             path.ownerSVGElement.setAttribute("viewBox", `0 0 ${columns} 45`);
-            path.setAttribute("d", this.wavePath(lane.peaks, from, to, columns));
+            path.setAttribute("d", this.wavePath(lane.peaks, from - (lane.shift ?? 0), to - (lane.shift ?? 0), columns));
 
-            const visible = lane.markers.map((at) => xOf(view, at)).filter((at) => at >= 0 && at <= 100);
+            // The dimmed stretches outside the lane's clip, as WarpView's OutsideClip draws them.
+            const [left, right] = [clampX(view, lane.clipFrom), clampX(view, lane.clipTo)];
+
+            if (left > 0)
+                html.push(`<div ${scope} class="outside before" style="width:${pct(left)}%"></div>`);
+
+            if (right < 100)
+                html.push(`<div ${scope} class="outside after" style="left:${pct(right)}%"></div>`);
+
+            const markers = lane.markers ?? [];
+            const visible = markers.map((at) => xOf(view, at)).filter((at) => at >= 0 && at <= 100);
             const flags = visible.every((at, i) => i === 0 || ((at - visible[i - 1]) / 100) * PLOT_PIXELS * wide >= FLAG_ROOM);
 
-            for (const at of lane.markers) {
+            for (const at of markers) {
                 const at100 = xOf(view, at);
 
                 if (at100 < 0 || at100 > 100)
@@ -569,7 +579,7 @@ export const Rows = (Base) =>
             if (view.zoomed) {
                 const ticks = [];
 
-                for (const at of lane.transients) {
+                for (const at of lane.transients ?? []) {
                     const at100 = xOf(view, at);
 
                     if (at100 >= 0 && at100 <= 100)

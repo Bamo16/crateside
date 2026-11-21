@@ -294,6 +294,14 @@ which refused a plan that unticked every stem and the Source while added sources
     name, size and modified time as measured, so the record stays standing, its stored path is
     updated, and nothing is measured again (rule 2 counts size and modified time, not the folder).
     The mix is treated the same way.
+30. **The warp view draws each lane's clip as a block on the grid (#229)**, the stretch outside it
+    dimmed. The mix and its stems start at the mix's clip start. An added source starts at the
+    mix's clip start too, which in its own file is `clip start - d` (rule 15); where its file
+    begins later than that, the block starts at the file's first sample. The block ends at the
+    file's end on the axis (`d` plus its length for an added source). This is
+    `WarpGroup.ClipSpan`; the lane's dimming is drawn by `WarpView.razor` and mirrored in
+    `playback/rows.js`, so it holds during a drag. Added-source lanes are redrawn there as well
+    (#228), from the file's own envelope shifted by `d`.
 
 ## Consequences
 

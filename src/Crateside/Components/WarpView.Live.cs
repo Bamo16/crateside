@@ -70,7 +70,9 @@ public partial class WarpView
                 open = band.Window is { } window && window == _openWindow,
                 button = band.Window is not null,
             }),
-            lanes = group.Stems.Select(stem => LaneOf(group, stem)),
+            lanes = group
+                .Stems.Select(stem => LaneOf(group, stem))
+                .Concat(_added.Select(added => AddedLaneOf(group, added))),
             keys = Run is null
                 ? null
                 : KeyStrip
@@ -124,8 +126,26 @@ public partial class WarpView
                 markers = stem.Markers.Select(marker => marker.Seconds),
                 transients = stem.TransientTimes,
                 clip = stem.Clip.Start,
+                clipFrom = group.ClipSpan(stem).Start,
+                clipTo = group.ClipSpan(stem).End,
                 parts = group.PartsFrom(stem),
             };
+
+    /// <summary>An added source's lane: its envelope as the file holds it, drawn <c>shift</c> seconds in, so it redraws like the others.</summary>
+    private object AddedLaneOf(WarpGroup group, AddedLane added)
+    {
+        var (clipFrom, clipTo) = group.ClipSpan(added.Warp, added.Shift);
+
+        return new
+        {
+            file = Path.GetFileName(added.Warp.Path),
+            covered = true,
+            peaks = PeaksSent(added.Warp),
+            shift = added.Shift,
+            clipFrom,
+            clipTo,
+        };
+    }
 
     private static IEnumerable<double?[]> TempoSegments(
         IReadOnlyList<WarpMarker> markers,

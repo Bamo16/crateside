@@ -48,6 +48,43 @@ public sealed class ClipMarkTests
         Assert.Equal(group.SecondsAt(4)!.Value, mark.Seconds, precision: 6);
     }
 
+    [Fact]
+    public void A_stems_clip_runs_from_the_mixs_clip_start_to_the_end_of_its_file()
+    {
+        var group = Group(markerBeat: 1, clipStartBeat: 4);
+
+        var (start, end) = group.ClipSpan(group.Stems[0]);
+
+        Assert.Equal(group.SecondsAt(4)!.Value, start, precision: 6);
+        Assert.Equal(20, end);
+    }
+
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(8, 8)]
+    public void An_added_sources_clip_starts_at_the_mixs_clip_start_unless_its_file_starts_later(
+        double shift,
+        double expectedStartAtLeast
+    )
+    {
+        var group = Group(markerBeat: 1, clipStartBeat: 4);
+        var added = new StemWarp
+        {
+            Path = "Song (Official).flac",
+            Owner = new WarpOwner.None(),
+            Seconds = 10,
+        };
+
+        var (start, end) = group.ClipSpan(added, shift);
+
+        Assert.Equal(
+            Math.Max(group.SecondsAt(4)!.Value, expectedStartAtLeast),
+            start,
+            precision: 6
+        );
+        Assert.Equal(10 + shift, end);
+    }
+
     private static WarpGroup Group(double markerBeat, double clipStartBeat, double first = 0.1245)
     {
         const double beat = 60 / 102.0;
