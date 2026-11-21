@@ -1,6 +1,7 @@
 using AbleKit.Analysis;
 using Crateside.Core;
 using Crateside.Core.Ableton;
+using Crateside.Core.SourceOffsets;
 using Crateside.Core.Warps;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -238,6 +239,238 @@ public sealed class WarpEditorTests : IDisposable
         File.SetLastWriteTimeUtc($"{Instrumental}.asd", DateTime.UtcNow.AddMinutes(5));
 
         Assert.Contains("you saved over it in Live", wording.Sentence(Reader().Read(Instrumental)));
+    }
+
+    [Fact]
+    public async Task An_aligned_added_source_is_written_the_mixs_warp_shifted_by_its_offset_and_backed_up()
+    {
+        var (editor, siblings) = await AddedGroup(OffsetVerdict.Aligned);
+        var before = File.ReadAllBytes($"{Extra}.asd");
+
+        var outcome = await editor.SaveAsync(
+            _plan,
+            siblings,
+            new WarpDraft().Later(1),
+            ct: TestContext.Current.CancellationToken
+        );
+
+        var save = Assert.IsType<WarpSaveOutcome.Saved>(outcome).Save;
+        var mix = AnalysisFile.Read($"{Instrumental}.asd");
+        var shifted = AnalysisFile.Read($"{Extra}.asd");
+        var one = Assert.Single(save.Shifted);
+
+        Assert.Equal(
+            mix.Warp.SecondsAt(8)!.Value - ExtraShift,
+            shifted.Warp.SecondsAt(8)!.Value,
+            1e-6
+        );
+        Assert.Equal(before, File.ReadAllBytes(one.Backup));
+        Assert.NotEqual(before, File.ReadAllBytes($"{Extra}.asd"));
+        Assert.IsType<WarpOwner.Shifted>(Reader().Read(Extra).Owner);
+        Assert.DoesNotContain(Extra, _written.LentTo(Instrumental));
+    }
+
+    [Fact]
+    public async Task Undo_puts_a_shifted_added_source_back_as_it_was()
+    {
+        var (editor, siblings) = await AddedGroup(OffsetVerdict.Aligned);
+        var before = File.ReadAllBytes($"{Extra}.asd");
+        var save = Assert
+            .IsType<WarpSaveOutcome.Saved>(
+                await editor.SaveAsync(
+                    _plan,
+                    siblings,
+                    new WarpDraft().Later(1),
+                    ct: TestContext.Current.CancellationToken
+                )
+            )
+            .Save;
+
+        editor.Undo(save);
+
+        Assert.Equal(before, File.ReadAllBytes($"{Extra}.asd"));
+        Assert.Null(_written.Of(Extra)?.Shift);
+    }
+
+    [Fact]
+    public async Task An_added_source_holding_its_own_warp_is_left_alone()
+    {
+        var (editor, siblings) = await AddedGroup(OffsetVerdict.Aligned, recorded: false);
+        var before = File.ReadAllBytes($"{Extra}.asd");
+
+        var save = Assert
+            .IsType<WarpSaveOutcome.Saved>(
+                await editor.SaveAsync(
+                    _plan,
+                    siblings,
+                    new WarpDraft().Later(1),
+                    ct: TestContext.Current.CancellationToken
+                )
+            )
+            .Save;
+
+        Assert.Equal(AddedSkip.HasOwnWarp, _plan.Added.Single().Skip);
+        Assert.Empty(save.Shifted);
+        Assert.Equal(before, File.ReadAllBytes($"{Extra}.asd"));
+    }
+
+    [Theory]
+    [InlineData(OffsetVerdict.Edit, AddedSkip.Edit)]
+    [InlineData(OffsetVerdict.Drift, AddedSkip.Drift)]
+    [InlineData(OffsetVerdict.NotTheSameRecording, AddedSkip.NotTheSameRecording)]
+    public async Task An_added_source_the_measurement_refused_is_not_written(
+        OffsetVerdict verdict,
+        AddedSkip skip
+    )
+    {
+        var (editor, siblings) = await AddedGroup(verdict);
+        var before = File.ReadAllBytes($"{Extra}.asd");
+
+        await editor.SaveAsync(
+            _plan,
+            siblings,
+            new WarpDraft().Later(1),
+            ct: TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(skip, _plan.Added.Single().Skip);
+        Assert.Equal(before, File.ReadAllBytes($"{Extra}.asd"));
+    }
+
+    [Fact]
+    public async Task An_added_source_not_measured_yet_waits_and_is_not_written()
+    {
+        var (editor, siblings) = await AddedGroup(null);
+
+        await editor.SaveAsync(
+            _plan,
+            siblings,
+            new WarpDraft().Later(1),
+            ct: TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(AddedSkip.Measuring, _plan.Added.Single().Skip);
+    }
+
+    [Fact]
+    public async Task An_added_source_saved_over_since_the_draft_began_stops_the_whole_save()
+    {
+        var (editor, siblings) = await AddedGroup(OffsetVerdict.Aligned);
+        var stems = new[] { Instrumental, Vocal, Drums }
+            .Select(stem => File.ReadAllBytes($"{stem}.asd"))
+            .ToArray();
+
+        File.SetLastWriteTimeUtc($"{Extra}.asd", DateTime.UtcNow.AddMinutes(5));
+
+        var outcome = await editor.SaveAsync(
+            _plan,
+            siblings,
+            new WarpDraft().Later(1),
+            ct: TestContext.Current.CancellationToken
+        );
+
+        Assert.IsType<WarpSaveOutcome.Changed>(outcome);
+        Assert.Equal(
+            stems,
+            new[] { Instrumental, Vocal, Drums }.Select(stem => File.ReadAllBytes($"{stem}.asd"))
+        );
+    }
+
+    [Fact]
+    public async Task A_source_that_starts_after_the_mixs_clip_gets_a_clip_start_on_the_next_bar_line()
+    {
+        var (_, siblings, plan) = await StarterGroup();
+        await Editor()
+            .SaveAsync(plan, siblings, new WarpDraft(), ct: TestContext.Current.CancellationToken);
+        var mix = AnalysisFile.Read($"{Instrumental}.asd");
+
+        var shifted = ShiftedWarp.Derive(mix, mix, 3 * 44_100, 44_100, 60);
+
+        Assert.NotNull(shifted);
+        Assert.True(shifted.ClipStartMoved);
+        Assert.True(shifted.ClipStartNowBar > shifted.ClipStartWasBar);
+        Assert.Equal(0, shifted.File.Warp.Markers[0].Seconds);
+        Assert.Equal(0, shifted.File.Clip.LoopStart % 4);
+        Assert.True(shifted.File.Clip.LoopStart >= shifted.File.Warp.Markers[0].Beat);
+        Assert.False(shifted.File.Clip.LoopOn);
+    }
+
+    [Fact]
+    public async Task A_source_shorter_than_the_mix_ends_on_a_hidden_marker_inside_the_file()
+    {
+        var (_, siblings, plan) = await StarterGroup();
+        await Editor()
+            .SaveAsync(plan, siblings, new WarpDraft(), ct: TestContext.Current.CancellationToken);
+        var mix = AnalysisFile.Read($"{Instrumental}.asd");
+
+        var shifted = ShiftedWarp.Derive(mix, mix, 0, 44_100, 10);
+
+        Assert.NotNull(shifted);
+        Assert.All(shifted.File.Warp.Markers, marker => Assert.InRange(marker.Seconds, 0, 10.1));
+        Assert.InRange(shifted.File.Clip.LoopEnd, 19, 20);
+    }
+
+    private const double ExtraShift = 0.1;
+
+    private WarpSavePlan.Ready _plan = null!;
+
+    private string Extra => Path.Combine(_paths.StagingFolder, "Song (Official Instrumental).flac");
+
+    /// <summary>Plans a save with one added source whose measurement said <paramref name="verdict"/> (null: not measured).</summary>
+    private async Task<(WarpEditor Editor, WarpSiblings Siblings)> AddedGroup(
+        OffsetVerdict? verdict,
+        bool recorded = true
+    )
+    {
+        var (editor, siblings, _) = await StarterGroup();
+        var asd = $"{Extra}.asd";
+
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), Extra);
+        (AnalysisFile.Read($"{Instrumental}.asd") with { IsDefaultClipSaved = true }).Write(asd);
+
+        if (recorded)
+            _written.RecordStarter(Extra);
+
+        var offsets = new SourceOffsetStore();
+
+        if (verdict is { } measured)
+            offsets.Save(
+                "added",
+                new SourceOffsetRecord(
+                    "main",
+                    FileStamp.Of(Instrumental)!,
+                    FileStamp.Of(Extra)!,
+                    new OffsetReading
+                    {
+                        Verdict = measured,
+                        SampleRate = 44_100,
+                        WindowSeconds = 5,
+                        Offset =
+                            measured is OffsetVerdict.Aligned ? (int)(ExtraShift * 44_100) : null,
+                    },
+                    _time.GetUtcNow()
+                )
+            );
+
+        var backups = new SidecarBackups(Path.Combine(_root, "backups"), _time);
+        var withOffsets = new WarpEditor(
+            _written,
+            _saved,
+            backups,
+            new WarpActions(_writer, _written, new LiveAnalyses(), backups, _time),
+            _time,
+            offsets
+        );
+
+        _plan = Assert.IsType<WarpSavePlan.Ready>(
+            withOffsets.Plan(
+                siblings,
+                WarpSiblings.Read(Instrumental)!,
+                [new AddedSourceFile(Extra, "added", "Official Instrumental")]
+            )
+        );
+
+        return (withOffsets, siblings);
     }
 
     private StemWarpReader Reader() =>

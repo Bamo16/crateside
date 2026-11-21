@@ -19,6 +19,15 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
 
     public static string Day(DateTime when) => when.ToString("d MMM", CultureInfo.CurrentCulture);
 
+    /// <summary>A signed offset in milliseconds, to a tenth: <c>+441.5 ms</c>.</summary>
+    public static string Offset(double milliseconds) =>
+        milliseconds.ToString("+0.0;-0.0;0.0", CultureInfo.InvariantCulture) + " ms";
+
+    private static string ClipStartMoved(WrittenShift shift) =>
+        shift is { ClipStartWasBar: { } was, ClipStartNowBar: { } now }
+            ? $" The clip start moved from bar {was} to bar {now}, the first this file holds."
+            : string.Empty;
+
     /// <summary>A tempo between markers, which is exact as a warp's figure is.</summary>
     public static string Tempo(double bpm) => TempoFormat.Format(TrackTempo.Typed(bpm)).Text;
 
@@ -70,6 +79,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
                 $"Borrowed from {Name(from)}",
                 ChipStyle.Outlined
             ),
+            WarpOwner.Shifted => new("Shifted from the mix", ChipStyle.Outlined),
             WarpOwner.Starter => new("Auto warp", ChipStyle.Auto),
             WarpOwner.Unwarped => new("Warp off", ChipStyle.Dashed),
             WarpOwner.LiveAnalysis => new("Live's analysis", ChipStyle.Dashed),
@@ -95,6 +105,8 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
                 $"saved {Day(saved)} · lent to {Names(lentTo)}{Differs(stem)}",
             WarpOwner.Yours(var saved, _, _) => $"saved {Day(saved)}{Differs(stem)}",
             WarpOwner.Borrowed(_, var written) => $"unchanged since {Day(written)}",
+            WarpOwner.Shifted(var written, var shift) =>
+                $"{Offset(shift.Milliseconds)} · {Day(written)}",
             WarpOwner.Starter => "one marker · not finished",
             WarpOwner.Unwarped => "gain and color only · warp it by hand",
             WarpOwner.LiveAnalysis => "not saved, so Live ignores it",
@@ -116,6 +128,8 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
                 $"Saved in Live on {Day(saved)}.{FollowsUntil(stem)}",
             WarpOwner.Borrowed(var from, var written) =>
                 $"crateside copied {Name(from)}'s warp on {Day(written)}. Unchanged since.",
+            WarpOwner.Shifted(var written, var shift) =>
+                $"Shifted from the mix's warp by {Offset(shift.Milliseconds)} on {Day(written)}, from where the two files line up.{ClipStartMoved(shift)}",
             WarpOwner.Starter =>
                 $"One marker at crateside's reading{StarterTempo(stem)}, so dropping it into an empty set sets the set's tempo. Not a finished warp: warp it in Live and press Save Default Clip.",
             WarpOwner.Unwarped(var written, { } because) =>

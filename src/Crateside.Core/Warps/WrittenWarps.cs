@@ -87,9 +87,13 @@ public sealed class WrittenWarps
     public void RecordUnwarped(string audioPath, string? because = null) =>
         Record(audioPath, null, unwarped: true, starter: null, because);
 
+    /// <summary>Records a sidecar derived from the mix's warp by the added source's measured offset (ADR 0111).</summary>
+    public void RecordShifted(string audioPath, WrittenShift shift) =>
+        Record(audioPath, null, unwarped: false, starter: null, because: null, shift);
+
     /// <summary>Records a sidecar crateside rewrote as still being what it was.</summary>
     public void Rerecord(string audioPath, WrittenWarp was) =>
-        Record(audioPath, was.From, was.IsUnwarped, was.Starter, was.WarpOffBecause);
+        Record(audioPath, was.From, was.IsUnwarped, was.Starter, was.WarpOffBecause, was.Shift);
 
     private WrittenWarp? Current(string audioPath)
     {
@@ -112,7 +116,8 @@ public sealed class WrittenWarps
         string? from,
         bool unwarped,
         WrittenStarter? starter,
-        string? because
+        string? because,
+        WrittenShift? shift = null
     )
     {
         var sidecar = new FileInfo(SidecarOf(audioPath));
@@ -125,7 +130,8 @@ public sealed class WrittenWarps
                 sidecar.LastWriteTimeUtc,
                 unwarped,
                 starter,
-                because
+                because,
+                shift
             );
 
             if (_path is not null)
@@ -159,18 +165,30 @@ public sealed class WrittenWarps
 /// <param name="IsUnwarped">A clip with Warp off, for a stem that gets no starter: no warp at all (ADR 0059).</param>
 /// <param name="Starter">A starter's grid and why its marker got its beat; null for anything else, and for starters written before #176.</param>
 /// <param name="WarpOffBecause">Why a clip with Warp off got no starter; null for anything else, and for clips written before this was kept.</param>
+/// <param name="Shift">The mix's warp shifted onto an added source (ADR 0111); null for anything else.</param>
 public sealed record WrittenWarp(
     string? From,
     long Length,
     DateTime Written,
     bool IsUnwarped = false,
     WrittenStarter? Starter = null,
-    string? WarpOffBecause = null
+    string? WarpOffBecause = null,
+    WrittenShift? Shift = null
 )
 {
     [JsonIgnore]
-    public bool IsStarter => From is null && !IsUnwarped;
+    public bool IsStarter => From is null && !IsUnwarped && Shift is null;
 }
+
+/// <param name="Samples">The offset the warp was shifted by: the added source's sample n sits at the mix's n plus this.</param>
+/// <param name="ClipStartWasBar">The bar the mix's clip starts on, when the added source begins too late for it; null when the clip start stayed.</param>
+/// <param name="ClipStartNowBar">The bar the clip start moved to.</param>
+public sealed record WrittenShift(
+    int Samples,
+    double Milliseconds,
+    int? ClipStartWasBar = null,
+    int? ClipStartNowBar = null
+);
 
 /// <summary>A starter as written: its tempo and marker, the reading they came from, and why the marker got its beat (#176).</summary>
 /// <param name="Bpm">The tempo written: the reading's, refined on the transients (ADR 0050).</param>

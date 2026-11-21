@@ -94,6 +94,7 @@ public sealed record StemWarp
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
 [JsonDerivedType(typeof(Yours), "yours")]
 [JsonDerivedType(typeof(Borrowed), "borrowed")]
+[JsonDerivedType(typeof(Shifted), "shifted")]
 [JsonDerivedType(typeof(Starter), "starter")]
 [JsonDerivedType(typeof(Unwarped), "unwarped")]
 [JsonDerivedType(typeof(LiveAnalysis), "liveAnalysis")]
@@ -116,6 +117,9 @@ public abstract record WarpOwner
 
     /// <summary>A sibling's warp crateside copied onto this stem (ADR 0043).</summary>
     public sealed record Borrowed(string From, DateTime Written) : WarpOwner;
+
+    /// <summary>The mix's warp, shifted onto this added source by its measured offset (ADR 0111).</summary>
+    public sealed record Shifted(DateTime Written, WrittenShift Shift) : WarpOwner;
 
     /// <summary>A starter warp crateside wrote from beatdetect's reading, not yet saved over.</summary>
     public sealed record Starter(DateTime Written) : WarpOwner;
@@ -192,6 +196,7 @@ public sealed class StemWarpReader(
             ({ } waited, _, false) => new WarpOwner.PuttingBack(waited),
             (_, { IsUnwarped: true }, _) => new WarpOwner.Unwarped(changed, ours?.WarpOffBecause),
             (_, { IsStarter: true }, _) => new WarpOwner.Starter(changed),
+            (_, { Shift: { } shift }, _) => new WarpOwner.Shifted(changed, shift),
             (_, { From: { } from }, _) => new WarpOwner.Borrowed(from, changed),
             (_, _, true) => new WarpOwner.Yours(
                 changed,

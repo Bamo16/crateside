@@ -1,5 +1,6 @@
 using AbleKit.Analysis;
 using Crateside.Core.Samples;
+using Crateside.Core.SourceOffsets;
 
 namespace Crateside.Core.Warps;
 
@@ -12,11 +13,16 @@ public sealed class WarpEditor(
     SavedWarps saved,
     SidecarBackups backups,
     WarpActions actions,
-    TimeProvider time
+    TimeProvider time,
+    SourceOffsetStore? offsets = null
 )
 {
     /// <summary>Which stems a save would write, without writing; taken when the draft begins, so the save can tell the files changed since.</summary>
-    public WarpSavePlan Plan(WarpSiblings siblings, SiblingFile song)
+    public WarpSavePlan Plan(
+        WarpSiblings siblings,
+        SiblingFile song,
+        IReadOnlyList<AddedSourceFile>? added = null
+    )
     {
         try
         {
@@ -62,7 +68,13 @@ public sealed class WarpEditor(
                         .Select(stem => stem.Cut.Path)
                         .Except(sharing, StringComparer.OrdinalIgnoreCase),
                 ]
-            );
+            )
+            {
+                Added =
+                    offsets is null || added is null
+                        ? []
+                        : AddedSourcePlan.Of(added, offsets, written),
+            };
         }
         catch (Exception ex)
             when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
@@ -80,6 +92,10 @@ public sealed class WarpEditor(
     )
     {
         List<SavedStem> done = [];
+        List<SavedStem> shifted = [];
+
+        if (plan.Added.FirstOrDefault(item => item.IsChanged) is { Stamp.Path: var changedAdded })
+            return new WarpSaveOutcome.Changed(changedAdded);
 
         try
         {
@@ -103,6 +119,8 @@ public sealed class WarpEditor(
                 saved.Record(stamp.Path, edits, time.GetUtcNow());
                 progress?.Invoke(done.Count);
             }
+
+            shifted.AddRange(ShiftAddedSources(plan));
         }
         catch (Exception ex)
             when (ex
@@ -112,7 +130,7 @@ public sealed class WarpEditor(
                         or InvalidOperationException
             )
         {
-            Restore(done);
+            Restore([.. done, .. shifted]);
 
             return new WarpSaveOutcome.Failed(ex.Message);
         }
@@ -147,7 +165,74 @@ public sealed class WarpEditor(
             }
         }
 
-        return new WarpSaveOutcome.Saved(new WarpSaved(time.GetUtcNow(), done, lent));
+        return new WarpSaveOutcome.Saved(new WarpSaved(time.GetUtcNow(), done, lent, shifted));
+    }
+
+    /// <summary>Derives each added source's sidecar from the mix's warp as saved, backing each up first (ADR 0111, rules 14 to 20).</summary>
+    private List<SavedStem> ShiftAddedSources(WarpSavePlan.Ready plan)
+    {
+        List<SavedStem> shifted = [];
+
+        if (
+            !plan.Added.Any(item => item.IsWritten)
+            || !AnalysisFile.TryRead(StemFileName.AnalysisFor(plan.Reference), out var mix)
+        )
+            return shifted;
+
+        try
+        {
+            foreach (
+                var item in plan.Added.Where(item =>
+                    item
+                        is {
+                            IsWritten: true,
+                            Record: { Stands: true, Reading: { Offset: not null } }
+                        }
+                )
+            )
+            {
+                var path = item.File.Path;
+                var sidecar = StemFileName.AnalysisFor(path);
+                var reading = item.Record!.Reading;
+                var source = AnalysisFile.Read(sidecar);
+
+                if (
+                    source.Audio.HeadTable is not [.., > 0 and var frames]
+                    || ShiftedWarp.Derive(
+                        mix,
+                        source,
+                        reading.Offset!.Value,
+                        reading.SampleRate,
+                        (double)frames / reading.SampleRate
+                    )
+                        is not { } derived
+                )
+                    continue;
+
+                var backup = backups.Keep(sidecar);
+                var was = written.Of(path);
+
+                derived.File.Write(sidecar);
+                written.RecordShifted(
+                    path,
+                    new WrittenShift(
+                        reading.Offset.Value,
+                        reading.OffsetMilliseconds,
+                        derived.ClipStartWasBar,
+                        derived.ClipStartNowBar
+                    )
+                );
+                shifted.Add(new SavedStem(path, backup, was, SidecarStamp.Of(path)));
+            }
+        }
+        catch
+        {
+            Restore(shifted);
+
+            throw;
+        }
+
+        return shifted;
     }
 
     /// <summary>Puts every sidecar the save wrote back as it was, if none has been saved over since.</summary>
@@ -163,7 +248,11 @@ public sealed class WarpEditor(
         {
             Restore(save.Stems);
 
-            foreach (var stem in save.Lent.Where(stem => SidecarStamp.Of(stem.Path) == stem.After))
+            foreach (
+                var stem in save
+                    .Lent.Concat(save.Shifted)
+                    .Where(stem => SidecarStamp.Of(stem.Path) == stem.After)
+            )
                 Restore([stem]);
 
             return new WarpUndoOutcome.Undone();
@@ -222,7 +311,11 @@ public abstract record WarpSavePlan
         IReadOnlyList<SidecarStamp> Stems,
         IReadOnlyList<string> Lent,
         IReadOnlyList<string> KeepsOwn
-    ) : WarpSavePlan;
+    ) : WarpSavePlan
+    {
+        /// <summary>Every added source of the track and whether this save writes it (ADR 0111).</summary>
+        public IReadOnlyList<AddedSourcePlan> Added { get; init; } = [];
+    }
 
     /// <summary>No stem the track is warped by holds a saved warp.</summary>
     public sealed record NoWarp : WarpSavePlan;
@@ -261,7 +354,8 @@ public abstract record WarpUndoOutcome
 public sealed record WarpSaved(
     DateTimeOffset At,
     IReadOnlyList<SavedStem> Stems,
-    IReadOnlyList<SavedStem> Lent
+    IReadOnlyList<SavedStem> Lent,
+    IReadOnlyList<SavedStem> Shifted
 );
 
 /// <param name="Backup">The sidecar as it was before the save.</param>

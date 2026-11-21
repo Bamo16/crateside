@@ -5330,6 +5330,9 @@
             "$ref": "#/components/schemas/WarpOwnerBorrowed"
           },
           {
+            "$ref": "#/components/schemas/WarpOwnerShifted"
+          },
+          {
             "$ref": "#/components/schemas/WarpOwnerStarter"
           },
           {
@@ -5354,6 +5357,7 @@
           "mapping": {
             "yours": "#/components/schemas/WarpOwnerYours",
             "borrowed": "#/components/schemas/WarpOwnerBorrowed",
+            "shifted": "#/components/schemas/WarpOwnerShifted",
             "starter": "#/components/schemas/WarpOwnerStarter",
             "unwarped": "#/components/schemas/WarpOwnerUnwarped",
             "liveAnalysis": "#/components/schemas/WarpOwnerLiveAnalysis",
@@ -5427,6 +5431,29 @@
           }
         },
         "description": "Live has written a fresh sidecar, and crateside has yet to put the warp back into it."
+      },
+      "WarpOwnerShifted": {
+        "required": [
+          "written",
+          "shift"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "shifted"
+            ],
+            "type": "string"
+          },
+          "written": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "shift": {
+            "$ref": "#/components/schemas/WrittenShift"
+          }
+        },
+        "description": "The mix's warp, shifted onto this added source by its measured offset (ADR 0111)."
       },
       "WarpOwnerStarter": {
         "required": [
@@ -5693,6 +5720,52 @@
         },
         "description": "One window's detector readings, and the section the verdict gave it, if any."
       },
+      "WrittenShift": {
+        "required": [
+          "samples",
+          "milliseconds"
+        ],
+        "type": "object",
+        "properties": {
+          "samples": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The offset the warp was shifted by: the added source's sample n sits at the mix's n plus this.",
+            "format": "int32"
+          },
+          "milliseconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "clipStartWasBar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "The bar the mix's clip starts on, when the added source begins too late for it; null when the clip start stayed.",
+            "format": "int32"
+          },
+          "clipStartNowBar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "The bar the clip start moved to.",
+            "format": "int32"
+          }
+        }
+      },
       "WrittenStarter": {
         "required": [
           "bpm",
@@ -5841,6 +5914,17 @@
               "string"
             ],
             "description": "Why a clip with Warp off got no starter; null for anything else, and for clips written before this was kept."
+          },
+          "shift": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The mix's warp shifted onto an added source (ADR 0111); null for anything else.",
+                "$ref": "#/components/schemas/WrittenShift"
+              }
+            ]
           }
         },
         "description": "A sidecar crateside wrote: a sibling's warp, a starter warp, or a clip with Warp off."
