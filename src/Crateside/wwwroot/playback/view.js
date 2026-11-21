@@ -242,6 +242,9 @@ export const View = (Base) =>
             if (step === "bar")
                 return this.snaps()[this.floorIndex(at)];
 
+            if (pick.startsWith("bars"))
+                return Math.max(0, this.grid.startOf(Math.floor(this.grid.indexAt(at) / step) * step));
+
             return Math.max(0, this.grid.secondsAt(Math.floor(this.grid.beatAt(at) / step + 1e-6) * step));
         }
 

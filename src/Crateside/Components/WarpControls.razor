@@ -2,7 +2,6 @@
 
 <span class="zoom">
     <button class="outline small" data-goto hidden></button>
-    <span class="mono readout" data-readout></span>
     <span class="gridpick" role="group" aria-label="Beat grid" title="The beat grid behind the waveforms">
         <span class="faint">Grid</span>
         @foreach (var choice in Enum.GetValues<GridDensity>())
@@ -16,18 +15,19 @@
         <button class="outline small" data-follow="page" title="The view moves on a whole window when the playhead reaches its right edge">Page</button>
         <button class="outline small" data-follow="scroll" title="The view moves with the playhead, which stays at its centre">Scroll</button>
     </span>
+    <span class="gridpick" role="group" aria-label="Loop">
+        <button class="outline small" data-loop aria-pressed="false" title="Loop between the braces over the ruler">Loop</button>
+    </span>
     <span class="gridpick" role="group" aria-label="Snap">
         <label class="faint" for="snap">Snap</label>
         <select id="snap" class="snap" data-quantize title="Where a click on the ruler or a waveform lands; the jump is always at once">
             <option value="none">None</option>
-            <option value="sixteenth">1/16</option>
-            <option value="eighth">1/8</option>
             <option value="quarter">1/4</option>
-            <option value="bar">1 Bar</option>
+            <option value="bar">1 bar</option>
+            <option value="bars2">2 bars</option>
+            <option value="bars4">4 bars</option>
+            <option value="bars8">8 bars</option>
         </select>
-    </span>
-    <span class="gridpick" role="group" aria-label="Loop">
-        <button class="outline small" data-loop aria-pressed="false" title="Loop between the braces over the ruler">Loop</button>
     </span>
     <button class="outline mono nav" data-zoom-out title="Zoom out (-, Ctrl + wheel)" aria-label="Zoom out">−</button>
     <button class="outline mono nav" data-zoom-in title="Zoom in (+, Ctrl + wheel)" aria-label="Zoom in">+</button>
