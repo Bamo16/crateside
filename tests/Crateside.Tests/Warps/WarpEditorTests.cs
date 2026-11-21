@@ -271,6 +271,25 @@ public sealed class WarpEditorTests : IDisposable
     }
 
     [Fact]
+    public async Task A_save_reports_it_has_moved_once_a_file_it_wrote_is_no_longer_where_it_was()
+    {
+        var (editor, siblings) = await AddedGroup(OffsetVerdict.Aligned);
+        var outcome = await editor.SaveAsync(
+            _plan,
+            siblings,
+            new WarpDraft().Later(1),
+            ct: TestContext.Current.CancellationToken
+        );
+        var save = Assert.IsType<WarpSaveOutcome.Saved>(outcome).Save;
+
+        Assert.False(save.HasMoved);
+
+        File.Move(Extra, $"{Extra}.moved");
+
+        Assert.True(save.HasMoved);
+    }
+
+    [Fact]
     public async Task Undo_puts_a_shifted_added_source_back_as_it_was()
     {
         var (editor, siblings) = await AddedGroup(OffsetVerdict.Aligned);

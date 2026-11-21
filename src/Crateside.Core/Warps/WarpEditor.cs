@@ -422,7 +422,11 @@ public sealed record WarpSaved(
     IReadOnlyList<SavedStem> Stems,
     IReadOnlyList<SavedStem> Lent,
     IReadOnlyList<SavedStem> Shifted
-);
+)
+{
+    /// <summary>Whether a file the save wrote has moved or gone, so its card and Undo no longer point at it.</summary>
+    public bool HasMoved => Stems.Concat(Lent).Concat(Shifted).Any(stem => !File.Exists(stem.Path));
+}
 
 /// <param name="Backup">The sidecar as it was before the save.</param>
 /// <param name="Was">What crateside had recorded of it then, put back by Undo; null when it held the user's own.</param>
