@@ -1,5 +1,6 @@
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Samples;
+using Crateside.Core.Staging;
 
 namespace Crateside.Core.Orchestration.Handoff;
 
@@ -17,12 +18,14 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
     /// </param>
     /// <param name="moved">Called with each stem's old and new path the moment it lands.</param>
     /// <param name="into">Where the stems go in place of Staging, which is the library for a re-cut that needs no warping (ADR 0103).</param>
+    /// <param name="guideLabel">The label of the added source these stems were cut from: its drums guide carries it, or it takes the name of the track's own guide.</param>
     public HandoffResult Run(
         IReadOnlyList<string> stems,
         string? name = null,
         IReadOnlyList<string>? superseded = null,
         Action<string, string>? moved = null,
-        string? into = null
+        string? into = null,
+        string? guideLabel = null
     )
     {
         var folder = into ?? paths.StagingFolder;
@@ -35,7 +38,9 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
 
         var cleared = Clear(superseded ?? []);
 
-        var moves = stems.Select(s => (From: s, To: Destination(s, name, folder))).ToList();
+        var moves = stems
+            .Select(s => (From: s, To: Destination(s, name, folder, guideLabel)))
+            .ToList();
 
         if (moves.FirstOrDefault(m => File.Exists(m.To)) is { From: not null } clash)
             return HandoffResult.Failed(
@@ -84,11 +89,25 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
         return cleared;
     }
 
-    private static string Destination(string stem, string? name, string folder) =>
+    private static string Destination(
+        string stem,
+        string? name,
+        string folder,
+        string? guideLabel
+    ) =>
         Path.Combine(
             folder,
             Path.GetFileName(
-                StemFileName.IsUsable(name) ? StemFileName.Renamed(stem, name, folder) : stem
+                StemFileName.IsUsable(name)
+                    ? StemFileName.Renamed(
+                        stem,
+                        guideLabel is { Length: > 0 }
+                        && StagedFile.IsWarpGuidePreset(StemFileName.PresetOf(stem))
+                            ? $"{name} ({guideLabel})"
+                            : name,
+                        folder
+                    )
+                    : stem
             )
         );
 }

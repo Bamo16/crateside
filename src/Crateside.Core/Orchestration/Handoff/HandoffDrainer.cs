@@ -59,7 +59,8 @@ public sealed class HandoffDrainer(
                 NameFor(trackKey),
                 SupersededStems.In(_paths.StagingFolder, trackKey, ledger, Kept()),
                 (from, to) => sidecars?.Moved(prepared, from, to),
-                libraryHandoff?.FolderFor(trackKey, prepared, IsOwnSource(trackKey))
+                libraryHandoff?.FolderFor(trackKey, prepared, IsOwnSource(trackKey)),
+                AddedLabel(trackKey)
             );
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -122,6 +123,14 @@ public sealed class HandoffDrainer(
                 : null,
             _ => null,
         };
+
+    /// <summary>The label of the added source this upload is, or null for a track's own audio.</summary>
+    private string? AddedLabel(string trackKey) =>
+        Owner(trackKey)
+            ?.Plan?.AddedSources.FirstOrDefault(source =>
+                source.TrackKey.Equals(trackKey, StringComparison.Ordinal)
+            )
+            ?.Label;
 
     /// <summary>The upload is the track's own, not a source added to a track.</summary>
     private bool IsOwnSource(string trackKey) =>

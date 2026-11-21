@@ -247,5 +247,31 @@ public sealed class HandoffTests : IDisposable
         Assert.Equal("vaQClQzY2fk", trackKey);
     }
 
+    [Fact]
+    public void An_added_sources_drums_guide_does_not_take_the_name_of_the_tracks_own_guide()
+    {
+        var own = Staged("Huey - Pop, Lock & Drop It (Main Version) (Drums).flac");
+        Directory.CreateDirectory(_paths.StagingFolder);
+        File.WriteAllText(own, "own guide");
+        var guide = Stem("Pop, Lock & Drop It (Official Instrumental) (Drums).flac");
+        const string name = "Huey - Pop, Lock & Drop It (Main Version)";
+
+        var clash = _runner.Run([guide], name);
+
+        Assert.False(clash.IsSuccess);
+
+        var result = _runner.Run([guide], name, guideLabel: "Official Instrumental");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("own guide", File.ReadAllText(own));
+        Assert.True(
+            File.Exists(
+                Staged(
+                    "Huey - Pop, Lock & Drop It (Main Version) (Official Instrumental) (Drums).flac"
+                )
+            )
+        );
+    }
+
     private HandoffSelector Selector(JobStore jobs) => new(jobs, _paths);
 }
