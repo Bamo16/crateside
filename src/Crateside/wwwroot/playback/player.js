@@ -249,7 +249,7 @@ export const PlayerStrip = (Base) =>
                 this.scrubbing = null;
 
                 if (e.type === "pointerup")
-                    this.seek(at(e));
+                    this.seek(at(e), { play: true });
             };
 
             this.scrubbing = { at: at(event) };

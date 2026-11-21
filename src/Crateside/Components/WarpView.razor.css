@@ -271,11 +271,11 @@
 }
 
 .ruler:not(.dragging) {
-    cursor: pointer;
+    cursor: url("/cursors/speaker.svg") 4 12, default;
 }
 
 .lane .plot {
-    cursor: pointer;
+    cursor: url("/cursors/speaker.svg") 4 12, default;
 }
 
 /* An added source's lane is read-only (ADR 0111): nothing to select, and a dashed edge says it is
