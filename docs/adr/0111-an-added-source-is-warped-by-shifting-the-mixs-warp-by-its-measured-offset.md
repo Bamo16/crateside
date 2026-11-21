@@ -227,8 +227,8 @@ confident, sharing no offset) and reads *not the same recording*, which is refus
       as in 12;
     - not the same recording: *Does not line up with the mix: 0 of 38 windows; not written*.
 
-    While it waits or measures the line says so. A source that is not the same recording is also
-    marked on the Tracks row's source count.
+    While it waits or measures the line says so. (The Tracks list has no per-row source count, so
+    nothing is marked there.)
 22. **In the warp view**, the Save confirmation lists each added source it will write, with its
     offset, and each it will not and why (edit, drift, not the same recording, has its own warp,
     measuring). After a save, the added source's warp card reads *Shifted from the mix's warp by
