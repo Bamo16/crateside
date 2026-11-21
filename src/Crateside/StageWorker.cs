@@ -1,4 +1,5 @@
-using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside;
 
@@ -6,16 +7,13 @@ namespace Crateside;
 /// The loop that keeps one stage draining. Deliberately thin — the decisions belong to a drainer
 /// or a selector.
 /// </summary>
-/// <param name="control">
-/// Only stages that can be paused supply this. Null means the stage always waits out the idle
-/// delay instead of waking on resume.
-/// </param>
-public sealed class StageWorker(
-    IStageDrainer drainer,
+public sealed class StageWorker<TDrainer>(
+    TDrainer drainer,
     JobStore jobs,
-    ILogger<StageWorker> logger,
-    DrainControl? control = null
+    ILogger<StageWorker<TDrainer>> logger,
+    StageSignals signals
 ) : BackgroundService
+    where TDrainer : IStageDrainer
 {
     private static readonly TimeSpan IdleDelay = TimeSpan.FromMinutes(2);
 
@@ -37,17 +35,14 @@ public sealed class StageWorker(
             {
                 break;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                logger.LogError(e, "{Stage} tick failed", drainer.Stage);
+                logger.LogError(ex, "{Stage} tick failed", drainer.Stage);
             }
 
             try
             {
-                if (control is not null)
-                    await control.WaitForWorkAsync(delay, stoppingToken);
-                else
-                    await Task.Delay(delay, stoppingToken);
+                await signals.For(drainer.Stage).WaitForWorkAsync(delay, stoppingToken);
             }
             catch (OperationCanceledException)
             {
@@ -57,29 +52,24 @@ public sealed class StageWorker(
     }
 
     /// <summary>
-    /// Squares the job store against reality before anything is allowed to start.
+    /// Squares the job store against reality before anything starts, or a job an interrupted run
+    /// left <c>Running</c> is skipped for ever.
     /// </summary>
-    /// <remarks>
-    /// A job left <c>Running</c> by an interrupted restart looks like work still in progress to
-    /// every selector, so without this the track would be skipped forever. It is recorded as
-    /// <see cref="JobStatus.Cancelled"/> rather than failed, since a restart is not the track's
-    /// fault.
-    /// </remarks>
     private void Reopen()
     {
         foreach (var job in jobs.Open(drainer.Stage))
         {
             jobs.Record(
-                job.VideoId,
+                job.TrackKey,
                 drainer.Stage,
-                JobStatus.Cancelled,
+                JobStatus.Canceled,
                 error: "did not survive a restart"
             );
 
             logger.LogInformation(
-                "{Stage} for {VideoId} did not survive a restart; it goes back in line",
+                "{Stage} for {TrackKey} did not survive a restart; it goes back in line",
                 drainer.Stage,
-                job.VideoId
+                job.TrackKey
             );
         }
     }
@@ -92,12 +82,18 @@ public sealed class StageWorker(
         {
             case { Outcome: StageOutcome.Ran, Subject: { } subject }:
                 if (tick.IsSuccess)
+                {
                     logger.LogInformation(
                         "{Stage}: {Title}{Note}",
                         drainer.Stage,
                         subject,
                         tick.Note is { } note ? $" — {note}" : string.Empty
                     );
+
+                    // A failure made nothing for anyone downstream, so only success broadcasts.
+                    if (tick.WakesOthers)
+                        signals.WakeAllBut(drainer.Stage);
+                }
                 else
                     logger.LogWarning(
                         "{Stage} failed for {Title}: {Error}",
@@ -112,6 +108,9 @@ public sealed class StageWorker(
                 logger.LogWarning("Queue could not be read: {Error}", error);
 
                 return IdleDelay;
+
+            case { Outcome: StageOutcome.Held, RetryAfter: { } wait }:
+                return wait;
 
             default:
                 return IdleDelay;

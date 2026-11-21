@@ -1,0 +1,303 @@
+using System.ComponentModel;
+using System.Globalization;
+using System.Text.RegularExpressions;
+using Crateside.Core.Ledger;
+using Crateside.Core.Orchestration.Loop;
+using Crateside.Core.Pairing;
+
+namespace Crateside.Core.KeyDetection;
+
+/// <summary>FiLL's <c>keydetect</c> filter in the NoMercy ffmpeg build: a key, its correlation, and the chords under it.</summary>
+public sealed partial class KeydetectFilter(IProcessRunner runner, Func<string> ffmpegFileName)
+{
+    public const string Name = "ffmpeg_keydetect";
+
+    private (string Version, string? Sha256)? _build;
+
+    public KeydetectFilter(IProcessRunner runner, string ffmpeg)
+        : this(runner, () => ffmpeg) { }
+
+    /// <summary>ffmpeg's version line and the executable's hash: <c>r</c>'s trust bands differ between builds.</summary>
+    public async Task<(string? Version, string? Sha256)> IdentifyAsync(
+        CancellationToken ct = default
+    )
+    {
+        if (_build is { } known)
+            return known;
+
+        ProcessOutcome outcome;
+        try
+        {
+            outcome = await runner.RunAsync(
+                new ProcessRequest(ffmpegFileName(), ["-hide_banner", "-version"]),
+                ct
+            );
+        }
+        catch (Win32Exception)
+        {
+            return (null, null);
+        }
+
+        if (
+            outcome is not { Succeeded: true, StandardOutput: var output }
+            || output.Split('\n')[0].Trim() is not { Length: > 0 } version
+        )
+            return (null, null);
+
+        var sha256 = FfmpegBuild.Located(ffmpegFileName()) is { Exists: true } executable
+            ? await FfmpegBuild.HashAsync(executable, ct)
+            : null;
+        _build = (version, sha256);
+
+        return (version, sha256);
+    }
+
+    public async Task<KeydetectReading> ReadAsync(
+        string audioPath,
+        RunWindow? window,
+        CancellationToken ct = default
+    )
+    {
+        ProcessOutcome outcome;
+
+        try
+        {
+            outcome = await runner.RunAsync(
+                new ProcessRequest(
+                    ffmpegFileName(),
+                    [
+                        "-nostdin",
+                        "-hide_banner",
+                        "-nostats",
+                        .. PcmDecoder.WindowArguments(window),
+                        "-i",
+                        audioPath,
+                        "-vn",
+                        "-af",
+                        "keydetect",
+                        "-f",
+                        "null",
+                        "-",
+                    ]
+                ),
+                ct
+            );
+        }
+        catch (Win32Exception ex)
+        {
+            return new KeydetectReading.Failed($"ffmpeg could not be started: {ex.Message}");
+        }
+
+        return outcome.Succeeded
+            ? Parse(outcome.StandardError)
+            : new KeydetectReading.Failed(
+                outcome.LastLine ?? $"ffmpeg exited with {outcome.ExitCode}"
+            );
+    }
+
+    /// <summary>The transposed repeats the filter's chroma shows over the whole audio, where the two-key fit agrees (ADR 0100).</summary>
+    public async Task<KeyLiftReading> ReadKeyLiftsAsync(
+        string audioPath,
+        CancellationToken ct = default
+    )
+    {
+        ProcessOutcome outcome;
+
+        try
+        {
+            outcome = await runner.RunAsync(
+                new ProcessRequest(
+                    ffmpegFileName(),
+                    [
+                        "-nostdin",
+                        "-hide_banner",
+                        "-nostats",
+                        "-i",
+                        audioPath,
+                        "-vn",
+                        "-af",
+                        // A frame can carry two chroma windows; printing through the log keeps the two printers' lines whole.
+                        "keydetect=chroma=1,ametadata=mode=print:key=lavfi.keydetect.chroma0,ametadata=mode=print:key=lavfi.keydetect.chroma1",
+                        "-f",
+                        "null",
+                        "-",
+                    ]
+                ),
+                ct
+            );
+        }
+        catch (Win32Exception ex)
+        {
+            return new KeyLiftReading.Failed($"ffmpeg could not be started: {ex.Message}");
+        }
+
+        if (!outcome.Succeeded)
+            return new KeyLiftReading.Failed(
+                outcome.LastLine ?? $"ffmpeg exited with {outcome.ExitCode}"
+            );
+
+        return KeyLifts.Parse(outcome.StandardError) is { Count: > 0 } windows
+            ? new KeyLiftReading.Read(await Task.Run(() => KeyLifts.Find(windows), ct))
+            : new KeyLiftReading.Failed(
+                "no lavfi.keydetect.chroma in ffmpeg's output: a build without chroma=1"
+            );
+    }
+
+    /// <summary>Reads the summary the filter prints at the end of the stream, and the key changes before it.</summary>
+    internal static KeydetectReading Parse(string stderr)
+    {
+        if (
+            FinalKey.Matches(stderr) is not [.., var keyLine]
+            || TryParseToken(keyLine.Groups["Key"].Value) is not { } key
+        )
+            return new KeydetectReading.Failed(
+                "no lavfi.keydetect.key in ffmpeg's output: silent input, or a build without the filter"
+            );
+
+        var r = Confidence.Matches(stderr) is [.., var confidenceLine]
+            ? double.Parse(confidenceLine.Groups["R"].Value, CultureInfo.InvariantCulture)
+            : 0;
+
+        List<string> chords = FinalChords.Matches(stderr) is [.., var chordLine]
+            ? Collapsed(chordLine.Groups["Chords"].Value.Split('-'))
+            : [];
+
+        // The summary keeps only the last 64 chords while every change prints an event, so the list lines up with the events' tail.
+        var starts =
+            chords.Count > 0
+            && ChordEvent.Matches(stderr) is { } events
+            && events.Count >= chords.Count
+            && events
+                .Skip(events.Count - chords.Count)
+                .Select(match => match.Groups["Chord"].Value)
+                .SequenceEqual(chords)
+                ?
+                [
+                    .. events
+                        .Skip(events.Count - chords.Count)
+                        .Select(match =>
+                            double.Parse(match.Groups["Start"].Value, CultureInfo.InvariantCulture)
+                        ),
+                ]
+                : (IReadOnlyList<double>)[];
+
+        return new KeydetectReading.Read(
+            key,
+            r,
+            chords,
+            [
+                .. KeyEvent
+                    .Matches(stderr)
+                    .Select(match => new KeydetectEvent(
+                        double.Parse(match.Groups["Seconds"].Value, CultureInfo.InvariantCulture),
+                        match.Groups["Key"].Value,
+                        double.Parse(match.Groups["R"].Value, CultureInfo.InvariantCulture)
+                    )),
+            ],
+            RunnerUpMatch.Matches(stderr) is [.., var altLine]
+                ? TryParseToken(altLine.Groups["Key"].Value)
+                : null,
+            RunnerUpCorrelation.Matches(stderr) is [.., var altRLine]
+                ? double.Parse(altRLine.Groups["R"].Value, CultureInfo.InvariantCulture)
+                : null,
+            Reranks.Matches(stderr) is [.., var reranked]
+                ? reranked.Groups["Flag"].Value is "1"
+                : null,
+            starts,
+            Tuning.Matches(stderr) is [.., var tuned]
+                ? double.Parse(tuned.Groups["Cents"].Value, CultureInfo.InvariantCulture)
+                : null,
+            [
+                .. ChordEvent
+                    .Matches(stderr)
+                    .Select(match => new ChordTime(
+                        match.Groups["Chord"].Value,
+                        double.Parse(match.Groups["Start"].Value, CultureInfo.InvariantCulture)
+                    )),
+            ]
+        );
+    }
+
+    /// <summary>The filter's spelling: <c>F#m</c> is F♯ minor, <c>F#</c> F♯ major.</summary>
+    internal static MusicKey? TryParseToken(string token) =>
+        token switch
+        {
+            [.. var tonic, 'm'] => MusicKey.FromString($"{tonic} minor"),
+            { Length: > 0 } => MusicKey.FromString($"{token} major"),
+            _ => null,
+        };
+
+    private static List<string> Collapsed(IEnumerable<string> chords) =>
+        chords.Aggregate(
+            new List<string>(),
+            (kept, chord) =>
+            {
+                if (kept is not [.., var last] || last != chord)
+                    kept.Add(chord);
+
+                return kept;
+            }
+        );
+
+    [GeneratedRegex(@"lavfi\.keydetect\.key=(?<Key>[A-G][#b]?m?)\s*$", RegexOptions.Multiline)]
+    private static partial Regex FinalKey { get; }
+
+    [GeneratedRegex(@"lavfi\.keydetect\.key_confidence=(?<R>[0-9.+-]+)")]
+    private static partial Regex Confidence { get; }
+
+    [GeneratedRegex(@"lavfi\.keydetect\.key_alt=(?<Key>[A-G][#b]?m?)\s*$", RegexOptions.Multiline)]
+    private static partial Regex RunnerUpMatch { get; }
+
+    [GeneratedRegex(@"lavfi\.keydetect\.key_alt_confidence=(?<R>[0-9.+-]+)")]
+    private static partial Regex RunnerUpCorrelation { get; }
+
+    [GeneratedRegex(@"lavfi\.keydetect\.tuning_cents=(?<Cents>[0-9.+-]+)")]
+    private static partial Regex Tuning { get; }
+
+    [GeneratedRegex(@"lavfi\.keydetect\.key_reranked=(?<Flag>[01])")]
+    private static partial Regex Reranks { get; }
+
+    [GeneratedRegex(@"lavfi\.keydetect\.chords=(?<Chords>[A-Gb#mN-]+)")]
+    private static partial Regex FinalChords { get; }
+
+    [GeneratedRegex(@"chord=(?<Chord>[A-Gb#mN]+) start=(?<Start>[0-9.]+)")]
+    private static partial Regex ChordEvent { get; }
+
+    [GeneratedRegex(@"t=(?<Seconds>[0-9.]+) key=(?<Key>[A-G][#b]?m?) \(r=(?<R>-?[0-9.]+)\)")]
+    private static partial Regex KeyEvent { get; }
+}
+
+/// <summary>What <c>keydetect</c> made of the audio, or why it made nothing.</summary>
+public abstract record KeydetectReading
+{
+    private KeydetectReading() { }
+
+    /// <param name="R">The correlation of the key's profile with the audio's chroma.</param>
+    /// <param name="Chords">The committed progression, repeats collapsed, in the filter's spelling.</param>
+    /// <param name="KeyEvents">Every change of the running estimate as the stream played.</param>
+    /// <param name="RunnerUp">The second-ranked key (<c>key_alt</c>), where the build prints one.</param>
+    /// <param name="Reranked">Whether the chord rerank changed the answer (<c>key_reranked</c>).</param>
+    /// <param name="TuningCents">How far the audio sits from A = 440, in cents within ±50 (<c>tuning_cents</c>); null when the build prints none.</param>
+    /// <param name="ChordTimeline">Every chord event the filter printed with its start, however many the summary kept; empty when the build prints none.</param>
+    /// <param name="ChordStarts">Where each of <paramref name="Chords"/> starts, in seconds (<c>start=</c>, v1.1.0 on); empty when the build prints none.</param>
+    public sealed record Read(
+        MusicKey Key,
+        double R,
+        IReadOnlyList<string> Chords,
+        IReadOnlyList<KeydetectEvent> KeyEvents,
+        MusicKey? RunnerUp = null,
+        double? RunnerUpR = null,
+        bool? Reranked = null,
+        IReadOnlyList<double>? ChordStarts = null,
+        double? TuningCents = null,
+        IReadOnlyList<ChordTime>? ChordTimeline = null
+    ) : KeydetectReading;
+
+    public sealed record Failed(string Error) : KeydetectReading;
+}
+
+/// <summary>A change of <c>keydetect</c>'s running estimate, in the filter's spelling.</summary>
+public sealed record KeydetectEvent(double Seconds, string Key, double R);
+
+/// <summary>One committed chord and where it starts, in seconds.</summary>
+public sealed record ChordTime(string Chord, double Start);

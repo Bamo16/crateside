@@ -1,0 +1,84 @@
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 999px;
+    padding: 4px 10px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+/* Only states where work is running carry a dot, so its pulse says "in progress". */
+.chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: chip-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes chip-pulse {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.35;
+        transform: scale(0.7);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chip-dot {
+        animation: none;
+    }
+}
+
+.chip.neutral-outline {
+    color: var(--text-75);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.chip.teal-filled {
+    color: var(--teal);
+    background: rgba(111, 199, 214, 0.14);
+    border-color: rgba(111, 199, 214, 0.3);
+}
+
+.chip.teal-outline {
+    color: var(--teal);
+    border-color: rgba(111, 199, 214, 0.3);
+}
+
+.chip.amber-filled {
+    color: var(--amber);
+    background: rgba(232, 180, 90, 0.16);
+    border-color: rgba(232, 180, 90, 0.35);
+}
+
+.chip.red-outline {
+    color: var(--red);
+    border-color: rgba(224, 122, 109, 0.45);
+}
+
+.chip.red-filled {
+    color: var(--red);
+    background: rgba(224, 122, 109, 0.18);
+    border-color: rgba(224, 122, 109, 0.45);
+}
+
+.chip.green-outline {
+    color: var(--green);
+    border-color: rgba(127, 207, 154, 0.3);
+}
+
+/* Dashed, because a hold is a deliberate absence rather than a state something put it in. */
+.chip.dashed-outline {
+    color: var(--text-75);
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, 0.3);
+}

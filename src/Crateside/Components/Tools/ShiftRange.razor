@@ -1,0 +1,63 @@
+@using System.Globalization
+@using Crateside.Core.Pairing
+
+<div class="shift-range" style="--ticks:@(2 * Range.Max)">
+    <div class="readout">
+        <span class="name">Shift range</span>
+        <span class="mono result">@Result</span>
+        <label class="linked">
+            <input type="checkbox" checked="@_linked" @onchange="e => _linked = (bool)e.Value!" />
+            <span>± linked</span>
+        </label>
+    </div>
+
+    <div class="track">
+        <input type="range" class="low" min="@(-Range.Max)" max="0" step="1" value="@Range.Lowest"
+               style="--fill:@Percent(-Range.Lowest)"
+               aria-label="Lowest shift" aria-valuetext="@Spoken("Lowest", Range.Lowest)"
+               @oninput="e => SetLowest(Read(e))" />
+        <input type="range" class="high" min="0" max="@Range.Max" step="1" value="@Range.Highest"
+               style="--fill:@Percent(Range.Highest)"
+               aria-label="Highest shift" aria-valuetext="@Spoken("Highest", Range.Highest)"
+               @oninput="e => SetHighest(Read(e))" />
+    </div>
+
+    <div class="scale mono" aria-hidden="true">
+        <span>@MashupPartner.FormatShift(-Range.Max)</span>
+        <span>0</span>
+        <span>@MashupPartner.FormatShift(Range.Max)</span>
+    </div>
+</div>
+
+@code {
+    private bool _linked;
+
+    [Parameter, EditorRequired]
+    public required Core.Pairing.ShiftRange Range { get; set; }
+
+    [Parameter]
+    public EventCallback<Core.Pairing.ShiftRange> OnChange { get; set; }
+
+    /// <summary>What a shift row is called in the readout.</summary>
+    [Parameter]
+    public string Noun { get; set; } = "row";
+
+    private string Result =>
+        (Range.Lowest, Range.Highest) switch
+        {
+            (0, 0) => "0 only",
+            var (lowest, highest) => $"{MashupPartner.FormatShift(lowest)} to {MashupPartner.FormatShift(highest)} · {Noun.ToQuantity(Range.Count)}",
+        };
+
+    private static int Read(ChangeEventArgs e) => int.Parse((string)e.Value!, CultureInfo.InvariantCulture);
+
+    private string Percent(int value) => $"{(Range.Max is 0 ? 0 : 100.0 * value / Range.Max).ToString("0.##", CultureInfo.InvariantCulture)}%";
+
+    private static string Spoken(string end, int shift) => $"{end} shift {"semitone".ToQuantity(shift)}".Replace("-", "−", StringComparison.Ordinal);
+
+    private Task SetLowest(int lowest) =>
+        OnChange.InvokeAsync(_linked ? new Core.Pairing.ShiftRange(lowest, -lowest, Range.Max) : Range.WithLowest(lowest));
+
+    private Task SetHighest(int highest) =>
+        OnChange.InvokeAsync(_linked ? new Core.Pairing.ShiftRange(-highest, highest, Range.Max) : Range.WithHighest(highest));
+}

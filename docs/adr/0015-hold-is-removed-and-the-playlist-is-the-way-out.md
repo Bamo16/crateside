@@ -60,7 +60,7 @@ reads the same way: the file loads, and it contributes no instructions.
 ## Consequences
 
 **21 tests went with it**, and the suite is smaller rather than weaker: every one of them
-asserted hold behaviour. Several store tests were kept and re-vehicled onto the
+asserted hold behavior. Several store tests were kept and re-vehicled onto the
 instrumental-release fact, because they were never about holding — they were about an instruction
 surviving a restart, a second field not being dropped by saving the first, and an instruction
 that says nothing not being kept. Those rules still matter.

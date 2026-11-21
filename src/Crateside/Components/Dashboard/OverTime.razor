@@ -1,0 +1,79 @@
+@using Crateside.Core.Orchestration.Jobs
+
+<div class="columns">
+    <div class="column">
+        <span class="caps">Tracks finished, by ISO week</span>
+        <div class="chart" style="grid-template-columns: repeat(@History.Weeks.Count, minmax(0, 1fr))">
+            @foreach (var week in History.Weeks)
+            {
+                <div class="column-bar">
+                    <span class="mono figure @(week.IsCurrent ? "current" : null)">@week.Tracks</span>
+                    <span class="fill @(week.IsCurrent ? "current" : null)" style="height: @Height(week.Tracks)px"></span>
+                </div>
+            }
+        </div>
+        <div class="weeks" style="grid-template-columns: repeat(@History.Weeks.Count, minmax(0, 1fr))">
+            @foreach (var week in History.Weeks)
+            {
+                <span class="mono">@(week.IsCurrent ? $"W{week.Week} so far" : $"W{week.Week}")</span>
+            }
+        </div>
+    </div>
+
+    <div class="column">
+        <span class="caps">Stages run</span>
+        <table class="stages">
+            <thead>
+                <tr>
+                    <th>Stage</th>
+                    <th class="numeric">Done</th>
+                    <th class="numeric">Failed</th>
+                    <th class="numeric">Canceled</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var stage in History.Stages)
+                {
+                    <tr>
+                        <td>@Plural(stage.Stage)</td>
+                        <td class="numeric mono">@stage.Done.ToString("N0")</td>
+                        <td class="numeric mono quiet">
+                            @if (stage.Failed > 0)
+                            {
+                                <a href="tracks?filter=NeedsAttention">@stage.Failed</a>
+                            }
+                            else
+                            {
+                                @stage.Failed
+                            }
+                        </td>
+                        <td class="numeric mono quiet">@stage.Canceled</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <span class="note">
+            <span class="mono">@History.Lines.ToString("N0")</span> stage lines. A count of failures opens
+            what needs attention on Tracks.
+        </span>
+    </div>
+</div>
+
+@code {
+    private const int ChartHeight = 160;
+
+    [Parameter, EditorRequired]
+    public required JobHistory History { get; set; }
+
+    private int Height(int tracks) =>
+        History.Weeks.Max(week => week.Tracks) is > 0 and var tallest ? tracks * ChartHeight / tallest : 0;
+
+    private static string Plural(JobStage stage) =>
+        stage switch
+        {
+            JobStage.Separation => "Separations",
+            JobStage.Verdict => "Verdicts",
+            JobStage.Handoff => "Handoffs",
+            _ => stage.ToString(),
+        };
+}

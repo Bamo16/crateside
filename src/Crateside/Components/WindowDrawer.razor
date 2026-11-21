@@ -1,0 +1,82 @@
+@using Crateside.Core.Ledger
+
+<div class="drawer" role="region" aria-label="This window">
+    <span class="caret" style="--at: @At.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)"></span>
+    <div class="who-column">
+        <span class="who-line">
+            <span class="who @(Yours ? "yours" : "judges")">@(Yours ? "yours" : "judge")</span>
+            <span class="window-label"><ProseText Text="@(Reading.Window.Label ?? (Yours ? "Window" : "Asked for"))" Inline="true" /></span>
+        </span>
+        <span class="mono window-span">@Span</span>
+        <span class="window-why">
+            @if (Yours)
+            {
+                <text>Given by you.</text>
+            }
+            else if (Run.WhyOf(Reading.Window) is { } why)
+            {
+                <ProseText Text="@why" Inline="true" />
+            }
+            else
+            {
+                <text>The judge asked for it, and crateside ran it unattended.</text>
+            }
+        </span>
+        <span class="became"><ProseText Text="@Became" Inline="true" /></span>
+    </div>
+    <div class="readings">
+        <DetectorRows Algorithms="Reading.Algorithms" Heads="true" />
+    </div>
+    <div class="side">
+        <button class="close" aria-label="Close" title="Close (Esc)" @onclick="OnClose">×</button>
+        <div class="side-foot">
+            <button class="outline small play-window" data-play-window data-start="@Start" data-end="@End">
+                <svg width="10" height="11" viewBox="0 0 14 16" aria-hidden="true"><path d="M2 1.5v13l11-6.5z" fill="currentColor"/></svg>
+                <span class="pw-label">Play window</span>
+            </button>
+            <span class="stepper">
+                <button class="outline small mono" title="Previous window" disabled="@(Index == 0)" @onclick="() => OnStep.InvokeAsync(-1)">‹</button>
+                <span class="mono position">@(Index + 1) of @Run.Readings.Count</span>
+                <button class="outline small mono" title="Next window" disabled="@(Index == Run.Readings.Count - 1)" @onclick="() => OnStep.InvokeAsync(1)">›</button>
+            </span>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required RunEvidence Run { get; set; }
+
+    [Parameter, EditorRequired]
+    public required WindowReading Reading { get; set; }
+
+    /// <summary>Which of the run's windows this is, from zero.</summary>
+    [Parameter, EditorRequired]
+    public int Index { get; set; }
+
+    /// <summary>The window's span, in bars where the warp can say and in time.</summary>
+    [Parameter, EditorRequired]
+    public required string Span { get; set; }
+
+    /// <summary>Where the window's middle falls in the plot, in percent, for the caret.</summary>
+    [Parameter]
+    public double At { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    /// <summary>Raised with -1 or 1 to move to the previous or next window.</summary>
+    [Parameter]
+    public EventCallback<int> OnStep { get; set; }
+
+    private string Start => Reading.Window.Start.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+
+    private string End => Reading.Window.End.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+
+    private bool Yours => Reading.Window.AskedBy is WindowAsker.User;
+
+    private string Became =>
+        Reading.Section is { } section
+            ? $"→ section {section.Label}: {ModeText.Named(section.Center)}"
+            : "→ no section: the judge did not place this window as a center of its own";
+}

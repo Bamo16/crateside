@@ -1,0 +1,38 @@
+.offset {
+    margin: 2px 0 8px 28px;
+    color: var(--text-75);
+    font-size: 0.9em;
+}
+
+.offset.waiting {
+    opacity: 0.7;
+}
+
+.offset summary {
+    cursor: pointer;
+}
+
+.offset .spans {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 14px;
+    margin: 4px 0;
+}
+
+.offset .windows {
+    margin-top: 6px;
+    border-collapse: collapse;
+    font-size: 0.85em;
+}
+
+.offset .windows th,
+.offset .windows td {
+    padding: 1px 12px 1px 0;
+    text-align: left;
+    font-weight: normal;
+}
+
+.offset .windows tr.unmatched,
+.offset .windows tr.silent {
+    opacity: 0.55;
+}

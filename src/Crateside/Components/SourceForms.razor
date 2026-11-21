@@ -1,0 +1,133 @@
+@using Crateside.Core.Orchestration.Edits
+@using Crateside.Core.Samples
+@using Crateside.Core.Tracks
+
+@if (Editor.Adding == Row.TrackKey)
+{
+    <div class="add-source">
+        <div class="add-fields @(Stacked ? "stacked" : null)">
+            <label>
+                <span>Where it is</span>
+                <input class="mono" placeholder="YouTube URL or video ID"
+                       value="@Editor.AddUrl"
+                       @oninput="e => Editor.OnAdd(Row, url: e.Value?.ToString())" />
+            </label>
+            <label>
+                <span>What it is</span>
+                <input placeholder="Official Instrumental"
+                       value="@Editor.AddLabel"
+                       @oninput="e => Editor.OnAdd(Row, label: e.Value?.ToString())" />
+            </label>
+        </div>
+
+        <div class="add-type">
+            <span class="add-type-label">Plays as</span>
+            @foreach (var type in Enum.GetValues<SampleType>())
+            {
+                <button class="pill @(Editor.AddType == type ? "on plain" : "off")"
+                        @onclick="() => Editor.ChooseType(Row, type)" disabled="@Editor.Working">
+                    @type
+                </button>
+            }
+            <span class="add-title">@Editor.TitleNote</span>
+        </div>
+
+        <p class="add-note @(Editor.AddPlan?.Refusal is null && Editor.Shortfall is null ? null : "bad")">
+            @if (Editor.Shortfall is { } poor)
+            {
+                <text>
+                    This upload offers no premium format.
+                    The best it has is @poor.Quality, and
+                    that is what would land in your library.
+                </text>
+            }
+            else
+            {
+                @(Editor.AddPlan?.Refusal ?? StemEditor.AddNote(Row))
+            }
+        </p>
+
+        <div class="actions">
+            @if (Editor.Shortfall is not null)
+            {
+                <button class="danger" disabled="@Editor.Working"
+                        @onclick="() => Editor.ConfirmAddAsync(Row, anyway: true)">
+                    @(Editor.Working ? "Adding…" : "Add it anyway")
+                </button>
+            }
+            else
+            {
+                <button class="primary" disabled="@(Editor.Working || Editor.AddPlan?.IsPossible is not true)"
+                        @onclick="() => Editor.ConfirmAddAsync(Row)">
+                    @(Editor.Working ? "Checking…" : "Add source")
+                </button>
+            }
+            <button class="outline" @onclick="Editor.CancelAdding" disabled="@Editor.Working">
+                Cancel
+            </button>
+        </div>
+    </div>
+}
+else if (Editor.Adopting == Row.TrackKey)
+{
+    <div class="add-source">
+        <div class="add-fields @(Stacked ? "stacked" : null)">
+            <label>
+                <span>The file</span>
+                <select value="@Editor.AdoptPath"
+                        @onchange="e => Editor.OnAdopt(Row, e.Value?.ToString())">
+                    <option value="">Choose a file nothing has placed…</option>
+                    @foreach (var candidate in Editor.AdoptCandidates)
+                    {
+                        <option value="@candidate">@Path.GetFileName(candidate)</option>
+                    }
+                </select>
+            </label>
+            <label>
+                <span>What the track calls it</span>
+                <input value="@(Editor.AdoptPlan?.Label ?? string.Empty)" readonly
+                       placeholder="read from the brackets in its name" />
+            </label>
+        </div>
+
+        <div class="add-type">
+            <span class="add-type-label">Plays as</span>
+            @foreach (var type in Enum.GetValues<SampleType>())
+            {
+                <button class="pill @(Editor.AdoptType == type ? "on plain" : "off")"
+                        @onclick="() => Editor.ChooseAdoptType(Row, type)" disabled="@Editor.Working">
+                    @type
+                </button>
+            }
+        </div>
+
+        <p class="add-note @(Editor.AdoptPlan?.Refusal is null ? null : "bad")">
+            @(Editor.AdoptPlan?.Refusal ?? StemEditor.AdoptNote)
+        </p>
+
+        <div class="actions">
+            <button class="primary" disabled="@(Editor.Working || Editor.AdoptPlan?.IsPossible is not true)"
+                    @onclick="() => Editor.ConfirmAdoptAsync(Row)">
+                Adopt it
+            </button>
+            <button class="outline" @onclick="Editor.CancelAdopting" disabled="@Editor.Working">
+                Cancel
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required StemEditor Editor { get; set; }
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    /// <summary>One field per line, for the row's 340px side column.</summary>
+    [Parameter]
+    public bool Stacked { get; set; }
+
+    public static bool IsOpen(StemEditor editor, TrackRow row) =>
+        editor.Adding == row.TrackKey || editor.Adopting == row.TrackKey;
+}

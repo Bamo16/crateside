@@ -1,5 +1,5 @@
 /* The one declaration of the shared header. The brand column is max-content rather than a fixed
-   width: it was 200px, and adding a tab pushed the nav straight over the neighbouring cell's
+   width: it was 200px, and adding a tab pushed the nav straight over the neighboring cell's
    divider (3fc429e). */
 .top {
     display: grid;
@@ -18,12 +18,34 @@
     margin: 0;
 }
 
+/* One row, as tall as --pin-nav, which what pins beneath it (the player) takes as its own top. */
+.top.pin {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 11;
+    box-sizing: border-box;
+    height: var(--pin-nav);
+    margin: 0 0 1.25rem;
+}
+
+.top.pin ::deep .brand {
+    align-self: center;
+}
+
+.top.pin ::deep .brand-cell {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 26px;
+    padding: 0 22px;
+}
+
 .top.shade {
     position: sticky;
     top: 0;
     z-index: 10;
     /* minmax(0, …) rather than a bare 1fr: a bare one is minmax(auto, 1fr), whose auto floor is
-       the content's own width, so a long song title widened the cell, squeezed its neighbour and
+       the content's own width, so a long song title widened the cell, squeezed its neighbor and
        pushed the quota off the edge behind a horizontal scrollbar. The subject already knows how
        to ellipsize; it was never given the chance. */
     grid-template-columns: max-content minmax(0, 1fr) minmax(0, 1fr) 300px;

@@ -15,16 +15,15 @@
     public Shapes Shape { get; set; }
 
     /// <summary>
-    /// The cells beside the brand, which become the header's remaining columns.
+    /// The cells beside the brand, which become the header's remaining columns — in
+    /// <see cref="Shapes.Shade"/> only.
     /// </summary>
-    /// <remarks>Only <see cref="Shapes.Shade"/> has room for any.</remarks>
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
 
     /// <summary>
-    /// The three headers the app actually has. Kept as a closed set rather than as loose
-    /// styling hooks, so adding a page means choosing one of these rather than inventing a
-    /// fourth by hand.
+    /// The four headers the app has — a closed set, so a new page chooses one rather than
+    /// inventing a fourth.
     /// </summary>
     public enum Shapes
     {
@@ -35,13 +34,12 @@
         Flush,
 
         /// <summary>
-        /// Sticky, carrying what is running beside the brand.
+        /// Sticky, carrying what is running beside the brand, like a notification shade.
         /// </summary>
-        /// <remarks>
-        /// Modelled on a notification shade: glanceable, and never scrolled away from. What is
-        /// running is something the user did not start and cannot otherwise see.
-        /// </remarks>
         Shade,
+
+        /// <summary>One slim row of brand and tabs that stays at the top while the page scrolls under it, with room for a pinned strip beneath.</summary>
+        Pin,
     }
 
     private static string Class(Shapes shape) => shape.ToString().ToLowerInvariant();

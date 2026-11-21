@@ -1,0 +1,157 @@
+@using Crateside.Core
+@using Crateside.Core.Ledger
+@using Crateside.Core.Orchestration
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Orchestration.Loop
+@using Crateside.Core.Orchestration.Verdict
+@using Crateside.Core.Pairing
+@using Crateside.Core.Tracks
+@implements IDisposable
+@inject PersonsKey Person
+@inject TracksService Tracks
+@inject StageSignals Signals
+@inject ActionLog Actions
+
+@if (Row.HasUpload && (Needs || Row.Verdict is not null))
+{
+    <section class="picker @(Needs ? "needed" : "optional")" id="decide">
+        @if (Needs)
+        {
+            <h2>Decide its key</h2>
+            <p class="lead">@Lead</p>
+            @ChoiceList()
+        }
+        else
+        {
+            <details>
+                <summary>Set the key yourself</summary>
+                <p class="lead">Your choice replaces @(Row.Key is { } key ? KeyText.Spell(key) : "the verdict") for this song and is tagged as it stands.</p>
+                @ChoiceList()
+            </details>
+        }
+
+        @if (_problem is { } problem)
+        {
+            <p class="problem">@problem</p>
+        }
+    </section>
+}
+
+@code {
+    private readonly CancellationTokenSource _circuit = new();
+
+    private bool _working;
+    private string? _problem;
+    private string _other = string.Empty;
+    private string _mode = string.Empty;
+
+    private static readonly DiatonicMode[] Modes =
+    [
+        DiatonicMode.Dorian,
+        DiatonicMode.Phrygian,
+        DiatonicMode.Lydian,
+        DiatonicMode.Mixolydian,
+        DiatonicMode.Locrian,
+    ];
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    [Parameter]
+    public RunEvidence? Run { get; set; }
+
+    /// <summary>No key crateside can tag with, and the person is the one left to give it.</summary>
+    private bool Needs =>
+        Row.PersonMayDecide(Run is not null) || Row.Verdict is { Confidence: KeyConfidence.Withheld or KeyConfidence.Low };
+
+    private string Lead =>
+        (Row.Verdict, Row.Judge) switch
+        {
+            ({ Confidence: KeyConfidence.Withheld or KeyConfidence.Low }, _) =>
+                "The verdict gave no key to tag with. Pick the key you hear; it is recorded as your call and the stems are tagged with it.",
+            (_, JudgeStanding.Absent) =>
+                "crateside's rules could not settle this one and no judge is set up. Pick the key you hear; it is recorded as your call and the stems are tagged with it.",
+            (_, JudgeStanding.Paused) =>
+                "crateside's rules could not settle this one, and judging is paused. Pick the key you hear, or leave it for the judge; yours is recorded as your call and the stems are tagged with it.",
+            _ =>
+                "crateside's rules could not settle this one. The judge will reach it, or pick the key you hear now: yours is recorded as your call, the judge skips the song, and the stems are tagged with it.",
+        };
+
+    private IReadOnlyList<KeyChoice> Choices => Person.ChoicesFor(BarJudging.OrderFor(Row), Run);
+
+    public void Dispose()
+    {
+        _circuit.Cancel();
+        _circuit.Dispose();
+    }
+
+    private async Task Choose(MusicKey key, DiatonicMode? mode = null)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            var outcome = Person.Choose(BarJudging.OrderFor(Row), key, mode);
+
+            if (outcome is RecordOutcome.Refused(var field, var why))
+            {
+                _problem = $"The ledger refused it: {field}: {why}";
+
+                return;
+            }
+
+            Actions.Record(
+                Row.TrackKey,
+                UserActionKind.KeyChosen,
+                mode is { } chosen ? (MusicKey.CenterOf(key) with { Mode = chosen }).Name : key.LedgerName
+            );
+            Signals.Wake(JobStage.Handoff, JobStage.Tagging);
+            await Tracks.RefreshAsync(_circuit.Token);
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private Task ChooseOther() =>
+        MusicKey.FromString(_other) is { } key
+            ? Choose(key, Enum.TryParse<DiatonicMode>(_mode, out var mode) ? mode : null)
+            : Task.CompletedTask;
+
+    private RenderFragment ChoiceList() =>
+        @<div class="choices">
+            <div class="grid">
+                @foreach (var choice in Choices)
+                {
+                    var namedBy = string.Join(", ", choice.NamedBy);
+
+                    <button class="choice" disabled="@_working" title="@namedBy" @onclick="() => Choose(choice.Key, choice.Mode)">
+                        <span class="mono key">@KeyText.Spell(choice.Mode is null ? choice.Key.LedgerName : choice.Center.Name)</span>
+                        <span class="by">@namedBy</span>
+                    </button>
+                }
+            </div>
+            <div class="any">
+                <label for="any-key">Any key</label>
+                <select id="any-key" @bind="_other">
+                    <option value="">—</option>
+                    @foreach (var key in MusicKey.AllKeys.OrderBy(key => key.Chromatic).ThenBy(key => key.Mode))
+                    {
+                        <option value="@key.LedgerName">@KeyText.Spell(key.LedgerName)</option>
+                    }
+                </select>
+                <label for="any-mode">Mode</label>
+                <select id="any-mode" @bind="_mode">
+                    <option value="">major / minor</option>
+                    @foreach (var mode in Modes)
+                    {
+                        <option value="@mode">@mode</option>
+                    }
+                </select>
+                <button class="outline" disabled="@(_working || _other.Length is 0)" @onclick="ChooseOther">Use this key</button>
+            </div>
+        </div>;
+}

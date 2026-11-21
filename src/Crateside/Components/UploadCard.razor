@@ -1,0 +1,33 @@
+@using Crateside.Core
+@using Crateside.Core.Imports
+@inject ImportStore Imports
+
+<div class="upload-card">
+    <div class="top">
+        <span class="role">@Role</span>
+        @if (TrackKeys.IsVideoId(TrackKey))
+        {
+            <a href="@($"https://www.youtube.com/watch?v={TrackKey}")" target="_blank" rel="noopener noreferrer">YouTube ↗</a>
+        }
+        else
+        {
+            <span>imported file</span>
+        }
+    </div>
+    @if (TrackKeys.IsVideoId(TrackKey))
+    {
+        <span class="mono id">@TrackKey</span>
+    }
+    else if (Imports.TryGetFile(TrackKey, out var path))
+    {
+        <span class="mono id">@Path.GetFileName(path)</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required string TrackKey { get; set; }
+
+    [Parameter, EditorRequired]
+    public required string Role { get; set; }
+}

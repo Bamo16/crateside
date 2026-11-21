@@ -36,7 +36,7 @@ that ground: forgetting a filter should be harmless, not destructive.
 The override lives on `TrackInstruction`, beside `Name`, `IsHeld` and `IsInstrumentalRelease`,
 and `WorkOrder.Compose` prefers it over the playlist entry's own watch URL.
 
-That is the right neighbour rather than a convenient one. Those fields are already the things the
+That is the right neighbor rather than a convenient one. Those fields are already the things the
 user has *said* about a track as against the things that are *true* of it, and by
 [ADR 0010](0010-the-playlist-is-the-inbox-not-the-work-list.md) they are read by video ID and
 outlive the playlist entry — which a swapped source must also do, since the entry still names the

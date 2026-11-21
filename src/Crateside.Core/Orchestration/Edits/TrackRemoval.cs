@@ -1,0 +1,75 @@
+using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Playlist;
+using Crateside.Core.Samples;
+using Crateside.Core.Staging;
+using Crateside.Core.WorkLists;
+
+namespace Crateside.Core.Orchestration.Edits;
+
+/// <summary>
+/// Takes a track out of crateside, records before files, and never reaches past
+/// <c>Staging</c> (ADR 0027, #33).
+/// </summary>
+public sealed class TrackRemoval(
+    TrackInstructionStore instructions,
+    IntakeStore intake,
+    WorkingSet workingSet,
+    IStagedFiles staged,
+    DeletionLog? deletions = null
+)
+{
+    private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
+
+    /// <summary>The staged files removing this track would recycle, never an adopted sample.</summary>
+    public IReadOnlyList<StagedFile> Recycling(IReadOnlyList<string> uploads) =>
+        [
+            .. uploads
+                .Distinct(StringComparer.Ordinal)
+                .SelectMany(staged.Of)
+                .Where(stem => !stem.IsAdopted),
+        ];
+
+    public TrackRemovalOutcome Apply(string trackKey, IReadOnlyList<string> uploads)
+    {
+        var recycling = Recycling(uploads);
+
+        // Both, because either one alone puts the track back on the next scan (ADR 0021).
+        instructions.Forget(trackKey);
+        intake.Forget(trackKey);
+
+        foreach (var upload in uploads.Distinct(StringComparer.Ordinal))
+            workingSet.Discard(upload);
+
+        var recycled = 0;
+
+        foreach (var stem in recycling)
+        {
+            try
+            {
+                _deletions.Recycle(stem.Path, "removed with the track");
+                RecycleBin.Remove(StemFileName.AnalysisFor(stem.Path));
+
+                recycled++;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return new TrackRemovalOutcome
+                {
+                    Recycled = recycled,
+                    Problem =
+                        $"The track is removed, but {stem.FileName} could not be recycled — it "
+                        + "is probably open in Ableton. Delete it by hand.",
+                };
+            }
+        }
+
+        return new TrackRemovalOutcome { Recycled = recycled };
+    }
+}
+
+public sealed record TrackRemovalOutcome
+{
+    public int Recycled { get; init; }
+
+    public string? Problem { get; init; }
+}

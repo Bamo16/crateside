@@ -1,0 +1,145 @@
+@using Crateside.Core.Ledger
+
+<article class="card">
+    <header class="top">
+        <h1>@Subject.Name</h1>
+        <div class="figures">
+            <div class="figure">
+                <span class="label">Key</span>
+                <span class="mono value">@Subject.Key</span>
+            </div>
+            <div class="figure">
+                <span class="label">Confidence</span>
+                <span class="mono value">@Subject.Confidence</span>
+            </div>
+            <div class="figure">
+                <span class="label">BPM</span>
+                <span class="mono value">@(Subject.Bpm ?? "—")</span>
+            </div>
+        </div>
+        <p class="summary">@RunSummary.Of(Run)</p>
+        @if (Run.Sections.Count > 1)
+        {
+            <ul class="centers">
+                @foreach (var part in Run.Sections)
+                {
+                    <li><ProseText Text="@part.Label" Inline="true" /> <span class="mono">@ModeText.Named(part.Center)</span></li>
+                }
+            </ul>
+        }
+    </header>
+
+    <div class="cols">
+        <section>
+            <h3>Why this key</h3>
+            @if (Run.Reasoning is { Length: > 0 } reasoning)
+            {
+                <ProseText Text="@reasoning" Budget="ReasoningBudget" />
+            }
+            else
+            {
+                <p class="muted">No reasoning was recorded for this run.</p>
+            }
+
+            @if (Run.Candidates.Count > 0)
+            {
+                <h4>Considered</h4>
+                <ul class="considered">
+                    @foreach (var candidate in Run.Candidates)
+                    {
+                        <li>
+                            <span class="candidate-key"><ProseText Text="@candidate.Key" Inline="true" /></span>
+                            <span class="candidate-why"><ProseText Text="@candidate.Why" Inline="true" /></span>
+                        </li>
+                    }
+                </ul>
+            }
+
+            @if (Run.Sources.Count > 0)
+            {
+                <h4>Sources</h4>
+                <ul class="sources">
+                    @foreach (var source in Run.Sources.OrderByDescending(source => source.Kind))
+                    {
+                        <li>
+                            <span class="source-head">
+                                <strong>@(source.Host ?? source.Via ?? "no page")</strong>
+                                <span class="muted">@source.Kind.ToString().ToLowerInvariant()</span>
+                                @if (source.StatesKey is { Length: > 0 } stated)
+                                {
+                                    <span class="mono">@ModeText.Stated(stated, source.StatesMode)</span>
+                                }
+                            </span>
+                            @if (source.Covers is { Length: > 0 } covers)
+                            {
+                                <span class="muted"><ProseText Text="@covers" Inline="true" /></span>
+                            }
+                            @if (source.Via is { Length: > 0 } via && source.Host is not null)
+                            {
+                                <span class="muted">@via</span>
+                            }
+                            @if (source.Relation is { } relation)
+                            {
+                                <span class="muted"><ProseText Text="@relation" Inline="true" /></span>
+                            }
+                            @if (source.Note is { Length: > 0 } note)
+                            {
+                                <span class="muted"><ProseText Text="@note" Inline="true" /></span>
+                            }
+                            @if (source.IsRemoved)
+                            {
+                                <span class="muted">removed by the maintainer, not counted</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+        <section>
+            <h3>What the detectors reported</h3>
+            @if (Run.Algorithms.Count > 0)
+            {
+                <DetectorRows Algorithms="Run.Algorithms" Heads="true" />
+
+                @foreach (var changed in Run.Algorithms.Where(algorithm => algorithm.Reranked is true))
+                {
+                    <p class="muted note">@changed.Label: the chord rerank changed the answer@(changed.RunnerUpKey is { } runnerUp ? $"; the runner-up was {JudgeProse.Inline(runnerUp)}" : null).</p>
+                }
+
+                @if (ShareText.Backing(Run.Backers) is { } backing)
+                {
+                    <p class="muted note">@backing</p>
+                }
+            }
+            else
+            {
+                <p class="muted">This run has no detector readings.</p>
+            }
+
+            @if (Run.TonicCheck is { Length: > 0 } tonicCheck)
+            {
+                <h4>Tonic check</h4>
+                <ProseText Text="@tonicCheck" Budget="TonicBudget" />
+            }
+        </section>
+    </div>
+
+    @if (ShareText.Flicker(Run.KeyEvents) is { } flicker)
+    {
+        <p class="flicker">@flicker</p>
+    }
+
+    <footer>crateside · key verdict@(Subject.VideoId is { } id ? $" · {id}" : null)</footer>
+</article>
+
+@code {
+    private const int ReasoningBudget = 2400;
+    private const int TonicBudget = 1200;
+
+    [Parameter, EditorRequired]
+    public required ShareSubject Subject { get; set; }
+
+    [Parameter, EditorRequired]
+    public required RunEvidence Run { get; set; }
+}

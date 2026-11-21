@@ -1,0 +1,61 @@
+@using System.Globalization
+@using Crateside.Core.SourceOffsets
+@inject SourceOffsetStore Store
+@inject SourceOffsetPass Pass
+
+@if (Pass.IsMeasuring(SourceKey))
+{
+    <p class="offset waiting">Measuring against the mix…</p>
+}
+else if (Store.Of(SourceKey) is { Stands: true, Reading: var reading })
+{
+    <details class="offset @Tone(reading)">
+        <summary>@OffsetWording.Line(reading)</summary>
+        @if (OffsetWording.Unmatched(reading) is { Count: > 0 } unmatched)
+        {
+            <p class="spans">
+                @foreach (var span in unmatched)
+                {
+                    <span>@span</span>
+                }
+            </p>
+        }
+        <table class="windows mono">
+            <thead>
+                <tr><th>from</th><th>offset</th><th>PSR</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var window in reading.Windows)
+                {
+                    <tr class="@window.State.ToString().ToLowerInvariant()">
+                        <td>@window.Start.ToString("0.#", CultureInfo.InvariantCulture) s</td>
+                        <td>@(window.State is WindowState.Silent ? "—" : window.Offset.ToString(CultureInfo.InvariantCulture))</td>
+                        <td>@(window.State is WindowState.Silent ? "—" : window.Psr.ToString("0.0", CultureInfo.InvariantCulture))</td>
+                        <td>@Say(window.State)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </details>
+}
+else
+{
+    <p class="offset waiting">@(Store.Of(SourceKey) is null ? "Waits to be measured against the mix." : "A file changed since it was measured; it is measured again shortly.")</p>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required string SourceKey { get; set; }
+
+    private static string Tone(OffsetReading reading) =>
+        reading.Verdict is OffsetVerdict.Aligned ? "aligned" : "refused";
+
+    private static string Say(WindowState state) =>
+        state switch
+        {
+            WindowState.Voting => "on the offset",
+            WindowState.Elsewhere => "matches the mix elsewhere",
+            WindowState.Unmatched => "not in the mix",
+            _ => "silent",
+        };
+}

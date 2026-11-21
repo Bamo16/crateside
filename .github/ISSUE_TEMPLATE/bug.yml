@@ -1,0 +1,25 @@
+name: Bug
+description: Something crateside does that it should not, or fails to do
+labels: [needs-triage]
+body:
+  - type: textarea
+    id: happens
+    attributes:
+      label: What happens
+      description: What crateside did, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: seen
+    attributes:
+      label: How it was seen or measured
+      description: The page, the track, the log lines (the daily log is in `%LOCALAPPDATA%\crateside\logs`), the numbers. Say what you counted.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: What done looks like
+      description: How we will know it is fixed.
+    validations:
+      required: true

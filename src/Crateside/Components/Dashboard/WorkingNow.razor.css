@@ -1,0 +1,189 @@
+.cards {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+}
+
+.label-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.caps {
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-40);
+}
+
+.padded {
+    padding: 4px 0;
+}
+
+.subject {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.subject a {
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.subject a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.paused-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text-75);
+}
+
+.bar {
+    display: block;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(111, 199, 214, 0.2);
+}
+
+.bar > span {
+    display: block;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--teal);
+}
+
+.bar.paused,
+.bar.quiet {
+    background: var(--line-strong);
+}
+
+.bar.paused > span {
+    background: var(--text-35);
+}
+
+.bar.quiet > span {
+    background: var(--text-50);
+}
+
+.status {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-60);
+}
+
+.value {
+    color: var(--text);
+}
+
+.meter {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.meter-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.note {
+    font-size: 12px;
+    color: var(--text-50);
+}
+
+.idle {
+    color: var(--text-50);
+}
+
+.working {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--teal);
+    text-decoration: none;
+}
+
+.working:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.waiting {
+    color: var(--text-75);
+}
+
+.quiet-link {
+    font-size: 12px;
+    color: var(--text-50);
+    text-decoration: none;
+}
+
+.quiet-link:hover {
+    color: var(--text);
+}
+
+.headline {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.figures {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding-top: 2px;
+}
+
+.figures > span {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.figure {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+@media (max-width: 1800px) {
+    .cards {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 1100px) {
+    .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

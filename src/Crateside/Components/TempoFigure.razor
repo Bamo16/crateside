@@ -1,0 +1,10 @@
+@{
+    var shown = TempoFormat.Format(Tempo);
+}
+<span class="figure @(shown.IsApproximate ? "approx" : null) @(shown.IsEstimate ? "estimate" : null)" title="@shown.Note">@shown.Text<span class="pad">@shown.Padding</span></span>
+
+@code {
+    /// <summary>A tempo in a column of them: right-aligned on its decimal point, with its marks.</summary>
+    [Parameter, EditorRequired]
+    public required TrackTempo Tempo { get; set; }
+}

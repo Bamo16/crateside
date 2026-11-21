@@ -12,7 +12,7 @@ production, which is too broad to be useful. Use **Track** for source material a
 a separated part. `Sample Staging` and `Mashup Samples` keep the word only because they are
 existing folder names on disk."* The folder names were treated as legacy baggage.
 
-They were not. The user chose that word deliberately, and the breadth is the point: what lands
+They were not. That word was chosen deliberately, and the breadth is the point: what lands
 in those folders is not always a separated part.
 
 **Stem** describes how a file was made. The board needs to know what a file is *for*, and those
@@ -41,7 +41,7 @@ domain where the boundary is a directory the user built.
 
 **`Warp guide` names the drum stem's role, and it is a role rather than a kind.** A stem
 produced to be looked at rather than heard, so warp markers can be placed against its
-transients, then deleted as a step of the workflow. Modelling it as "not a sample" was
+transients, then deleted as a step of the workflow. Modeling it as "not a sample" was
 considered and rejected: a drum stem is perfectly mixable, and the user can imagine keeping one.
 Calling it a non-sample would make that case a contradiction in the glossary instead of a
 deviation from it. **The distinguishing axis is retention, not role.**
@@ -60,7 +60,7 @@ release like this will never have one; writing `instrumental: true` on a track t
 have an `Instrumental - Full` file is the same overload this ADR exists to undo. It sits at the
 top level rather than inside `verdict`, because it is something the user says rather than
 something the agent concluded from evidence, and it is kept distinct from `input_kind`, which
-says *which file was analysed* — for one of these the analysed file genuinely is the full mix.
+says *which file was analyzed* — for one of these the analyzed file genuinely is the full mix.
 It records the **fact** rather than the plan ("separate drums only"), so it still explains itself
 when the workflow changes, and crateside derives the plan from it.
 
@@ -99,12 +99,12 @@ policy, and crateside's policy is to expect the usual vocal and instrumental pai
 This ADR says a warp guide "is never tagged and never mixed". **The first half is not true, and
 that is deliberate rather than a lapse.** crateside tags one with the key and no type — the
 mapping `TaggingRunner.KeywordsFor` was read off the user's own library, where every drums entry
-in staging already carried a key — and the user confirmed on 2026-09-02 that this is what they
-want: so the key reads sensibly on the rare occasion a drum stem is selected in Ableton's
+in staging already carried a key — and it was confirmed on 2026-09-02 that this is what is
+wanted: so the key reads sensibly on the rare occasion a drum stem is selected in Ableton's
 browser, and so the library is consistent. Never *mixed* still holds.
 
 Found by noticing `Rob Dougan - Furious Angels (Drums).flac` carrying `Key|C` and `Key|Minor`,
-and raised as a suspected bug. It was not one; the behaviour was already described in the
+and raised as a suspected bug. It was not one; the behavior was already described in the
 runner's own remarks. Recorded here because this ADR is where a reader would go to check, and it
 said the opposite.
 
@@ -119,3 +119,15 @@ reason it used. What needed correcting was the *reason* written beside the code,
 guide* definition. That file is a glossary of current fact rather than a history, so it wants
 the wording corrected in place rather than a note appended — in the other repo, and not done
 here.
+
+## The fact is no longer recorded — 2026-09-12
+
+**The decision above to record `has_vocals` rather than the plan is reversed by
+[ADR 0018](0018-the-plan-is-the-record-and-the-warp-guide-is-not-part-of-it.md).** Its reasoning —
+that a fact still explains itself when the workflow changes — held while there was one fact and two
+recipes. Once a track can ask for any of nine presets and the source, there is no fact underneath,
+and what the user asked for is the only thing left to keep.
+
+**Everything else here stands**, and ADR 0018 leans on it: *sample* as the role word, *warp guide*
+as a role distinguished by retention, and crateside treating every drums stem as one with no
+override. The warp guide staying out of the plan is that same argument, applied to the picker.

@@ -44,7 +44,7 @@ Ableton file.
    places                 7   file_id, folder_kind, level, name
    ```
 
-   `places` is the anchor and `files.parent_id` walks all the way up to `P:\`, so a place is
+   `places` is the anchor and `files.parent_id` walks all the way up to the drive root, so a place is
    found by the **absolute path it stands for** rather than by `places.name`, which is only a
    display name.
 
@@ -174,7 +174,7 @@ Two things this ADR left open are now measured and closed:
 
 ## Alternatives considered
 
-**EF Core.** The user asked. Rejected: crateside neither owns this schema nor writes it, so a
+**EF Core.** Rejected: crateside neither owns this schema nor writes it, so a
 model, a migration story and a change tracker would all be dead weight over four columns of a
 read-only query.
 
