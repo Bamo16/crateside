@@ -41,32 +41,30 @@ public sealed class LibraryMove(
                 $"{Path.GetFileName(taken.To)} already exists in the library, so nothing was moved."
             );
 
-        if (FirstHeld(pairs) is { } held)
-            return new LibraryMoveOutcome.Held(held);
-
         return Move(pairs);
     }
 
+    /// <summary>Moves each file and its sidecar; the first one Windows refuses puts back what moved (#233).</summary>
     private LibraryMoveOutcome Move(List<Pair> pairs)
     {
         List<(string From, string To)> done = [];
+        var steps = pairs.SelectMany(pair =>
+            new[] { (pair.From, pair.To), (pair.SidecarFrom, pair.SidecarTo) }
+        );
 
-        foreach (var pair in pairs)
+        foreach (var (from, to) in steps)
         {
+            if (!File.Exists(from))
+                continue;
+
             try
             {
-                File.Move(pair.From, pair.To);
-                done.Add((pair.From, pair.To));
-
-                if (File.Exists(pair.SidecarFrom))
-                {
-                    File.Move(pair.SidecarFrom, pair.SidecarTo);
-                    done.Add((pair.SidecarFrom, pair.SidecarTo));
-                }
+                File.Move(from, to);
+                done.Add((from, to));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                return PutBack(done, Path.GetFileName(pair.From), ex.Message);
+                return PutBack(done, Path.GetFileName(from), ex.Message);
             }
         }
 
@@ -94,36 +92,11 @@ public sealed class LibraryMove(
         }
 
         return stranded is []
-            ? new LibraryMoveOutcome.Held(fileName)
+            ? new LibraryMoveOutcome.Held(fileName, error)
             : new LibraryMoveOutcome.Stranded(
                 $"{fileName} stopped the move ({error}), and these could not go back to Staging: "
                     + string.Join("; ", stranded)
             );
-    }
-
-    private static string? FirstHeld(List<Pair> pairs)
-    {
-        foreach (var path in pairs.SelectMany(pair => new[] { pair.From, pair.SidecarFrom }))
-        {
-            if (!File.Exists(path))
-                continue;
-
-            try
-            {
-                using var stream = new FileStream(
-                    path,
-                    FileMode.Open,
-                    FileAccess.Read,
-                    FileShare.None
-                );
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                return Path.GetFileName(path);
-            }
-        }
-
-        return null;
     }
 
     private List<StagedFile> Samples(IReadOnlyList<string> uploads) =>
@@ -168,8 +141,8 @@ public abstract record LibraryMoveOutcome
     public sealed record Moved(int Samples, IReadOnlyList<GuideKeeping> Guides)
         : LibraryMoveOutcome;
 
-    /// <summary>A file is open elsewhere, most likely in a Live set, and nothing was left moved.</summary>
-    public sealed record Held(string FileName) : LibraryMoveOutcome;
+    /// <summary>Windows refused to move a file, most likely open in a Live set, and nothing was left moved.</summary>
+    public sealed record Held(string FileName, string Error) : LibraryMoveOutcome;
 
     public sealed record Refused(string Reason) : LibraryMoveOutcome;
 

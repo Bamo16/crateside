@@ -67,3 +67,13 @@ crateside may do the same move for him from Track details.
   the maintainer's confirmation (ADR 0103).
 - The existing signal, the existing state and the existing guide keeping are untouched, so Live's
   move and the button's move cannot diverge.
+
+## Amended 2026-11-21 (#233): the move is the check
+
+The exclusive-open check is gone. It refused whenever Live held any handle, even one opened with
+delete sharing, which Windows lets a file be renamed under (the drums guides already move this way
+while they sit in an open set). crateside now moves each audio file and sidecar in turn; the first
+one Windows refuses puts back everything already moved, and the answer names that file with
+Windows' own reason. The rest of "a file Live holds open" stands. Which share mode Live uses was
+not measured: no Live session was available to the agent, so the maintainer's next move under an
+open set settles it.

@@ -301,7 +301,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
                     break;
                 case LibraryMoveOutcome.Held held:
                     _problem =
-                        $"{held.FileName} is open in Ableton Live, so nothing was moved. Close the set and press the button again.";
+                        $"Windows would not move {held.FileName} ({held.Error}), so nothing was moved. If a Live set has it open, close the set and press the button again.";
 
                     break;
                 case LibraryMoveOutcome.Refused refused:

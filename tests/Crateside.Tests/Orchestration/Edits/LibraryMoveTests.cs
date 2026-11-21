@@ -146,6 +146,25 @@ public sealed class LibraryMoveTests : IDisposable
     }
 
     [Fact]
+    public void A_file_open_with_delete_sharing_still_moves()
+    {
+        var vocal = Stage("Song (Vocal - Full).flac", "Vocal - Full", [1]);
+
+        using (
+            new FileStream(
+                vocal,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete
+            )
+        )
+            Assert.IsType<LibraryMoveOutcome.Moved>(_move.Apply([Key]));
+
+        Assert.False(File.Exists(vocal));
+        Assert.True(File.Exists(Path.Combine(_paths.LibraryFolder, "Song (Vocal - Full).flac")));
+    }
+
+    [Fact]
     public void A_held_sidecar_moves_nothing_too()
     {
         var vocal = Stage("Song (Vocal - Full).flac", "Vocal - Full", [1]);
