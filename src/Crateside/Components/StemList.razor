@@ -57,11 +57,12 @@
             {
                 var file = line.Files.FirstOrDefault();
                 var tickable = ticking && line is { IsPinned: false };
+                var detailed = ticking || line.State is StemState.Coming;
 
-                <div class="grow @(ticking || line.IsOnDisk ? "shown" : null)" @key="KeyOf(line)">
+                <div class="grow @(detailed || line.IsOnDisk ? "shown" : null)" @key="KeyOf(line)">
                     <div class="grow-inner">
-                        <div class="stem @(ticking ? LineTone(line) : line.Kind is StemKind.WarpGuide ? "guide" : null) @(tickable ? "tickable" : null)"
-                             title="@(ticking ? Hover(line, Row) : null)"
+                        <div class="stem @(detailed ? LineTone(line) : line.Kind is StemKind.WarpGuide ? "guide" : null) @(tickable ? "tickable" : null)"
+                             title="@(detailed ? Hover(line, Row) : null)"
                              @onclick="() => Pick(line, tickable)">
                             <span class="tick @TickTone(line)">@TickMark(line)</span>
                             <span class="stem-label">
@@ -83,7 +84,7 @@
                             {
                                 <span class="mono stem-tag dim">—</span>
                             }
-                            @if (ticking && line.State is not StemState.Kept)
+                            @if (detailed && line.State is not StemState.Kept)
                             {
                                 <span class="mono stem-where @StateTone(line)">@StateWord(line, picker)</span>
                             }
@@ -92,7 +93,7 @@
                                 <span class="mono stem-where @(line.IsInLibrary ? "good" : null)">@(file is null ? "—" : Where(file))</span>
                             }
                             <span class="stem-note">
-                                @if (ticking)
+                                @if (detailed)
                                 {
                                     @Note(line, Row)
                                 }

@@ -36,7 +36,7 @@ public sealed class RunSummaryTests
     {
         var summary = RunSummary.Of(Run([], [new()]));
 
-        Assert.Equal("0 of 1 source agree; no detector readings.", summary);
+        Assert.Equal("0 of 1 source agrees; no detector readings.", summary);
     }
 
     [Fact]

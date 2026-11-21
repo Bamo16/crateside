@@ -11,19 +11,10 @@ else if (Store.Of(SourceKey) is { Stands: true, Reading: var reading })
 {
     <details class="offset @Tone(reading)">
         <summary>@OffsetWording.Line(reading)</summary>
-        @if (OffsetWording.Unmatched(reading) is { Count: > 0 } unmatched)
-        {
-            <p class="spans">
-                @foreach (var span in unmatched)
-                {
-                    <span>@span</span>
-                }
-            </p>
-        }
         <div class="strip" role="img" aria-label="@($"The added file's {reading.Windows.Count} windows, in order")">
             @foreach (var window in reading.Windows)
             {
-                <span class="cell @window.State.ToString().ToLowerInvariant()" title="@Tip(window)"></span>
+                <span class="cell @window.State.ToString().ToLowerInvariant()" title="@Tip(reading, window)"></span>
             }
         </div>
         <p class="legend">
@@ -45,10 +36,16 @@ else
     private static string Tone(OffsetReading reading) =>
         reading.Verdict is OffsetVerdict.Aligned ? "aligned" : "refused";
 
-    private static string Tip(OffsetWindow window) =>
-        window.State is WindowState.Silent
-            ? $"{Seconds(window.Start)} · silent"
-            : $"{Seconds(window.Start)} · offset {window.Offset.ToString(CultureInfo.InvariantCulture)} samples · PSR {window.Psr.ToString("0.0", CultureInfo.InvariantCulture)} · {Say(window.State)}";
+    private static string Tip(OffsetReading reading, OffsetWindow window) =>
+        string.Join(
+            "\n",
+            [
+                window.State is WindowState.Silent
+                    ? $"{Seconds(window.Start)} · silent"
+                    : $"{Seconds(window.Start)} · offset {window.Offset.ToString(CultureInfo.InvariantCulture)} samples · PSR {window.Psr.ToString("0.0", CultureInfo.InvariantCulture)} · {Say(window.State)}",
+                .. OffsetWording.WindowNotes(reading, window),
+            ]
+        );
 
     private static string Seconds(double start) => $"{start.ToString("0.#", CultureInfo.InvariantCulture)} s";
 

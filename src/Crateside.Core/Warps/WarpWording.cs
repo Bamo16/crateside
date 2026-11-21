@@ -19,9 +19,17 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
 
     public static string Day(DateTime when) => when.ToString("d MMM", CultureInfo.CurrentCulture);
 
-    /// <summary>A signed offset in milliseconds, to a tenth: <c>+441.5 ms</c>.</summary>
-    public static string Offset(double milliseconds) =>
-        milliseconds.ToString("+0.0;-0.0;0.0", CultureInfo.InvariantCulture) + " ms";
+    /// <summary>A signed offset as Live's status bar writes a duration, minutes:seconds:milliseconds: <c>+0:00:441</c>.</summary>
+    public static string Offset(double milliseconds)
+    {
+        var whole = (long)Math.Round(Math.Abs(milliseconds), MidpointRounding.AwayFromZero);
+        var sign =
+            whole is 0 ? string.Empty
+            : milliseconds < 0 ? "-"
+            : "+";
+
+        return $"{sign}{whole / 60_000}:{whole % 60_000 / 1000:00}:{whole % 1000:000}";
+    }
 
     private static string ClipStartMoved(WrittenShift shift) =>
         shift is { ClipStartWasBar: { } was, ClipStartNowBar: { } now }

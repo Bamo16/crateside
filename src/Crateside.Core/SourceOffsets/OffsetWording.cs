@@ -1,4 +1,5 @@
 using System.Globalization;
+using Crateside.Core.Warps;
 
 namespace Crateside.Core.SourceOffsets;
 
@@ -12,7 +13,7 @@ public static class OffsetWording
         reading switch
         {
             { Verdict: OffsetVerdict.Aligned, Offset: { } samples } =>
-                $"Aligned to the mix: {Signed(reading.OffsetMilliseconds)} ms ({Grouped(samples)} samples), {Windows(reading)}",
+                $"Aligned to the mix: {WarpWording.Offset(reading.OffsetMilliseconds)} ({Grouped(samples)} samples), {Windows(reading)}",
             { Verdict: OffsetVerdict.Edit } =>
                 $"Cut differently from the mix: {RunsText(reading)}; not written. Split the clip in Live where the cut is",
             { Verdict: OffsetVerdict.Drift, SpeedFactor: not null, DriftPpm: { } ppm } =>
@@ -22,23 +23,33 @@ public static class OffsetWording
             _ => $"Does not line up with the mix: {Windows(reading)}; not written",
         };
 
-    /// <summary>The spans an aligned source has that the other file lacks, one phrase each.</summary>
-    public static IReadOnlyList<string> Unmatched(OffsetReading reading) =>
+    /// <summary>The spans an aligned source has that the other file lacks and that this window covers, one phrase each.</summary>
+    public static IReadOnlyList<string> WindowNotes(OffsetReading reading, OffsetWindow window)
+    {
+        var end = window.Start + reading.WindowSeconds;
+        var shift = reading.OffsetMilliseconds / 1000;
+
+        return
         [
-            .. reading.OnlyInSource.Select(span => $"only in this file: {Span(span)}"),
-            .. reading.OnlyInMix.Select(span => $"only in the mix: {Span(span)}"),
+            .. reading
+                .OnlyInSource.Where(span => span.From < end && span.To > window.Start)
+                .Select(span => $"only in this file: {Span(span)}"),
+            .. reading
+                .OnlyInMix.Where(span => span.From < end + shift && span.To > window.Start + shift)
+                .Select(span => $"only in the mix: {Span(span)}"),
         ];
+    }
 
     /// <summary>What the added source's lane in the warp view says beside its label.</summary>
     public static string Lane(OffsetReading reading) =>
-        $"shifted {Signed(reading.OffsetMilliseconds)} ms";
+        $"shifted {WarpWording.Offset(reading.OffsetMilliseconds)}";
 
     /// <summary>The line the warp view's save lists for an added source.</summary>
     public static string Saves(AddedSourcePlan plan) =>
         plan switch
         {
             { IsWritten: true, OffsetMilliseconds: { } ms } =>
-                $"{plan.File.Label}: shifted by {Signed(ms)} ms",
+                $"{plan.File.Label}: shifted by {WarpWording.Offset(ms)}",
             { Skip: { } skip } => $"{plan.File.Label}: not written, {Why(skip)}",
             _ => plan.File.Label,
         };
@@ -78,9 +89,6 @@ public static class OffsetWording
 
     private static string Windows(OffsetReading reading) =>
         $"{reading.ConfidentWindows} of {reading.AwakeWindows} windows";
-
-    private static string Signed(double milliseconds) =>
-        milliseconds.ToString("+0.0;-0.0;0.0", CultureInfo.InvariantCulture);
 
     private static string Grouped(int samples) =>
         samples.ToString("N0", CultureInfo.InvariantCulture).Replace(',', ' ');

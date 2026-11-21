@@ -23,7 +23,7 @@ public sealed class SourceOffsetLineTests : IDisposable
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
     [Fact]
-    public async Task An_aligned_source_shows_its_shift_the_unmatched_spans_and_a_strip_of_its_windows()
+    public async Task An_aligned_source_shows_its_shift_and_a_strip_whose_windows_carry_the_unmatched_spans()
     {
         Save(
             new OffsetReading
@@ -38,15 +38,19 @@ public sealed class SourceOffsetLineTests : IDisposable
                     new(5, 0, 3.2, WindowState.Unmatched),
                 ],
                 OnlyInSource = [new(5, 10)],
-                OnlyInMix = [new(257.8, 263.3)],
+                OnlyInMix = [new(6, 9)],
             }
         );
 
         var html = await RenderAsync();
 
-        Assert.Contains("Aligned to the mix: &#x2B;441.5 ms", html);
-        Assert.Contains("only in this file: 5-10 s", html);
-        Assert.Contains("only in the mix: 257.8-263.3 s", html);
+        Assert.Contains("Aligned to the mix: &#x2B;0:00:441", html);
+        Assert.Matches(
+            "class=\"cell unmatched\"[^>]*title=\"[^\"]*only in this file: 5-10 s",
+            html
+        );
+        Assert.Matches("class=\"cell unmatched\"[^>]*title=\"[^\"]*only in the mix: 6-9 s", html);
+        Assert.DoesNotContain("<p class=\"spans\"", html);
         Assert.DoesNotContain("<table", html);
         Assert.Matches(
             "class=\"cell voting\"[^>]*title=\"0 s [^\"]*offset 19470 samples[^\"]*PSR 21.5",

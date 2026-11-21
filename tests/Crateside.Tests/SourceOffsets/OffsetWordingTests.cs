@@ -1,4 +1,5 @@
 using Crateside.Core.SourceOffsets;
+using Crateside.Core.Warps;
 
 namespace Crateside.Tests.SourceOffsets;
 
@@ -28,7 +29,7 @@ public sealed class OffsetWordingTests
             Offset = 19_470,
         };
 
-        Assert.Equal("shifted +441.5 ms", OffsetWording.Lane(reading));
+        Assert.Equal("shifted +0:00:441", OffsetWording.Lane(reading));
     }
 
     [Fact]
@@ -44,7 +45,7 @@ public sealed class OffsetWordingTests
         };
 
         Assert.Equal(
-            "Aligned to the mix: +441.5 ms (19" + NoBreak + "470 samples), 51 of 52 windows",
+            "Aligned to the mix: +0:00:441 (19" + NoBreak + "470 samples), 51 of 52 windows",
             OffsetWording.Line(reading)
         );
     }
@@ -62,7 +63,7 @@ public sealed class OffsetWordingTests
         };
 
         Assert.StartsWith(
-            "Aligned to the mix: -63.8 ms (-2" + NoBreak + "812 samples)",
+            "Aligned to the mix: -0:00:064 (-2" + NoBreak + "812 samples)",
             OffsetWording.Line(reading)
         );
     }
@@ -124,7 +125,7 @@ public sealed class OffsetWordingTests
         );
 
         Assert.Equal(
-            "Official Acappella: shifted by +8153.0 ms",
+            "Official Acappella: shifted by +0:08:153",
             OffsetWording.Saves(new AddedSourcePlan(file, null, null, record))
         );
         Assert.Equal(
@@ -138,7 +139,7 @@ public sealed class OffsetWordingTests
     }
 
     [Fact]
-    public void Spans_only_one_file_has_are_listed_apart_from_the_verdict()
+    public void Spans_only_one_file_has_are_said_of_the_windows_they_cover()
     {
         var reading = new OffsetReading
         {
@@ -152,7 +153,23 @@ public sealed class OffsetWordingTests
 
         Assert.Equal(
             ["only in this file: 75-85 s", "only in the mix: 74.9-84.9 s"],
-            OffsetWording.Unmatched(reading)
+            OffsetWording.WindowNotes(reading, new OffsetWindow(80, 0, 3, WindowState.Unmatched))
+        );
+        Assert.Empty(
+            OffsetWording.WindowNotes(reading, new OffsetWindow(5, 0, 20, WindowState.Voting))
         );
     }
+
+    [Theory]
+    [InlineData(441.5, "+0:00:442")]
+    [InlineData(441.4, "+0:00:441")]
+    [InlineData(8153, "+0:08:153")]
+    [InlineData(-63.76, "-0:00:064")]
+    [InlineData(61_005, "+1:01:005")]
+    [InlineData(0, "0:00:000")]
+    [InlineData(-0.2, "0:00:000")]
+    public void An_offset_reads_as_Lives_status_bar_writes_a_duration(
+        double milliseconds,
+        string expected
+    ) => Assert.Equal(expected, WarpWording.Offset(milliseconds));
 }

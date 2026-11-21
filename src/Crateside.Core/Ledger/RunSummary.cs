@@ -15,10 +15,12 @@ public static class RunSummary
             (0, var detectors) =>
                 $"No human sources; {"detector".ToQuantity(detectors)} and the chord check.",
             (var sources, 0) =>
-                $"{Agreeing(run)} of {"source".ToQuantity(sources)} agree; no detector readings.",
+                $"{Agreeing(run)} of {"source".ToQuantity(sources)} {Agree(sources)}; no detector readings.",
             (var sources, var detectors) =>
-                $"{Agreeing(run)} of {"source".ToQuantity(sources)} agree, with {"detector".ToQuantity(detectors)} alongside.",
+                $"{Agreeing(run)} of {"source".ToQuantity(sources)} {Agree(sources)}, with {"detector".ToQuantity(detectors)} alongside.",
         };
+
+    private static string Agree(int sources) => sources is 1 ? "agrees" : "agree";
 
     private static int Agreeing(RunEvidence run) =>
         run.Sources.Count(source => source is { IsRemoved: false, Stance: SourceStance.Agrees });
