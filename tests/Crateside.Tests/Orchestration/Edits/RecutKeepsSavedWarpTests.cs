@@ -37,6 +37,7 @@ public sealed class RecutKeepsSavedWarpTests : IDisposable
 
     private readonly CratesidePaths _paths;
     private readonly List<StagedFile> _staged = [];
+    private readonly WrittenWarps _written = new();
     private readonly KeptWarps _kept;
 
     public RecutKeepsSavedWarpTests()
@@ -47,7 +48,7 @@ public sealed class RecutKeepsSavedWarpTests : IDisposable
             LibraryFolder = Path.Combine(_root, "Library"),
             DataRoot = Path.Combine(_root, "data"),
         };
-        _kept = new KeptWarps(_paths, new WrittenWarps());
+        _kept = new KeptWarps(_paths, _written);
         Directory.CreateDirectory(_paths.StagingFolder);
         Directory.CreateDirectory(Path.Combine(_root, "working"));
     }
@@ -77,6 +78,31 @@ public sealed class RecutKeepsSavedWarpTests : IDisposable
             .PrepareAsync([source], TestContext.Current.CancellationToken);
 
         Assert.False(prepared[source].IsUnwarped);
+        Assert.NotNull(prepared[source].From);
+        Assert.Equal(
+            [0.1, 0.4],
+            prepared[source].File.Warp.Markers.Select(marker => marker.Seconds)
+        );
+    }
+
+    [Fact]
+    public async Task A_warp_lent_to_a_stem_comes_back_to_the_source_when_a_recut_returns_to_it()
+    {
+        var instrumental = Stage("Instrumental - Full");
+        SaveWarp(instrumental);
+        _written.RecordBorrowed(instrumental, Path.Combine(_paths.StagingFolder, "Song.flac"));
+        var settings = new TrackInstructionStore(
+            new LedgerStore(LedgerStore.InMemory, TimeProvider.System)
+        );
+
+        Recut(settings).Apply(Video, new StemPlan { Presets = [], KeepSource = true }, Catalog);
+
+        var source = Path.Combine(_root, "working", "Song.flac");
+        Tagged(source, preset: null);
+
+        var prepared = await Sidecars()
+            .PrepareAsync([source], TestContext.Current.CancellationToken);
+
         Assert.NotNull(prepared[source].From);
         Assert.Equal(
             [0.1, 0.4],

@@ -10,13 +10,13 @@ public sealed class KeptWarps(CratesidePaths paths, WrittenWarps written)
 {
     private const string SourceName = "(source)";
 
-    /// <summary>Copies the stem's sidecar if it holds a warp the user saved; a stem without one is left alone.</summary>
+    /// <summary>Copies the stem's sidecar if it holds a warp the user saved, or crateside's copy of one lent to it (#235); a stem without one is left alone.</summary>
     public void Keep(string audioPath)
     {
         if (
             StemTagReader.Read(audioPath)?.Provenance
                 is not { IsAdopted: false, SourceTrackKey: { } trackKey } provenance
-            || written.IsCratesides(audioPath)
+            || written.Of(audioPath) is { From: null }
             || !IsSaved(audioPath)
         )
             return;
