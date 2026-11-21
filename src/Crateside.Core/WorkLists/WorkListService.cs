@@ -20,7 +20,8 @@ public sealed class WorkListService(
     PresetCatalogReader? presets = null,
     ActionLog? actions = null,
     JobStore? jobs = null,
-    RecipeStore? recipes = null
+    RecipeStore? recipes = null,
+    SourceOffsets.SourceOffsetStore? offsets = null
 )
 {
     private readonly CratesidePaths _paths = paths.Value;
@@ -75,7 +76,13 @@ public sealed class WorkListService(
                 Reopened(items, ledger),
                 bumped.TrackKey,
                 reopened?.AwaitingCut(ledger),
-                InventoriesBySong(processed, ledger, catalog, _paths.LibraryFolder),
+                InventoriesBySong(
+                    processed,
+                    ledger,
+                    catalog,
+                    _paths.LibraryFolder,
+                    offsets is null ? null : offsets.IsRefused
+                ),
                 jobs?.All()
                     .Where(job =>
                         job is { Stage: JobStage.Verdict, Status: JobStatus.AwaitingPerson }
@@ -235,7 +242,8 @@ public sealed class WorkListService(
         ProcessedTracks processed,
         Ledger.KeyLedger ledger,
         PresetCatalog catalog,
-        string? finishedRoot = null
+        string? finishedRoot = null,
+        Func<string, bool>? isRefused = null
     )
     {
         string Song(string trackKey) => ledger.SongFor(trackKey) ?? trackKey;
@@ -245,7 +253,12 @@ public sealed class WorkListService(
             .ToDictionary(
                 song => song.Key,
                 song =>
-                    StemInventory.Of(song.SelectMany(entry => entry.Value), catalog, finishedRoot),
+                    StemInventory.Of(
+                        song.SelectMany(entry => entry.Value),
+                        catalog,
+                        finishedRoot,
+                        isRefused
+                    ),
                 StringComparer.Ordinal
             );
 

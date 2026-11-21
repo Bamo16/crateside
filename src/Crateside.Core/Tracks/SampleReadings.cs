@@ -26,4 +26,7 @@ public sealed record SampleReadings
 
     /// <summary>The integrated loudness kept for a file, or null when none is.</summary>
     public Func<string, double?>? LufsOf { get; init; }
+
+    /// <summary>Whether an added source's measurement refuses it, so it is warped by hand (ADR 0111).</summary>
+    public Func<string, bool>? IsSourceRefused { get; init; }
 }

@@ -161,14 +161,34 @@ public sealed class AddedSourceTests
     );
 
     [Fact]
-    public void A_staged_instrumental_source_owes_a_drums_guide_cut_from_its_own_file()
+    public void A_staged_instrumental_source_that_is_aligned_or_not_measured_owes_no_guide()
+    {
+        StemOnDisk[] files =
+        [
+            File("SUPADOPA (Drums).flac", Track, GuidePreset),
+            File("SUPADOPA (Official Instrumental).flac", Added),
+        ];
+
+        Assert.Empty(
+            SeparationRecipe
+                .For(WithOfficial, StemInventory.Of(files, Catalog, isRefused: _ => false))
+                .AddedGuides
+        );
+        Assert.Empty(
+            SeparationRecipe.For(WithOfficial, StemInventory.Of(files, Catalog)).AddedGuides
+        );
+    }
+
+    [Fact]
+    public void A_staged_instrumental_source_that_is_refused_owes_a_drums_guide_cut_from_its_own_file()
     {
         var inventory = StemInventory.Of(
             [
                 File("SUPADOPA (Drums).flac", Track, GuidePreset),
                 File("SUPADOPA (Official Instrumental).flac", Added),
             ],
-            Catalog
+            Catalog,
+            isRefused: key => key == Added
         );
 
         var recipe = SeparationRecipe.For(WithOfficial, inventory);

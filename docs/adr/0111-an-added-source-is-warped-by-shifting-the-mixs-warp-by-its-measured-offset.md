@@ -282,6 +282,19 @@ which refused a plan that unticked every stem and the Source while added sources
     and the shift needs only the offset. Rules 14, 23 and 25 read it so; the worker still
     measures again only while both files exist and one changed.
 
+### Amended 2026-11-21
+
+28. **An added source's drums guide is cut only when its record is refused** (edit, drift, not the
+    same recording), because the guide exists so the file can be warped by hand. An aligned
+    source is warped from the mix's warp (rule 14) and gets none; one not measured yet, or whose
+    file changed since, waits for the measurement before the re-cut decides. The track's own
+    drums guide is unchanged. The worker refreshes the rows after each measurement so the guide,
+    if owed, is queued without waiting for another change.
+29. **A record follows its file when the file is moved**: the file at the new path has the same
+    name, size and modified time as measured, so the record stays standing, its stored path is
+    updated, and nothing is measured again (rule 2 counts size and modified time, not the folder).
+    The mix is treated the same way.
+
 ## Consequences
 
 - A refusal is the common safe answer, and it is the one the maintainer has always had: line it up

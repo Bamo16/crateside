@@ -333,7 +333,12 @@ public sealed record TracksView
                 IsLibraryOnly = members.All(seed => seed.IsLibraryOnly),
                 IsAddedByUrl = instruction?.AddedByUrl is true,
                 IsBackfill = instruction?.Backfill is true,
-                Inventory = StemInventory.Of(files, read.Presets, finishedRoot),
+                Inventory = StemInventory.Of(
+                    files,
+                    read.Presets,
+                    finishedRoot,
+                    read.IsSourceRefused
+                ),
             };
         }
     }

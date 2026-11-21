@@ -3,6 +3,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
 using Crateside.Core.Loudness;
 using Crateside.Core.Orchestration.Separation;
+using Crateside.Core.SourceOffsets;
 using Crateside.Core.Warps;
 
 namespace Crateside.Core.Tracks;
@@ -14,7 +15,8 @@ public sealed class SampleReadingsReader(
     WarpTempoReader warpTempos,
     BeatReader beats,
     WrittenWarps written,
-    LoudnessReader? loudness = null
+    LoudnessReader? loudness = null,
+    SourceOffsetStore? offsets = null
 )
 {
     public async Task<SampleReadings> ReadAsync(CancellationToken ct = default)
@@ -33,6 +35,7 @@ public sealed class SampleReadingsReader(
             FullMixBeatsOf = readSource,
             WrittenWarp = written.Of,
             LufsOf = loudness is null ? null : path => loudness.Read(path)?.IntegratedLufs,
+            IsSourceRefused = offsets is null ? null : offsets.IsRefused,
         };
     }
 

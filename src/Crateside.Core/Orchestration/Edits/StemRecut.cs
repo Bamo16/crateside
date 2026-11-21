@@ -39,7 +39,11 @@ public sealed class StemRecut(
     )
     {
         var files = staged.Of(trackKey);
-        var stagedInventory = StemInventory.Of(files.Select(AsOnDisk), catalog);
+        var stagedInventory = StemInventory.Of(
+            files.Select(AsOnDisk),
+            catalog,
+            isRefused: offsets is null ? null : offsets.IsRefused
+        );
 
         // Everywhere the track's files could be: a preset already in the library is never asked
         // for again, and a library file the plan drops goes too, to the Recycle Bin (ADR 0103).
@@ -54,6 +58,7 @@ public sealed class StemRecut(
                 ),
             ],
             IsFinished = known?.IsFinished is true,
+            IsRefused = stagedInventory.IsRefused,
         };
 
         var stored = Stored(trackKey);

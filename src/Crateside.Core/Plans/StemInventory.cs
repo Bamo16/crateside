@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
 using Crateside.Core.WorkLists;
@@ -49,15 +50,21 @@ public sealed record StemInventory
             file.Kind is StemKind.WarpGuide && !plan.AddedSources.Any(added => IsFrom(file, added))
         );
 
+    /// <summary>Whether an added source's measurement refuses it; null when nothing is known, so no guide is owed.</summary>
+    [JsonIgnore]
+    public Func<string, bool>? IsRefused { get; init; }
+
     /// <summary>
     /// The drums guides an added source owes: a staged, instrumental source file with no guide of
-    /// its own yet. A source already in the library is warped and owes none (ADR 0103).
+    /// its own yet, whose measurement refuses it, so it is warped by hand (ADR 0111, rule 28). One
+    /// aligned or not yet measured owes none; a source already in the library is warped and owes none (ADR 0103).
     /// </summary>
     public IReadOnlyList<AddedGuide> GuidesOwed(StemPlan plan) =>
         [
             .. plan
                 .AddedSources.Where(added =>
                     added is { Type: SampleType.Instrumental }
+                    && IsRefused?.Invoke(added.TrackKey) is true
                     && !Files.Any(file => file.Kind is StemKind.WarpGuide && IsFrom(file, added))
                 )
                 .Select(added =>
@@ -152,7 +159,8 @@ public sealed record StemInventory
     public static StemInventory Of(
         IEnumerable<StemOnDisk> files,
         PresetCatalog catalog,
-        string? finishedRoot = null
+        string? finishedRoot = null,
+        Func<string, bool>? isRefused = null
     )
     {
         var classified = files.Select(file => ClassifiedStem.Of(file, catalog)).ToList();
@@ -162,6 +170,7 @@ public sealed record StemInventory
             Files = classified,
             IsClassified = !catalog.IsEmpty,
             LibraryRoot = finishedRoot,
+            IsRefused = isRefused,
             IsFinished =
                 finishedRoot is not null
                 && classified.Any(file =>

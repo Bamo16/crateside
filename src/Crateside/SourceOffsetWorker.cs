@@ -40,10 +40,13 @@ public sealed class SourceOffsetWorker(
                     foreach (var pair in Owed(rows, sources, store))
                     {
                         if (await pass.RunAsync([pair], stoppingToken) is { Count: > 0 })
+                        {
                             logger.LogInformation(
                                 "Measured {Source} against its mix",
                                 Path.GetFileName(pair.SourcePath)
                             );
+                            await tracks.EnsureFreshAsync(TimeSpan.Zero, stoppingToken);
+                        }
                     }
                 }
             }
