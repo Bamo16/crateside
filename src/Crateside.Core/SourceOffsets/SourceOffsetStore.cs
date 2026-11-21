@@ -99,7 +99,13 @@ public sealed record SourceOffsetRecord(
 
     /// <summary>Whether the offset can still be relied on: the source is as it was, and the mix is as it was or has gone from disk (ADR 0111, rule 27).</summary>
     [JsonIgnore]
-    public bool IsUsable => Source.Holds && (Mix.Holds || !File.Exists(Mix.Path));
+    public bool IsUsable => IsUsableAt(Source.Path);
+
+    /// <summary>Whether the offset can be relied on for the source now at <paramref name="sourcePath"/>, which may have moved since it was measured.</summary>
+    public bool IsUsableAt(string sourcePath) =>
+        FileStamp.Of(sourcePath) is { } now
+        && Source.IsSameFileAs(now)
+        && (Mix.Holds || !File.Exists(Mix.Path));
 }
 
 [JsonSourceGenerationOptions(

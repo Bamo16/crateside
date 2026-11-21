@@ -157,9 +157,9 @@ public partial class WarpView
                     !PathIs(file.Path, _mixLane?.Source.Path ?? string.Empty)
                     && Offsets.Of(file.SourceKey)
                         is {
-                            IsUsable: true,
                             Reading: { Verdict: OffsetVerdict.Aligned, Offset: not null } reading,
-                        }
+                        } record
+                    && record.IsUsableAt(file.Path)
                     && Reader.Read(file.Path) is { Sidecar: not null } warp
                         ? new AddedLane(warp, file.Label, reading)
                         : null
@@ -171,7 +171,7 @@ public partial class WarpView
         string.Concat(
             AddedFiles()
                 .Select(file =>
-                    $"{Stamp([file.Path])}{Offsets.Of(file.SourceKey)?.MeasuredAt.Ticks}{Offsets.Of(file.SourceKey)?.IsUsable}"
+                    $"{Stamp([file.Path])}{Offsets.Of(file.SourceKey)?.MeasuredAt.Ticks}{Offsets.Of(file.SourceKey)?.IsUsableAt(file.Path)}"
                 )
         );
 

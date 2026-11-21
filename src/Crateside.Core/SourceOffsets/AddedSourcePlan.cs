@@ -63,7 +63,7 @@ public sealed record AddedSourcePlan(
     {
         AddedSourcePlan Skipped(AddedSkip skip) => new(file, skip, null, record);
 
-        if (record is not { IsUsable: true })
+        if (record is null || !record.IsUsableAt(file.Path))
             return Skipped(AddedSkip.Measuring);
 
         switch (record.Reading.Verdict)

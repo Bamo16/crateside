@@ -60,6 +60,40 @@ public sealed class SourceOffsetPassTests : IDisposable
         Assert.True(_decoder.Calls > 0);
     }
 
+    [Fact]
+    public void A_moved_source_is_usable_at_its_new_path_before_any_pass_runs()
+    {
+        var (mix, source) = (Touch("mix", "mix.flac"), Touch("staging", "source.flac"));
+        Remember(mix, source);
+        var moved = Move(source, "library");
+
+        Assert.True(_store.Of("added")!.IsUsableAt(moved));
+    }
+
+    [Fact]
+    public void A_changed_source_is_not_usable_at_its_new_path()
+    {
+        var (mix, source) = (Touch("mix", "mix.flac"), Touch("staging", "source.flac"));
+        Remember(mix, source);
+        var moved = Move(source, "library");
+        File.AppendAllText(moved, "more");
+
+        Assert.False(_store.Of("added")!.IsUsableAt(moved));
+    }
+
+    [Fact]
+    public void A_second_move_of_the_same_source_is_new_work()
+    {
+        var staging = Pair("mix.flac", Path.Combine("staging", "source.flac"));
+        var library = Pair("mix.flac", Path.Combine("library", "source.flac"));
+
+        Assert.NotEqual(staging.WorkKey, library.WorkKey);
+        Assert.Equal(
+            staging.WorkKey,
+            Pair("mix.flac", Path.Combine("staging", "source.flac")).WorkKey
+        );
+    }
+
     private SourceOffsetPass Pass() => new(_decoder, _store, TimeProvider.System);
 
     private static SourceOffsetPair Pair(string mix, string source) =>

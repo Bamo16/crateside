@@ -20,7 +20,7 @@ public sealed class SourceOffsetWorker(
 
     private readonly NewWork _newWork = new(
         tracks,
-        rows => Owed(rows, sources, store).Select(pair => pair.SourceKey)
+        rows => Owed(rows, sources, store).Select(pair => pair.WorkKey)
     );
 
     public override void Dispose()
@@ -39,14 +39,17 @@ public sealed class SourceOffsetWorker(
                 {
                     foreach (var pair in Owed(rows, sources, store))
                     {
+                        var before = store.Of(pair.SourceKey);
+
                         if (await pass.RunAsync([pair], stoppingToken) is { Count: > 0 })
-                        {
                             logger.LogInformation(
                                 "Measured {Source} against its mix",
                                 Path.GetFileName(pair.SourcePath)
                             );
-                            await tracks.EnsureFreshAsync(TimeSpan.Zero, stoppingToken);
-                        }
+                        else if (store.Of(pair.SourceKey) == before)
+                            continue;
+
+                        await tracks.EnsureFreshAsync(TimeSpan.Zero, stoppingToken);
                     }
                 }
             }

@@ -13,6 +13,9 @@ public sealed record SourceOffsetPair(
     string SourcePath
 )
 {
+    /// <summary>Names this pair as work for <c>NewWork</c>, so a file moved again wakes the worker again.</summary>
+    public string WorkKey => $"{SourceKey}|{SourcePath}|{MixPath}";
+
     /// <summary>Every added source in the rows whose track's mix is on disk (ADR 0111, rule 1).</summary>
     public static IReadOnlyList<SourceOffsetPair> Find(
         IReadOnlyList<TrackRow> rows,

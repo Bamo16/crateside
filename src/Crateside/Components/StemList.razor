@@ -121,7 +121,7 @@
 
                         @if (!ticking && line is { AddedSource: { } addedSource, IsOnDisk: true })
                         {
-                            <SourceOffsetLine SourceKey="@addedSource.TrackKey" />
+                            <SourceOffsetLine SourceKey="@addedSource.TrackKey" Path="@line.Files[0].Path" />
                         }
                     </div>
                 </div>

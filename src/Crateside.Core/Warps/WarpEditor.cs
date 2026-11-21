@@ -122,9 +122,9 @@ public sealed class WarpEditor(
             if (
                 offsets.Of(file.SourceKey)
                     is not {
-                        IsUsable: true,
                         Reading: { Verdict: OffsetVerdict.Aligned, Offset: not null } reading
-                    }
+                    } record
+                || !record.IsUsableAt(file.Path)
                 || !AnalysisFile.TryRead(StemFileName.AnalysisFor(file.Path), out var sidecar)
                 || sidecar
                     is not {
@@ -246,11 +246,8 @@ public sealed class WarpEditor(
         {
             foreach (
                 var item in plan.Added.Where(item =>
-                    item
-                        is {
-                            IsWritten: true,
-                            Record: { IsUsable: true, Reading: { Offset: not null } }
-                        }
+                    item is { IsWritten: true, Record: { Reading.Offset: not null } record }
+                    && record.IsUsableAt(item.File.Path)
                 )
             )
             {

@@ -133,7 +133,29 @@ public sealed class SourceOffsetLineTests : IDisposable
         return source;
     }
 
-    private async Task<string> RenderAsync()
+    [Fact]
+    public async Task A_source_moved_since_it_was_measured_keeps_its_line()
+    {
+        var source = Save(
+            new OffsetReading
+            {
+                Verdict = OffsetVerdict.Aligned,
+                SampleRate = 44_100,
+                WindowSeconds = 5,
+                Offset = 19_470,
+            }
+        );
+        var moved = Path.Combine(_root, "library", "source.flac");
+        Directory.CreateDirectory(Path.GetDirectoryName(moved)!);
+        File.Move(source, moved);
+
+        var html = await RenderAsync(moved);
+
+        Assert.Contains("Aligned to the mix", html);
+        Assert.DoesNotContain("measured again", html);
+    }
+
+    private async Task<string> RenderAsync(string? path = null)
     {
         await using var services = new ServiceCollection()
             .AddSingleton(_store)
@@ -145,7 +167,11 @@ public sealed class SourceOffsetLineTests : IDisposable
         {
             var output = await renderer.RenderComponentAsync<SourceOffsetLine>(
                 ParameterView.FromDictionary(
-                    new Dictionary<string, object?> { ["SourceKey"] = "added" }
+                    new Dictionary<string, object?>
+                    {
+                        ["SourceKey"] = "added",
+                        ["Path"] = path ?? Path.Combine(_root, "source.flac"),
+                    }
                 )
             );
 
