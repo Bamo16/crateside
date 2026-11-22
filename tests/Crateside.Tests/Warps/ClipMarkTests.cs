@@ -49,22 +49,21 @@ public sealed class ClipMarkTests
     }
 
     [Fact]
-    public void A_stems_clip_runs_from_the_mixs_clip_start_to_the_end_of_its_file()
+    public void A_stems_extent_ignores_the_mixs_clip_start_and_runs_the_length_of_its_file()
     {
         var group = Group(markerBeat: 1, clipStartBeat: 4);
 
         var (start, end) = group.ClipSpan(group.Stems[0]);
 
-        Assert.Equal(group.SecondsAt(4)!.Value, start, precision: 6);
+        Assert.Equal(0, start);
         Assert.Equal(20, end);
     }
 
     [Theory]
-    [InlineData(1, 1)]
-    [InlineData(8, 8)]
-    public void An_added_sources_clip_starts_at_the_mixs_clip_start_unless_its_file_starts_later(
-        double shift,
-        double expectedStartAtLeast
+    [InlineData(0.441)]
+    [InlineData(8.153)]
+    public void An_added_sources_extent_is_its_file_after_its_offset_whatever_the_clip_start(
+        double shift
     )
     {
         var group = Group(markerBeat: 1, clipStartBeat: 4);
@@ -77,11 +76,7 @@ public sealed class ClipMarkTests
 
         var (start, end) = group.ClipSpan(added, shift);
 
-        Assert.Equal(
-            Math.Max(group.SecondsAt(4)!.Value, expectedStartAtLeast),
-            start,
-            precision: 6
-        );
+        Assert.Equal(shift, start);
         Assert.Equal(10 + shift, end);
     }
 
