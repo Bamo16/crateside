@@ -602,12 +602,101 @@ public sealed class BackingRunnerTests : IDisposable
         Assert.Empty(Runner().Unbacked(_root, Ledger("HIGH"), ownedOf: _ => []));
     }
 
-    private BackingRunner Runner() =>
+    [Fact]
+    public void A_warped_keyed_file_gets_the_two_tempo_tags_nearest_its_tempo()
+    {
+        var stem = LibraryStem();
+        File.Copy(Fixture("sidecar-clicks.asd"), $"{stem}.asd");
+        new FolderInfoWriter().Apply(
+            _root,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|A", "Key|Minor", "Camelot|8", "Camelot|A"],
+                },
+            ]
+        );
+
+        var assignment = Assert.Single(
+            Runner(new WarpTempoReader()).Unbacked(_root, Ledger("HIGH"), ownedOf: _ => [])
+        );
+
+        // 120 BPM sits between the 116 and 123 bands.
+        Assert.Equal(
+            [
+                "Key|A",
+                "Key|Minor",
+                "Camelot|8",
+                "Camelot|A",
+                "Tempo|≈116 · 233",
+                "Tempo|≈123 · 247",
+            ],
+            assignment.Keywords
+        );
+    }
+
+    [Fact]
+    public void A_stray_tempo_tag_on_a_file_with_no_warp_is_taken_off()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|A", "Key|Minor", "Camelot|8", "Camelot|A", "Tempo|≈87 · 174"],
+                },
+            ]
+        );
+
+        var assignment = Assert.Single(
+            Runner(new WarpTempoReader()).Unbacked(_root, Ledger("HIGH"), ownedOf: _ => [])
+        );
+
+        Assert.Equal(["Key|A", "Key|Minor", "Camelot|8", "Camelot|A"], assignment.Keywords);
+    }
+
+    [Fact]
+    public void A_warped_file_with_the_right_tempo_tags_needs_no_write()
+    {
+        var stem = LibraryStem();
+        File.Copy(Fixture("sidecar-clicks.asd"), $"{stem}.asd");
+        new FolderInfoWriter().Apply(
+            _root,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords =
+                    [
+                        "Key|A",
+                        "Key|Minor",
+                        "Camelot|8",
+                        "Camelot|A",
+                        "Tempo|≈116 · 233",
+                        "Tempo|≈123 · 247",
+                    ],
+                },
+            ]
+        );
+
+        Assert.Empty(
+            Runner(new WarpTempoReader()).Unbacked(_root, Ledger("HIGH"), ownedOf: _ => [])
+        );
+    }
+
+    private static string Fixture(string name) =>
+        Path.Combine(AppContext.BaseDirectory, "Fixtures", name);
+
+    private BackingRunner Runner(WarpTempoReader? tempos = null) =>
         new(
             new FolderInfoReader(),
             new FolderInfoWriter(),
             TestCollections.Store(_root),
-            NullLogger<BackingRunner>.Instance
+            NullLogger<BackingRunner>.Instance,
+            tempos
         );
 
     private sealed class ListLogger : ILogger<BackingRunner>

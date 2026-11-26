@@ -100,6 +100,12 @@ the views, and running the workflow.
   `8`, `A`; C major `8`, `B`); a modal center (`Key|Dorian` etc.) gets the number of its note set
   and no letter (D Dorian `8`), so the exact `8` + `A` filter never catches it
   ([ADR 0112](docs/adr/0112-camelot-tags-are-derived-from-the-key-tags.md)).
+- **Tempo tags** — the `Tempo|` group crateside writes from a file's warp: the tempo the warp holds
+  longest, folded by halving or doubling into one octave (80–160 BPM), cut into 12 bands, each
+  tag named for its centre and its double (`≈87 · 174`). Every file carries the two bands nearest
+  its tempo, so one filter finds everything within about 6 % of that band's centre, 174 DnB beside
+  87 hip hop. Derived on the same writes as the Key and Camelot tags and never set by hand; a file
+  with no warp has none ([ADR 0113](docs/adr/0113-tempo-tags-fold-a-warps-tempo-into-one-octave.md)).
 - **Backer** — another detector that names the same key as keydetect. Whether keydetect has
   backers says more about its being right than its own confidence does.
 - **Window** — a stretch of a track detected on its own, given by the user in bars or asked

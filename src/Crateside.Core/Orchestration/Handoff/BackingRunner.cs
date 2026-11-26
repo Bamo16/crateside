@@ -22,7 +22,8 @@ public sealed class BackingRunner(
     FolderInfoReader folderInfo,
     FolderInfoWriter writer,
     CollectionSettingsStore collections,
-    ILogger<BackingRunner> log
+    ILogger<BackingRunner> log,
+    WarpTempoReader? tempos = null
 )
 {
     /// <summary>Each file's provenance as last read, keyed by path and good while its write time holds.</summary>
@@ -341,21 +342,24 @@ public sealed class BackingRunner(
                         file.MayCorrect ? file.Existing!.Key : null
                     );
                     var corrects = correctedTo is not null;
-                    var merged = CamelotTags.Reconcile(
-                        WithMode(
-                            Merged(
+                    var merged = TempoTags.Reconcile(
+                        CamelotTags.Reconcile(
+                            WithMode(
+                                Merged(
+                                    file.Existing,
+                                    keywords,
+                                    correcting: corrects,
+                                    retired: provenance is { SourceTrackKey: { } trackKey }
+                                        ? retiredOf?.Invoke(trackKey)
+                                        : null
+                                ),
                                 file.Existing,
-                                keywords,
-                                correcting: corrects,
-                                retired: provenance is { SourceTrackKey: { } trackKey }
-                                    ? retiredOf?.Invoke(trackKey)
-                                    : null
-                            ),
-                            file.Existing,
-                            provenance,
-                            ledger,
-                            keyWritten: file.NeedsKey || corrects
-                        )
+                                provenance,
+                                ledger,
+                                keyWritten: file.NeedsKey || corrects
+                            )
+                        ),
+                        tempos?.Read(file.Path)
                     );
                     // A write that changes nothing is not worth a reconcile — and one whose whole
                     // key the user had taken off changes nothing.

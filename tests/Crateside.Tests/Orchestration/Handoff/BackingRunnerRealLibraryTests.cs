@@ -20,7 +20,8 @@ public sealed class BackingRunnerRealLibraryTests
 
     private static IReadOnlyList<TagAssignment> Unbacked(
         string library,
-        bool correctKeys = false
+        bool correctKeys = false,
+        WarpTempoReader? tempos = null
     ) =>
         new BackingRunner(
             new FolderInfoReader(),
@@ -29,7 +30,8 @@ public sealed class BackingRunnerRealLibraryTests
                 Path.Combine(Path.GetTempPath(), "crateside-tests-absent", "collections.json"),
                 TestLedger.Store()
             ),
-            NullLogger<BackingRunner>.Instance
+            NullLogger<BackingRunner>.Instance,
+            tempos
         ).Unbacked(library, TestLedger.FromReal(), correctKeys: correctKeys);
 
     [Fact]
@@ -135,6 +137,57 @@ public sealed class BackingRunnerRealLibraryTests
         }
 
         Assert.True(keyed > 0);
+    }
+
+    [Fact]
+    public void After_the_pass_every_warped_keyed_file_has_exactly_two_tempo_tags_and_no_other_has_any()
+    {
+        var library = Library();
+        var backed = new FolderInfoReader().Read(library);
+        var tempos = new WarpTempoReader();
+        var planned = Unbacked(library, correctKeys: true, tempos)
+            .ToDictionary(a => a.RelativePath, StringComparer.OrdinalIgnoreCase);
+        var perBand = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        int warped = 0,
+            unwarped = 0;
+
+        foreach (var path in Directory.EnumerateFiles(library, "*", SearchOption.AllDirectories))
+        {
+            if (
+                !backed.TryGet(path, out var tags)
+                || !tags.IsKeyTagged
+                || !SampleFiles.IsAudio(path)
+            )
+                continue;
+
+            var after =
+                planned.TryGetValue(Path.GetRelativePath(library, path), out var assignment)
+                && assignment.Keywords is { } keywords
+                    ? keywords
+                    : tags.Keywords;
+            var tempo = after.Where(TempoTags.IsKeyword).ToArray();
+
+            if (tempos.Read(path) is { } warp)
+            {
+                warped++;
+                Assert.True(tempo.Length is 2, $"{path}: {string.Join(", ", tempo)}");
+                Assert.Equal(TempoTags.For(warp.Bpm).Order(), tempo.Order());
+
+                foreach (var tag in tempo)
+                    perBand[tag] = perBand.GetValueOrDefault(tag) + 1;
+            }
+            else
+            {
+                unwarped++;
+                Assert.Empty(tempo);
+            }
+        }
+
+        Assert.True(warped > 0);
+        TestContext.Current.SendDiagnosticMessage(
+            $"warped {warped}, no warp {unwarped}; files per tag: "
+                + string.Join("; ", perBand.Select(pair => $"{pair.Key} = {pair.Value}"))
+        );
     }
 
     [Fact]

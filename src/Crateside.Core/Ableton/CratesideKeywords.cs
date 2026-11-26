@@ -27,6 +27,7 @@ public static partial class CratesideKeywords
                 || KeyTags.Modes.Contains(value)
                 || ModeTags.IsModal(value),
             [CamelotTags.Group, var value] => CamelotTags.IsKnown(value),
+            [TempoTags.Group, var value] => TempoTags.IsKnown(value),
             ["Type", var value] => Types.Contains(value),
             // The subtag a vocal stem takes, which the person sets in Live (ADR 0090).
             ["Type", "Vocal", _] => VocalVocabulary.IsKeyword(keyword),
