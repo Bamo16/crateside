@@ -341,19 +341,21 @@ public sealed class BackingRunner(
                         file.MayCorrect ? file.Existing!.Key : null
                     );
                     var corrects = correctedTo is not null;
-                    var merged = WithMode(
-                        Merged(
+                    var merged = CamelotTags.Reconcile(
+                        WithMode(
+                            Merged(
+                                file.Existing,
+                                keywords,
+                                correcting: corrects,
+                                retired: provenance is { SourceTrackKey: { } trackKey }
+                                    ? retiredOf?.Invoke(trackKey)
+                                    : null
+                            ),
                             file.Existing,
-                            keywords,
-                            correcting: corrects,
-                            retired: provenance is { SourceTrackKey: { } trackKey }
-                                ? retiredOf?.Invoke(trackKey)
-                                : null
-                        ),
-                        file.Existing,
-                        provenance,
-                        ledger,
-                        keyWritten: file.NeedsKey || corrects
+                            provenance,
+                            ledger,
+                            keyWritten: file.NeedsKey || corrects
+                        )
                     );
                     // A write that changes nothing is not worth a reconcile — and one whose whole
                     // key the user had taken off changes nothing.

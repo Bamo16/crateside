@@ -356,7 +356,13 @@ public sealed class BackingRunnerTests : IDisposable
         var stem = LibraryStem();
         new FolderInfoWriter().Apply(
             _root,
-            [new() { RelativePath = Path.GetFileName(stem), Keywords = ["Key|A", "Key|Minor"] }]
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|A", "Key|Minor", "Camelot|8", "Camelot|A"],
+                },
+            ]
         );
 
         Assert.Empty(Runner().Unbacked(_root, Ledger("HIGH")));
@@ -368,7 +374,13 @@ public sealed class BackingRunnerTests : IDisposable
         var stem = LibraryStem();
         new FolderInfoWriter().Apply(
             _root,
-            [new() { RelativePath = Path.GetFileName(stem), Keywords = ["Key|C♯", "Key|Major"] }]
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|C♯", "Key|Major", "Camelot|3", "Camelot|B"],
+                },
+            ]
         );
 
         Assert.Empty(Runner().Unbacked(_root, Ledger("LOW")));
@@ -405,7 +417,10 @@ public sealed class BackingRunnerTests : IDisposable
         var assignment = Assert.Single(Runner().Unbacked(_root, Ledger("HIGH"), index: index));
 
         Assert.Equal([1], assignment.Collections);
-        Assert.Equal(["Key|A", "Key|Minor", "Type|Vocal"], assignment.Keywords);
+        Assert.Equal(
+            ["Key|A", "Key|Minor", "Type|Vocal", "Camelot|8", "Camelot|A"],
+            assignment.Keywords
+        );
     }
 
     [Fact]
@@ -414,7 +429,13 @@ public sealed class BackingRunnerTests : IDisposable
         var stem = LibraryStem();
         new FolderInfoWriter().Apply(
             _root,
-            [new() { RelativePath = Path.GetFileName(stem), Keywords = ["Key|A", "Key|Minor"] }]
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|A", "Key|Minor", "Camelot|8", "Camelot|A"],
+                },
+            ]
         );
 
         var assignment = Assert.Single(
@@ -452,7 +473,7 @@ public sealed class BackingRunnerTests : IDisposable
                 new()
                 {
                     RelativePath = Path.GetFileName(stem),
-                    Keywords = ["Key|A", "Key|Minor"],
+                    Keywords = ["Key|A", "Key|Minor", "Camelot|8", "Camelot|A"],
                     Collections = [TestCollections.Number(BrowserCollection.CheckBeat)],
                 },
             ]
@@ -474,7 +495,8 @@ public sealed class BackingRunnerTests : IDisposable
             Runner().Unbacked(_root, Ledger("HIGH", "dorian"), ownedOf: _ => [])
         );
 
-        Assert.Equal(["Key|A", "Key|Minor", "Key|Dorian"], assignment.Keywords);
+        // G major's notes: 9, and no letter.
+        Assert.Equal(["Key|A", "Key|Minor", "Key|Dorian", "Camelot|9"], assignment.Keywords);
     }
 
     [Fact]
@@ -494,7 +516,7 @@ public sealed class BackingRunnerTests : IDisposable
 
         var assignment = Assert.Single(Runner().Unbacked(_root, Ledger("HIGH"), ownedOf: _ => []));
 
-        Assert.Equal(["Key|A", "Key|Minor"], assignment.Keywords);
+        Assert.Equal(["Key|A", "Key|Minor", "Camelot|8", "Camelot|A"], assignment.Keywords);
     }
 
     [Fact]
@@ -516,7 +538,68 @@ public sealed class BackingRunnerTests : IDisposable
             Runner().Unbacked(_root, Ledger("HIGH", "phrygian"), ownedOf: _ => [])
         );
 
-        Assert.Equal(["Key|A", "Key|Minor", "Key|Phrygian"], assignment.Keywords);
+        Assert.Equal(["Key|A", "Key|Minor", "Key|Phrygian", "Camelot|7"], assignment.Keywords);
+    }
+
+    [Fact]
+    public void A_key_correction_rewrites_both_the_key_and_the_camelot_groups()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|G", "Key|Major", "Camelot|9", "Camelot|B"],
+                },
+            ]
+        );
+
+        var assignment = Assert.Single(Runner().Unbacked(_root, Ledger("HIGH"), ownedOf: _ => []));
+
+        Assert.Equal(
+            ["Key|A", "Key|Minor", "Type|Vocal", "Camelot|8", "Camelot|A"],
+            assignment.Keywords
+        );
+    }
+
+    [Fact]
+    public void A_stray_camelot_tag_that_disagrees_with_the_key_is_replaced()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|A", "Key|Minor", "Camelot|3", "Camelot|B"],
+                },
+            ]
+        );
+
+        var assignment = Assert.Single(Runner().Unbacked(_root, Ledger("HIGH"), ownedOf: _ => []));
+
+        Assert.Equal(["Key|A", "Key|Minor", "Camelot|8", "Camelot|A"], assignment.Keywords);
+    }
+
+    [Fact]
+    public void A_keyed_file_with_the_right_camelot_tags_needs_no_write()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|A", "Key|Minor", "Camelot|8", "Camelot|A"],
+                },
+            ]
+        );
+
+        Assert.Empty(Runner().Unbacked(_root, Ledger("HIGH"), ownedOf: _ => []));
     }
 
     private BackingRunner Runner() =>

@@ -50,7 +50,7 @@ public sealed class TaggingRunner(CratesidePaths paths, FolderInfoWriter? writer
         if (ledgerKey is not { Length: > 0 } key || !TryReadKey(key, out var tonic, out var mode))
             return [];
 
-        List<string> keywords = [$"Key|{tonic}", $"Key|{mode}"];
+        List<string> keywords = [.. CamelotTags.Reconcile([$"Key|{tonic}", $"Key|{mode}"])];
 
         if (TypeFor(preset, type) is { } tagged)
             keywords.Add($"Type|{tagged}");

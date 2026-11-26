@@ -47,7 +47,15 @@ public sealed class MeterPropagationTests : IDisposable
         _runner.Run(_root, Ledger(), ownedOf: _ => ["Genres|Hip Hop"], backKeys: false);
 
         Assert.Equal(
-            ["Key|A", "Key|Minor", "Meter|3/4", "Meter|Odd bars", "Genres|Hip Hop"],
+            [
+                "Key|A",
+                "Key|Minor",
+                "Meter|3/4",
+                "Meter|Odd bars",
+                "Genres|Hip Hop",
+                "Camelot|8",
+                "Camelot|A",
+            ],
             KeywordsOf(vocal)
         );
     }
@@ -62,8 +70,14 @@ public sealed class MeterPropagationTests : IDisposable
         Assert.True(store.Settle(Song, _runner.MeterReadings(_root, Ledger(), index: null)));
         Pass(store);
 
-        Assert.Equal(["Key|A", "Key|Minor", "Meter|6/8", "Meter|Odd bars"], KeywordsOf(drums));
-        Assert.Equal(["Key|A", "Key|Minor", "Meter|6/8", "Meter|Odd bars"], KeywordsOf(vocal));
+        Assert.Equal(
+            ["Key|A", "Key|Minor", "Meter|6/8", "Meter|Odd bars", "Camelot|8", "Camelot|A"],
+            KeywordsOf(drums)
+        );
+        Assert.Equal(
+            ["Key|A", "Key|Minor", "Meter|6/8", "Meter|Odd bars", "Camelot|8", "Camelot|A"],
+            KeywordsOf(vocal)
+        );
     }
 
     [Fact]
@@ -77,8 +91,14 @@ public sealed class MeterPropagationTests : IDisposable
         Pass(store);
 
         Assert.True(store.Of(Song)?.Contradicts);
-        Assert.Equal(["Key|A", "Key|Minor", "Meter|6/8"], KeywordsOf(vocal));
-        Assert.Equal(["Key|A", "Key|Minor", "Meter|4/4"], KeywordsOf(drums));
+        Assert.Equal(
+            ["Key|A", "Key|Minor", "Meter|6/8", "Camelot|8", "Camelot|A"],
+            KeywordsOf(vocal)
+        );
+        Assert.Equal(
+            ["Key|A", "Key|Minor", "Meter|4/4", "Camelot|8", "Camelot|A"],
+            KeywordsOf(drums)
+        );
     }
 
     [Fact]
@@ -104,7 +124,10 @@ public sealed class MeterPropagationTests : IDisposable
         );
         Pass(store);
 
-        Assert.Equal(["Key|A", "Key|Minor", "Meter|4/4"], KeywordsOf(drums));
+        Assert.Equal(
+            ["Key|A", "Key|Minor", "Meter|4/4", "Camelot|8", "Camelot|A"],
+            KeywordsOf(drums)
+        );
     }
 
     [Theory]
@@ -112,7 +135,7 @@ public sealed class MeterPropagationTests : IDisposable
     [InlineData("4/4", false)]
     public void Collection_7_follows_the_meter_tags_and_not_the_hand_mark(string meter, bool shown)
     {
-        Stem("Vocal - Full", "Key|A", "Key|Minor");
+        Stem("Vocal - Full", "Key|A", "Key|Minor", "Camelot|8", "Camelot|A");
         var store = new MeterStore(Path.Combine(_root, "meters.json"));
 
         store.Settle(

@@ -1,6 +1,7 @@
 using AbleKit.Tags;
 using Crateside.Core.Ableton;
 using Crateside.Core.Orchestration.Handoff;
+using Crateside.Core.Samples;
 using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -17,7 +18,10 @@ public sealed class BackingRunnerRealLibraryTests
         return library;
     }
 
-    private static IReadOnlyList<TagAssignment> Unbacked(string library) =>
+    private static IReadOnlyList<TagAssignment> Unbacked(
+        string library,
+        bool correctKeys = false
+    ) =>
         new BackingRunner(
             new FolderInfoReader(),
             new FolderInfoWriter(),
@@ -26,7 +30,7 @@ public sealed class BackingRunnerRealLibraryTests
                 TestLedger.Store()
             ),
             NullLogger<BackingRunner>.Instance
-        ).Unbacked(library, TestLedger.FromReal(), correctKeys: false);
+        ).Unbacked(library, TestLedger.FromReal(), correctKeys: correctKeys);
 
     [Fact]
     public void No_key_the_store_already_holds_is_offered_again()
@@ -94,6 +98,43 @@ public sealed class BackingRunnerRealLibraryTests
                     )
                 )
         );
+    }
+
+    [Fact]
+    public void After_the_pass_every_keyed_file_has_one_camelot_number_and_a_letter_unless_modal()
+    {
+        var library = Library();
+        var backed = new FolderInfoReader().Read(library);
+        var planned = Unbacked(library, correctKeys: true)
+            .ToDictionary(a => a.RelativePath, StringComparer.OrdinalIgnoreCase);
+        var keyed = 0;
+
+        foreach (var path in Directory.EnumerateFiles(library, "*", SearchOption.AllDirectories))
+        {
+            if (
+                !backed.TryGet(path, out var tags)
+                || !tags.IsKeyTagged
+                || !SampleFiles.IsAudio(path)
+            )
+                continue;
+
+            keyed++;
+            var after =
+                planned.TryGetValue(Path.GetRelativePath(library, path), out var assignment)
+                && assignment.Keywords is { } keywords
+                    ? keywords
+                    : tags.Keywords;
+            var camelot = after.Where(CamelotTags.IsKeyword).ToArray();
+            var modal = after.Any(ModeTags.IsKeyword);
+
+            Assert.True(
+                camelot.Count(k => int.TryParse(k["Camelot|".Length..], out _)) is 1,
+                $"{path}: {string.Join(", ", camelot)}"
+            );
+            Assert.Equal(!modal ? 1 : 0, camelot.Count(k => k is "Camelot|A" or "Camelot|B"));
+        }
+
+        Assert.True(keyed > 0);
     }
 
     [Fact]

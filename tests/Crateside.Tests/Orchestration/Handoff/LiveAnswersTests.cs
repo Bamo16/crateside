@@ -236,7 +236,15 @@ public sealed class LiveAnswersTests : IDisposable
         );
 
         Assert.Equal(
-            ["Key|A", "Key|Minor", "Type|Vocal", "Type|Vocal|Lead", "Genres|Pop"],
+            [
+                "Key|A",
+                "Key|Minor",
+                "Type|Vocal",
+                "Type|Vocal|Lead",
+                "Genres|Pop",
+                "Camelot|8",
+                "Camelot|A",
+            ],
             Keywords(Vocal)
         );
     }

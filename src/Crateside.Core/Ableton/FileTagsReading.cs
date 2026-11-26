@@ -35,7 +35,7 @@ public static class FileTagsReading
     }
 
     /// <summary>Live spells the tonic with ♯/♭ (<c>Key|G♯</c>); the ledger with ASCII.</summary>
-    private static (string? Key, bool IsPartial) ReadKey(IReadOnlyList<string> keywords)
+    internal static (string? Key, bool IsPartial) ReadKey(IReadOnlyList<string> keywords)
     {
         string? tonic = null;
         string? mode = null;

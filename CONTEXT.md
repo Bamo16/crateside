@@ -93,6 +93,13 @@ the views, and running the workflow.
   *G major*'s) is next to the collapsed one on the **Camelot** wheel only for Aeolian, Lydian and
   Mixolydian; for Dorian and Phrygian it is the relative major's neighbor (*A Dorian*: 8A → 9B;
   *A Phrygian*: 8A → 7B), and for Locrian further off (*A Locrian*: 8A → 6B).
+- **Camelot tags** — the `Camelot|` group crateside writes beside **Key tags**: `1`–`12` and `A`
+  or `B`, so one filter finds a key and its relative (`8` finds A minor and C major; `8` + `A`
+  only A minor). Always derived from the Key tags in the same write, never set on their own; a
+  hand edit in Live is overwritten. A major or minor key gets its number and letter (A minor
+  `8`, `A`; C major `8`, `B`); a modal center (`Key|Dorian` etc.) gets the number of its note set
+  and no letter (D Dorian `8`), so the exact `8` + `A` filter never catches it
+  ([ADR 0112](docs/adr/0112-camelot-tags-are-derived-from-the-key-tags.md)).
 - **Backer** — another detector that names the same key as keydetect. Whether keydetect has
   backers says more about its being right than its own confidence does.
 - **Window** — a stretch of a track detected on its own, given by the user in bars or asked

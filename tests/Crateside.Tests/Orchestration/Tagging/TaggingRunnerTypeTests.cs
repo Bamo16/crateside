@@ -12,6 +12,15 @@ public sealed class TaggingRunnerTypeTests
             .SingleOrDefault(keyword => keyword.StartsWith("Type|", StringComparison.Ordinal));
 
     [Fact]
+    public void A_staged_key_is_written_with_its_camelot_tags()
+    {
+        Assert.Equal(
+            ["Key|G♯", "Key|Minor", "Camelot|1", "Camelot|A", "Type|Instrumental"],
+            TaggingRunner.KeywordsFor("G# minor", preset: null, type: null)
+        );
+    }
+
+    [Fact]
     public void A_stem_takes_its_type_from_its_preset()
     {
         Assert.Equal("Type|Vocal", TypeKeyword("Vocal - Full", type: null));
