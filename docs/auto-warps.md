@@ -1,4 +1,4 @@
-# Starter warps: how a steady track arrives warped
+# Auto warps: how a steady track arrives warped
 
 What crateside does today to give a staged stem a warp of its own making, and when it does not.
 The aim: a track with one steady tempo arrives in Sample Staging already on Live's grid, its bars
@@ -7,7 +7,7 @@ where the first verse begins, and saves the default clip.
 
 The clip start crateside writes is only a bar line near the start of the file. The default clip
 saved for the library carries the maintainer's clip start, which only they can choose; the
-starter's job is to make that a matter of picking the right bar.
+auto warp's job is to make that a matter of picking the right bar.
 
 This page describes the current behavior and is edited in place whenever that changes. Why it
 works this way is in the ADRs listed at the end.
@@ -18,27 +18,28 @@ The Collections below are written only for a meaning mapped to a number in Setti
 
 | crateside wrote | the stem's Collection | left to do by hand |
 |---|---|---|
-| a starter | Check beat (orange) | check the bars fall on the downbeats, move the clip start to the first verse's bar, and save: in Live (Save Default Clip) or in crateside's warp view, which writes every stem of the group ([ADR 0107](adr/0107-a-warp-saved-in-crateside-is-the-maintainers-own.md)) |
+| an auto warp | Check beat (orange) | check the bars fall on the downbeats, move the clip start to the first verse's bar, and save: in Live (Save Default Clip) or in crateside's warp view, which writes every stem of the group ([ADR 0107](adr/0107-a-warp-saved-in-crateside-is-the-maintainers-own.md)) |
 | a clip with Warp off | Warp by hand (blue) | the whole warp and the clip start, in Live |
 | a lent warp (a sibling's saved warp) | Warped (green) | nothing: the sibling's clip start comes with it |
 
 ## Settings
 
-- **`Warps:StarterWarps`**, changed from Settings while crateside runs and kept in
-  `warp-settings.json`, which wins over appsettings:
+- **`Warps:AutoWarps`**, changed from Settings while crateside runs and kept in
+  `warp-settings.json`, which wins over appsettings (`Warps:StarterWarps` and `starterWarps` are
+  read as the same setting, [ADR 0114](adr/0114-the-starter-warp-is-renamed-the-auto-warp.md)):
   - *Off*: nothing is written, and Live analyzes the stem itself.
   - *On the grid* (the default): the marker on a beat, numbered within its bar, and the clip
     starting on the bar line.
 
   *Tempo only*, a marker at 0 s that only set the tempo, was removed on 2026-10-19 (ADR 0054).
 - **`Warps:LendAutomatically`**: whether a sibling's saved warp is copied without asking. When a
-  stem has a warp to borrow, that always comes first, so no starter is written even with lending off.
+  stem has a warp to borrow, that always comes first, so no auto warp is written even with lending off.
 
 ## When it runs
 
 - **A re-cut keeps the saved warp** (ADR 0103): a removed stem's sidecar is copied to `KeptWarps`
   first, and lent at handoff when no sibling on disk holds a warp, so a re-cut never falls back
-  to a starter.
+  to an auto warp.
 - **At handoff**, while the stems are still in the working set (`HandoffSidecars`). Each sidecar is
   written as its stem lands in staging, so a stem never sits there unanalyzed.
 - **Over staging when Staging or the library changes, and every ten minutes besides**
@@ -46,20 +47,20 @@ The Collections below are written only for a meaning mapped to a number in Setti
   setting changed, a stem put in staging by hand. Within a run, a stem is looked at again only
   when its files, its siblings' sidecars, or the tempo or downbeat it would be given changed;
   after a restart every stem is looked at again. Either way a stem that already holds the warp it
-  would be lent, from the same sibling, or a starter with the same marker, is left as it is.
+  would be lent, from the same sibling, or an auto warp with the same marker, is left as it is.
 - **Never while Live is analyzing a stem** whose sidecar was recycled from the warp view
   (#97, showing each stem's warp in Track details).
 
 **Order of precedence:** the maintainer's own warp, which is never touched; then a lent warp; then a
-starter; then a clip with Warp off. A starter and a Warp-off clip replace each other as the tempo
-allows, and a starter replaces an older starter whose marker is numbered differently. Neither
+auto warp; then a clip with Warp off. An auto warp and a Warp-off clip replace each other as the tempo
+allows, and an auto warp replaces an older auto warp whose marker is numbered differently. Neither
 replaces a lent warp or the maintainer's own.
 
 ## The steps
 
 1. **Pick the reference.** The stem is the upload's instrumental, else its kept source, else its
    karaoke (`WarpSiblings.TempoSources`); every stem of the upload is timed from this one stem, so
-   all get the same tempo and marker, and Live can edit them together. No such stem: no starter.
+   all get the same tempo and marker, and Live can edit them together. No such stem: no auto warp.
    The beats are read on the upload's source on disk (the working set's download or the kept
    sample, from `source-index.json`) when there is one, else on that stem
    (`BeatReader.ReferenceFor`, [ADR 0065](adr/0065-the-starter-warps-beats-are-read-on-the-source.md)).
@@ -69,7 +70,7 @@ replaces a lent warp or the maintainer's own.
    where the instrumental was) is read once, and one that falls back is read by its own. A reading from an older build than
    the pin is used until the beat worker reads the file again, which it does once every file with
    no reading has one (`BeatReader.ToRead`).
-3. **Gate on the reading** (`TrackTempo.StarterBpm`). No starter when:
+3. **Gate on the reading** (`TrackTempo.AutoWarpBpm`). No auto warp when:
    - **it drifts**: the 30 s windows in their majority octave spread 0.1% or more (interquartile range
      over median); or
    - there is no reading.
@@ -93,17 +94,17 @@ replaces a lent warp or the maintainer's own.
    A stem that fails gets a clip with Warp off.
 7. **Place the marker.** Fold the transients onto one beat at the refined tempo, louder ones
    weighted to the fourth power, and take the peak within half a 16th of the reading's beat
-   (`beat_offset_ms`, carried in `StarterGrid.BeatSeconds`; `GridCheck.FirstBeat`). The reading
+   (`beat_offset_ms`, carried in `AutoWarpGrid.BeatSeconds`; `GridCheck.FirstBeat`). The reading
    picks which 16th is the beat, and the transients place the marker precisely within it. A reading
    with no beat leaves the whole fold to choose. That is the first beat in the file, at most one beat
    from its start. With fewer than 32 transients no beat is placed, and the stem gets a clip with
    Warp off.
-8. **Number the marker's beat in its bar** (`StarterGrid`, `SidecarWriter.StarterWarp`). Bar lines
+8. **Number the marker's beat in its bar** (`AutoWarpGrid`, `SidecarWriter.AutoWarp`). Bar lines
    are every fourth beat from beat 0. When the reading's `downbeat_confidence` is 0.6 or more (1.4.0's scale; 0.03 on 1.3.x), in
    bars of four, the marker is the beat it falls on counting from beatdetect's downbeat: 0 to 3, so
    a pickup makes it 1, 2 or 3. Otherwise the marker is beat 0, a downbeat. On the library this puts
    the bar right on 66% of steady tracks, against 52% for the marker always as a downbeat (ADR 0054).
-9. **Write the sidecar** for each stem (`SidecarWriter.Starter`):
+9. **Write the sidecar** for each stem (`SidecarWriter.AutoWarp`):
    - the marker, plus Live's hidden marker 1/32 of a beat later;
    - the clip from beat 0, the bar line at or before the marker, to the end of the file, looping
      off. That bar line is usually before the audio starts;
@@ -112,19 +113,19 @@ replaces a lent warp or the maintainer's own.
    - its color by kind.
 
    The stem goes in its Collection (table above). `written-warps.json` records, beside the sidecar,
-   how the starter was made (`WrittenStarter`): the tempo written and the reading's, the marker in
+   how the auto warp was made (`WrittenAutoWarp`): the tempo written and the reading's, the marker in
    seconds and its beat, the reading's beat and downbeat with its confidence and the gate in force,
    where the beat came from (the reading's 16th placed by the fold, or the fold alone), and how the
    bar was numbered (the reading's downbeat, or beat 0 and why). The stem's warp card on the song
    page shows it as one line, its beats numbered from 1 as Live's ruler numbers them: "marker on
    beat 1: downbeat confidence 0.32 under 0.6, so beat 1 (beatdetect said beat 3)". The API returns
-   it under the stem's `warp.written.starter`. Starters written before 2026-11-01 have none.
+   it under the stem's `warp.written.autoWarp`. Auto warps written before 2026-11-01 have none.
 
 ## When it does not apply
 
 | situation | what the stem gets |
 |---|---|
-| `StarterWarps` is *Off* | nothing; Live analyzes it |
+| `AutoWarps` is *Off* | nothing; Live analyzes it |
 | a sibling holds a saved warp | the lent warp, or nothing if lending is off |
 | no instrumental, kept source or karaoke stem | Warp off |
 | no reading yet | Warp off, until a reading arrives |
@@ -155,13 +156,13 @@ pass it (MEASURED, ADR 0048).
 - **The downbeat comes from the source, else the instrumental.** The drum stem gave a surer one on GYARI –
   *アカリがやってきたぞっ* (*Akari ga Yattekita zo*) (0.078 against 0.002), but over 42 kept drum
   stems it was less sure and no more often right (ADR 0054).
-- **A clip that starts before the audio** has not yet been opened in Live from a starter. The first
+- **A clip that starts before the audio** has not yet been opened in Live from an auto warp. The first
   one written is to be checked there. The warp view has no place on its ruler for that clip start;
   edit mode draws the grip anyway, dimmed, at the marker's bar (DESIGN.md, Editing the warp).
 
 ## History
 
-- [ADR 0047](adr/0047-a-starter-warp-and-where-transients-came-from.md): the starter warp
+- [ADR 0047](adr/0047-a-starter-warp-and-where-transients-came-from.md): the auto warp
 - [ADR 0048](adr/0048-stems-arrive-in-staging-already-warped.md): written at handoff, at
   crateside's own tempo; the 10 ms check; beatdetect's moving flag dropped
 - [ADR 0050](adr/0050-a-warp-shows-as-itself-and-is-vouched-for-by-its-grid.md): the refined tempo
@@ -169,7 +170,7 @@ pass it (MEASURED, ADR 0048).
   marker on a beat, numbered from the downbeat; beatdetect's beat picks the 16th (2026-10-30)
 - [ADR 0058](adr/0058-a-staged-stem-shows-its-state-in-live.md): Collections
 - [ADR 0059](adr/0059-a-sample-arrives-at-one-loudness.md): clip gain, and Warp off when there is
-  no starter
+  no auto warp
 - [ADR 0091](adr/0091-a-saved-clip-with-warp-off-carries-the-marker-pair-live-writes.md): the Warp
   off clip carries Live's marker pair, or Live crashes (2026-11-10)
 - [ADR 0110](adr/0110-a-warp-off-clip-says-why-and-a-later-stage-clears-an-earlier-parking.md): a

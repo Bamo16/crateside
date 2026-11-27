@@ -146,8 +146,8 @@ Each kind of document holds one kind of content:
 - **`docs/design/`** holds the Claude Design round trip: see `docs/agents/design.md`.
 - **Code** holds what the code cannot say itself. See below.
 
-**A change to how a starter warp is made, gated or written updates
-[docs/starter-warps.md](docs/starter-warps.md) in the same commit.** It is the one place the whole
+**A change to how an auto warp is made, gated or written updates
+[docs/auto-warps.md](docs/auto-warps.md) in the same commit.** It is the one place the whole
 pipeline is described as it stands; the ADRs say how it got there.
 
 ## Comments are the exception, not the default

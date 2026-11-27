@@ -289,7 +289,7 @@ by hand; everything below describes candidates against it.
   ([ADR 0066](docs/adr/0066-keydetect-has-its-own-pinned-build.md)).
   Before a song is judged its working-set evidence is made whole the same way, so the judge never
   sees fewer detectors than exist ([ADR 0068](docs/adr/0068-a-song-is-judged-only-on-complete-evidence.md)).
-- **Starter warp** — (the UI calls it **Auto warp**; code, ADRs and the API keep "starter") a one-marker warp crateside writes, at its own steady beatdetect reading of the
+- **Auto warp** — a one-marker warp crateside writes, at its own steady beatdetect reading of the
   instrumental, onto each stem of an upload nothing is warped on yet as it lands in staging, so the
   group dragged into an empty set sets its tempo. It is written only where that one tempo keeps the
   beats on its grid through the track, within 10 ms
@@ -301,6 +301,8 @@ by hand; everything below describes candidates against it.
   it becomes the user's warp once Live saves over it
   ([ADR 0047](docs/adr/0047-a-starter-warp-and-where-transients-came-from.md),
   [ADR 0048](docs/adr/0048-stems-arrive-in-staging-already-warped.md)).
+  Formerly **starter warp**: ADRs 0047 to 0113, issues and commits before 2026-11-27 say "starter warp"
+  or "starter" for the same thing ([ADR 0114](docs/adr/0114-the-starter-warp-is-renamed-the-auto-warp.md)).
 - **Warp guide** — a **role** a sample plays, not a kind of file: a track's drums stem, cut to be
   looked at while warping rather than heard. It is never tagged and never mixed, and deleting it
   is a step in the workflow, so its presence says "warping outstanding". A drums stem could be
@@ -321,13 +323,13 @@ by hand; everything below describes candidates against it.
   analysis file in staging and the library, the user's included, and sets it again whenever Live
   saves over one; the audio is never touched
   ([ADR 0059](docs/adr/0059-a-sample-arrives-at-one-loudness.md)).
-- **Warp off clip** — the analysis file crateside writes for a staged stem that gets no **starter
+- **Warp off clip** — the analysis file crateside writes for a staged stem that gets no **auto warp
   warp** (one tempo does not hold on its beats, or its tempo is not read yet): a saved clip over the
   whole file with Warp off, carrying its **clip color** and **clip gain** and the pair of markers
   Live writes at a clip's start, without which Live crashes
   ([ADR 0091](docs/adr/0091-a-saved-clip-with-warp-off-carries-the-marker-pair-live-writes.md)).
   It is not a warp:
-  the stem still waits to be warped by hand, it never lends, a starter whose tempo holds or a lent
+  the stem still waits to be warped by hand, it never lends, an auto warp whose tempo holds or a lent
   warp replaces it, and it becomes the user's once Live saves over it
   ([ADR 0059](docs/adr/0059-a-sample-arrives-at-one-loudness.md),
   [ADR 0048](docs/adr/0048-stems-arrive-in-staging-already-warped.md)).

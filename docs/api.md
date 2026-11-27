@@ -276,7 +276,7 @@ nor a verdict for the video ID:
   text is worded from (`kind` `judge`: key, confidence, sections, turns, model, seconds and input,
   cached and output tokens), and `summary` is worded from them when read (#197).
 - **`stageNotes`**: what the two passes with no job record did to the track's samples, one line each
-  in `summary`, oldest first: the warp pass (`stage` `Warp`: "Vocal - Full: starter warp at 190.00
+  in `summary`, oldest first: the warp pass (`stage` `Warp`: "Vocal - Full: auto warp at 190.00
   BPM, marker at 0.75 s", "Vocal - Full: Warp off: one tempo misses by 12 ms") and loudness (`stage`
   `Loudness`: "Vocal - Full: clip gain −3.2 dB to −14 LUFS"). The activity feed merges them in with
   the job lines.
@@ -288,7 +288,7 @@ nor a verdict for the video ID:
   a retype to a truer tempo (`retyped`), and, on `owner` when `kind` is `yours`, the save made from the
   warp view that the sidecar still holds (`savedHere`: when, and the edits: bar shift, nudge in ms,
   tempo factor, clip start bar and the bar it was), null once Live has saved over it, and the copies of the sidecar it kept (`backups`). A
-  starter written since 2026-11-01 says how it was made (`written.starter`): the tempo written and
+  auto warp written since 2026-11-01 says how it was made (`written.autoWarp`): the tempo written and
   beatdetect's before refining, the marker in seconds and its beat within the bar (0 the downbeat),
   beatdetect's beat and downbeat with its confidence and the gate it was held to, where the beat
   came from (`beatFrom`: `ReadingRefinedByFold`, or `FoldAlone` when beatdetect gave none), how the
@@ -455,7 +455,7 @@ shows no genre.
       "tags": null,
       "warp": {
         "owner": {
-          "kind": "starter",
+          "kind": "autoWarp",
           "written": "2026-10-01T07:58:00-05:00"
         },
         "hasSidecar": true,
@@ -505,7 +505,7 @@ shows no genre.
           "length": 31180,
           "written": "2026-10-01T12:58:00Z",
           "isUnwarped": false,
-          "starter": {
+          "autoWarp": {
             "bpm": 120,
             "readBpm": 119.998,
             "markerSeconds": 0.5,

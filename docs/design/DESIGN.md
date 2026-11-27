@@ -49,9 +49,9 @@ filled for authoritative, outlined for corroborating, dashed for algorithmic and
 The warp view's provenance chips are the second: filled for the user's warp, also on a sibling crateside copied it to
 (it reads *Your warp*, `saved 21 Nov`; only the file card says whose warp was copied, #232),
 outlined for one shifted from the mix, dashed for Live's unsaved analysis or no warp yet; amber only
-while waiting on Live, teal only while crateside writes. The starter warp's chip reads *Auto warp*
+while waiting on Live, teal only while crateside writes. The auto warp's chip reads *Auto warp*
 (the UI's name for it) in its own lilac, `--lilac`, which no state color shares; the Tracks page
-shows the same word as a small lilac badge on a row where any stem's warp is a starter, and an
+shows the same word as a small lilac badge on a row where any stem's warp is an auto warp, and an
 *Auto warp* filter pill sits beside *In staging*.
 
 ## Type
@@ -111,7 +111,7 @@ fails if a page formats one itself. Summaries go through `Bin` and `Range` and c
 Handoff 14, `WarpView`. A **Warp** section in Track details' main column under the sample list,
 open, no fold, drawn when the track has samples.
 
-**Scope (2026-11-20).** The warp view adjusts a starter warp or an existing warp: the marker on the
+**Scope (2026-11-20).** The warp view adjusts an auto warp or an existing warp: the marker on the
 downbeat, the clip start, and saving the default clip. It does not add, move or remove warp markers
 beyond that. Warping a wandering or changing tempo happens in Ableton Live, and crateside does not
 try to match Live's warping tools. Because no future warp-marker editing will claim the waveform,
@@ -354,7 +354,7 @@ running totals, so a change is where the whole-song estimate flipped, not where 
   the old place until release. Release sets the draft and the lanes redraw then; Esc reverts.
   `rows.js`'s `notchHtml` draws the marker in the ruler's live copy, the same as `WarpView.razor` does.
   A `role="slider"`; ←/→ move a bar, Shift four.
-- **A clip start before the audio** (2026-11-20): a starter's clip starts on a bar line at or before
+- **A clip start before the audio** (2026-11-20): an auto warp's clip starts on a bar line at or before
   its marker, which is usually before the first sample, so it has no place on the ruler. Edit mode
   still draws the grip, standing at the marker's bar (the left edge when that bar is before the
   audio), drawn as the normal grip and titled `Clip start not set`; dragging it to a
@@ -536,7 +536,7 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
   derived value as settled, since it is what gets written.
 - **Meter** (#154, `MeterStrip`): in Tags, where the *Odd bars* mark was. A tag line `Meter` · the
   Meter tags set in Live (`7/8, 3/4`) · `Set in Live`, or `The stems disagree` with what to do; with
-  no Meter tag, the *Odd bars* mark as before. A `Starter` line follows when the starter's fate is known.
+  no Meter tag, the *Odd bars* mark as before. An `AutoWarp` line follows when the auto warp's fate is known.
 - **Destructive.** Set apart by position and the stronger rule, not color. Buttons stay `.outline`
   until the confirm step, which is `.danger`. Remove's confirm opens below its button.
 - **Editors.** Rename and swap replace their group's body; the label turns amber and the groups
@@ -657,9 +657,9 @@ Tools · Settings**), at `/` and `/dashboard`; Tracks moved to `/tracks`. No wid
 - **Over time**: tracks finished by ISO week (the current week dashed, "so far") and stages run, two
   equal columns under `--table-activity`.
 - **The library grid** is three columns at ≥ 2000px, two below, one below 1400px. Key detectors,
-  Loudness adjustments and How the starter warps fared span two wherever there are two. Order: Key
+  Loudness adjustments and How the auto warps fared span two wherever there are two. Order: Key
   detectors, Where verdicts come from (a teal bar table of Judged, Ruled by crateside, Your call and
-  No verdict, each count a link to that Tracks filter), Loudness adjustments, By key, By tempo, How the starter warps fared, By genre (with *What the sources called the rest* behind a dashed opener), By
+  No verdict, each count a link to that Tracks filter), Loudness adjustments, By key, By tempo, How the auto warps fared, By genre (with *What the sources called the rest* behind a dashed opener), By
   familiarity (with No key under it), By artist.
 - **The action band** (*Never judged*) sits at the top of *The library*.
 - **Top N · all.** Key shows 8 rows, artists 12, the all-three-wrong list 6.
@@ -668,7 +668,7 @@ Tools · Settings**), at `/` and `/dashboard`; Tracks moved to `/tracks`. No wid
 - **Split bars** (tempo bins, key detectors): the solid part is the strict count, teal 35% the
   looser one.
 - **Tempo summaries are whole with no marks**: bins and peaks (a peak counts songs whose headline
-  rounds to it), and *By artist*'s range, rounded outward. *How the starter warps fared* lists
+  rounds to it), and *By artist*'s range, rounded outward. *How the auto warps fared* lists
   song names under a count, with no figures.
 
 ## Tools
@@ -885,7 +885,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   markers" counted the hidden one Live writes past the last. A steady warp reads *1 marker*.
 - **Flags or ticks is decided at the 832px plot** the page has at its width cap, not measured in the
   browser.
-- **Re-apply is also offered on a starter** when a sibling holds a warp of the user's, as for Live's
+- **Re-apply is also offered on an auto warp** when a sibling holds a warp of the user's, as for Live's
   analysis; lending would replace it within a minute anyway.
 - **"Putting the warp back"** reads *Live wrote a fresh file. crateside puts the warp back within a
   minute.* while it lasts; the worker puts warps back once a minute.
@@ -956,7 +956,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 
 - **No Separation or Judging rows.** Their pause controls already live in the Tracks header.
 - **Folders also lists Ableton projects**, which postdates the design (ADR 0040).
-- **A *Starter warps* section** (Off · On the grid, with a note under the pills; *Tempo only* was removed on 2026-10-19) sits
+- **An *Auto warps* section** (Off · On the grid, with a note under the pills; *Tempo only* was removed on 2026-10-19) sits
   before Emptying the playlist. It was added without a design, from the existing row and pills.
 - **Emptying as tracks are taken on** is disabled until removal access is granted, with a status
   saying so. The canvas only drew the authorized state.
@@ -990,7 +990,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   verdicts arrive (406 HIGH or MEDIUM songs on 2026-09-28, against the brief's 397). A verdict
   recorded by hand carries no detectors, so its song uses the latest run that has them.
 - **The BPM detectors panel is gone** (ADR 0075). It had one detector, beatdetect, and said little;
-  *How the starter warps fared* took its place. The ledger stopped producing a BPM (#93); older ledger lines
+  *How the auto warps fared* took its place. The ledger stopped producing a BPM (#93); older ledger lines
   keep their `bpm` as the last-resort figure.
 - **The shape line reads "Steady · Mostly steady · Drifting"** (handoff 08 drew the older names).
 - **Key detectors shows the three detectors crateside still runs**: keydetect, madmom and edma (#113).

@@ -64,14 +64,14 @@ nothing is outstanding. Separation (GPU) and judging (paid tokens) can be paused
    source as the sample instead.
 6. **Stage** the stems in your Staging folder, which Ableton's browser shows, and **tag** each with
    its key in the folder's tag store.
-7. **Warp.** A steady-tempo track gets a *starter warp*: crateside reads the tempo and downbeat
+7. **Warp.** A steady-tempo track gets an *auto warp*: crateside reads the tempo and downbeat
    with NoMercy's `beatdetect` ffmpeg filter, fits the tempo to the stem's transients, and writes Live's
    `.asd` sidecar so the stems open on the grid, bars on the downbeats. Each stem's clip gain is
    set to one loudness target, and its Collection in Live's browser, once you map one, says what is left to check.
-   [docs/starter-warps.md](docs/starter-warps.md) has the whole procedure.
+   [docs/auto-warps.md](docs/auto-warps.md) has the whole procedure.
 
 A track whose tempo drifts, or does not hold one grid to within 10 ms, arrives with Warp off
-instead, to be warped by hand. Checked against the maintainer's own warps, the starter lands on the
+instead, to be warped by hand. Checked against the maintainer's own warps, the auto warp lands on the
 beat: 345 of 394 steady tracks in his library (88%) hold one grid to within 10 ms. The bar line is a
 stricter test. On 251 of the 382 steady tracks beatdetect reads at the right tempo (66%), it also
 falls on the downbeat; on the rest the beats are right but the bar starts on another beat, which is
@@ -144,7 +144,7 @@ subscription each track costs about 37k tokens of session start-up, and backgrou
 ## The pages
 
 - **Dashboard**: what is waiting on you, what is running now, and the library by key, tempo,
-  genre, familiarity and artist, with how crateside's starter warps compared with the warps you finished.
+  genre, familiarity and artist, with how crateside's auto warps compared with the warps you finished.
 - **Tracks**: one row per song, filtered to *Unfinished*, *In staging*, *In flight*, *Needs
   attention* and more. A row expands to its files, its verdict and why, and its controls: rename,
   swap the upload its stems are cut from, change which stems are cut, or remove it.
@@ -152,7 +152,7 @@ subscription each track costs about 37k tokens of session start-up, and backgrou
   yourself, or have it judged again over bars you choose, with a note to the judge and what you hear.
 - **Tools**: *Partners* (the keys that pair with a song's key, fewest semitones of shift first), a
   re-pitch calculator and a Camelot wheel.
-- **Settings**: folders, the playlist and YouTube access, pausing separation and judging, starter
+- **Settings**: folders, the playlist and YouTube access, pausing separation and judging, auto warp
   warps, and how long downloads are kept.
 
 ## Requirements
@@ -231,7 +231,7 @@ those are absent.
 - [CONTEXT.md](CONTEXT.md): the glossary. Every noun above is defined there.
 - [docs/adr](docs/adr): the decision records.
 - [docs/secrets.md](docs/secrets.md), [docs/judge.md](docs/judge.md),
-  [docs/ledger.md](docs/ledger.md), [docs/starter-warps.md](docs/starter-warps.md) and
+  [docs/ledger.md](docs/ledger.md), [docs/auto-warps.md](docs/auto-warps.md) and
   [docs/the-manual-workflow.md](docs/the-manual-workflow.md).
 
 ## Credits
