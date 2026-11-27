@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Finishing a warp on Track details</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0c0b09}
+.cv{width:2240px;padding:40px;box-sizing:border-box;background:#0c0b09;display:flex;flex-direction:column;gap:70px;align-items:flex-start;font-family:'IBM Plex Sans',sans-serif}
+.cv-l{font:600 13px 'IBM Plex Mono',monospace;color:#0f0e0c;background:#ece7dc;border-radius:4px;padding:3px 9px;display:inline-block;margin-bottom:14px}
+.cv-p{font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:110ch;margin:-4px 0 16px}
+:root{--bg:#141310;--surface:#1b1a15;--raised:#23211a;--ink:#0f0e0c;--text:#ece7dc;--t75:rgba(236,231,220,.75);--t60:rgba(236,231,220,.6);--t50:rgba(236,231,220,.5);--t40:rgba(236,231,220,.4);--t30:rgba(236,231,220,.3);--line:rgba(236,231,220,.08);--teal:#6fc7d6;--amber:#e8b45a;--red:#e07a6d;--green:#8fcf9b}
+.pb{background:var(--bg);color:var(--text);font:400 14px/1.4 'IBM Plex Sans',sans-serif;box-sizing:border-box;position:relative}
+.pb *{box-sizing:border-box}
+.pb button{font-family:inherit;cursor:pointer}
+.mono{font-family:'IBM Plex Mono',monospace}
+.caps{font:600 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--t40)}
+.t75{color:var(--t75)}.t60{color:var(--t60)}.t50{color:var(--t50)}.t40{color:var(--t40)}
+.sp{flex:1}
+.pb a{color:var(--text);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--t40)}
+
+.nav{height:48px;display:flex;align-items:center;gap:26px;padding:0 32px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--t60)}
+.nav b{font-weight:600;font-size:15px;color:var(--text);margin-right:10px}
+.nav .on{color:var(--text);font-weight:500}
+.page{padding:18px 32px 40px}
+.back{font-size:13px;color:var(--t60);margin-bottom:10px}
+
+.btn{display:inline-flex;align-items:center;gap:6px;font:500 12.5px 'IBM Plex Sans',sans-serif;color:var(--text);background:transparent;border:1px solid var(--t30);border-radius:6px;padding:4px 10px;min-height:30px;white-space:nowrap}
+.btn.sm{min-height:26px;padding:2px 8px;font-size:12px}
+.btn.sq{min-width:30px;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:13px}
+.btn.mn{font-family:'IBM Plex Mono',monospace;min-width:38px;justify-content:center}
+.btn[disabled]{color:var(--t40);border-color:var(--line);cursor:default}
+.btn.pri{color:var(--ink);background:var(--text);border-color:var(--text)}
+.btn.pri[disabled]{opacity:.4;color:var(--ink)}
+.btn.dan{color:var(--red);background:rgba(224,122,109,.18);border-color:rgba(224,122,109,.45)}
+.why{font-size:12px;color:var(--t40);white-space:nowrap}
+.lk{background:none;border:0;padding:0;color:var(--text);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--t40);font:inherit;cursor:pointer}
+.pb input[type=range]{accent-color:#ece7dc;width:72px;height:16px;margin:0}
+.tog{display:inline-flex;align-items:center;gap:6px;font:500 12.5px 'IBM Plex Sans',sans-serif;color:var(--t75);background:transparent;border:1px solid var(--t30);border-radius:999px;padding:4px 11px;min-height:30px;white-space:nowrap}
+.tog.on{color:var(--text);background:rgba(236,231,220,.14);border-color:var(--t50);font-weight:600}
+
+.hs{display:flex;background:var(--surface);border-radius:10px;overflow:hidden}
+.cover{width:152px;height:152px;flex:none;background:#2b2820;display:grid;place-items:center;font:400 11px 'IBM Plex Mono',monospace;color:var(--t40)}
+.hs-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.hs-title{padding:15px 22px 12px}
+.hs-title h1{margin:0;font:600 24px/30px 'IBM Plex Sans',sans-serif}
+.hs-title p{margin:3px 0 0;font-size:13.5px;color:var(--t60)}
+.cells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line);flex:1}
+.cell{padding:10px 22px 11px;border-left:1px solid var(--line);min-width:0}
+.cell:first-child{border-left:0}
+.cell .v{font:600 28px/34px 'IBM Plex Mono',monospace;white-space:nowrap;margin-top:2px}
+.cell .n{font-size:12.5px;line-height:1.3;color:var(--t60)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;border-radius:999px;padding:2px 10px;border:1px solid var(--t30);white-space:nowrap}
+.chip.amb{background:var(--amber);color:var(--ink);border-color:transparent;font-weight:600}
+.chip.done{color:var(--green);border-color:rgba(143,207,155,.5)}
+.chip.fill{background:rgba(236,231,220,.8);color:var(--ink);border-color:transparent;font-weight:500;font-size:11px;padding:1px 8px}
+.chip.dash{border-style:dashed;color:var(--t75);font-size:11px;padding:1px 8px;border-color:var(--t40)}
+.chip.out{font-size:11px;padding:1px 8px;color:var(--t75);border-color:var(--t50)}
+.chip.tl{font-size:11px;padding:1px 8px;color:var(--teal);border-color:rgba(111,199,214,.55)}
+.flow{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 22px;background:var(--surface);border-radius:10px;font-size:12.5px;color:var(--t60)}
+
+.ps{background:var(--raised);border:1px solid rgba(236,231,220,.1);border-radius:10px;margin-top:10px;position:relative}
+.ps-row{display:flex;align-items:center;gap:8px 16px;padding:9px 14px 8px;flex-wrap:wrap}
+.grp{display:flex;align-items:center;gap:8px}
+.grp.sep{padding-left:16px;border-left:1px solid var(--line)}
+.play{width:40px;height:40px;flex:none;border-radius:50%;background:var(--text);color:var(--ink);border:0;display:grid;place-items:center}
+.ro{font:500 14px 'IBM Plex Mono',monospace;white-space:nowrap;min-width:27ch}
+.ro b{font-weight:600}
+.pick{width:210px;justify-content:space-between;min-height:32px;font-size:13px}
+.ps-wave{position:relative;height:34px;margin:0 14px 11px;background:rgba(0,0,0,.22);border-radius:4px;overflow:hidden}
+.ps-wave .wf{position:absolute;inset:3px 0;background:rgba(236,231,220,.5)}
+.ps-wave .rest{position:absolute;top:0;bottom:0;right:0;background:rgba(35,33,26,.62)}
+.ph{position:absolute;top:0;bottom:0;width:1px;background:var(--text);pointer-events:none;z-index:3}
+.ph i{position:absolute;top:0;left:-5px;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--text)}
+
+.wv{position:relative}
+.wv-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;font-size:12.5px;color:var(--t60);min-height:30px}
+.wv-head .loud{color:var(--text)}
+.r{display:grid;grid-template-columns:200px 820px;column-gap:12px;margin-bottom:6px}
+.g{font-size:12px;color:var(--t50);align-self:center;line-height:1.35}
+.g b{display:block;font-weight:500;font-size:12.5px;color:var(--t75)}
+.g small{font-size:10.5px;color:var(--t40)}
+.plot{position:relative;min-width:0}
+.over{position:absolute;left:212px;width:820px;pointer-events:none}
+.ov{position:relative;height:34px;background:var(--surface);border-radius:3px}
+.ov .wf{position:absolute;inset:4px 0;background:var(--t30)}
+.dim{position:absolute;top:0;bottom:0;background:rgba(20,19,16,.66)}
+.win{position:absolute;top:0;bottom:0;background:rgba(236,231,220,.07);border-top:1px solid var(--t50);border-bottom:1px solid var(--t50)}
+.hd{position:absolute;top:0;bottom:0;width:6px;background:rgba(236,231,220,.7);border-radius:2px;border:0;padding:0}
+.hd.l{left:-3px}.hd.rr{right:-3px}
+.hd::after{content:'';position:absolute;left:2.5px;top:50%;height:10px;margin-top:-5px;width:1px;background:var(--ink)}
+.ruler{position:relative;height:49px;border-bottom:1px solid var(--t30)}
+.ticks{position:absolute;bottom:0;right:0;height:5px;background:repeating-linear-gradient(90deg,var(--t30) 0 1px,transparent 1px var(--p))}
+.bn{position:absolute;bottom:7px;font:400 10.5px 'IBM Plex Mono',monospace;color:var(--t50);padding-left:3px;white-space:nowrap}
+.bn.cs{color:var(--t75)}
+.tk{position:absolute;bottom:0;width:1px;height:9px;background:var(--t50)}
+.notch{position:absolute;bottom:0;width:11px;height:16px;margin-left:-5px;background:var(--t75);clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%);cursor:ew-resize;z-index:4;border:0;padding:0}
+.notch.hov{background:var(--text)}
+.notch.drag{background:var(--text);filter:drop-shadow(0 0 2px rgba(236,231,220,.5))}
+.nghost{position:absolute;bottom:0;width:11px;height:16px;margin-left:-5px;border:1px dashed var(--t50);border-radius:2px}
+.tip{position:absolute;top:2px;transform:translateX(-50%);font:500 11px 'IBM Plex Mono',monospace;background:var(--text);color:var(--ink);border-radius:3px;padding:1px 6px;white-space:nowrap;z-index:5}
+.tempo{position:relative;height:26px}
+.tempo::after{content:'';position:absolute;left:0;right:0;top:12px;border-top:1px solid var(--t75)}
+.og{position:relative;height:72px}
+.og .z{position:absolute;left:0;right:0;top:36px;border-top:1px dashed var(--t30)}
+.og svg{display:block;width:100%;height:72px}
+.lane{position:relative;height:64px;overflow:hidden;border-radius:3px}
+.lane.sel{background:rgba(236,231,220,.05);box-shadow:inset 0 0 0 1px var(--t30)}
+.lane.own{box-shadow:inset 0 0 0 1px var(--t30);outline:1px dashed var(--t40);outline-offset:-1px;box-shadow:none}
+.lane .wf{position:absolute;left:0;right:0;height:25px;background:rgba(236,231,220,.42)}
+.lane .c1{top:5px}.lane .c2{top:34px}
+.gl{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(90deg,rgba(236,231,220,.16) 0 1px,transparent 1px),linear-gradient(90deg,rgba(236,231,220,.08) 0 1px,transparent 1px);background-size:102.5px 100%,25.625px 100%;background-position:var(--g) 0,var(--g) 0}
+.gl.h{background-size:205px 100%,51.25px 100%}
+.gl.w{background-size:41px 100%,41px 100%}
+.kk{position:absolute;left:0;right:0;top:18px;bottom:18px;background-image:linear-gradient(90deg,rgba(236,231,220,.5) 0 3px,transparent 3px);background-size:25.625px 100%;background-position:var(--k) 0}
+.db{position:absolute;left:0;right:0;top:4px;bottom:4px;background-image:linear-gradient(90deg,rgba(236,231,220,.85) 0 3px,transparent 3px);background-size:102.5px 100%;background-position:var(--d) 0}
+.clip{position:absolute;top:0;bottom:0;width:1px;background:var(--t50);z-index:2}
+.clip.dr{background:none;border-left:1px dashed var(--t75)}
+.clip.now{background:var(--text)}
+.flag{position:absolute;top:0;z-index:2}
+.mk{position:absolute;top:0;bottom:0;width:1px;background:rgba(236,231,220,.35)}
+.lg{padding:7px 10px;border-radius:6px;align-self:stretch;font-size:13px;font-weight:600;line-height:1.3}
+.lg.sel{background:var(--raised);box-shadow:inset 0 0 0 1px var(--t30)}
+.lg small{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;font-weight:400;color:var(--t50);margin-top:4px}
+.drt{display:inline-flex;align-items:center;gap:5px;color:var(--text)}
+.ring{display:inline-block;width:7px;height:7px;border:1.5px solid currentColor;border-radius:50%}
+.ks{position:relative;height:30px;border-top:1px solid rgba(236,231,220,.1)}
+.kb{position:absolute;top:4px;height:22px;border:1px solid rgba(236,231,220,.55);border-radius:3px;background:rgba(236,231,220,.03);font:500 11.5px 'IBM Plex Mono',monospace;padding:2px 6px;white-space:nowrap;overflow:hidden}
+.ax{position:relative;height:20px}
+.ax span{position:absolute;top:4px;font:400 10.5px 'IBM Plex Mono',monospace;color:var(--t40)}
+
+.eb{background:var(--surface);border:1px solid rgba(236,231,220,.12);border-radius:8px;margin:0 0 14px}
+.eb-top{display:flex;align-items:center;gap:12px;padding:11px 16px 0;font-size:12.5px;color:var(--t60);flex-wrap:wrap}
+.eb-top .caps{color:var(--text)}
+.dr{display:inline-flex;align-items:center;gap:6px;font:500 12px 'IBM Plex Mono',monospace;color:var(--text)}
+.ondisk{font:400 12px 'IBM Plex Mono',monospace;color:var(--t40)}
+.eb-cells{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:11px;border-top:1px solid var(--line)}
+.eb-cells.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.eb-cells.two .ec:nth-child(3){border-left:0}
+.eb-cells.two .ec:nth-child(n+3){border-top:1px solid var(--line)}
+.ec{padding:10px 16px 12px;border-left:1px solid var(--line);min-width:0;display:flex;flex-direction:column;gap:8px}
+.ec:first-child{border-left:0}
+.ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.rd{font:400 12px/1.4 'IBM Plex Mono',monospace;color:var(--t50)}
+.rd.ch{color:var(--text)}
+.rd .hint{font-family:'IBM Plex Sans',sans-serif;color:var(--t40)}
+.eb-foot{display:flex;align-items:center;gap:10px 10px;padding:10px 16px 12px;border-top:1px solid var(--line);flex-wrap:wrap}
+.to{font-size:12.5px;color:var(--t60);line-height:1.55}
+.keys{font-size:11.5px;color:var(--t40);white-space:nowrap}
+.kbd{font:500 11px 'IBM Plex Mono',monospace;border:1px solid var(--t30);border-radius:3px;padding:0 4px;color:var(--t60)}
+.ask{color:var(--amber);font-size:12.5px;font-weight:500}
+.msg{padding:10px 16px;border-top:1px solid var(--line);font-size:12.5px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.msg.red{color:var(--red);border-top-color:rgba(224,122,109,.35);background:rgba(224,122,109,.06)}
+.ln{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;border:1px solid rgba(236,231,220,.12);background:var(--surface);font-size:13px;margin-bottom:14px}
+.ln.teal{border-color:rgba(111,199,214,.5)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex:none}
+
+.sheet{padding:12px;border:1px solid var(--line);border-radius:6px}
+.st-h{font:600 15px 'IBM Plex Sans',sans-serif;margin:0 0 4px;color:var(--text)}
+.st-p{font-size:13px;line-height:1.5;color:var(--t60);margin:0 0 12px;max-width:100ch}
+.st-n{display:inline-block;font:600 11px 'IBM Plex Mono',monospace;background:var(--text);color:var(--ink);border-radius:4px;padding:1px 6px;margin-right:8px;vertical-align:1px}
+.cols{display:grid;grid-template-columns:1056px 1056px;gap:40px 48px}
+.cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.wf{-webkit-mask-image:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 3px);mask-image:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 3px)}
+.env-a{clip-path:polygon(0 47%,3% 45%,6% 43%,8% 44%,9% 15%,12% 9%,15% 13%,18% 7%,21% 11%,24% 8%,27% 15%,30% 6%,33% 10%,36% 12%,39% 5%,42% 9%,45% 20%,47% 8%,50% 6%,53% 11%,56% 7%,59% 14%,62% 5%,65% 8%,68% 12%,71% 6%,74% 10%,77% 7%,80% 17%,83% 6%,86% 9%,89% 5%,92% 11%,95% 8%,97% 30%,99% 43%,100% 48%,100% 52%,99% 57%,97% 70%,95% 92%,92% 89%,89% 95%,86% 91%,83% 94%,80% 83%,77% 93%,74% 90%,71% 94%,68% 88%,65% 92%,62% 95%,59% 86%,56% 93%,53% 89%,50% 94%,47% 92%,45% 80%,42% 91%,39% 95%,36% 88%,33% 90%,30% 94%,27% 85%,24% 92%,21% 89%,18% 93%,15% 87%,12% 91%,9% 85%,8% 56%,6% 57%,3% 55%,0 53%)}
+.env-b{clip-path:polygon(0 49%,8% 49%,9% 35%,11% 25%,13% 40%,15% 22%,18% 20%,20% 37%,22% 18%,25% 21%,28% 35%,30% 17%,34% 20%,37% 39%,39% 47%,44% 47%,45% 25%,48% 16%,52% 20%,55% 36%,57% 19%,61% 15%,64% 30%,66% 17%,70% 21%,73% 40%,75% 20%,79% 15%,83% 19%,86% 35%,88% 18%,92% 22%,95% 39%,97% 47%,100% 49%,100% 51%,97% 53%,95% 61%,92% 78%,88% 82%,86% 65%,83% 81%,79% 85%,75% 80%,73% 60%,70% 79%,66% 83%,64% 70%,61% 85%,57% 81%,55% 64%,52% 80%,48% 84%,45% 75%,44% 53%,39% 53%,37% 61%,34% 80%,30% 83%,28% 65%,25% 79%,22% 82%,20% 63%,18% 80%,15% 78%,13% 60%,11% 75%,9% 65%,8% 51%,0 51%)}
+.modal-bg{position:absolute;inset:0;background:rgba(10,9,7,.72);display:grid;place-items:center}
+.modal{width:440px;background:var(--raised);border:1px solid rgba(236,231,220,.16);border-radius:10px;box-shadow:0 18px 48px rgba(0,0,0,.6);padding:18px 20px 16px}
+.modal h2{margin:0 0 6px;font:600 16px 'IBM Plex Sans',sans-serif}
+.modal p{margin:0 0 16px;font-size:13px;line-height:1.5;color:var(--t75)}
+.facts{display:grid;grid-template-columns:repeat(7,auto);gap:4px 22px;font-size:12px;margin:10px 0 12px}
+.facts .caps{font-size:10px}
+.facts .mono{font-size:12.5px}
+</style>
+</helmet>
+
+<div class="cv">
+
+<!-- ============ 1a ============ -->
+<div>
+<div class="cv-l">1a · Track details, the edit bar open on a starter as it arrives · full width</div>
+<p class="cv-p">The track is invented: a steady 128 BPM song of 5:00 with four stems sharing crateside's starter and a Vocal warped on its own. The header strip, player, flow and side stack are handoff 22's, unchanged; the side stack is left out. The waveforms are drawn shapes.</p>
+<div class="pb" style="width: 1440px">
+<div class="nav"><b>crateside</b><span>Dashboard</span><span class="on">Tracks</span><span>Tools</span><span>Activity</span><span>Settings</span></div>
+<div class="page">
+<div class="back">← Tracks</div>
+<div class="hs"><div class="cover">cover</div><div class="hs-main">
+<div class="hs-title"><h1>[Song title]</h1><p>[Artist] · [Album] · 2019 · <a href="#">YouTube ↗</a></p></div>
+<div class="cells">
+<div class="cell"><div class="caps">Key</div><div class="v">A min</div><div class="n">high · three detectors agree</div></div>
+<div class="cell"><div class="caps">Tempo</div><div class="v">128</div><div class="n">steady · crateside's starter</div></div>
+<div class="cell"><div class="caps">Stems</div><div class="v">5</div><div class="n">4 share a warp · Vocal on its own</div></div>
+<div class="cell"><div class="caps">Where it is</div><div style="margin-top: 7px"><span class="chip amb">Staging · your turn</span></div><div class="n" style="margin-top: 6px">waiting on the default clip</div></div>
+</div></div></div>
+
+<section class="ps" aria-label="Player">
+<div class="ps-row">
+<button class="play" aria-label="Pause (Space)"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="2" y="1" width="3.5" height="12" fill="currentColor"></rect><rect x="8.5" y="1" width="3.5" height="12" fill="currentColor"></rect></svg></button>
+<div class="ro"><b>bar 65.2.3</b> <span class="t75">· 2:01.66</span> <span class="t40">/ 5:00</span></div>
+<button class="btn pick"><span>Drums - Full</span><span class="t60">▾</span></button>
+<span class="sp"></span>
+<div class="grp"><button class="tog on" aria-pressed="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 14h6L9 2H7z M8 10l4-5"></path></svg>Metronome</button><button class="btn sm">Classic <span class="t60">▾</span></button><input type="range" min="0" max="100" value="60" aria-label="Metronome" style="width: 60px"></div>
+<div class="grp sep"><button class="tog" aria-pressed="false">Loop</button></div>
+<div class="grp sep"><span class="t60" style="font-size: 12px">Main</span><input type="range" min="0" max="100" value="80" aria-label="Main"></div>
+</div>
+<div class="ps-wave"><div class="wf env-a"></div><div class="rest" style="left: 40.55%"></div><div class="ph" style="left: 40.55%"></div></div>
+</section>
+
+<div class="flow"><span>Pass 1 · First run</span><span class="sp" style="flex: 0 0 60px"></span><span class="chip done">✓ Download</span><span class="chip done">✓ Detect</span><span class="chip done">✓ Judge</span><span class="chip done">✓ Separate</span><span class="chip done">✓ Stage &amp; tag</span><span class="chip amb">● Warp</span></div>
+
+<div style="width: 1032px; margin-top: 28px">
+<section class="wv" aria-label="Warp">
+<div class="wv-head"><span class="caps">Warp</span><span>4 stems · one warp · 1 marker · Complex · <span class="loud">Vocal warped on its own</span></span><button class="btn sm">Judge again</button><span class="sp"></span><span class="t60" style="font-size: 12px">Grid</span><button class="btn sm">Medium ▾</button><span class="t60" style="font-size: 12px">Follow</span><button class="btn sm">Page ▾</button><span class="mono t75">whole track · 5:00</span><button class="btn sm sq" aria-label="Zoom out">−</button><button class="btn sm sq" aria-label="Zoom in">+</button><button class="btn sm" disabled aria-label="Move the view back">‹</button><button class="btn sm" disabled aria-label="Move the view on">›</button></div>
+
+<div class="eb" role="region" aria-label="Edit the warp">
+<div class="eb-top"><span class="caps">Edit the warp</span><span>crateside's starter · <span class="mono">128.00</span> · 1 marker at <span class="mono">0:00.52</span></span><span class="sp"></span><span class="ondisk">as on disk</span></div>
+<div class="eb-cells">
+<div class="ec"><div class="caps">Bar</div><div class="ctl"><button class="btn sm">‹ a beat earlier</button><button class="btn sm">a beat later ›</button></div><div class="rd">bar 1 starts on the marker's beat 1, where crateside put it</div></div>
+<div class="ec"><div class="caps">Nudge</div><div class="ctl"><button class="btn sm sq" aria-label="Nudge 1 ms earlier, 5 ms with Shift">−</button><button class="btn sm sq" aria-label="Nudge 1 ms later, 5 ms with Shift">+</button><span class="keys">1 ms · Shift 5 ms</span></div><div class="rd">on crateside's marker</div></div>
+<div class="ec"><div class="caps">Tempo</div><div class="ctl"><button class="btn sm mn" aria-label="Halve the tempo">/2</button><button class="btn sm mn" aria-label="Double the tempo">×2</button><span class="keys">every stem, about the clip start</span></div><div class="rd">128.00</div></div>
+<div class="ec"><div class="caps">Clip start</div><div class="ctl"><button class="btn sm">Clip start at the playhead's bar</button></div><div class="rd">clip start · bar 1 <span class="hint">· or drag its notch on the ruler</span></div></div>
+</div>
+<div class="eb-foot"><div class="to">Saves to Instrumental, Drums, Bass, Other<br>Vocal keeps its own warp</div><span class="sp"></span><span class="keys"><span class="kbd">,</span> <span class="kbd">.</span> a beat · <span class="kbd">←</span> <span class="kbd">→</span> 1 ms</span><button class="btn pri">Save the default clip</button><button class="btn" disabled>Revert</button><button class="btn">Close</button></div>
+</div>
+
+<div class="r"><div class="g"><b>View</b><small>pull a handle to zoom · double-click for 8 bars</small></div>
+<div class="plot"><div class="ov"><div class="wf env-a"></div><div class="win" style="left: 0; right: 0"><button class="hd l" aria-label="Start of the view"></button><button class="hd rr" aria-label="End of the view"></button></div><div class="ph" style="left: 40.55%"></div></div></div></div>
+
+<div class="r"><div class="g">Bar</div>
+<div class="plot"><div class="ruler"><div class="ticks" style="left: 1.4px; --p: 41px; height: 4px"></div><div class="ph" style="left: 332.5px; bottom: auto; height: 545px"><i></i></div>
+<button class="notch" style="left: 1.4px" role="slider" aria-label="Clip start" aria-valuetext="bar 1"></button><span class="bn cs" style="left: 6px">clip start</span>
+<span class="bn" style="left: 165.4px">33</span><span class="tk" style="left: 165.4px"></span>
+<span class="bn" style="left: 329.4px">65</span><span class="tk" style="left: 329.4px"></span>
+<span class="bn" style="left: 493.4px">97</span><span class="tk" style="left: 493.4px"></span>
+<span class="bn" style="left: 657.4px">129</span><span class="tk" style="left: 657.4px"></span>
+</div></div></div>
+
+<div class="r"><div class="g">Tempo from the markers<br><span class="mono" style="color: var(--text); font-weight: 600">128.00</span> crateside's starter</div><div class="plot"><div class="tempo"></div></div></div>
+
+<div class="r"><div class="g"><b>Off the grid</b>holds <span class="t40">· 4 ms early</span></div><div class="plot"><div class="og"><div class="z"></div><svg viewBox="0 0 820 72" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="rgba(236,231,220,.6)" stroke-width="1" points="14,31 41,30 68,32 96,29 123,31 150,31 178,30 205,32 232,30 260,31 287,29 314,31 342,32 369,30 396,31 424,30 451,31 478,29 506,31 533,30 560,32 588,30 615,31 642,31 670,29 697,31 724,30 752,32 779,30 806,31"></polyline></svg></div></div></div>
+
+<div class="r"><div class="lg">Instrumental - Full<small><span class="chip dash">Starter</span> placed 16 Nov</small></div>
+<div class="plot"><div class="lane"><div class="gl w" style="--g: 1.4px"></div><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div><div class="mk" style="left: 1.4px"></div><svg class="flag" style="left: 1.4px" width="7" height="9" viewBox="0 0 7 9" aria-hidden="true"><path d="M0 0h7L4.5 3 7 6H1v3H0z" fill="rgba(236,231,220,.8)"></path></svg><div class="clip" style="left: 1.4px"></div></div></div></div>
+
+<div class="r"><div class="lg sel"><svg style="float: right" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" role="img" aria-label="Playing"><path d="M2 6h2.5L8 3v10L4.5 10H2z" fill="currentColor" stroke="none"></path><path d="M10.5 5.5a3.5 3.5 0 0 1 0 5"></path></svg>Drums - Full<small><span class="chip dash">Starter</span> placed 16 Nov</small></div>
+<div class="plot"><div class="lane sel"><div class="gl w" style="--g: 1.4px"></div><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div><div class="mk" style="left: 1.4px"></div><svg class="flag" style="left: 1.4px" width="7" height="9" viewBox="0 0 7 9" aria-hidden="true"><path d="M0 0h7L4.5 3 7 6H1v3H0z" fill="rgba(236,231,220,.8)"></path></svg><div class="clip" style="left: 1.4px"></div></div></div></div>
+
+<div class="r"><div class="lg">Bass - Full<small><span class="chip dash">Starter</span> placed 16 Nov</small></div>
+<div class="plot"><div class="lane"><div class="gl w" style="--g: 1.4px"></div><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div><div class="mk" style="left: 1.4px"></div><svg class="flag" style="left: 1.4px" width="7" height="9" viewBox="0 0 7 9" aria-hidden="true"><path d="M0 0h7L4.5 3 7 6H1v3H0z" fill="rgba(236,231,220,.8)"></path></svg><div class="clip" style="left: 1.4px"></div></div></div></div>
+
+<div class="r"><div class="lg">Other - Full<small><span class="chip dash">Starter</span> placed 16 Nov</small></div>
+<div class="plot"><div class="lane"><div class="gl w" style="--g: 1.4px"></div><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div><div class="mk" style="left: 1.4px"></div><svg class="flag" style="left: 1.4px" width="7" height="9" viewBox="0 0 7 9" aria-hidden="true"><path d="M0 0h7L4.5 3 7 6H1v3H0z" fill="rgba(236,231,220,.8)"></path></svg><div class="clip" style="left: 1.4px"></div></div></div></div>
+
+<div class="r"><div class="lg">Vocal - Full<small><span class="chip fill">Your warp</span> on its own · saved 16 Nov</small></div>
+<div class="plot"><div class="lane own"><div class="wf c1 env-a" style="opacity: .8"></div><div class="wf c2 env-a" style="opacity: .8"></div><svg class="flag" style="left: 3px" width="7" height="9" viewBox="0 0 7 9" aria-hidden="true"><path d="M0 0h7L4.5 3 7 6H1v3H0z" fill="rgba(236,231,220,.8)"></path></svg><svg class="flag" style="left: 214px" width="7" height="9" viewBox="0 0 7 9" aria-hidden="true"><path d="M0 0h7L4.5 3 7 6H1v3H0z" fill="rgba(236,231,220,.8)"></path></svg><svg class="flag" style="left: 590px" width="7" height="9" viewBox="0 0 7 9" aria-hidden="true"><path d="M0 0h7L4.5 3 7 6H1v3H0z" fill="rgba(236,231,220,.8)"></path></svg><div class="clip" style="left: 1.4px"></div></div></div></div>
+
+<div class="r"><div class="g"><b>Key</b><small>A minor, one center</small></div><div class="plot"><div class="ks"><div class="kb" style="left: 0; right: 0">A min</div></div></div></div>
+
+<div class="r"><div></div><div class="plot"><div class="ax"><span style="left: 0">0:00</span><span style="left: 82px">0:30</span><span style="left: 164px">1:00</span><span style="left: 246px">1:30</span><span style="left: 328px">2:00</span><span style="left: 410px">2:30</span><span style="left: 492px">3:00</span><span style="left: 574px">3:30</span><span style="left: 656px">4:00</span><span style="left: 738px">4:30</span></div></div></div>
+</section>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ============ 1b ============ -->
+<div>
+<div class="cv-l">1b · The head line: offered, both refusals, and with each of the two open</div>
+<p class="cv-p">The opener sits after <i>Judge again</i>, in the same small outline style. Whichever of the two is open hides its own opener and keeps the other's; clicking the other closes the open one (with a draft, Close's question comes first, 2a·7).</p>
+<div class="pb sheet" style="width: 1056px; display: flex; flex-direction: column; gap: 18px">
+<div><div class="caps" style="margin-bottom: 6px">1 · offered: the stems share one warp</div>
+<div class="wv-head" style="margin: 0"><span class="caps">Warp</span><span>4 stems · one warp · 1 marker · Complex · <span class="loud">Vocal warped on its own</span></span><button class="btn sm">Judge again</button><button class="btn sm">Edit the warp</button><span class="sp"></span><span class="mono t75">whole track · 5:00</span></div></div>
+<div><div class="caps" style="margin-bottom: 6px">2 · not offered: no stem has a warp</div>
+<div class="wv-head" style="margin: 0"><span class="caps">Warp</span><span>4 stems · no warp yet</span><button class="btn sm">Judge again</button><button class="btn sm" disabled>Edit the warp</button><span class="why">warp it in Live first</span><span class="sp"></span><span class="mono t75">whole track · 5:00</span></div></div>
+<div><div class="caps" style="margin-bottom: 6px">3 · not offered: the authority stems disagree</div>
+<div class="wv-head" style="margin: 0"><span class="caps">Warp</span><span>4 stems · <span class="loud">two warps</span> · Instrumental and Drums differ</span><button class="btn sm">Judge again</button><button class="btn sm" disabled>Edit the warp</button><span class="why">the stems hold different warps; settle it in Live</span><span class="sp"></span><span class="mono t75">whole track · 5:00</span></div></div>
+<div><div class="caps" style="margin-bottom: 6px">4 · the edit bar open, with a draft: its opener gone, the gist ends · draft</div>
+<div class="wv-head" style="margin: 0"><span class="caps">Warp</span><span>4 stems · one warp · 1 marker · Complex · <span class="loud">Vocal warped on its own</span> · <span class="drt"><span class="ring"></span>draft</span></span><button class="btn sm">Judge again</button><span class="sp"></span><span class="mono" style="color: var(--text)">bars 61–68 · 1:53–2:08</span></div></div>
+<div><div class="caps" style="margin-bottom: 6px">5 · the judge form open: its opener gone, Edit the warp stays</div>
+<div class="wv-head" style="margin: 0"><span class="caps">Warp</span><span>4 stems · one warp · 1 marker · Complex · <span class="loud">Vocal warped on its own</span></span><button class="btn sm">Edit the warp</button><span class="sp"></span><span class="mono t75">whole track · 5:00</span></div></div>
+</div>
+</div>
+
+<!-- ============ 2a ============ -->
+<div>
+<div class="cv-l">2a · The edit bar, full width: as it arrives, each kind of edit, the maintainer's own warp</div>
+<p class="cv-p">The four controls in the order the work is done. A readout that differs from disk is at <span style="color: #ece7dc">--text</span>; one that does not stays at --text-50, so a glance down the bar shows what the draft changed. The states build on one another: 2 is 1 with the bar moved, 3 adds the nudge, 4 the clip start, 5 the halving.</p>
+<div class="cols">
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">1</span>A starter as it arrives</p><p class="st-p">Nothing changed. <i>Save</i> is live: saving a starter as it is accepts it, and that is a finished warp. <i>Revert</i> has nothing to go back to.</p>
+<div class="eb" style="margin: 0">
+<div class="eb-top"><span class="caps">Edit the warp</span><span>crateside's starter · <span class="mono">128.00</span> · 1 marker at <span class="mono">0:00.52</span></span><span class="sp"></span><span class="ondisk">as on disk</span></div>
+<div class="eb-cells">
+<div class="ec"><div class="caps">Bar</div><div class="ctl"><button class="btn sm">‹ a beat earlier</button><button class="btn sm">a beat later ›</button></div><div class="rd">bar 1 starts on the marker's beat 1, where crateside put it</div></div>
+<div class="ec"><div class="caps">Nudge</div><div class="ctl"><button class="btn sm sq">−</button><button class="btn sm sq">+</button><span class="keys">1 ms · Shift 5 ms</span></div><div class="rd">on crateside's marker</div></div>
+<div class="ec"><div class="caps">Tempo</div><div class="ctl"><button class="btn sm mn">/2</button><button class="btn sm mn">×2</button><span class="keys">every stem, about the clip start</span></div><div class="rd">128.00</div></div>
+<div class="ec"><div class="caps">Clip start</div><div class="ctl"><button class="btn sm">Clip start at the playhead's bar</button></div><div class="rd">clip start · bar 1 <span class="hint">· or drag its notch on the ruler</span></div></div>
+</div>
+<div class="eb-foot"><div class="to">Saves to Instrumental, Drums, Bass, Other<br>Vocal keeps its own warp</div><span class="sp"></span><span class="keys"><span class="kbd">,</span> <span class="kbd">.</span> a beat · <span class="kbd">←</span> <span class="kbd">→</span> 1 ms</span><button class="btn pri">Save the default clip</button><button class="btn" disabled>Revert</button><button class="btn">Close</button></div>
+</div></div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">2</span>The bar moved two beats later</p><p class="st-p"><i>a beat later ›</i> twice (or <span class="kbd">.</span> twice). The audio stays; the grid slides under it, so the bar numbers move and the downbeat lands on beat 1 (3a·2). The bar's top line now says <i>draft · not saved</i>.</p>
+<div class="eb" style="margin: 0">
+<div class="eb-top"><span class="caps">Edit the warp</span><span>crateside's starter · <span class="mono">128.00</span> · 1 marker at <span class="mono">0:00.52</span></span><span class="sp"></span><span class="dr"><span class="ring"></span>draft · not saved</span></div>
+<div class="eb-cells">
+<div class="ec"><div class="caps">Bar</div><div class="ctl"><button class="btn sm">‹ a beat earlier</button><button class="btn sm">a beat later ›</button></div><div class="rd ch">bar 1 starts on the marker's beat 3 · crateside put it on beat 1</div></div>
+<div class="ec"><div class="caps">Nudge</div><div class="ctl"><button class="btn sm sq">−</button><button class="btn sm sq">+</button><span class="keys">1 ms · Shift 5 ms</span></div><div class="rd">on crateside's marker</div></div>
+<div class="ec"><div class="caps">Tempo</div><div class="ctl"><button class="btn sm mn">/2</button><button class="btn sm mn">×2</button><span class="keys">every stem, about the clip start</span></div><div class="rd">128.00</div></div>
+<div class="ec"><div class="caps">Clip start</div><div class="ctl"><button class="btn sm">Clip start at the playhead's bar</button></div><div class="rd">clip start · bar 1 <span class="hint">· or drag its notch on the ruler</span></div></div>
+</div>
+<div class="eb-foot"><div class="to">Saves to Instrumental, Drums, Bass, Other<br>Vocal keeps its own warp</div><span class="sp"></span><span class="keys"><span class="kbd">,</span> <span class="kbd">.</span> a beat · <span class="kbd">←</span> <span class="kbd">→</span> 1 ms</span><button class="btn pri">Save the default clip</button><button class="btn">Revert</button><button class="btn">Close</button></div>
+</div></div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">3</span>Nudged 4 ms later</p><p class="st-p"><i>+</i> four times (or <span class="kbd">→</span>). Too small to see on the lanes at any zoom; <i>Off the grid</i> is what shows it, its dots coming back to the zero line (3a·3).</p>
+<div class="eb" style="margin: 0">
+<div class="eb-top"><span class="caps">Edit the warp</span><span>crateside's starter · <span class="mono">128.00</span> · 1 marker at <span class="mono">0:00.52</span></span><span class="sp"></span><span class="dr"><span class="ring"></span>draft · not saved</span></div>
+<div class="eb-cells">
+<div class="ec"><div class="caps">Bar</div><div class="ctl"><button class="btn sm">‹ a beat earlier</button><button class="btn sm">a beat later ›</button></div><div class="rd ch">bar 1 starts on the marker's beat 3 · crateside put it on beat 1</div></div>
+<div class="ec"><div class="caps">Nudge</div><div class="ctl"><button class="btn sm sq">−</button><button class="btn sm sq">+</button><span class="keys">1 ms · Shift 5 ms</span></div><div class="rd ch">+4 ms from where crateside put it</div></div>
+<div class="ec"><div class="caps">Tempo</div><div class="ctl"><button class="btn sm mn">/2</button><button class="btn sm mn">×2</button><span class="keys">every stem, about the clip start</span></div><div class="rd">128.00</div></div>
+<div class="ec"><div class="caps">Clip start</div><div class="ctl"><button class="btn sm">Clip start at the playhead's bar</button></div><div class="rd">clip start · bar 1 <span class="hint">· or drag its notch on the ruler</span></div></div>
+</div>
+<div class="eb-foot"><div class="to">Saves to Instrumental, Drums, Bass, Other<br>Vocal keeps its own warp</div><span class="sp"></span><span class="keys"><span class="kbd">,</span> <span class="kbd">.</span> a beat · <span class="kbd">←</span> <span class="kbd">→</span> 1 ms</span><button class="btn pri">Save the default clip</button><button class="btn">Revert</button><button class="btn">Close</button></div>
+</div></div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">4</span>The clip start set to bar 65</p><p class="st-p">The playhead at <span class="mono">bar 65.2.3</span>, then <i>Clip start at the playhead's bar</i>: the bar the playhead is in, never the next. The ruler's notch moves there; the clip end stays at the file's end.</p>
+<div class="eb" style="margin: 0">
+<div class="eb-top"><span class="caps">Edit the warp</span><span>crateside's starter · <span class="mono">128.00</span> · 1 marker at <span class="mono">0:00.52</span></span><span class="sp"></span><span class="dr"><span class="ring"></span>draft · not saved</span></div>
+<div class="eb-cells">
+<div class="ec"><div class="caps">Bar</div><div class="ctl"><button class="btn sm">‹ a beat earlier</button><button class="btn sm">a beat later ›</button></div><div class="rd ch">bar 1 starts on the marker's beat 3 · crateside put it on beat 1</div></div>
+<div class="ec"><div class="caps">Nudge</div><div class="ctl"><button class="btn sm sq">−</button><button class="btn sm sq">+</button><span class="keys">1 ms · Shift 5 ms</span></div><div class="rd ch">+4 ms from where crateside put it</div></div>
+<div class="ec"><div class="caps">Tempo</div><div class="ctl"><button class="btn sm mn">/2</button><button class="btn sm mn">×2</button><span class="keys">every stem, about the clip start</span></div><div class="rd">128.00</div></div>
+<div class="ec"><div class="caps">Clip start</div><div class="ctl"><button class="btn sm">Clip start at the playhead's bar</button></div><div class="rd ch">clip start · bar 65 <span class="hint">· was bar 1</span></div></div>
+</div>
+<div class="eb-foot"><div class="to">Saves to Instrumental, Drums, Bass, Other<br>Vocal keeps its own warp</div><span class="sp"></span><span class="keys"><span class="kbd">,</span> <span class="kbd">.</span> a beat · <span class="kbd">←</span> <span class="kbd">→</span> 1 ms</span><button class="btn pri">Save the default clip</button><button class="btn">Revert</button><button class="btn">Close</button></div>
+</div></div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">5</span>The tempo halved, about bar 65</p><p class="st-p"><i>/2</i>: bar 65 keeps its number and its moment; the bars either side are twice as long. Bar 1 now lies before the file starts, so the bar readout switches to saying where the marker falls. <i>×2</i> after it reads <span class="mono">128.00</span> again and every readout returns to state 4.</p>
+<div class="eb" style="margin: 0">
+<div class="eb-top"><span class="caps">Edit the warp</span><span>crateside's starter · <span class="mono">128.00</span> · 1 marker at <span class="mono">0:00.52</span></span><span class="sp"></span><span class="dr"><span class="ring"></span>draft · not saved</span></div>
+<div class="eb-cells">
+<div class="ec"><div class="caps">Bar</div><div class="ctl"><button class="btn sm">‹ a beat earlier</button><button class="btn sm">a beat later ›</button></div><div class="rd ch">the marker falls on bar 32, beat 4 · crateside put it on bar 1, beat 1</div></div>
+<div class="ec"><div class="caps">Nudge</div><div class="ctl"><button class="btn sm sq">−</button><button class="btn sm sq">+</button><span class="keys">1 ms · Shift 5 ms</span></div><div class="rd ch">+4 ms from where crateside put it</div></div>
+<div class="ec"><div class="caps">Tempo</div><div class="ctl"><button class="btn sm mn">/2</button><button class="btn sm mn">×2</button><span class="keys">every stem, about the clip start</span></div><div class="rd ch">128.00 → <b style="font-weight: 600">64.00</b></div></div>
+<div class="ec"><div class="caps">Clip start</div><div class="ctl"><button class="btn sm">Clip start at the playhead's bar</button></div><div class="rd ch">clip start · bar 65 <span class="hint">· was bar 1</span></div></div>
+</div>
+<div class="eb-foot"><div class="to">Saves to Instrumental, Drums, Bass, Other<br>Vocal keeps its own warp</div><span class="sp"></span><span class="keys"><span class="kbd">,</span> <span class="kbd">.</span> a beat · <span class="kbd">←</span> <span class="kbd">→</span> 1 ms</span><button class="btn pri">Save the default clip</button><button class="btn">Revert</button><button class="btn">Close</button></div>
+</div></div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">6</span>A warp of the maintainer's, being edited</p><p class="st-p">The top line names the warp as the lane chips do. Readouts compare with <i>the saved warp</i>. With no draft, <i>Save</i> is disabled and says <i>nothing to change</i>; here a 2 ms nudge makes one. No stem is warped on its own, so <i>Saves to</i> is one line; a stem crateside lends the warp to is named on a second.</p>
+<div class="eb" style="margin: 0">
+<div class="eb-top"><span class="caps">Edit the warp</span><span><span class="chip fill">Your warp</span> saved in Live 2 Nov · <span class="mono">100.00</span> · 1 marker at <span class="mono">0:01.07</span></span><span class="sp"></span><span class="dr"><span class="ring"></span>draft · not saved</span></div>
+<div class="eb-cells">
+<div class="ec"><div class="caps">Bar</div><div class="ctl"><button class="btn sm">‹ a beat earlier</button><button class="btn sm">a beat later ›</button></div><div class="rd">bar 1 starts on the marker's beat 1, as saved</div></div>
+<div class="ec"><div class="caps">Nudge</div><div class="ctl"><button class="btn sm sq">−</button><button class="btn sm sq">+</button><span class="keys">1 ms · Shift 5 ms</span></div><div class="rd ch">−2 ms from the saved warp</div></div>
+<div class="ec"><div class="caps">Tempo</div><div class="ctl"><button class="btn sm mn">/2</button><button class="btn sm mn">×2</button><span class="keys">every stem, about the clip start</span></div><div class="rd">100.00</div></div>
+<div class="ec"><div class="caps">Clip start</div><div class="ctl"><button class="btn sm">Clip start at the playhead's bar</button></div><div class="rd">clip start · bar 9 <span class="hint">· or drag its notch on the ruler</span></div></div>
+</div>
+<div class="eb-foot"><div class="to">Saves to Instrumental, Drums, Bass, Other, Vocal<br>then lends it again to Piano</div><span class="sp"></span><span class="keys"><span class="kbd">,</span> <span class="kbd">.</span> a beat · <span class="kbd">←</span> <span class="kbd">→</span> 1 ms</span><button class="btn pri">Save the default clip</button><button class="btn">Revert</button><button class="btn">Close</button></div>
+</div></div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">7</span>Close with a draft asks first</p><p class="st-p">The house confirm: the foot's buttons give way to the question, its label amber, the confirm <span class="mono">.danger</span>. <i>Judge again</i> with a draft asks the same before it opens the form. Esc is <i>Keep editing</i>.</p>
+<div class="eb" style="margin: 0">
+<div class="eb-top"><span class="caps">Edit the warp</span><span>crateside's starter · <span class="mono">128.00</span> · 1 marker at <span class="mono">0:00.52</span></span><span class="sp"></span><span class="dr"><span class="ring"></span>draft · not saved</span></div>
+<div class="eb-cells">
+<div class="ec"><div class="caps">Bar</div><div class="ctl"><button class="btn sm" disabled>‹ a beat earlier</button><button class="btn sm" disabled>a beat later ›</button></div><div class="rd ch">bar 1 starts on the marker's beat 3 · crateside put it on beat 1</div></div>
+<div class="ec"><div class="caps">Nudge</div><div class="ctl"><button class="btn sm sq" disabled>−</button><button class="btn sm sq" disabled>+</button></div><div class="rd ch">+4 ms from where crateside put it</div></div>
+<div class="ec"><div class="caps">Tempo</div><div class="ctl"><button class="btn sm mn" disabled>/2</button><button class="btn sm mn" disabled>×2</button></div><div class="rd">128.00</div></div>
+<div class="ec"><div class="caps">Clip start</div><div class="ctl"><button class="btn sm" disabled>Clip start at the playhead's bar</button></div><div class="rd ch">clip start · bar 65 <span class="hint">· was bar 1</span></div></div>
+</div>
+<div class="eb-foot"><div class="to">Saves to Instrumental, Drums, Bass, Other<br>Vocal keeps its own warp</div><span class="sp"></span><span class="ask">Close without saving the warp?</span><button class="btn dan">Close without saving</button><button class="btn">Keep editing</button></div>
+</div></div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">8</span>Where it goes, when the group is uneven</p><p class="st-p">Only the two cases the brief draws: one line when every stem in the group saves, a second when a stem keeps its own warp. Lending, where it happens, takes the second line's place in the same voice. No per-stem choice anywhere.</p>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div class="eb" style="margin: 0"><div class="eb-foot" style="border-top: 0"><div class="to">Saves to Instrumental, Drums, Bass, Other<br>Vocal keeps its own warp</div></div></div>
+<div class="eb" style="margin: 0"><div class="eb-foot" style="border-top: 0"><div class="to">Saves to Instrumental, Drums, Bass, Other<br>Vocal and Backing Vocal keep their own warps</div></div></div>
+<div class="eb" style="margin: 0"><div class="eb-foot" style="border-top: 0"><div class="to">Saves to Instrumental, Drums, Bass, Other, Vocal</div></div></div>
+</div></div>
+
+</div>
+</div>
+
+<!-- ============ 2b ============ -->
+<div>
+<div class="cv-l">2b · The edit bar at 56rem</div>
+<p class="cv-p">The four cells go two by two, as the header strip's do. The foot wraps: <i>Saves to</i> takes the full width, the buttons follow on a row of their own, right-aligned, and the key hint drops (it returns above 56rem).</p>
+<div class="pb sheet" style="width: 856px">
+<div class="wv-head" style="margin-bottom: 10px"><span class="caps">Warp</span><span>4 stems · one warp · <span class="drt"><span class="ring"></span>draft</span></span><button class="btn sm">Judge again</button><span class="sp"></span><span class="mono" style="color: var(--text)">bars 61–68</span><button class="btn sm sq">−</button><button class="btn sm sq">+</button><button class="btn sm">‹</button><button class="btn sm">›</button></div>
+<div class="eb" style="margin: 0">
+<div class="eb-top"><span class="caps">Edit the warp</span><span>crateside's starter · <span class="mono">128.00</span></span><span class="sp"></span><span class="dr"><span class="ring"></span>draft · not saved</span></div>
+<div class="eb-cells two">
+<div class="ec"><div class="caps">Bar</div><div class="ctl"><button class="btn sm">‹ a beat earlier</button><button class="btn sm">a beat later ›</button></div><div class="rd ch">bar 1 starts on the marker's beat 3 · crateside put it on beat 1</div></div>
+<div class="ec"><div class="caps">Nudge</div><div class="ctl"><button class="btn sm sq">−</button><button class="btn sm sq">+</button><span class="keys">1 ms · Shift 5 ms</span></div><div class="rd ch">+4 ms from where crateside put it</div></div>
+<div class="ec"><div class="caps">Tempo</div><div class="ctl"><button class="btn sm mn">/2</button><button class="btn sm mn">×2</button><span class="keys">every stem, about the clip start</span></div><div class="rd">128.00</div></div>
+<div class="ec"><div class="caps">Clip start</div><div class="ctl"><button class="btn sm">Clip start at the playhead's bar</button></div><div class="rd ch">clip start · bar 65 <span class="hint">· was bar 1</span></div></div>
+</div>
+<div class="eb-foot"><div class="to" style="flex: 1 1 100%">Saves to Instrumental, Drums, Bass, Other<br>Vocal keeps its own warp</div><span class="sp"></span><button class="btn pri">Save the default clip</button><button class="btn">Revert</button><button class="btn">Close</button></div>
+</div>
+</div>
+</div>
+
+<!-- ============ 3a ============ -->
+<div>
+<div class="cv-l">3a · The lanes and ruler holding a draft · zoomed to bars 61–68</div>
+<p class="cv-p">Drums shows the beat as tick marks: short for every beat, tall for each true downbeat. While a draft differs from disk the lanes say so quietly: each saving lane's gutter adds <span style="color: #ece7dc">○ draft</span> after its chip, its clip-start line is dashed, and its marker's flag is drawn hollow. No color: the chip keeps what is on disk, and Vocal, which the save does not touch, is drawn as before. The view keeps its place in the audio while the grid moves under it, so after a bar move it sits off the bar lines until the next zoom or pan.</p>
+<div class="cols">
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">1</span>The starter as it arrives</p><p class="st-p">Bar lines fall on beats, but on beat 3 of the song's bars: the tall ticks sit between them. <i>Off the grid</i> sits 4 ms early.</p>
+<div class="r"><div class="g">Bar</div><div class="plot"><div class="ruler"><div class="ticks" style="left: 0; --p: 25.625px"></div><div class="ph" style="left: 500px; bottom: auto; height: 369px"><i></i></div>
+<span class="bn" style="left: 0">61</span><span class="tk" style="left: 0"></span><span class="bn" style="left: 102.5px">62</span><span class="tk" style="left: 102.5px"></span><span class="bn" style="left: 205px">63</span><span class="tk" style="left: 205px"></span><span class="bn" style="left: 307.5px">64</span><span class="tk" style="left: 307.5px"></span><span class="bn" style="left: 410px">65</span><span class="tk" style="left: 410px"></span><span class="bn" style="left: 512.5px">66</span><span class="tk" style="left: 512.5px"></span><span class="bn" style="left: 615px">67</span><span class="tk" style="left: 615px"></span><span class="bn" style="left: 717.5px">68</span><span class="tk" style="left: 717.5px"></span>
+</div></div></div>
+<div class="r"><div class="g">Tempo · <span class="mono" style="color: var(--text)">128.00</span></div><div class="plot"><div class="tempo"></div></div></div>
+<div class="r"><div class="g"><b>Off the grid</b>holds <span class="t40">· 4 ms early</span></div><div class="plot"><div class="og"><div class="z"></div><svg viewBox="0 0 820 72" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="rgba(236,231,220,.6)" stroke-width="1" points="0,30 245,31 790,30"></polyline><circle cx="245" cy="31" r="2.5" fill="#ece7dc"></circle><circle cx="790" cy="30" r="2.5" fill="#ece7dc"></circle></svg></div></div></div>
+<div class="r"><div class="lg sel">Drums - Full<small><span class="chip dash">Starter</span> placed 16 Nov</small></div><div class="plot"><div class="lane sel"><div class="gl" style="--g: 0px"></div><div class="kk" style="--k: 0px"></div><div class="db" style="--d: 51.25px"></div></div></div></div>
+<div class="r"><div class="lg">Instrumental - Full<small><span class="chip dash">Starter</span> placed 16 Nov</small></div><div class="plot"><div class="lane"><div class="gl" style="--g: 0px"></div><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div></div></div></div>
+<div class="r"><div class="lg">Vocal - Full<small><span class="chip fill">Your warp</span> on its own</small></div><div class="plot"><div class="lane own"><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div></div></div></div>
+<div class="r"><div></div><div class="plot"><div class="ax"><span style="left: 53.6px">1:54</span><span style="left: 162.9px">1:56</span><span style="left: 272.2px">1:58</span><span style="left: 381.6px">2:00</span><span style="left: 490.9px">2:02</span><span style="left: 600.3px">2:04</span><span style="left: 709.6px">2:06</span></div></div></div>
+</div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">2</span>The bar two beats later</p><p class="st-p">The grid slid right by two beats under still audio: bar lines now on the tall ticks, every number moved. The playhead keeps its time; the player reads it in the draft's bars.</p>
+<div class="r"><div class="g">Bar</div><div class="plot"><div class="ruler"><div class="ticks" style="left: 0; --p: 25.625px"></div><div class="ph" style="left: 500px; bottom: auto; height: 369px"><i></i></div>
+<span class="bn" style="left: 51.25px">61</span><span class="tk" style="left: 51.25px"></span><span class="bn" style="left: 153.75px">62</span><span class="tk" style="left: 153.75px"></span><span class="bn" style="left: 256.25px">63</span><span class="tk" style="left: 256.25px"></span><span class="bn" style="left: 358.75px">64</span><span class="tk" style="left: 358.75px"></span><span class="bn" style="left: 461.25px">65</span><span class="tk" style="left: 461.25px"></span><span class="bn" style="left: 563.75px">66</span><span class="tk" style="left: 563.75px"></span><span class="bn" style="left: 666.25px">67</span><span class="tk" style="left: 666.25px"></span><span class="bn" style="left: 768.75px">68</span><span class="tk" style="left: 768.75px"></span>
+</div></div></div>
+<div class="r"><div class="g">Tempo · <span class="mono" style="color: var(--text)">128.00</span></div><div class="plot"><div class="tempo"></div></div></div>
+<div class="r"><div class="g"><b>Off the grid</b>holds <span class="t40">· 4 ms early</span></div><div class="plot"><div class="og"><div class="z"></div><svg viewBox="0 0 820 72" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="rgba(236,231,220,.6)" stroke-width="1" points="0,30 245,31 790,30"></polyline><circle cx="245" cy="31" r="2.5" fill="#ece7dc"></circle><circle cx="790" cy="30" r="2.5" fill="#ece7dc"></circle></svg></div></div></div>
+<div class="r"><div class="lg sel">Drums - Full<small><span class="chip dash">Starter</span><span class="drt"><span class="ring"></span>draft</span></small></div><div class="plot"><div class="lane sel"><div class="gl" style="--g: 51.25px"></div><div class="kk" style="--k: 0px"></div><div class="db" style="--d: 51.25px"></div></div></div></div>
+<div class="r"><div class="lg">Instrumental - Full<small><span class="chip dash">Starter</span><span class="drt"><span class="ring"></span>draft</span></small></div><div class="plot"><div class="lane"><div class="gl" style="--g: 51.25px"></div><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div></div></div></div>
+<div class="r"><div class="lg">Vocal - Full<small><span class="chip fill">Your warp</span> on its own</small></div><div class="plot"><div class="lane own"><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div></div></div></div>
+<div class="r"><div></div><div class="plot"><div class="ax"><span style="left: 53.6px">1:54</span><span style="left: 162.9px">1:56</span><span style="left: 272.2px">1:58</span><span style="left: 381.6px">2:00</span><span style="left: 490.9px">2:02</span><span style="left: 600.3px">2:04</span><span style="left: 709.6px">2:06</span></div></div></div></div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">3</span>Nudged +4 ms, the clip start at bar 65</p><p class="st-p"><i>Off the grid</i> is worked out again on each step: its dots are on the zero line and the gutter says <i>holds</i>. The clip start is the notch on the ruler (labelled, taking 65's place) and a dashed line down each saving lane.</p>
+<div class="r"><div class="g">Bar</div><div class="plot"><div class="ruler"><div class="ticks" style="left: 0; --p: 25.625px"></div><div class="ph" style="left: 500px; bottom: auto; height: 369px"><i></i></div>
+<span class="bn" style="left: 51.25px">61</span><span class="tk" style="left: 51.25px"></span><span class="bn" style="left: 153.75px">62</span><span class="tk" style="left: 153.75px"></span><span class="bn" style="left: 256.25px">63</span><span class="tk" style="left: 256.25px"></span><span class="bn" style="left: 358.75px">64</span><span class="tk" style="left: 358.75px"></span><button class="notch" style="left: 461.25px" role="slider" aria-label="Clip start" aria-valuetext="bar 65"></button><span class="bn cs" style="left: 466px">clip start</span><span class="bn" style="left: 563.75px">66</span><span class="tk" style="left: 563.75px"></span><span class="bn" style="left: 666.25px">67</span><span class="tk" style="left: 666.25px"></span><span class="bn" style="left: 768.75px">68</span><span class="tk" style="left: 768.75px"></span>
+</div></div></div>
+<div class="r"><div class="g">Tempo · <span class="mono" style="color: var(--text)">128.00</span></div><div class="plot"><div class="tempo"></div></div></div>
+<div class="r"><div class="g"><b>Off the grid</b>holds</div><div class="plot"><div class="og"><div class="z"></div><svg viewBox="0 0 820 72" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="rgba(236,231,220,.6)" stroke-width="1" points="0,36 245,36 790,35"></polyline><circle cx="245" cy="36" r="2.5" fill="#ece7dc"></circle><circle cx="790" cy="35" r="2.5" fill="#ece7dc"></circle></svg></div></div></div>
+<div class="r"><div class="lg sel">Drums - Full<small><span class="chip dash">Starter</span><span class="drt"><span class="ring"></span>draft</span></small></div><div class="plot"><div class="lane sel"><div class="gl" style="--g: 51.25px"></div><div class="kk" style="--k: 0px"></div><div class="db" style="--d: 51.25px"></div><div class="clip dr" style="left: 461.25px"></div></div></div></div>
+<div class="r"><div class="lg">Instrumental - Full<small><span class="chip dash">Starter</span><span class="drt"><span class="ring"></span>draft</span></small></div><div class="plot"><div class="lane"><div class="gl" style="--g: 51.25px"></div><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div><div class="clip dr" style="left: 461.25px"></div></div></div></div>
+<div class="r"><div class="lg">Vocal - Full<small><span class="chip fill">Your warp</span> on its own</small></div><div class="plot"><div class="lane own"><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div></div></div></div>
+<div class="r"><div></div><div class="plot"><div class="ax"><span style="left: 53.6px">1:54</span><span style="left: 162.9px">1:56</span><span style="left: 272.2px">1:58</span><span style="left: 381.6px">2:00</span><span style="left: 490.9px">2:02</span><span style="left: 600.3px">2:04</span><span style="left: 709.6px">2:06</span></div></div></div></div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">4</span>The clip-start notch being dragged</p><p class="st-p">While the bar is open the notch is a grip (11×16, <span class="mono">ew-resize</span>; full <span class="mono">--text</span> on hover and while held). It moves bar line by bar line; a tag over it names the bar, a dashed ghost keeps the place it left, and a solid 1 px line runs down the saving lanes. Esc or <span class="mono">pointercancel</span> puts it back. As a <span class="mono">role="slider"</span> it takes ←/→ a bar, Shift four: arrows on the focused notch move it and do not nudge.</p>
+<div class="r"><div class="g">Bar</div><div class="plot"><div class="ruler" style="cursor: ew-resize"><div class="ticks" style="left: 0; --p: 25.625px"></div><div class="ph" style="left: 500px; bottom: auto; height: 369px"><i></i></div>
+<span class="bn" style="left: 51.25px">61</span><span class="tk" style="left: 51.25px"></span><span class="bn" style="left: 153.75px">62</span><span class="tk" style="left: 153.75px"></span><span class="bn" style="left: 256.25px">63</span><span class="tk" style="left: 256.25px"></span><span class="tip" style="left: 358.75px">clip start · bar 64</span><button class="notch drag" style="left: 358.75px" role="slider" aria-label="Clip start" aria-valuetext="bar 64"></button><span class="nghost" style="left: 461.25px"></span><span class="bn" style="left: 461.25px">65</span><span class="bn" style="left: 563.75px">66</span><span class="tk" style="left: 563.75px"></span><span class="bn" style="left: 666.25px">67</span><span class="tk" style="left: 666.25px"></span><span class="bn" style="left: 768.75px">68</span><span class="tk" style="left: 768.75px"></span>
+</div></div></div>
+<div class="r"><div class="g">Tempo · <span class="mono" style="color: var(--text)">128.00</span></div><div class="plot"><div class="tempo"></div></div></div>
+<div class="r"><div class="g"><b>Off the grid</b>holds</div><div class="plot"><div class="og"><div class="z"></div><svg viewBox="0 0 820 72" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="rgba(236,231,220,.6)" stroke-width="1" points="0,36 245,36 790,35"></polyline><circle cx="245" cy="36" r="2.5" fill="#ece7dc"></circle><circle cx="790" cy="35" r="2.5" fill="#ece7dc"></circle></svg></div></div></div>
+<div class="r"><div class="lg sel">Drums - Full<small><span class="chip dash">Starter</span><span class="drt"><span class="ring"></span>draft</span></small></div><div class="plot"><div class="lane sel"><div class="gl" style="--g: 51.25px"></div><div class="kk" style="--k: 0px"></div><div class="db" style="--d: 51.25px"></div><div class="clip now" style="left: 358.75px"></div></div></div></div>
+<div class="r"><div class="lg">Instrumental - Full<small><span class="chip dash">Starter</span><span class="drt"><span class="ring"></span>draft</span></small></div><div class="plot"><div class="lane"><div class="gl" style="--g: 51.25px"></div><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div><div class="clip now" style="left: 358.75px"></div></div></div></div>
+<div class="r"><div class="lg">Vocal - Full<small><span class="chip fill">Your warp</span> on its own</small></div><div class="plot"><div class="lane own"><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div></div></div></div>
+<div class="r"><div></div><div class="plot"><div class="ax"><span style="left: 53.6px">1:54</span><span style="left: 162.9px">1:56</span><span style="left: 272.2px">1:58</span><span style="left: 381.6px">2:00</span><span style="left: 490.9px">2:02</span><span style="left: 600.3px">2:04</span><span style="left: 709.6px">2:06</span></div></div></div></div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">5</span>The tempo halved, about bar 65</p><p class="st-p">Bar 65 stays where it was in the audio and in number; 63, 64 and 66 are twice as far apart. The tempo line drops and its gutter shows the step; the beat grid's lines are every other tick. <i>Off the grid</i> is unchanged in time (the beats it measures against are now the even ones).</p>
+<div class="r"><div class="g">Bar</div><div class="plot"><div class="ruler"><div class="ticks" style="left: 0; --p: 51.25px"></div><div class="ph" style="left: 500px; bottom: auto; height: 369px"><i></i></div>
+<span class="bn" style="left: 51.25px">63</span><span class="tk" style="left: 51.25px"></span><span class="bn" style="left: 256.25px">64</span><span class="tk" style="left: 256.25px"></span><button class="notch" style="left: 461.25px" role="slider" aria-label="Clip start" aria-valuetext="bar 65"></button><span class="bn cs" style="left: 466px">clip start</span><span class="bn" style="left: 666.25px">66</span><span class="tk" style="left: 666.25px"></span>
+</div></div></div>
+<div class="r"><div class="g">Tempo · <span class="mono" style="color: var(--text); font-weight: 600">64.00</span> <span class="t40">was 128.00</span></div><div class="plot"><div class="tempo" style="opacity: .9"></div></div></div>
+<div class="r"><div class="g"><b>Off the grid</b>holds</div><div class="plot"><div class="og"><div class="z"></div><svg viewBox="0 0 820 72" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="rgba(236,231,220,.6)" stroke-width="1" points="0,36 245,36 790,35"></polyline><circle cx="245" cy="36" r="2.5" fill="#ece7dc"></circle><circle cx="790" cy="35" r="2.5" fill="#ece7dc"></circle></svg></div></div></div>
+<div class="r"><div class="lg sel">Drums - Full<small><span class="chip dash">Starter</span><span class="drt"><span class="ring"></span>draft</span></small></div><div class="plot"><div class="lane sel"><div class="gl h" style="--g: 51.25px"></div><div class="kk" style="--k: 0px"></div><div class="db" style="--d: 51.25px"></div><div class="clip dr" style="left: 461.25px"></div></div></div></div>
+<div class="r"><div class="lg">Instrumental - Full<small><span class="chip dash">Starter</span><span class="drt"><span class="ring"></span>draft</span></small></div><div class="plot"><div class="lane"><div class="gl h" style="--g: 51.25px"></div><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div><div class="clip dr" style="left: 461.25px"></div></div></div></div>
+<div class="r"><div class="lg">Vocal - Full<small><span class="chip fill">Your warp</span> on its own</small></div><div class="plot"><div class="lane own"><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div></div></div></div>
+<div class="r"><div></div><div class="plot"><div class="ax"><span style="left: 53.6px">1:54</span><span style="left: 162.9px">1:56</span><span style="left: 272.2px">1:58</span><span style="left: 381.6px">2:00</span><span style="left: 490.9px">2:02</span><span style="left: 600.3px">2:04</span><span style="left: 709.6px">2:06</span></div></div></div></div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">6</span>The whole track holding a draft</p><p class="st-p">Zoomed out, the marker's flag is where the draft shows most: hollow while unsaved, at its nudged place. The clip-start line is dashed at bar 65.</p>
+<div class="r"><div class="g">Bar</div><div class="plot"><div class="ruler"><div class="ticks" style="left: 3.9px; --p: 41px; height: 4px"></div>
+<span class="bn" style="left: 3.9px">1</span><span class="tk" style="left: 3.9px"></span><span class="bn" style="left: 167.9px">33</span><span class="tk" style="left: 167.9px"></span><button class="notch" style="left: 331.9px" role="slider" aria-label="Clip start" aria-valuetext="bar 65"></button><span class="bn cs" style="left: 337px">clip start</span><span class="bn" style="left: 495.9px">97</span><span class="tk" style="left: 495.9px"></span><span class="bn" style="left: 659.9px">129</span><span class="tk" style="left: 659.9px"></span>
+</div></div></div>
+<div class="r"><div class="lg sel">Drums - Full<small><span class="chip dash">Starter</span><span class="drt"><span class="ring"></span>draft</span></small></div><div class="plot"><div class="lane sel"><div class="gl w" style="--g: 3.9px"></div><div class="wf c1 env-b"></div><div class="wf c2 env-b"></div><div class="mk" style="left: 1.4px"></div><svg class="flag" style="left: 1.4px" width="7" height="9" viewBox="0 0 7 9" aria-hidden="true"><path d="M.5 .5h5.5L3.9 3 6 5.5H1.2v3H.5z" fill="#141310" stroke="rgba(236,231,220,.85)" stroke-width="1"></path></svg><div class="clip dr" style="left: 331.9px"></div></div></div></div>
+<div class="r"><div class="lg">Instrumental - Full<small><span class="chip dash">Starter</span><span class="drt"><span class="ring"></span>draft</span></small></div><div class="plot"><div class="lane"><div class="gl w" style="--g: 3.9px"></div><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div><div class="mk" style="left: 1.4px"></div><svg class="flag" style="left: 1.4px" width="7" height="9" viewBox="0 0 7 9" aria-hidden="true"><path d="M.5 .5h5.5L3.9 3 6 5.5H1.2v3H.5z" fill="#141310" stroke="rgba(236,231,220,.85)" stroke-width="1"></path></svg><div class="clip dr" style="left: 331.9px"></div></div></div></div>
+<div class="r"><div class="lg">Vocal - Full<small><span class="chip fill">Your warp</span> on its own</small></div><div class="plot"><div class="lane own"><div class="wf c1 env-a"></div><div class="wf c2 env-a"></div><div class="clip" style="left: 1.4px"></div></div></div></div>
+<div class="r"><div></div><div class="plot"><div class="ax"><span style="left: 0">0:00</span><span style="left: 82px">0:30</span><span style="left: 164px">1:00</span><span style="left: 246px">1:30</span><span style="left: 328px">2:00</span><span style="left: 410px">2:30</span><span style="left: 492px">3:00</span><span style="left: 574px">3:30</span><span style="left: 656px">4:00</span><span style="left: 738px">4:30</span></div></div></div>
+</div>
+
+</div>
+</div>
+
+<!-- ============ 4a ============ -->
+<div>
+<div class="cv-l">4a · Saving, saved with Undo, Not saved after Live saved, a failed write</div>
+<p class="cv-p">While it writes, the bar folds into one line in the judge form's running shape (teal: crateside is writing), and the lanes' chips are teal outlines. Done, the line is neutral and holds <i>Undo</i> until the page is left or the bar is opened again.</p>
+<div class="cols">
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">1</span>Saving</p><p class="st-p">Every control waits. The page can be left; the write finishes either way, and the leave prompt does not ask (there is no draft left to lose).</p>
+<div class="wv-head"><span class="caps">Warp</span><span>4 stems · one warp · 1 marker · Complex · <span class="loud">Vocal warped on its own</span></span><span class="sp"></span><span class="mono" style="color: var(--text)">bars 61–68 · 1:53–2:08</span></div>
+<div class="ln teal" role="status"><span class="dot"></span><span>Saving to 4 stems · backing each sidecar up, then writing</span><span class="sp"></span><span class="t50" style="font-size: 12px">2 of 4</span></div>
+<div class="r" style="margin-bottom: 4px"><div class="lg">Instrumental - Full<small><span class="chip tl">writing…</span></small></div><div></div></div>
+<div class="r" style="margin-bottom: 0"><div class="lg">Drums - Full<small><span class="chip tl">writing…</span></small></div><div></div></div>
+</div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">2</span>Saved, with Undo</p><p class="st-p">The bar is closed and the opener back. The lanes read <i>Your warp</i>, filled, as a save in Live does; the stage chip goes to <i>ready to move</i> once every staged stem is saved. <i>Undo</i> puts every stem's previous sidecar back and lends again.</p>
+<div class="wv-head"><span class="caps">Warp</span><span>4 stems · one warp · 1 marker · Complex · <span class="loud">Vocal warped on its own</span></span><button class="btn sm">Judge again</button><button class="btn sm">Edit the warp</button><span class="sp"></span><span class="mono" style="color: var(--text)">bars 61–68 · 1:53–2:08</span></div>
+<div class="ln" role="status"><span>Saved to 4 stems just now · <button class="lk">Undo</button></span></div>
+<div class="r" style="margin-bottom: 4px"><div class="lg">Instrumental - Full<small><span class="chip fill">Your warp</span> saved in crateside 17 Nov</small></div><div></div></div>
+<div class="r" style="margin-bottom: 0"><div class="lg">Drums - Full<small><span class="chip fill">Your warp</span> saved in crateside 17 Nov</small></div><div></div></div>
+</div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">3</span>Undone</p><p class="st-p">Undo writes too, so it runs teal (<i>● Putting 4 stems back…</i>), then says so in the same neutral place. The lanes are the starter again. Undo cannot itself be undone; <i>Edit the warp</i> starts over.</p>
+<div class="wv-head"><span class="caps">Warp</span><span>4 stems · one warp · 1 marker · Complex · <span class="loud">Vocal warped on its own</span></span><button class="btn sm">Judge again</button><button class="btn sm">Edit the warp</button><span class="sp"></span><span class="mono" style="color: var(--text)">bars 61–68 · 1:53–2:08</span></div>
+<div class="ln" role="status"><span>Put back: the 4 stems are as they were before the save</span></div>
+<div class="r" style="margin-bottom: 0"><div class="lg">Instrumental - Full<small><span class="chip dash">Starter</span> placed 16 Nov</small></div><div></div></div>
+</div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">4</span>Not saved: Live saved one meanwhile</p><p class="st-p">Nothing written. The bar stays open with the draft drawn, so its numbers can be read off first. The line sits between the cells and the foot; <i>Not saved</i> is amber, since the next move is the maintainer's, and <i>Revert</i> is the one way on (Save waits until it is used).</p>
+<div class="eb" style="margin: 0">
+<div class="eb-top"><span class="caps">Edit the warp</span><span>crateside's starter · <span class="mono">128.00</span> · 1 marker at <span class="mono">0:00.52</span></span><span class="sp"></span><span class="dr"><span class="ring"></span>draft · not saved</span></div>
+<div class="eb-cells">
+<div class="ec"><div class="caps">Bar</div><div class="rd ch">bar 1 starts on the marker's beat 3 · crateside put it on beat 1</div></div>
+<div class="ec"><div class="caps">Nudge</div><div class="rd ch">+4 ms from where crateside put it</div></div>
+<div class="ec"><div class="caps">Tempo</div><div class="rd">128.00</div></div>
+<div class="ec"><div class="caps">Clip start</div><div class="rd ch">clip start · bar 65 <span class="hint">· was bar 1</span></div></div>
+</div>
+<div class="msg" role="status"><span><b style="color: var(--amber); font-weight: 600">Not saved:</b> Live saved Drums' warp since you started. Revert to load it, then redo the edits.</span></div>
+<div class="eb-foot"><div class="to">Saves to Instrumental, Drums, Bass, Other<br>Vocal keeps its own warp</div><span class="sp"></span><button class="btn pri" disabled>Save the default clip</button><button class="btn">Revert</button><button class="btn">Close</button></div>
+</div></div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">5</span>A file that could not be written</p><p class="st-p">Red, <span class="mono">role="alert"</span>, in the same place. True up's write path has already put back whatever it had written, so the line says nothing changed. The draft stays; <i>Save</i> is live again to retry.</p>
+<div class="eb" style="margin: 0">
+<div class="eb-top"><span class="caps">Edit the warp</span><span>crateside's starter · <span class="mono">128.00</span> · 1 marker at <span class="mono">0:00.52</span></span><span class="sp"></span><span class="dr"><span class="ring"></span>draft · not saved</span></div>
+<div class="eb-cells">
+<div class="ec"><div class="caps">Bar</div><div class="rd ch">bar 1 starts on the marker's beat 3 · crateside put it on beat 1</div></div>
+<div class="ec"><div class="caps">Nudge</div><div class="rd ch">+4 ms from where crateside put it</div></div>
+<div class="ec"><div class="caps">Tempo</div><div class="rd">128.00</div></div>
+<div class="ec"><div class="caps">Clip start</div><div class="rd ch">clip start · bar 65 <span class="hint">· was bar 1</span></div></div>
+</div>
+<div class="msg red" role="alert"><span>Couldn't save: Bass - Full.wav.asd could not be written ([the reason the system gave]). Nothing changed; every stem is as it was.</span></div>
+<div class="eb-foot"><div class="to">Saves to Instrumental, Drums, Bass, Other<br>Vocal keeps its own warp</div><span class="sp"></span><button class="btn pri">Save the default clip</button><button class="btn">Revert</button><button class="btn">Close</button></div>
+</div></div>
+
+<div class="pb sheet"><p class="st-h"><span class="st-n">6</span>The lane detail after a save</p><p class="st-p">The selected lane's detail as built, with the provenance sentence for a save made here. The edits are named from what the save started as, in the edit bar's order, and only those that changed. A later save in Live reads <i>Saved in Live on …</i> as today.</p>
+<div style="background: var(--surface); border-radius: 8px; padding: 14px 16px">
+<div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 600">Drums - Full.wav <span class="chip fill">Your warp</span></div>
+<div class="facts">
+<div><div class="caps">Tempo</div><div class="mono">128.00</div></div>
+<div><div class="caps">Mode</div><div>Complex</div></div>
+<div><div class="caps">Markers</div><div class="mono">1</div></div>
+<div><div class="caps">Transients</div><div class="mono">[n]</div></div>
+<div><div class="caps">Clip</div><div class="mono">bar 65 – end</div></div>
+<div><div class="caps">Loop</div><div>off</div></div>
+<div><div class="caps">Default clip</div><div>saved</div></div>
+</div>
+<p style="margin: 0; font-size: 13px; line-height: 1.55; color: var(--t75); max-width: 80ch">Saved in crateside on 17 Nov, from crateside's starter: bar two beats later, +4 ms, clip start bar 65. crateside lends it to Drums - Kick.</p>
+<div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(236,231,220,.14); font-size: 12px; color: var(--t40)">[the two controls, as built]</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- ============ 4b ============ -->
+<div>
+<div class="cv-l">4b · Leaving with a draft</div>
+<p class="cv-p">A link inside crateside opens the page's own dialog over the page; a reload or a closed tab gets the browser's own, whose wording is the browser's. The draft is not kept anywhere, and the dialog says what is lost in the edit bar's words. Esc and <i>Stay</i> do the same.</p>
+<div class="pb" style="width: 1056px; height: 300px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden">
+<div class="nav"><b>crateside</b><span>Dashboard</span><span class="on">Tracks</span><span>Tools</span><span>Activity</span><span>Settings</span></div>
+<div class="modal-bg" style="top: 48px">
+<div class="modal" role="alertdialog" aria-labelledby="lv-h">
+<h2 id="lv-h">Leave without saving the warp?</h2>
+<p>The draft (bar two beats later, +4 ms, clip start bar 65) is not kept. The four stems stay as they are on disk.</p>
+<div style="display: flex; justify-content: flex-end; gap: 8px"><button class="btn">Stay</button><button class="btn dan">Leave without saving</button></div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2240,"height":6600}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,136 @@
+using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Samples;
+using Crateside.Core.Staging;
+
+namespace Crateside.Core.Orchestration.Handoff;
+
+/// <summary>
+/// Hands one track's finished stems to the human half, by moving them into
+/// <c>Staging</c>.
+/// </summary>
+public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions = null)
+{
+    private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
+
+    /// <param name="superseded">
+    /// Staged files of an upload this track has been swapped away from, cleared <em>before</em>
+    /// the move to make room for same-named replacements (ADR 0014).
+    /// </param>
+    /// <param name="moved">Called with each stem's old and new path the moment it lands.</param>
+    /// <param name="into">Where the stems go in place of Staging, which is the library for a re-cut that needs no warping (ADR 0103).</param>
+    /// <param name="guideLabel">The label of the added source these stems were cut from: its drums guide carries it, or it takes the name of the track's own guide.</param>
+    public HandoffResult Run(
+        IReadOnlyList<string> stems,
+        string? name = null,
+        IReadOnlyList<string>? superseded = null,
+        Action<string, string>? moved = null,
+        string? into = null,
+        string? guideLabel = null
+    )
+    {
+        var folder = into ?? paths.StagingFolder;
+
+        if (stems.Count is 0)
+            return HandoffResult.Failed("no stems to hand off");
+
+        if (paths.StagingFolder is not { Length: > 0 })
+            return HandoffResult.Failed("the Staging folder is not set; set it in Settings");
+
+        var cleared = Clear(superseded ?? []);
+
+        var moves = stems
+            .Select(s => (From: s, To: Destination(s, name, folder, guideLabel)))
+            .ToList();
+
+        if (moves.FirstOrDefault(m => File.Exists(m.To)) is { From: not null } clash)
+            return HandoffResult.Failed(
+                $"{Path.GetFileName(clash.To)} is already in {(into is null ? "staging" : "the library")}; nothing was moved"
+            );
+
+        try
+        {
+            Directory.CreateDirectory(folder);
+
+            foreach (var (from, to) in moves)
+            {
+                File.Move(from, to);
+                moved?.Invoke(from, to);
+            }
+
+            return HandoffResult.Succeeded(moves.Count, cleared);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Staging lives on an external drive Ableton may hold files open on.
+            return HandoffResult.Failed(ex.Message);
+        }
+    }
+
+    /// <summary>A file that will not go is left for the clash check to judge, not a failure here.</summary>
+    private int Clear(IReadOnlyList<string> superseded)
+    {
+        var cleared = 0;
+
+        foreach (var path in superseded)
+        {
+            try
+            {
+                // Removal is silent about a path that is not there, which would make the
+                // count say files went that never existed.
+                if (!File.Exists(path))
+                    continue;
+
+                _deletions.Recycle(path, "superseded by the new upload");
+                cleared++;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        }
+
+        return cleared;
+    }
+
+    private static string Destination(
+        string stem,
+        string? name,
+        string folder,
+        string? guideLabel
+    ) =>
+        Path.Combine(
+            folder,
+            Path.GetFileName(
+                StemFileName.IsUsable(name)
+                    ? StemFileName.Renamed(
+                        stem,
+                        guideLabel is { Length: > 0 }
+                        && StagedFile.IsWarpGuidePreset(StemFileName.PresetOf(stem))
+                            ? $"{name} ({guideLabel})"
+                            : name,
+                        folder
+                    )
+                    : stem
+            )
+        );
+}
+
+/// <summary>How one handoff turned out.</summary>
+public sealed record HandoffResult
+{
+    public required bool IsSuccess { get; init; }
+
+    public int Moved { get; init; }
+
+    /// <summary>Superseded staged files removed to make room for these (ADR 0014).</summary>
+    public int Cleared { get; init; }
+
+    public string? Error { get; init; }
+
+    public static HandoffResult Succeeded(int moved, int cleared = 0) =>
+        new()
+        {
+            IsSuccess = true,
+            Moved = moved,
+            Cleared = cleared,
+        };
+
+    public static HandoffResult Failed(string error) => new() { IsSuccess = false, Error = error };
+}

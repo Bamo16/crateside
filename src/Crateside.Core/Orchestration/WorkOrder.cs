@@ -1,18 +1,19 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
-using Crateside.Core.Queue;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
+using Crateside.Core.WorkLists;
 
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
 /// crateside's instruction for one track: which URL is canonical, where its stems belong, and
-/// what to ask for. What used to be prose in the detect-key skill.
+/// what to ask for. What actually ran is a <see cref="Jobs.TrackJob"/>.
 /// </summary>
-/// <remarks>
-/// Not a record that anything did — that is <see cref="TrackJob"/>. Composing one is pure.
-/// </remarks>
 public sealed record WorkOrder
 {
-    public required string VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
     public required string Title { get; init; }
 
     /// <summary>The URL to hand the downloader. See <see cref="Compose"/> for how it is picked.</summary>
@@ -30,24 +31,25 @@ public sealed record WorkOrder
     /// <summary>
     /// Decides what should happen to a queued track.
     /// </summary>
-    public static WorkOrder Compose(QueueItem item, KeyLedger ledger) =>
+    public static WorkOrder Compose(WorkItem item, KeyLedger ledger) =>
         new()
         {
-            VideoId = item.VideoId,
+            TrackKey = item.TrackKey,
             Title = item.Title,
             SourceUrl = item switch
             {
                 { StatedSourceUrl: { Length: > 0 } stated } => stated,
+                { TrackKey: var key } when !TrackKeys.IsVideoId(key) => TrackKeys.ProvenanceOf(key),
                 { PremiumOutlook: PremiumOutlook.ArtTrack } =>
-                    $"https://music.youtube.com/watch?v={item.VideoId}",
+                    $"https://music.youtube.com/watch?v={item.TrackKey}",
                 _ => item.WatchUrl,
             },
             Destination =
-                ledger.TryGetLatestByVideoId(item.VideoId, out var run) && run.HasTaggableKey
+                ledger.TryGetLatestByTrackKey(item.TrackKey, out var run) && run.HasTaggableKey
                     ? StemDestination.KeyIdentified
                     : StemDestination.UnresolvedKey,
             PremiumOutlook = item.PremiumOutlook,
-            Recipe = SeparationRecipe.From(item.Plan),
+            Recipe = SeparationRecipe.For(item.Plan, item.Inventory),
         };
 }
 
@@ -68,21 +70,12 @@ public sealed record SeparationRecipe
     /// The usual pair plus a warp guide. Repeated presets run as independent stem sets rather
     /// than being blended.
     /// </summary>
-    /// <remarks>
-    /// Built from the plan rather than beside it, so the preset list has one definition and two
-    /// recipes for the same plan compare equal — the record's equality is by reference on
-    /// <see cref="Presets"/>, so a second identical array would not.
-    /// </remarks>
     public static SeparationRecipe Standard { get; } = From(StemPlan.Default);
 
     /// <summary>
     /// For a release that has no vocals: nothing to separate out, so the drums are the only
     /// stem and the source track is the sample — which is what <see cref="KeepSource"/> is for.
     /// </summary>
-    /// <remarks>
-    /// <c>--keep-source</c> is a flag about URL inputs, so it does nothing for a local file;
-    /// crateside copies the source into the destination itself instead.
-    /// </remarks>
     public static SeparationRecipe InstrumentalRelease { get; } =
         From(StemPlan.InstrumentalRelease);
 
@@ -95,36 +88,82 @@ public sealed record SeparationRecipe
     public string Format { get; init; } = "flac";
 
     /// <summary>
-    /// How many files this recipe should produce — one per preset, plus the warp guide and the
-    /// kept source where they are asked for.
+    /// Added sources whose drums are cut as a guide each, in a run of their own beside the
+    /// track's (ADR 0103).
     /// </summary>
-    public int ExpectedOutputs => Presets.Count + (ExtractDrums ? 1 : 0) + (KeepSource ? 1 : 0);
+    public IReadOnlyList<AddedGuide> AddedGuides { get; init; } = [];
+
+    /// <summary>Whether the track's own source is separated at all, or only added sources are.</summary>
+    public bool CutsOwnSource => Presets.Count > 0 || ExtractDrums;
+
+    /// <summary>
+    /// How many files the separator should produce — one per preset, plus the warp guide and one
+    /// per added source's. A kept source is not among them: the download stage copies it (ADR 0019).
+    /// </summary>
+    public int ExpectedOutputs => Presets.Count + (ExtractDrums ? 1 : 0) + AddedGuides.Count;
 
     /// <summary>
     /// How many passes the separator makes. A kept source is not one of them: it is copied.
     /// </summary>
-    public int Passes => Presets.Count + (ExtractDrums ? 1 : 0);
+    public int Passes => ExpectedOutputs;
 
     /// <summary>
-    /// Roughly how long the GPU will be busy.
+    /// Roughly how long the GPU will be busy — an assumed shape, not a measurement, so build no
+    /// logic on it.
     /// </summary>
-    /// <remarks>
-    /// A shape assumed, not measured — good enough to say roughly how long, not to build logic on.
-    /// </remarks>
     public TimeSpan Estimate => TimeSpan.FromSeconds(75 + (95 * Passes));
 
     /// <summary>
-    /// What to ask the separator for, given what the user asked for.
+    /// Two recipes asking for the same files in the same order are the same recipe, where a record
+    /// would compare <see cref="Presets"/> by reference.
     /// </summary>
-    /// <remarks>
-    /// The warp guide is not part of the plan and is always requested: it is not a sample, it is
-    /// deleted after warping, and no workflow yet exists that does not want one (ADR 0018).
-    /// </remarks>
-    public static SeparationRecipe From(StemPlan plan) =>
-        new()
+    public bool Equals(SeparationRecipe? other) =>
+        other is not null
+        && ExtractDrums == other.ExtractDrums
+        && KeepSource == other.KeepSource
+        && Format == other.Format
+        && Presets.SequenceEqual(other.Presets, StringComparer.Ordinal)
+        && AddedGuides.SequenceEqual(other.AddedGuides);
+
+    public override int GetHashCode() =>
+        HashCode.Combine(ExtractDrums, KeepSource, Format, Presets.Count, AddedGuides.Count);
+
+    /// <summary>
+    /// What to ask the separator for, given what the user asked for (ADR 0018).
+    /// </summary>
+    public static SeparationRecipe From(StemPlan plan) => For(plan, StemInventory.Empty);
+
+    /// <summary>
+    /// What to ask the separator for, given what the user asked for and what is already made.
+    /// </summary>
+    public static SeparationRecipe For(StemPlan plan, StemInventory inventory)
+    {
+        var shortfall = inventory.Shortfall(plan);
+
+        return new SeparationRecipe
         {
-            Presets = plan.Presets,
-            ExtractDrums = true,
-            KeepSource = plan.KeepSource,
+            Presets = shortfall.Presets,
+            // A guide is for warping new samples by eye, so new presets get one. A re-downloaded
+            // source does not: it is the same audio as the stems already warped, whose markers
+            // ADR 0020 copies verbatim. With no sample on disk to copy from it is the guide or
+            // nothing, which is what an instrumental release needs (#30), staged or not (#55).
+            ExtractDrums =
+                !inventory.HasOwnWarpGuide(plan)
+                && (
+                    shortfall.Presets.Count > 0
+                    || (shortfall.KeepSource && inventory is { Presets.Count: 0, HasSource: false })
+                    || (
+                        plan is { Presets.Count: 0, KeepSource: true }
+                        && inventory is { Presets.Count: 0, IsFinished: false }
+                    )
+                    // Only added sources are kept and nothing of the track's own is on disk to warp on: the guide is what the mix's markers are placed on (ADR 0111, rule 24).
+                    || (
+                        plan is { Presets.Count: 0, KeepSource: false, AddedSources.Count: > 0 }
+                        && inventory is { Presets.Count: 0, HasSource: false, IsFinished: false }
+                    )
+                ),
+            KeepSource = shortfall.KeepSource,
+            AddedGuides = inventory.GuidesOwed(plan),
         };
+    }
 }

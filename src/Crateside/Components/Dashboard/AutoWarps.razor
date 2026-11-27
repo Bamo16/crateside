@@ -1,0 +1,108 @@
+@using Crateside.Core.Library
+
+<section id="p-auto-warp" class="auto-warp">
+    <h3>How the auto warps fared</h3>
+    <p class="lead">
+        The auto warp crateside writes from beatdetect's reading, set against the warp you finished in Live,
+        on the <span class="mono">@Counts.Compared</span> songs with a steady warp and a reading.
+        @if (Counts.NotCompared > 0)
+        {
+            <text>
+                <span class="mono">@Counts.NotCompared</span> more are left out: their warp is not steady, or
+                beatdetect has not read them.
+            </text>
+        }
+    </p>
+
+    <div class="rows">
+        @foreach (var bucket in Counts.Buckets)
+        {
+            <div class="row @(bucket.Fate is AutoWarpFate.Kept ? "kept" : null)">
+                <span class="what">
+                    <span class="title">@Title(bucket.Fate)</span>
+                    <span class="rule">@Rule(bucket.Fate)</span>
+                </span>
+                <span class="cell">
+                    <span class="bar" style="width: @Width(bucket.Songs.Count)"></span>
+                    <button class="count mono @(_open == bucket.Fate ? "open" : null)"
+                            @onclick="() => Toggle(bucket.Fate)" disabled="@(bucket.Songs.Count is 0)">
+                        @bucket.Songs.Count
+                    </button>
+                </span>
+            </div>
+
+            @if (_open == bucket.Fate)
+            {
+                <div class="songs">
+                    <ul>
+                        @foreach (var song in _all ? bucket.Songs : bucket.Songs.Take(SongsShown))
+                        {
+                            <li title="@song.Name">@song.Name</li>
+                        }
+                    </ul>
+                    @if (!_all && bucket.Songs.Count > SongsShown)
+                    {
+                        <p class="fold">
+                            @(bucket.Songs.Count - SongsShown) more ·
+                            <button class="link" @onclick="() => _all = true">show all</button>
+                        </p>
+                    }
+                </div>
+            }
+        }
+    </div>
+
+    <p class="foot">
+        Kept as written means right at the start of the clip. Only the
+        <span class="mono">@Counts.KeptWithMeter</span> kept songs that also carry a Meter tag are known to be
+        right throughout: that tag says you heard the track through and signed off its meter.
+    </p>
+
+    <p class="foot">
+        Judged from the first beat beatdetect reads and where your warp puts it, not from the sidecar crateside
+        wrote: that is replaced the moment Live saves.
+    </p>
+</section>
+
+@code {
+    private const int SongsShown = 8;
+
+    private AutoWarpFate? _open;
+    private bool _all;
+
+    [Parameter, EditorRequired]
+    public required AutoWarpCounts Counts { get; set; }
+
+    private int Largest => Counts.Buckets.Select(bucket => bucket.Songs.Count).DefaultIfEmpty().Max();
+
+    private void Toggle(AutoWarpFate fate)
+    {
+        _open = _open == fate ? null : fate;
+        _all = false;
+    }
+
+    private string Width(int count) =>
+        $"{(Largest is 0 ? 0 : count * 100.0 / Largest).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}%";
+
+    internal static string Title(AutoWarpFate fate) =>
+        fate switch
+        {
+            AutoWarpFate.Kept => "Kept as written",
+            AutoWarpFate.BeatMoved => "Marker moved",
+            AutoWarpFate.OtherOctave => "Tempo at half or double",
+            AutoWarpFate.BarCorrected => "Bar corrected",
+            AutoWarpFate.LeftAtBeatZero => "Left at beat 0",
+            _ => "No auto warp written",
+        };
+
+    internal static string Rule(AutoWarpFate fate) =>
+        fate switch
+        {
+            AutoWarpFate.Kept => "the marker is on a beat of your warp, in the right bar",
+            AutoWarpFate.BeatMoved => "your warp's beats are not where the marker went (beat wrong)",
+            AutoWarpFate.OtherOctave => "you retyped the tempo, half or double the auto warp's",
+            AutoWarpFate.BarCorrected => "the downbeat was trusted and was wrong (downbeat wrong)",
+            AutoWarpFate.LeftAtBeatZero => "the downbeat was not trusted (low confidence), and your bar differs",
+            _ => "beatdetect read no steady tempo to start from",
+        };
+}

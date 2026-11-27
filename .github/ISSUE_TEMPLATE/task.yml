@@ -1,0 +1,25 @@
+name: Task
+description: Maintenance, cleanup or groundwork that is neither a bug nor a feature
+labels: [needs-triage]
+body:
+  - type: textarea
+    id: wanted
+    attributes:
+      label: What is wanted
+      description: The work, and why it is needed.
+    validations:
+      required: true
+  - type: textarea
+    id: seen
+    attributes:
+      label: How it was seen or measured
+      description: What showed the work is needed (a warning, a duplicate, a slow path, a count).
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: What done looks like
+      description: The state of the repo when the task is finished.
+    validations:
+      required: true

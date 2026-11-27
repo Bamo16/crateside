@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif}a{color:#ece7dc;text-decoration:none}a:hover{color:#fff}button{cursor:pointer;font-family:inherit}</style>
+</helmet>
+
+<section style="padding:56px 56px 0;display:flex;flex-direction:column;gap:40px;width:1720px;box-sizing:border-box;background:#0c0b09">
+  <header style="display:flex;flex-direction:column;gap:8px;max-width:960px">
+    <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Brief 13 · turn 2</div>
+    <h1 style="margin:0;font:600 28px 'IBM Plex Sans',sans-serif">How much a drifting tempo drifts</h1>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">A drifting tempo now says how much it drifts, in two forms. <strong style="color:#ece7dc;font-weight:500">The range</strong>: whole numbers rounded outward, never hundredths. <strong style="color:#ece7dc;font-weight:500">The spread</strong>: that range as a percentage of the figure shown, so drifts at different tempos can be compared. Both appear in the note and the tooltip. The song page adds a tempo-over-time strip showing where in the track it drifts. Changes from turn 1 are only in the drifting state.</p>
+  </header>
+
+  <div id="2a" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">2a</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">The rule, and Tracks with the tooltip open</span></div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) 520px;gap:28px;align-items:start">
+      <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:visible">
+        <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 90px 80px 84px 150px;gap:14px;padding:10px 22px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);border-bottom:1px solid rgba(255,255,255,.08)"><span></span><span>Song</span><span>Key</span><span>Conf</span><span style="text-align:right">BPM</span><span>State</span></div>
+        <sc-for list="{{ driftRows }}" as="r" hint-placeholder-count="3">
+          <div style="position:relative;display:grid;grid-template-columns:24px minmax(0,1fr) 90px 80px 84px 150px;gap:14px;align-items:center;padding:0 22px;height:46px;border-bottom:1px solid rgba(255,255,255,.06);background:{{ r.bg }}">
+            <span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.35)">›</span>
+            <span style="display:flex;align-items:center;gap:10px;min-width:0"><span style="font:500 14px 'IBM Plex Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.song }}</span><span style="flex:none;display:inline-flex;font:500 11px 'IBM Plex Sans',sans-serif;padding:2px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.2);color:rgba(236,231,220,.75);white-space:nowrap">tempo drifts</span></span>
+            <span style="font:500 13px 'IBM Plex Mono',monospace">{{ r.key }}</span>
+            <span style="font:400 11.5px 'IBM Plex Mono',monospace;letter-spacing:.04em;color:rgba(236,231,220,.6)">{{ r.conf }}</span>
+            <span style="position:relative;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:400;color:{{ r.ink }}">{{ r.fig }}<span style="visibility:hidden">.00</span>
+              <sc-if value="{{ r.tipOpen }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;right:0;top:26px;z-index:3;white-space:nowrap;padding:6px 9px;background:#23211a;border:1px solid rgba(255,255,255,.14);border-radius:5px;box-shadow:0 6px 18px rgba(0,0,0,.45);font:400 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;text-align:left">{{ r.tip }}</span></sc-if>
+            </span>
+            <span style="display:inline-flex;width:fit-content;font:500 12px 'IBM Plex Sans',sans-serif;padding:3px 10px;border-radius:999px;background:{{ r.chipBg }};color:{{ r.chipFg }};border:1px solid {{ r.chipBd }}">{{ r.state }}</span>
+          </div>
+        </sc-for>
+        <div style="height:40px"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7)">
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Range.</b> Take the lowest and highest 30-second window of crateside's reading, round the lowest down and the highest up. So the range is never a single number, even for a slight drift: 127.6–128.4 reads <code>127–129</code>.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Spread.</b> <code>(highest − lowest) ÷ the figure shown</code>, using the raw window figures, rounded to a whole percent. Under 1% reads <code>&lt;1%</code>. A 3 BPM swing is 3% at 92 but under 2% at 170. The percentage reflects that, and a range or ±n doesn't.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Wording.</b> <code>drifts 91–94 · 3% · crateside's reading</code>. The same string is the song page note, the tooltip, and (without the source) the Tools card note. On Tracks the flag carries the spread too (<a href="#2c" style="text-decoration:underline">2c</a>).</p>
+        <p style="margin:0;color:rgba(236,231,220,.5);text-wrap:pretty">Rapper's Delight is open to show the tooltip. The window figures in 2a–2b are made up. For a warped track, the range and spread come from the warp's segments, not the reading. See the handoff for the open question about short segments.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="2b" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">2b</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Track details: the BPM cell with the tempo strip. Hover a tick for its window.</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start">
+      <sc-for list="{{ strips }}" as="s" hint-placeholder-count="2">
+        <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;justify-content:space-between;gap:12px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">BPM</span><span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4)">{{ s.song }}</span></div>
+          <span style="font:400 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">{{ s.fig }}</span>
+          <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ s.note }}</span>
+          <div style="display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;margin-top:4px">
+            <div style="display:flex;flex-direction:column;justify-content:space-between;height:44px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4);text-align:right"><span>{{ s.hi }}</span><span>{{ s.lo }}</span></div>
+            <div style="position:relative;height:44px;border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="position:absolute;left:0;right:0;top:{{ s.medTop }};border-top:1px dashed rgba(236,231,220,.35)"></div>
+              <div style="position:absolute;inset:0;display:flex;gap:2px">
+                <sc-for list="{{ s.ticks }}" as="t" hint-placeholder-count="14">
+                  <div title="{{ t.tip }}" style="position:relative;flex:1;height:100%" style-hover="background:rgba(255,255,255,.05)"><span style="position:absolute;left:15%;right:15%;top:{{ t.top }};height:3px;margin-top:-1.5px;border-radius:1.5px;background:rgba(236,231,220,.75)"></span></div>
+                </sc-for>
+              </div>
+            </div>
+            <span></span>
+            <div style="display:flex;justify-content:space-between;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)"><span>0:00</span><span>{{ s.len }}</span></div>
+          </div>
+        </div>
+      </sc-for>
+      <div style="display:flex;flex-direction:column;gap:12px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7)">
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">One tick per 30-second window</b> of crateside's reading, positioned by its tempo. A dashed line marks the figure shown. Range labels on the left (the rounded range), time along the bottom. All monochrome: the strip shows a fact about the music, not a state.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Hover a tick</b> for <code>2:30–3:00 · ~112</code>: the window's tempo, whole and approximate, like every drifting figure.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Only for drifting tempos.</b> Steady tracks would show a flat line, which tells you nothing. Mostly steady and changing tracks are left out too: those states are rare and you care least about them (brief 13). They can be added later if the strip proves useful.</p>
+        <p style="margin:0;text-wrap:pretty">Height 44px, full width of the cell, under the note. With no reading (keytag only), the strip isn't drawn.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="2c" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">2c</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Kept: the spread in the Tracks flag, so drifts can be compared without hovering</span></div>
+    <div style="display:flex;gap:28px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:10px;padding:16px 20px;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px">
+        <sc-for list="{{ driftRows }}" as="r" hint-placeholder-count="3">
+          <span style="display:flex;align-items:center;gap:10px"><span style="font:500 14px 'IBM Plex Sans',sans-serif;width:300px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.song }}</span><span style="display:inline-flex;gap:6px;font:500 11px 'IBM Plex Sans',sans-serif;padding:2px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.2);color:rgba(236,231,220,.75);white-space:nowrap">drifts <span style="font-family:'IBM Plex Mono',monospace">{{ r.pct }}</span></span></span>
+        </sc-for>
+      </div>
+      <p style="margin:0;max-width:640px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">The flag would read <i>drifts 3%</i> instead of <i>tempo drifts</i>, at the same width. When you're scanning Tracks to decide what to warp next, you can see which drifting tracks are the hard ones without opening each. The spread is a whole percent, never tenths: it's measured from 30-second windows or warp segments, so tenths would claim a precision the measurement doesn't have. Under 1% reads <i>drifts &lt;1%</i>. Kept (user, 2026-10-02).</p>
+    </div>
+  </div>
+</section>
+
+<section style="padding:56px;display:flex;flex-direction:column;gap:56px;width:1720px;box-sizing:border-box;min-height:100vh;background:#0c0b09">
+  <header style="display:flex;flex-direction:column;gap:8px;max-width:960px">
+    <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Brief 13 · issue #92 · ADR 0049 · built against 58a2dae</div>
+    <h1 style="margin:0;font:600 28px 'IBM Plex Sans',sans-serif">How a BPM reads, everywhere one appears</h1>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">Two marks, used the same way everywhere. <strong style="color:#ece7dc;font-weight:500">A bare figure in full weight</strong> is a tempo crateside can vouch for: <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:#ece7dc">128</span> means 128.00. <strong style="color:#ece7dc;font-weight:500">A tilde and a light weight</strong> mean approximate: <span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">~123</span>. It is always a whole number, so a tilde never appears next to hundredths. Everything else about a tempo (where it came from, whether it drifts or changes) is said in words: in the note on the song page, in a tooltip, and as a flag beside a title on Tracks. No new tokens or colors.</p>
+    <p style="margin:0;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Song names and BPM figures come from the brief and ADR 0049. Keys, genres and the Dashboard counts are made up for illustration.</p>
+  </header>
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1a</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">The states: one formatter, seven outputs</span></div>
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:200px 110px 140px 330px 300px 1fr;gap:20px;padding:12px 22px;border-bottom:1px solid rgba(255,255,255,.08);font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span>State</span><span style="text-align:right">Figure</span><span>Flag on Tracks</span><span>Note · also the tooltip</span><span>Example</span><span>Rule</span></div>
+      <sc-for list="{{ states }}" as="s" hint-placeholder-count="7">
+        <div style="display:grid;grid-template-columns:200px 110px 140px 330px 300px 1fr;gap:20px;align-items:baseline;padding:14px 22px;border-bottom:1px solid rgba(255,255,255,.06)">
+          <span style="font:500 14px 'IBM Plex Sans',sans-serif">{{ s.name }}</span>
+          <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:{{ s.w }};color:{{ s.ink }}">{{ s.fig }}<span style="visibility:hidden">{{ s.pad }}</span></span>
+          <span><sc-if value="{{ s.flag }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;font:500 11px 'IBM Plex Sans',sans-serif;padding:2px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.2);color:rgba(236,231,220,.75);white-space:nowrap">{{ s.flag }}</span></sc-if></span>
+          <span style="font:400 13px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">{{ s.note }}</span>
+          <span style="font:400 13px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ s.eg }}</span>
+          <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);text-wrap:pretty">{{ s.rule }}</span>
+        </div>
+      </sc-for>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px;padding:18px 22px 20px;font:400 12.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7)">
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Two marks for approximate, never one.</b> A tilde and a weight of 400, where a vouched figure is 600. Either one alone tells the two apart, so an amber row (where the color already carries a meaning) or a copied screenshot still reads correctly.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Where it came from</b> uses three phrases everywhere: <i>from your warp</i>, <i>crateside's reading</i>, <i>keytag's estimate</i>. keytag's figure is also drawn at <code style="font-size:12px">--text-50</code>, because it's the weakest source and only shows up before a reading exists.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Shape is said in words</b>, so the figure keeps its two meanings and nothing more. A drifting tempo is approximate, so it gets the tilde. A mostly-steady or changing tempo shows its main tempo as vouched, because that part is.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Summaries aren't tempos.</b> Bins, peaks and ranges summarize many tracks, so they are whole numbers with no mark. They still go through the same formatter (<code style="font-size:12px">Range</code>, <code style="font-size:12px">Bin</code>) so the no-hand-formatting test still covers them.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="1b" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1b</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Tracks: the BPM column, aligned on the decimal point</span></div>
+    <div style="display:flex;gap:28px;align-items:flex-start">
+      <div style="width:1180px;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 90px 80px 84px 150px 150px;gap:14px;padding:10px 22px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);border-bottom:1px solid rgba(255,255,255,.08)"><span></span><span>Song</span><span>Key</span><span>Conf</span><span style="text-align:right">BPM</span><span>Genre</span><span>State</span></div>
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+          <div title="{{ r.tip }}" style="display:grid;grid-template-columns:24px minmax(0,1fr) 90px 80px 84px 150px 150px;gap:14px;align-items:center;padding:0 22px;height:46px;border-bottom:1px solid rgba(255,255,255,.06);background:{{ r.bg }}">
+            <span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.35)">›</span>
+            <span style="display:flex;align-items:center;gap:10px;min-width:0"><span style="font:500 14px 'IBM Plex Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:{{ r.nameStyle }}">{{ r.song }}</span><sc-if value="{{ r.flag }}" hint-placeholder-val="{{ false }}"><span style="flex:none;display:inline-flex;font:500 11px 'IBM Plex Sans',sans-serif;padding:2px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.2);color:rgba(236,231,220,.75);white-space:nowrap">{{ r.flag }}</span></sc-if></span>
+            <span style="font:500 13px 'IBM Plex Mono',monospace">{{ r.key }}</span>
+            <span style="font:400 11.5px 'IBM Plex Mono',monospace;letter-spacing:.04em;color:rgba(236,231,220,.6)">{{ r.conf }}</span>
+            <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:{{ r.w }};color:{{ r.ink }}">{{ r.fig }}<span style="visibility:hidden">{{ r.pad }}</span></span>
+            <span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">{{ r.genre }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;width:fit-content;font:500 12px 'IBM Plex Sans',sans-serif;padding:3px 10px;border-radius:999px;background:{{ r.chipBg }};color:{{ r.chipFg }};border:1px solid {{ r.chipBd }}">{{ r.state }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:14px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7)">
+        <div style="padding:16px 18px;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:8px;display:flex;flex-direction:column;gap:2px;align-items:flex-end;font:600 22px/1.35 'IBM Plex Mono',monospace;width:150px;align-self:flex-start">
+          <span>128.02</span><span>85.52</span><span>128<span style="color:rgba(236,231,220,.18)">.00</span></span><span style="font-weight:400">~123<span style="color:rgba(236,231,220,.18)">.00</span></span><span>119.50</span>
+        </div>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Aligned on the decimal point.</b> A whole figure is padded on the right with an invisible <code>.00</code> (dim above to show it), so the whole-number digits always line up and the hundredths read as extra detail. A tilde sits in the gap to the left. The widest figure is 6 characters (<code>128.02</code>), so the column goes from 80px to 84px.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Ready-to-warp rows stay amber</b>, approximate figures included. Weight 400 and the tilde still mark them. keytag figures never show up on an amber row, since a track has a reading before it's staged.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Flags beside the title</b> use the existing <i>tempo drifts</i> neutral flag. It now shows on any drifting tempo, warped or not. The <i>Tempo drifts</i> filter still finds only tracks not warped yet. Two new flags in the same style: <i>part changes tempo</i>, <i>changes tempo</i>.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">The tooltip</b> on the BPM cell is the state's note from <a href="#1a" style="text-decoration:underline">1a</a>. Hover a row to read it.</p>
+        <p style="margin:0;color:rgba(236,231,220,.5);text-wrap:pretty">The two rows in italics aren't real songs. The brief gave no example for these states.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="1c" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1c</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Track details: the BPM cell of the verdict band, for each state</span></div>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px">
+      <sc-for list="{{ heads }}" as="h" hint-placeholder-count="8">
+        <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;justify-content:space-between;gap:12px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">BPM</span><span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4);font-style:{{ h.nameStyle }}">{{ h.song }}</span></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:52px;line-height:1;letter-spacing:-.03em;font-weight:{{ h.w }};color:{{ h.ink }}">{{ h.fig }}</span>
+          <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);text-wrap:pretty">{{ h.note }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <p style="margin:0;max-width:1100px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">The headline isn't aligned to anything, so it drops the invisible padding. Notes always put shape first, then where the figure came from, joined with <code>·</code>. The share in <i>steady for 91%</i> is the main tempo's share of the track's length. Leave it out when the warp doesn't give it. If the build knows which part changes (start or end), <i>the intro</i> or <i>the outro</i> can replace <i>one part</i>. The red <i>conflict</i> note stays as built: it shows only when a second source disagrees, and <a href="#1d" style="text-decoration:underline">1d</a> shows how.</p>
+  </div>
+
+  <div id="1d" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1d</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Evidence panel: the headline, then each source labeled underneath</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
+      <sc-for list="{{ evid }}" as="e" hint-placeholder-count="3">
+        <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px 22px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;justify-content:space-between"><span style="font:600 13px 'IBM Plex Sans',sans-serif">Tempo</span><span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4)">{{ e.song }}</span></div>
+          <div style="display:flex;align-items:baseline;gap:10px"><span style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:{{ e.w }}">{{ e.fig }}</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ e.from }}</span></div>
+          <div style="display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,.06)">
+            <sc-for list="{{ e.lines }}" as="l" hint-placeholder-count="2">
+              <div style="display:grid;grid-template-columns:150px 64px minmax(0,1fr);gap:12px;align-items:baseline;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+                <span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ l.label }}</span>
+                <span style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:{{ l.w }};color:{{ l.ink }}">{{ l.fig }}<span style="visibility:hidden">{{ l.pad }}</span></span>
+                <span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:{{ l.cmtInk }}">{{ l.cmt }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <p style="margin:0;max-width:1100px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">Each secondary figure has a label in Plex Sans in front of it and is set smaller and lighter than the headline: 13px, <code>--text-75</code>, weight 500 when vouched and 400 when approximate. The marks still apply, so keytag's figure is always <code>~</code>. A source that's also the headline says <i>shown above</i> and isn't repeated. The comment column replaces the old <i>beatdetect 63.5 · half or double</i> wording: no one-decimal figures, and the relation is put in words.</p>
+  </div>
+
+  <div id="1e" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1e</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Dashboard (Counts): summaries stay whole, single tracks use the marks</span></div>
+    <div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,.8fr);gap:14px;align-items:start">
+      <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px 22px;display:flex;flex-direction:column;gap:12px">
+        <span style="font:600 15px 'IBM Plex Sans',sans-serif">By tempo</span>
+        <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Each song's headline BPM: the warp where there is one. Bins and peaks are whole numbers.</span>
+        <div style="display:grid;grid-template-columns:90px minmax(0,1fr) 44px 140px;gap:12px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span>BPM</span><span></span><span style="text-align:right">Songs</span><span>Shared by 10+</span></div>
+        <sc-for list="{{ bins }}" as="b" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:90px minmax(0,1fr) 44px 140px;gap:12px;align-items:center;font:400 13px 'IBM Plex Mono',monospace">
+            <span>{{ b.bin }}</span>
+            <span style="height:10px;background:rgba(95,184,176,.35);border-radius:2px;width:{{ b.w }}"><span style="display:block;height:100%;background:#5fb8b0;border-radius:2px;width:{{ b.solid }}"></span></span>
+            <span style="text-align:right">{{ b.n }}</span>
+            <span style="color:rgba(236,231,220,.6)">{{ b.peaks }}</span>
+          </div>
+        </sc-for>
+        <span style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">A peak counts songs whose headline rounds to it. 128.02 counts as 128. Drifting songs are counted at their whole-number figure.</span>
+      </div>
+      <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px 22px;display:flex;flex-direction:column;gap:12px">
+        <span style="font:600 15px 'IBM Plex Sans',sans-serif">BPM detectors · Exact · beatdetect</span>
+        <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">The drill-down rows: single tracks, so each figure uses the marks.</span>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 72px 72px 48px;gap:12px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span>Song</span><span style="text-align:right">Your warp</span><span style="text-align:right">Read</span><span style="text-align:right">Ratio</span></div>
+        <sc-for list="{{ det }}" as="d" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 72px 72px 48px;gap:12px;align-items:baseline;font:400 13px 'IBM Plex Mono',monospace">
+            <span style="font-family:'IBM Plex Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.song }}</span>
+            <span style="text-align:right;font-weight:500">{{ d.warp }}<span style="visibility:hidden">{{ d.wpad }}</span></span>
+            <span style="text-align:right;font-weight:{{ d.rw }}">{{ d.read }}<span style="visibility:hidden">{{ d.rpad }}</span></span>
+            <span style="text-align:right;color:rgba(236,231,220,.6)">{{ d.ratio }}</span>
+          </div>
+        </sc-for>
+        <span style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Copy puts the same figures on the clipboard, with the tilde included (it's a report, not a value to paste into Ableton). The band rules (<i>within 0.5</i>…) stay as they are.</span>
+      </div>
+      <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px 22px;display:flex;flex-direction:column;gap:12px">
+        <span style="font:600 15px 'IBM Plex Sans',sans-serif">By artist</span>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 40px 80px;gap:12px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span>Artist</span><span style="text-align:right">Songs</span><span style="text-align:right">BPM</span></div>
+        <sc-for list="{{ artists }}" as="a" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 40px 80px;gap:12px;align-items:baseline;font:400 13px 'IBM Plex Mono',monospace"><span style="font-family:'IBM Plex Sans',sans-serif">{{ a.name }}</span><span style="text-align:right">{{ a.n }}</span><span style="text-align:right;color:rgba(236,231,220,.6)">{{ a.range }}</span></div>
+        </sc-for>
+        <span style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Ranges are whole: the lowest headline rounded down to the highest rounded up. One song shows one figure, using the marks.</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="1f" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1f</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Tools: Working on + Re-Pitch, vouched and drifting. Click a BPM to copy it.</span></div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px">
+      <sc-for list="{{ tools }}" as="t" hint-placeholder-count="2">
+        <div style="display:grid;grid-template-columns:300px minmax(0,1fr);gap:28px;align-items:start;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:22px">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <span style="font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)">Working on</span>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:14px 16px;background:#1b1a15;border:1px solid rgba(255,255,255,.12);border-radius:8px">
+              <span style="font:500 15px/1.35 'IBM Plex Sans',sans-serif">{{ t.song }}</span>
+              <div style="display:flex;gap:18px;font:400 13.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span>{{ t.key }} <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ t.cam }}</span></span><span><span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc;font-weight:{{ t.w }}">{{ t.fig }}</span> BPM · {{ t.cardNote }}</span></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="display:flex;flex-direction:column;gap:4px"><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Key</span><span style="padding:7px 10px;background:#23211a;border:1px solid rgba(255,255,255,.12);border-radius:6px;font:400 13.5px 'IBM Plex Mono',monospace">{{ t.key }}</span></div>
+              <div style="display:flex;flex-direction:column;gap:4px"><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">BPM</span><span style="display:flex;padding:7px 10px;background:#23211a;border:1px solid rgba(255,255,255,.12);border-radius:6px;font:400 13.5px 'IBM Plex Mono',monospace"><span style="color:rgba(236,231,220,.5)">{{ t.fieldMark }}</span>{{ t.field }}</span></div>
+            </div>
+            <span style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);text-wrap:pretty">{{ t.fieldNote }}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)">Re-Pitch</span>
+            <div style="display:grid;grid-template-columns:60px 90px 100px minmax(0,1fr);gap:14px;padding:0 10px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span>Shift</span><span>Key</span><span style="text-align:right">Arrangement</span><span></span></div>
+            <sc-for list="{{ t.shifts }}" as="r" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:60px 90px 100px minmax(0,1fr);gap:14px;align-items:center;padding:7px 10px;border-radius:6px;background:{{ r.bg }};font:400 13.5px 'IBM Plex Mono',monospace">
+                <span style="color:rgba(236,231,220,.6)">{{ r.shift }}</span>
+                <span>{{ r.key }}</span>
+                <span onClick="{{ r.copy }}" title="Copy {{ r.clip }}" style="text-align:right;cursor:copy;font-weight:{{ t.rowW }};border-bottom:1px dotted rgba(255,255,255,.25)" style-hover="color:#fff;border-bottom-color:rgba(255,255,255,.6)">{{ r.fig }}<span style="visibility:hidden">{{ r.pad }}</span></span>
+                <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ r.msg }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <p style="margin:0;max-width:1200px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Re-Pitch uses the same formatter.</b> A shifted figure is calculated from a vouched tempo, so it's vouched too and shows two decimals, or none at 0 when the tempo is whole. <b style="color:#ece7dc;font-weight:500">The clipboard gets exactly the number on screen, minus any tilde</b>, because After Effects needs a plain number. A drifting track's rows are whole numbers with a tilde. Copying one says what was copied and that it's approximate. The BPM field holds the whole number, with the tilde drawn as a fixed prefix outside the text you can edit. Typing in the field drops the track (as built), and the tilde goes with it. A typed figure counts as vouched. Mostly-steady and changing tracks work from their main tempo as vouched, and the card says <i>part changes tempo</i> / <i>changes tempo</i>. Tools only picks warped songs, so approximate and keytag figures don't show up here.</p>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { copied: null };
+  renderVals() {
+    const T = '#ece7dc', T50 = 'rgba(236,231,220,.5)', AMB = '#e8b45a';
+    const pad = f => /\./.test(f) ? '' : '.00';
+    const states = [
+      { name: 'Vouched, whole', fig: '128', w: 600, ink: T, flag: '', note: 'from your warp', eg: 'Flo Rida – Low (warped at 128.002) · 1991 – If Only, 174 (crateside\'s reading, steady to the hundredth)', rule: 'Any warp, or a reading whose windows agree within 0.02%. .00 dropped.' },
+      { name: 'Vouched, hundredths', fig: '128.02', w: 600, ink: T, flag: '', note: 'from your warp', eg: 'Paul Oakenfold – Ready Steady Go · Eminem – My Name Is 85.52 · Mr Oizo – Jo 119.50', rule: 'Always two decimals: 119.50, never 119.5.' },
+      { name: 'Approximate', fig: '~123', w: 400, ink: T, flag: '', note: 'crateside\'s reading · steady, but not to the hundredth', eg: 'Smash Mouth – Walkin On The Sun (read 123.03, not warped)', rule: 'A reading whose windows agree less tightly. Whole number, tilde, weight 400.' },
+      { name: 'Drifting', fig: '~111', w: 400, ink: T, flag: 'tempo drifts', note: 'drifts 110–112 · 2% · from your warp', eg: 'The Sugarhill Gang – Rapper\'s Delight · Cypress Hill – Hits from the Bong (91–94)', rule: 'Warp shape Drifting, or a reading that drifts. Figure is the median. Range on the song page only.' },
+      { name: 'Mostly steady', fig: '124', w: 600, ink: T, flag: 'part changes tempo', note: 'steady for 91% · one part changes tempo · from your warp', eg: 'a track with a free-time intro', rule: 'Main tempo, formatted as vouched.' },
+      { name: 'Changes tempo', fig: '180', w: 600, ink: T, flag: 'changes tempo', note: 'changes tempo · 24 bars at 132 · from your warp', eg: 'ReeK – Deity Mode', rule: 'Main tempo, formatted as vouched. The second tempo appears only in the note.' },
+      { name: 'keytag\'s estimate', fig: '~128', w: 400, ink: T50, flag: '', note: 'keytag\'s estimate · not read yet', eg: 'a track still being judged', rule: 'Only while there is no warp and no reading. Always approximate, drawn at --text-50.' },
+    ].map(s => ({ ...s, pad: pad(s.fig) }));
+    const note = Object.fromEntries(states.map(s => [s.name, s.note]));
+    const chip = {
+      done: { chipBg: 'transparent', chipFg: '#7fcf9a', chipBd: 'rgba(127,207,154,.45)', state: 'done' },
+      ready: { chipBg: AMB, chipFg: '#0f0e0c', chipBd: AMB, state: 'ready to warp' },
+      judging: { chipBg: '#5fb8b0', chipFg: '#0f0e0c', chipBd: '#5fb8b0', state: '● judging' },
+    };
+    const R = (song, key, conf, fig, st, kind, genre, opts = {}) => {
+      const ready = st === 'ready', s = states.find(x => x.name === kind);
+      return { song, key, conf, fig, pad: pad(fig), genre, ...chip[st], flag: s.flag,
+        w: s.w, ink: kind === 'keytag\'s estimate' ? T50 : ready ? AMB : T,
+        bg: ready ? 'rgba(232,180,90,.05)' : 'transparent',
+        tip: opts.tip || s.note, nameStyle: opts.fake ? 'italic' : 'normal' };
+    };
+    const rows = [
+      R('Paul Oakenfold – Ready Steady Go', 'D min', 'HIGH', '128.02', 'done', 'Vouched, hundredths', 'Trance'),
+      R('Flo Rida – Low', 'C min', 'HIGH', '128', 'done', 'Vouched, whole', 'Hip hop'),
+      R('Eminem – My Name Is', 'D min', 'HIGH', '85.52', 'done', 'Vouched, hundredths', 'Hip hop'),
+      R('Mr Oizo – Jo', 'F min', 'MEDIUM', '119.50', 'done', 'Vouched, hundredths', 'Electro'),
+      R('1991 – If Only', 'F♯ min', 'HIGH', '174', 'ready', 'Vouched, whole', 'Drum and bass', { tip: 'crateside\'s reading · steady to the hundredth' }),
+      R('Smash Mouth – Walkin On The Sun', 'C min', 'HIGH', '~123', 'ready', 'Approximate', 'Rock'),
+      R('Cypress Hill – Hits from the Bong', 'A min', 'MEDIUM', '~92', 'ready', 'Drifting', 'Hip hop', { tip: 'drifts 91–94 · 3% · crateside\'s reading' }),
+      R('The Sugarhill Gang – Rapper\'s Delight', 'E maj', 'HIGH', '~111', 'done', 'Drifting', 'Hip hop'),
+      R('ReeK – Deity Mode', 'G min', 'HIGH', '180', 'done', 'Changes tempo', 'Drum and bass'),
+      R('Free-time intro example', 'A♭ maj', 'HIGH', '124', 'done', 'Mostly steady', 'House', { fake: true }),
+      R('Track being judged', '—', '—', '~128', 'judging', 'keytag\'s estimate', '—', { fake: true }),
+    ];
+    const H = (song, kind, fig, n, fake) => { const s = states.find(x => x.name === kind); return { song, fig, w: s.w, ink: kind === 'keytag\'s estimate' ? T50 : T, note: n || s.note, nameStyle: fake ? 'italic' : 'normal' }; };
+    const heads = [
+      H('Flo Rida – Low', 'Vouched, whole', '128'),
+      H('Mr Oizo – Jo', 'Vouched, hundredths', '119.50'),
+      H('1991 – If Only', 'Vouched, whole', '174', 'crateside\'s reading · steady to the hundredth'),
+      H('Smash Mouth – Walkin On The Sun', 'Approximate', '~123'),
+      H('The Sugarhill Gang – Rapper\'s Delight', 'Drifting', '~111'),
+      H('Free-time intro example', 'Mostly steady', '124', null, true),
+      H('ReeK – Deity Mode', 'Changes tempo', '180'),
+      H('Track being judged', 'keytag\'s estimate', '~128', null, true),
+    ];
+    const L = (label, fig, cmt, approx, warn) => ({ label, fig, pad: pad(fig), w: approx ? 400 : 500, ink: 'rgba(236,231,220,.75)', cmt, cmtInk: warn ? '#e0705f' : 'rgba(236,231,220,.5)' });
+    const evid = [
+      { song: 'Flo Rida – Low', fig: '128', w: 600, from: 'from your warp', lines: [
+        L('crateside\'s reading', '128', 'agrees'), L('keytag\'s estimate', '~128', 'agrees', true) ] },
+      { song: 'Smash Mouth – Walkin On The Sun', fig: '~123', w: 400, from: 'crateside\'s reading · steady, but not to the hundredth', lines: [
+        L('Your warp', '—', 'not warped yet'), L('keytag\'s estimate', '~104', 'conflict', true, true) ] },
+      { song: 'Cypress Hill – Hits from the Bong', fig: '~92', w: 400, from: 'drifts 91–94 · 3% · crateside\'s reading', lines: [
+        L('Your warp', '—', 'not warped yet'), L('keytag\'s estimate', '~61', 'two-thirds of it', true) ] },
+    ];
+    const bins = [
+      { bin: '84–87', n: 38, w: '30%', solid: '40%', peaks: '' },
+      { bin: '88–91', n: 46, w: '37%', solid: '45%', peaks: '90 ×12' },
+      { bin: '120–123', n: 71, w: '57%', solid: '50%', peaks: '122 ×14' },
+      { bin: '124–127', n: 92, w: '74%', solid: '62%', peaks: '125 ×18  126 ×16' },
+      { bin: '128–131', n: 124, w: '100%', solid: '70%', peaks: '128 ×61' },
+    ];
+    const det = [
+      { song: 'Paul Oakenfold – Ready Steady Go', warp: '128.02', wpad: '', read: '128.02', rpad: '', rw: 500, ratio: '1.00' },
+      { song: 'Flo Rida – Low', warp: '128', wpad: '.00', read: '128', rpad: '.00', rw: 500, ratio: '1.00' },
+      { song: 'Eminem – My Name Is', warp: '85.52', wpad: '', read: '85.52', rpad: '', rw: 500, ratio: '1.00' },
+      { song: 'The Sugarhill Gang – Rapper\'s Delight', warp: '~111', wpad: '.00', read: '~111', rpad: '.00', rw: 400, ratio: '1.00' },
+    ];
+    const artists = [
+      { name: 'Eminem', n: 9, range: '85–98' },
+      { name: 'Cypress Hill', n: 4, range: '88–100' },
+      { name: 'Flo Rida', n: 3, range: '99–128' },
+      { name: 'Mr Oizo', n: 1, range: '119.50' },
+    ];
+    const copied = this.state.copied;
+    const mk = (id, base, drift) => {
+      const keys = drift ? ['D maj', 'E♭ maj', 'E maj', 'F maj', 'F♯ maj'] : ['E♭ min', 'E min', 'F min', 'F♯ min', 'G min'];
+      return [-2, -1, 0, 1, 2].map((s, i) => {
+        const v = base * Math.pow(2, s / 12);
+        let fig = drift ? '~' + Math.round(v) : v.toFixed(2).replace(/\.00$/, '');
+        const clip = fig.replace('~', ''), k = id + s;
+        return { shift: s > 0 ? '+' + s : s === 0 ? '0' : '−' + -s, key: keys[i], fig, pad: pad(fig), clip,
+          bg: s === 0 ? 'rgba(255,255,255,.08)' : 'transparent',
+          msg: copied === k ? (drift ? `Copied ${clip}. The tempo drifts, so it's approximate.` : `Copied ${clip}`) : '',
+          copy: () => this.setState({ copied: k }) };
+      });
+    };
+    const tools = [
+      { song: 'Mr Oizo – Jo', key: 'F min', cam: '4A', fig: '119.50', w: 600, cardNote: 'from your warp', fieldMark: '', field: '119.50', fieldNote: 'Filled from the warp, as shown everywhere else.', rowW: 500, shifts: mk('jo', 119.5, false) },
+      { song: 'The Sugarhill Gang – Rapper\'s Delight', key: 'E maj', cam: '12B', fig: '~111', w: 400, cardNote: 'drifts 110–112 · 2%', fieldMark: '~', field: '111', fieldNote: 'The tempo drifts, so every figure here is approximate. Typing in the field drops the track.', rowW: 400, shifts: mk('rd', 111, true) },
+    ];
+    const driftRows = [
+      { song: 'The Sugarhill Gang – Rapper\'s Delight', key: 'E maj', conf: 'HIGH', fig: '~111', ink: T, bg: 'transparent', ...chip.done, tip: 'drifts 110–112 · 2% · from your warp', tipOpen: true, pct: '2%' },
+      { song: 'Cypress Hill – Hits from the Bong', key: 'A min', conf: 'MEDIUM', fig: '~92', ink: AMB, bg: 'rgba(232,180,90,.05)', ...chip.ready, tip: 'drifts 91–94 · 3% · crateside\'s reading', tipOpen: false, pct: '3%' },
+    ];
+    const strip = (song, fig, note, w, lo, hi, med, secs) => {
+      const fmt = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+      const y = v => `${((hi - v) / (hi - lo) * 100).toFixed(1)}%`;
+      return { song, fig, note, lo, hi, medTop: y(med), len: fmt(w.length * 30),
+        ticks: w.map((v, i) => ({ top: y(v), tip: `${fmt(i * 30)}–${fmt(i * 30 + 30)} · ~${Math.round(v)}` })) };
+    };
+    const strips = [
+      strip('The Sugarhill Gang – Rapper\'s Delight', '~111', 'drifts 110–112 · 2% · from your warp',
+        [110.1, 110.6, 110.9, 111.0, 110.8, 111.2, 111.4, 111.1, 111.5, 111.7, 111.3, 111.8, 112.0, 111.6], 110, 112, 111.1),
+      strip('Cypress Hill – Hits from the Bong', '~92', 'drifts 91–94 · 3% · crateside\'s reading',
+        [91.3, 91.6, 92.4, 93.8, 93.5, 92.2, 91.8, 92.0, 91.4], 91, 94, 92.1),
+    ];
+    return { states, rows, heads, evid, bins, det, artists, tools, driftRows, strips };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+using Crateside.Core.Beats;
+using Crateside.Core.Tempo;
+
+namespace Crateside.Core.Warps;
+
+/// <summary>What an auto warp takes from the reference stem's reading: its tempo, a beat, and the downbeat when the filter is sure of it (#134, ADR 0054).</summary>
+/// <param name="BeatSeconds">A beat in the file, which picks the 16th the marker goes on; null from a build without it.</param>
+/// <param name="DownbeatSeconds">A downbeat in the file, or null when which beat starts a bar is a guess.</param>
+public sealed record AutoWarpGrid(double Bpm, double? BeatSeconds, double? DownbeatSeconds)
+{
+    /// <summary>The downbeat confidence from which the filter's downbeat is trusted.</summary>
+    public const double DownbeatSureAt = 0.6;
+
+    public const int BeatsPerBar = 4;
+
+    /// <summary>The filter's downbeat as read, sure or not, so an auto warp can say why its marker got its beat (#176).</summary>
+    public ReadDownbeat? Read { get; init; }
+
+    /// <summary>Null when the reading gives no auto warp tempo (<see cref="TrackTempo.AutoWarpBpm"/>).</summary>
+    public static AutoWarpGrid? Of(BeatReading? reading) =>
+        TrackTempo.AutoWarpBpm(reading) is { } bpm
+            ? new(
+                bpm,
+                reading?.BeatOffsetMs / 1000,
+                reading
+                    is {
+                        DownbeatConfidence: >= DownbeatSureAt,
+                        DownbeatOffsetMs: { } downbeat,
+                        BeatsPerBar: BeatsPerBar,
+                    }
+                    ? downbeat / 1000
+                    : null
+            )
+            {
+                Read = reading is { DownbeatOffsetMs: { } offset }
+                    ? new(offset / 1000, reading.DownbeatConfidence, reading.BeatsPerBar)
+                    : null,
+            }
+            : null;
+
+    /// <summary>Why a reading gives no auto warp tempo, in a line for a clip with Warp off to carry.</summary>
+    public static string WhyNone(BeatReading? reading) =>
+        reading switch
+        {
+            null => "no tempo reading yet",
+            { Bpm: not > 0 } => "beatdetect read no tempo",
+            { Drifts: true, Drift: var drift } => string.Create(
+                System.Globalization.CultureInfo.InvariantCulture,
+                $"the tempo drifts: its 30 s windows spread {drift:0.00}% against a limit of {BeatReading.DriftsAt}%"
+            ),
+            _ => "no tempo reading yet",
+        };
+
+    /// <summary>The beat a marker falls on within its bar of four, counting from a downbeat: 0 to 3.</summary>
+    public static double BeatInBar(double markerSeconds, double downbeatSeconds, double bpm) =>
+        (Math.Round((markerSeconds - downbeatSeconds) / (60 / bpm)) % BeatsPerBar + BeatsPerBar)
+        % BeatsPerBar;
+}
+
+/// <summary>A downbeat as the filter read it, in seconds into the file.</summary>
+public sealed record ReadDownbeat(double Seconds, double? Confidence, int? BeatsPerBar);

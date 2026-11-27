@@ -1,0 +1,64 @@
+@using System.Globalization
+@using Crateside.Core.SourceOffsets
+@inject SourceOffsetStore Store
+@inject SourceOffsetPass Pass
+
+@if (Pass.IsMeasuring(SourceKey))
+{
+    <p class="offset waiting">Measuring against the mix…</p>
+}
+else if (Store.Of(SourceKey) is { Reading: var reading } record && record.IsUsableAt(Path))
+{
+    <details class="offset @Tone(reading)">
+        <summary>@OffsetWording.Line(reading)</summary>
+        <div class="strip" role="img" aria-label="@($"The added file's {reading.Windows.Count} windows, in order")">
+            @foreach (var window in reading.Windows)
+            {
+                <span class="cell @window.State.ToString().ToLowerInvariant()" title="@Tip(reading, window)"></span>
+            }
+        </div>
+        <p class="legend">
+            <span class="key voting"></span>on the offset
+            <span class="key elsewhere"></span>matches elsewhere in the mix
+            <span class="key unmatched"></span>not in the mix
+        </p>
+    </details>
+}
+else
+{
+    <p class="offset waiting">@(Store.Of(SourceKey) is null ? "Waits to be measured against the mix." : "A file changed since it was measured; it is measured again shortly.")</p>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required string SourceKey { get; set; }
+
+    /// <summary>Where the added source's file is now, so a moved file keeps its measurement.</summary>
+    [Parameter, EditorRequired]
+    public required string Path { get; set; }
+
+    private static string Tone(OffsetReading reading) =>
+        reading.Verdict is OffsetVerdict.Aligned ? "aligned" : "refused";
+
+    private static string Tip(OffsetReading reading, OffsetWindow window) =>
+        string.Join(
+            "\n",
+            [
+                window.State is WindowState.Silent
+                    ? $"{Seconds(window.Start)} · silent"
+                    : $"{Seconds(window.Start)} · offset {window.Offset.ToString(CultureInfo.InvariantCulture)} samples · PSR {window.Psr.ToString("0.0", CultureInfo.InvariantCulture)} · {Say(window.State)}",
+                .. OffsetWording.WindowNotes(reading, window),
+            ]
+        );
+
+    private static string Seconds(double start) => $"{start.ToString("0.#", CultureInfo.InvariantCulture)} s";
+
+    private static string Say(WindowState state) =>
+        state switch
+        {
+            WindowState.Voting => "on the offset",
+            WindowState.Elsewhere => "matches the mix elsewhere",
+            WindowState.Unmatched => "not in the mix",
+            _ => "silent",
+        };
+}

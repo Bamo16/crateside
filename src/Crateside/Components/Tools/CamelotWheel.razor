@@ -1,0 +1,76 @@
+@using System.Globalization
+@using Crateside.Core.Pairing
+
+<svg class="wheel" width="320" height="320" viewBox="0 0 320 320" role="img" aria-label="Camelot wheel">
+    @foreach (var segment in Segments)
+    {
+        <path d="@segment.Path" class="@segment.Class" />
+        <!text x="@F(segment.X)" y="@F(segment.Y - 3)" class="code @segment.Class">@segment.Key.CamelotCode</!text>
+        <!text x="@F(segment.X)" y="@F(segment.Y + 10)" class="name @segment.Class">@segment.Key.ShortName</!text>
+    }
+</svg>
+
+@code {
+    private const double Center = 160;
+    private const double Gap = 0.012;
+
+    private static readonly (Mode Mode, double Inner, double Outer)[] Rings =
+    [
+        (Mode.Major, 112, 156),
+        (Mode.Minor, 66, 110),
+    ];
+
+    [Parameter]
+    public MusicKey? Working { get; set; }
+
+    /// <summary>The key before a shift or the relative, ringed when it is not the one worked from.</summary>
+    [Parameter]
+    public MusicKey? Own { get; set; }
+
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<MashupPartner> Partners { get; set; }
+
+    private IEnumerable<Segment> Segments =>
+        Rings.SelectMany(ring =>
+            MusicKey.AllKeys.Where(key => key.Mode == ring.Mode).Select(key => Draw(key, ring.Inner, ring.Outer))
+        );
+
+    private Segment Draw(MusicKey key, double inner, double outer)
+    {
+        var slot = int.Parse(key.CamelotCode[..^1], CultureInfo.InvariantCulture) % 12;
+        var (from, to) = ((slot - 0.5) * Math.PI / 6 + Gap, (slot + 0.5) * Math.PI / 6 - Gap);
+        var (x0, y0) = Point(outer, from);
+        var (x1, y1) = Point(outer, to);
+        var (x2, y2) = Point(inner, to);
+        var (x3, y3) = Point(inner, from);
+        var (tx, ty) = Point((inner + outer) / 2, slot * Math.PI / 6);
+
+        return new Segment(
+            key,
+            $"M{F(x0)},{F(y0)} A{F(outer)},{F(outer)} 0 0 1 {F(x1)},{F(y1)} L{F(x2)},{F(y2)} A{F(inner)},{F(inner)} 0 0 0 {F(x3)},{F(y3)} Z",
+            tx,
+            ty,
+            ClassOf(key)
+        );
+    }
+
+    private string ClassOf(MusicKey key) =>
+        string.Join(
+            ' ',
+            new[]
+            {
+                key.Equals(Working) ? "working"
+                : Partners.Any(partner => partner.Shift is 0 && partner.Tag.Equals(key)) ? "near"
+                : Partners.Any(partner => partner.Tag.Equals(key)) ? "far"
+                : null,
+                Own is not null && !Own.Equals(Working) && key.Equals(Own) ? "own" : null,
+            }.OfType<string>()
+        );
+
+    private static (double X, double Y) Point(double radius, double angle) =>
+        (Center + radius * Math.Sin(angle), Center - radius * Math.Cos(angle));
+
+    private static string F(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private sealed record Segment(MusicKey Key, string Path, double X, double Y, string Class);
+}

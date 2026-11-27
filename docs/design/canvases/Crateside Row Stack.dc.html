@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 28px;align-items:start">
+  <div style="display:flex;flex-direction:column">
+    <div style="display:flex;gap:8px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06)">
+      <sc-if value="{{ hasFolder }}" hint-placeholder-val="{{ true }}"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Open folder</button></sc-if>
+      <button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Track details</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+      <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Next</span>
+      <sc-if value="{{ nextAmber }}" hint-placeholder-val="{{ true }}"><div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#e8b45a;text-wrap:pretty">{{ nextLine }}</div></sc-if>
+      <sc-if value="{{ nextPlain }}" hint-placeholder-val="{{ false }}"><div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:#ece7dc;text-wrap:pretty">{{ nextLine }}</div></sc-if>
+      <div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty">{{ nextDetail }}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;padding:14px 0">
+      <sc-if value="{{ tagsSettled }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5);width:88px">Genre</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Drum &amp; Bass</span></div><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Change</button></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5);width:88px">Familiarity</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Obscure</span></div><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Change</button></div>
+        <div style="padding-left:98px;font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">1991 <span style="font-family:'IBM Plex Mono',monospace">4,944</span> fans · song rank <span style="font-family:'IBM Plex Mono',monospace">317,277</span></div>
+      </sc-if>
+      <sc-if value="{{ tagsUnknown }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:baseline;gap:10px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5);width:88px">Genre</span><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">not looked up yet</span></div>
+        <div style="display:flex;align-items:baseline;gap:10px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5);width:88px">Familiarity</span><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">not looked up yet</span></div>
+      </sc-if>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column">
+    <div style="display:flex;flex-direction:column;gap:4px;padding:0 0 18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Name</span><sc-if value="{{ canRename }}" hint-placeholder-val="{{ false }}"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Rename</button></sc-if></div>
+      <div style="font:500 13px 'IBM Plex Sans',sans-serif">{{ title }}</div>
+      <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);text-wrap:pretty">{{ nameStatus }}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14)">
+      <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Start over</span>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Source</span><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Swap source</button></div>
+        <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">cut from the playlist entry's own video</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Track</span><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Remove from playlist</button></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:680,&quot;height&quot;:420},&quot;hasFolder&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;nextAmber&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;nextLine&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;your turn — warp, then move to Mashup Samples&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;nextDetail&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Judged G# minor, medium confidence. Staged 2 days ago.&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;tagsUnknown&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;canRename&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;1991 - If Only&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;nameStatus&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;named from the file names · a sample is in the library, so rename it in Ableton&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    return {
+      hasFolder: p.hasFolder ?? true,
+      nextAmber: p.nextAmber ?? true,
+      nextPlain: !(p.nextAmber ?? true),
+      nextLine: p.nextLine ?? 'your turn — warp, then move to Mashup Samples',
+      nextDetail: p.nextDetail ?? 'Judged G# minor, medium confidence. Staged 2 days ago.',
+      tagsSettled: !(p.tagsUnknown ?? false),
+      tagsUnknown: p.tagsUnknown ?? false,
+      canRename: p.canRename ?? false,
+      title: p.title ?? '1991 - If Only',
+      nameStatus: p.nameStatus ?? 'named from the file names · a sample is in the library, so rename it in Ableton',
+    };
+  }
+}
+</script>
+</body>
+</html>

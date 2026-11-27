@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif}a{color:#ece7dc;text-decoration:none}a:hover{color:#fff}button{cursor:pointer;font-family:inherit}</style>
+</helmet>
+
+<section style="padding:56px 56px 72px;display:flex;flex-direction:column;gap:56px;width:1600px;box-sizing:border-box;background:#0c0b09">
+  <header style="display:flex;flex-direction:column;gap:10px;max-width:1000px">
+    <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Brief 16 · turn 1 · #96 · ADR 0050</div>
+    <h1 style="margin:0;font:600 28px 'IBM Plex Sans',sans-serif">A warp that sits off its tempo, and the button that fixes it</h1>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty"><strong style="color:#ece7dc;font-weight:500">Who owns the problem decides where it shows.</strong> <em>Drifts</em> is about the music, so it stays a flag beside the title. <em>Off its tempo</em> is about the warp's figure, so it moves next to the BPM as a small mark (a pennant, the shape the warp view already uses for markers), with the detail on hover. On Track details the song page says outright that <em>your warp</em> is typed at one figure and the audio holds another. The warp view gets an <strong style="color:#ece7dc;font-weight:500">Off the grid</strong> row under the tempo line: it plots how far the audio sits from the warp's grid over the track. A warp that is off its tempo draws as a straight slope, a drifting one wanders, and one that steps jumps. <strong style="color:#ece7dc;font-weight:500">True up</strong> sits in that row's gutter, beside the tempo, the way Live puts <span style="font-family:'IBM Plex Mono',monospace">/2 ×2</span> next to its BPM box. It acts on the track's warp, not on whichever stem is selected.</p>
+    <p style="margin:0;font:400 12.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Figures, offsets and dates are made up. Songs in italics aren't real. The 10 ms line between a filled and a hollow mark is a proposal for the build to check against real tracks.</p>
+  </header>
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:12px;scroll-margin-top:24px">
+    <div style="display:flex;align-items:baseline;gap:10px"><a href="#1a" style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1a</a><span style="font:500 14px 'IBM Plex Sans',sans-serif">Tracks: a mark in the BPM cell, and a filter that sorts by how far off</span></div>
+    <div style="display:grid;grid-template-columns:1000px minmax(0,1fr);gap:28px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+          <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 70px 84px 140px 150px;gap:14px;padding:10px 22px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);border-bottom:1px solid rgba(255,255,255,.08)"><span></span><span>Song</span><span>Key</span><span style="text-align:right">BPM</span><span>Genre</span><span>State</span></div>
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 70px 84px 140px 150px;gap:14px;align-items:center;padding:0 22px;height:46px;border-bottom:1px solid rgba(255,255,255,.06)">
+              <span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.35)">›</span>
+              <span style="display:flex;align-items:center;gap:10px;min-width:0"><span style="font:500 14px 'IBM Plex Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:{{ r.ital }}">{{ r.song }}</span><sc-if value="{{ r.flag }}" hint-placeholder-val="{{ false }}"><span style="flex:none;display:inline-flex;gap:5px;font:500 11px 'IBM Plex Sans',sans-serif;padding:2px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.2);color:rgba(236,231,220,.75);white-space:nowrap">{{ r.flag }}<span style="font-family:'IBM Plex Mono',monospace">{{ r.flagN }}</span></span></sc-if></span>
+              <span style="font:500 13px 'IBM Plex Mono',monospace">{{ r.key }}</span>
+              <span title="{{ r.tip }}" style="display:flex;justify-content:flex-end;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:{{ r.w }}"><span>{{ r.fig }}</span><span style="width:{{ r.padW }};display:flex;align-items:center;padding-left:4px;box-sizing:border-box"><sc-if value="{{ r.fill }}" hint-placeholder-val="{{ false }}"><svg width="7" height="9" viewBox="0 0 7 9" style="display:block"><path d="M.5 .5H6.5L4.6 4.5L6.5 8.5H.5Z" fill="rgba(236,231,220,.8)"></path></svg></sc-if><sc-if value="{{ r.ring }}" hint-placeholder-val="{{ false }}"><svg width="7" height="9" viewBox="0 0 7 9" style="display:block"><path d="M.5 .5H6.5L4.6 4.5L6.5 8.5H.5Z" fill="none" stroke="rgba(236,231,220,.6)"></path></svg></sc-if></span></span>
+              <span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">{{ r.genre }}</span>
+              <span style="display:inline-flex;width:fit-content;font:500 12px 'IBM Plex Sans',sans-serif;padding:3px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2);color:rgba(236,231,220,.8)">{{ r.state }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:8px;padding:14px 22px;border-bottom:1px solid rgba(255,255,255,.08)">
+            <span style="font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.14);color:rgba(236,231,220,.6)">All</span>
+            <span style="font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.14);color:rgba(236,231,220,.6)">Tags to answer</span>
+            <span style="font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.14);color:rgba(236,231,220,.6)">Tempo drifts</span>
+            <span style="display:inline-flex;gap:6px;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;background:#ece7dc;color:#0f0e0c">Off its tempo<span style="font-family:'IBM Plex Mono',monospace">3</span></span>
+            <span style="margin-left:auto;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">steady warps whose grid falls away from the audio · furthest first</span>
+          </div>
+          <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 70px 84px 130px 130px 150px;gap:14px;padding:10px 22px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);border-bottom:1px solid rgba(255,255,255,.08)"><span></span><span>Song</span><span>Key</span><span style="text-align:right">BPM</span><span>Runs</span><span style="text-align:right">By the end</span><span>State</span></div>
+          <sc-for list="{{ offRows }}" as="r" hint-placeholder-count="3">
+            <div title="{{ r.tip }}" style="display:grid;grid-template-columns:24px minmax(0,1fr) 70px 84px 130px 130px 150px;gap:14px;align-items:center;padding:0 22px;height:46px;border-bottom:1px solid rgba(255,255,255,.06)">
+              <span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.35)">›</span>
+              <span style="font:500 14px 'IBM Plex Sans',sans-serif;font-style:{{ r.ital }}">{{ r.song }}</span>
+              <span style="font:500 13px 'IBM Plex Mono',monospace">{{ r.key }}</span>
+              <span style="text-align:right;font:400 14px 'IBM Plex Mono',monospace">{{ r.fig }}<span style="visibility:hidden">.00</span></span>
+              <span style="font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">{{ r.runs }}</span>
+              <span style="text-align:right;font:500 13px 'IBM Plex Mono',monospace;color:{{ r.msInk }}">{{ r.ms }}</span>
+              <span style="display:inline-flex;width:fit-content;font:500 12px 'IBM Plex Sans',sans-serif;padding:3px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2);color:rgba(236,231,220,.8)">{{ r.state }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7)">
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">The mark sits in the invisible <code>.00</code>.</b> An approximate figure is always whole, so the BPM column already holds three empty characters to its right. The pennant goes there: no new width, the digits stay aligned, and it reads as part of the figure rather than the title. Hover the cell for the full note.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Two levels, not a number.</b> Filled: 10 ms or more by the end, worth truing up. Hollow: measurably off, but under 10 ms. That answers "how bad" at a glance. The exact amount lives in the tooltip and in the filter.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">An <i>Off its tempo</i> filter</b> beside <i>Tempo drifts</i> gives the amount its own columns and sorts by the drift. The later batch action belongs at this filter's head.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">No mark for <i>steps in its grid</i> or <i>grid not confirmed</i>.</b> The <code>~</code> already says approximate. The pennant means one thing crateside can fix for you, so it isn't spent on the others.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">The <i>off its tempo</i> chip beside the title goes</b>, along with its spacing bug. <i>drifts N%</i> stays where it is.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="1b" style="display:flex;flex-direction:column;gap:12px;scroll-margin-top:24px">
+    <div style="display:flex;align-items:baseline;gap:10px"><a href="#1b" style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1b</a><span style="font:500 14px 'IBM Plex Sans',sans-serif">Track details: the BPM cell says it's your warp that's in question</span></div>
+    <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;align-items:stretch">
+      <sc-for list="{{ heads }}" as="h" hint-placeholder-count="5">
+        <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;justify-content:space-between;gap:12px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">BPM</span><span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4)">{{ h.label }}</span></div>
+          <div style="display:flex;align-items:flex-start;gap:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:52px;line-height:1;letter-spacing:-.03em;font-weight:{{ h.w }}">{{ h.fig }}</span><sc-if value="{{ h.fill }}" hint-placeholder-val="{{ false }}"><svg width="11" height="14" viewBox="0 0 7 9" style="display:block;margin-top:6px"><path d="M.5 .5H6.5L4.6 4.5L6.5 8.5H.5Z" fill="rgba(236,231,220,.8)"></path></svg></sc-if><sc-if value="{{ h.ring }}" hint-placeholder-val="{{ false }}"><svg width="11" height="14" viewBox="0 0 7 9" style="display:block;margin-top:6px"><path d="M.5 .5H6.5L4.6 4.5L6.5 8.5H.5Z" fill="none" stroke="rgba(236,231,220,.6)" stroke-width=".8"></path></svg></sc-if></div>
+          <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ h.note }}</span>
+          <span style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty">{{ h.say }}</span>
+          <sc-if value="{{ h.link }}" hint-placeholder-val="{{ false }}"><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-decoration:underline;text-underline-offset:3px">{{ h.link }}</span></sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <p style="margin:0;max-width:1180px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">The note stays short (<i>off its tempo · from your warp</i>), and a sentence under it names both figures: <b style="color:#ece7dc;font-weight:500">what your warp is typed at, and what the audio holds.</b> That makes it clear the warp is being questioned, not crateside's reading. The full note with the amounts (<i>runs 0.017 slow · drifts 27 ms</i>) stays the tooltip everywhere else. A tight reading that disagrees with a warp that holds (<i>crateside reads 99.98</i>) keeps its bare figure, gets no mark and uses the same sentence shape: <i>Your warp is typed at 100. crateside reads 99.98.</i> No tempo strip for any of these, since the Off the grid row in <a href="#1c" style="text-decoration:underline">1c</a> draws the drift.</p>
+  </div>
+
+  <div id="1c" style="display:flex;flex-direction:column;gap:12px;scroll-margin-top:24px">
+    <div style="display:flex;align-items:baseline;gap:10px"><a href="#1c" style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1c</a><span style="font:500 14px 'IBM Plex Sans',sans-serif">Warp view: an Off the grid row, with True up in its gutter</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.55)">live: press True up, or pick a state</span></div>
+    <div style="display:flex;gap:6px">
+      <sc-for list="{{ stepPills }}" as="p" hint-placeholder-count="5">
+        <button onClick="{{ p.go }}" style="white-space:nowrap;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;border:1px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }}">{{ p.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display:grid;grid-template-columns:1100px minmax(0,1fr);gap:28px;align-items:start">
+      <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:24px 28px 26px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;min-height:30px">
+          <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Warp</span>
+          <span style="flex:none;white-space:nowrap;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">2 stems · one warp · 1 marker · Complex</span>
+          <span style="margin-left:auto;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;background:#ece7dc;color:#0f0e0c">Whole track</span>
+          <span style="font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.14);color:rgba(236,231,220,.6)">32 bars</span>
+          <span style="font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.14);color:rgba(236,231,220,.6)">8 bars</span>
+        </div>
+
+        <div style="display:grid;grid-template-columns:200px 832px;column-gap:12px">
+          <div style="height:30px;display:flex;align-items:flex-end;padding-bottom:4px;font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Bar</div>
+          <div style="position:relative;width:832px;height:30px"><svg width="832" height="30" style="display:block;position:absolute;left:0;top:0"><path d="{{ ruler }}" stroke="rgba(236,231,220,.35)"></path><path d="M0 18 L5 18 L0 24 Z" fill="#ece7dc"></path></svg><sc-for list="{{ barNums }}" as="b" hint-placeholder-count="7"><span style="position:absolute;left:{{ b.px }};top:2px;font:400 10.5px/12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.45)">{{ b.n }}</span></sc-for></div>
+
+          <div style="height:40px;display:flex;flex-direction:column;justify-content:center;gap:2px;border-top:1px solid rgba(255,255,255,.06)"><span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Tempo from the markers</span><span style="display:flex;gap:6px;align-items:baseline"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:{{ tw }}">{{ tFig }}</span><span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ tNote }}</span></span></div>
+          <svg width="832" height="40" style="display:block;border-top:1px solid rgba(255,255,255,.06)"><line x1="0" x2="832" y1="20" y2="20" stroke="rgba(236,231,220,.35)" stroke-dasharray="3 3"></line><line x1="0" x2="832" y1="20" y2="20" stroke="rgba(236,231,220,.75)" stroke-width="1.5"></line></svg>
+
+          <div style="padding:8px 0;display:flex;flex-direction:column;gap:3px;border-top:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px"><span style="font:500 13px 'IBM Plex Sans',sans-serif">Off the grid</span><sc-if value="{{ showBtn }}" hint-placeholder-val="{{ true }}"><button onClick="{{ ask }}" style="font:500 12px 'IBM Plex Sans',sans-serif;padding:3px 10px;border-radius:6px;background:#23211a;border:1px solid rgba(255,255,255,.22);color:#ece7dc">True up</button></sc-if></div>
+            <span style="font:500 13px 'IBM Plex Mono',monospace">{{ offFig }}</span>
+            <span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ offSub }}</span>
+          </div>
+          <svg width="832" height="72" style="display:block;border-top:1px solid rgba(255,255,255,.06)"><line x1="0" x2="832" y1="36" y2="36" stroke="rgba(236,231,220,.3)" stroke-dasharray="3 3"></line><path d="{{ offLine }}" stroke="rgba(236,231,220,.35)" fill="none"></path><path d="{{ offDots }}" fill="rgba(236,231,220,.85)"></path><text x="828" y="12" text-anchor="end" fill="rgba(236,231,220,.4)" style="font:400 10px 'IBM Plex Mono',monospace">audio early +30 ms</text><text x="828" y="68" text-anchor="end" fill="rgba(236,231,220,.4)" style="font:400 10px 'IBM Plex Mono',monospace">late −30 ms</text></svg>
+
+          <div></div>
+          <div style="padding:10px 0 14px">
+            <sc-if value="{{ isConfirm }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;background:#1b1a15;border:1px solid rgba(255,255,255,.12);border-radius:8px">
+                <span style="font:500 12.5px 'IBM Plex Sans',sans-serif;color:#e8b45a">True up the warp</span>
+                <span style="font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:#ece7dc;max-width:720px;text-wrap:pretty">Retype your warp from <span style="font-family:'IBM Plex Mono',monospace">125</span> to <span style="font-family:'IBM Plex Mono',monospace">125.017</span> and line its first beat up with the drums? The grid moves by up to 27 ms, most at the end. Vocal - Full borrows this warp and moves with it. Yours (1 marker, saved 29 Sep) is backed up first.</span>
+                <div style="display:flex;gap:8px"><button onClick="{{ doIt }}" style="white-space:nowrap;font:500 12px 'IBM Plex Sans',sans-serif;color:#e07a6d;background:rgba(224,122,109,.18);border:1px solid rgba(224,122,109,.45);border-radius:6px;padding:7px 12px">True up my warp</button><button onClick="{{ cancel }}" style="white-space:nowrap;font:500 12.5px 'IBM Plex Sans',sans-serif;padding:5px 12px;border-radius:6px;background:#23211a;border:1px solid rgba(255,255,255,.22);color:#ece7dc">Cancel</button></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isWriting }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;align-items:center;gap:8px;font:400 13px 'IBM Plex Sans',sans-serif;color:#6fc7d6"><span style="width:7px;height:7px;border-radius:50%;background:#6fc7d6"></span>Retyping the warp to 125.017… Yours is backed up.</span>
+            </sc-if>
+            <sc-if value="{{ statusText }}" hint-placeholder-val="{{ true }}">
+              <span style="display:block;max-width:760px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:{{ statusInk }};text-wrap:pretty">{{ statusText }}</span>
+            </sc-if>
+          </div>
+
+          <sc-for list="{{ lanes }}" as="l" hint-placeholder-count="2">
+            <div style="min-height:84px;padding:8px 10px;box-sizing:border-box;display:flex;flex-direction:column;gap:4px;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.06)"><span style="font:500 13px 'IBM Plex Sans',sans-serif;white-space:nowrap">{{ l.name }}</span><span style="width:fit-content;white-space:nowrap;font:500 11px 'IBM Plex Sans',sans-serif;padding:2px 8px;border-radius:999px;background:{{ l.chipBg }};color:{{ l.chipFg }};border:1px solid {{ l.chipBd }}">{{ l.chip }}</span><span style="font:400 11.5px/1.35 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ l.sub }}</span></div>
+            <svg width="832" height="84" style="display:block;height:100%;min-height:84px;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.06)"><path d="{{ l.wave }}" fill="rgba(236,231,220,.42)"></path><line x1="0.5" x2="0.5" y1="0" y2="76" stroke="rgba(236,231,220,.45)"></line><path d="M0 0.5H7L5 5L7 9.5H0Z" fill="#ece7dc"></path></svg>
+          </sc-for>
+
+          <div></div>
+          <div style="position:relative;width:832px;height:22px;border-top:1px solid rgba(255,255,255,.06)"><sc-for list="{{ times }}" as="t" hint-placeholder-count="7"><span style="position:absolute;left:{{ t.px }};top:4px;font:400 10.5px/13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">{{ t.s }}</span></sc-for></div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7)">
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">The row belongs to the track's warp</b>, like the tempo line above it, so True up sits in its gutter and not in a stem's detail. That settles the maintainer's point: selecting a different lane doesn't change what it acts on. The stem detail keeps its two controls.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">The drawing</b> is one dot per 10 s window: how far the audio's transients sit from the warp's grid lines there, against a dashed zero line, ±30 ms. A warp that is off its tempo draws a straight slope, so you can see the fix will be a retype.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">The status line spans the plot</b> under the row, in the side stack's status shape. The confirm opens in its place, with an amber label and a <code>.danger</code> button, and says what moves and by how much. Writing is teal. Done keeps the row, now flat, so you can see the fix worked.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Not offered</b>: no button, and the status line says why at <code>--text-40</code>, as the other two controls do.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">The row draws whenever the check ran</b>, that is, on any steady warp. A warp that holds draws flat with <i>holds</i>, and gets no button or status line. For a warp that changes tempo it isn't drawn.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="1d" style="display:flex;flex-direction:column;gap:12px;scroll-margin-top:24px">
+    <div style="display:flex;align-items:baseline;gap:10px"><a href="#1d" style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1d</a><span style="font:500 14px 'IBM Plex Sans',sans-serif">The shape says whose fault it is</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.55)">the Off the grid row for four steady warps</span></div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;max-width:1480px">
+      <sc-for list="{{ shapes }}" as="s" hint-placeholder-count="4">
+        <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:16px 20px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 13.5px 'IBM Plex Sans',sans-serif">{{ s.name }}</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.55)">{{ s.fig }}</span></div>
+          <svg width="680" height="72" style="display:block"><line x1="0" x2="680" y1="36" y2="36" stroke="rgba(236,231,220,.3)" stroke-dasharray="3 3"></line><path d="{{ s.line }}" stroke="rgba(236,231,220,.35)" fill="none"></path><path d="{{ s.dots }}" fill="rgba(236,231,220,.85)"></path></svg>
+          <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">{{ s.say }}</span>
+        </div>
+      </sc-for>
+    </div>
+    <p style="margin:0;max-width:1180px;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">This answers the brief's last two questions. <b style="color:#ece7dc;font-weight:500">The three unconfirmed notes get their marks in the drawing, not the text</b>: a slope, a jump, or no dots at all. <b style="color:#ece7dc;font-weight:500">Off its tempo and drifts look different because they are different shapes</b>, and each sits where its owner is (the BPM for the warp, the title for the music). The milliseconds are drawn here only, never on the stem lanes, which stay Live's clip view.</p>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { step: 'offered' };
+  W = 832;
+  rand(seed) { let s = seed; return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; }; }
+  plot(fn, w, n, seed) {
+    const r = this.rand(seed), pts = [];
+    for (let i = 0; i < n; i++) { const t = (i + .5) / n; pts.push([t * w, 36 - Math.max(-30, Math.min(30, fn(t) + (r() - .5) * 3)) * (30 / 30) * 1]); }
+    const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+    const dots = pts.map(p => `M${(p[0] - 2.2).toFixed(1)} ${p[1].toFixed(1)}a2.2 2.2 0 1 0 4.4 0a2.2 2.2 0 1 0 -4.4 0`).join('');
+    return { line, dots };
+  }
+  wave(seed) {
+    const r = this.rand(seed); let top = '', bot = [];
+    for (let x = 0; x <= this.W; x += 4) {
+      const env = x < 90 ? .35 : x > 760 ? .3 : .75; const a = (env * (.55 + r() * .45));
+      top += (x ? 'L' : 'M') + x + ' ' + (41 - a * 27).toFixed(1); bot.unshift('L' + x + ' ' + (41 + a * 27).toFixed(1));
+    }
+    return top + bot.join('') + 'Z';
+  }
+  renderVals() {
+    const st = this.state.step, set = s => () => this.setState({ step: s }), W = this.W;
+    const done = st === 'done';
+    if (!this._w) this._w = [this.wave(7), this.wave(19)];
+    const bars = 104, bx = b => b / bars * W;
+    let ruler = ''; for (let b = 0; b <= bars; b += 4) ruler += `M${bx(b).toFixed(1)} 30V${b % 16 ? 26 : 22}`;
+    const barNums = []; for (let b = 0; b < bars; b += 16) barNums.push({ px: (bx(b) + 3).toFixed(1) + 'px', n: b + 1 });
+    const times = []; for (let s = 0; s <= 180; s += 30) times.push({ px: (s / 200 * W + 2).toFixed(1) + 'px', s: Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') });
+    const off = this.plot(done ? () => 0 : t => 27 * t, W, 20, 3);
+    const statusMap = {
+      offered: ['Runs 0.017 slow, so its grid falls 27 ms behind by the end. Retypes it to 125.017 and lines it up with the drums. Yours is backed up first.', 'rgba(236,231,220,.75)'],
+      notoffered: ['Not offered: Vocal - Full has markers of its own past 2:10, and retyping the shared warp would pull the two apart.', 'rgba(236,231,220,.4)'],
+      done: ['Trued up just now: 125.017, within 1 ms to the end. Your previous warp (125, saved 29 Sep) is backed up.', '#ece7dc']
+    };
+    const pills = [['offered', 'Offered'], ['confirm', 'Confirm'], ['writing', 'Writing'], ['done', 'Done'], ['notoffered', 'Not offered']];
+    const shape = (fn, seed) => this.plot(fn, 680, 20, seed);
+    const a = shape(t => 27 * t, 3), b = shape(t => 18 * Math.sin(t * 7.5) + 6 * Math.sin(t * 19), 11), c = shape(t => t < .55 ? 0 : 19, 5), d = shape(() => 0, 9);
+    return {
+      rows: [
+        { song: 'Dragula', key: '6A', fig: '~125', w: 400, padW: '3ch', fill: true, ring: false, genre: 'Industrial metal', state: 'Ready', tip: 'off its tempo · runs 0.017 slow · drifts 27 ms · from your warp' },
+        { song: 'Hits from the Bong', key: '8A', fig: '~92', w: 400, padW: '3ch', flag: 'drifts', flagN: '<1%', genre: 'Hip hop', state: 'In Library', tip: 'drifts 91–93 · <1% · from your warp' },
+        { song: 'Song C', ital: 'italic', key: '11B', fig: '~98', w: 400, padW: '3ch', ring: true, fill: false, genre: 'Funk', state: 'In Library', tip: 'off its tempo · runs 0.002 fast · drifts 4 ms · from your warp' },
+        { song: "Rapper's Delight", key: '2A', fig: '~111', w: 400, padW: '3ch', flag: 'drifts', flagN: '2%', genre: 'Hip hop', state: 'In Library', tip: 'drifts 110–113 · 2% · from your warp' },
+        { song: 'Song F', ital: 'italic', key: '4B', fig: '~140', w: 400, padW: '3ch', genre: 'Drum and bass', state: 'In Library', tip: 'steps in its grid · from your warp' },
+        { song: 'Song G', ital: 'italic', key: '9A', fig: '128.02', w: 600, padW: '0', genre: 'House', state: 'In Library', tip: 'from your warp' }
+      ],
+      offRows: [
+        { song: 'Dragula', key: '6A', fig: '~125', runs: '0.017 slow', ms: '27 ms', msInk: '#ece7dc', state: 'Ready', tip: 'off its tempo · runs 0.017 slow · drifts 27 ms · from your warp' },
+        { song: 'Song E', ital: 'italic', key: '1A', fig: '~174', runs: '0.011 fast', ms: '19 ms', msInk: '#ece7dc', state: 'In Library', tip: 'off its tempo · runs 0.011 fast · drifts 19 ms · from your warp' },
+        { song: 'Song C', ital: 'italic', key: '11B', fig: '~98', runs: '0.002 fast', ms: '4 ms', msInk: 'rgba(236,231,220,.55)', state: 'In Library', tip: 'off its tempo · runs 0.002 fast · drifts 4 ms · from your warp' }
+      ],
+      heads: [
+        { label: 'off its tempo', fig: '~125', w: 400, fill: true, note: 'off its tempo · from your warp', say: 'Your warp is typed at 125. The audio holds 125.017, so its grid falls 27 ms behind by the end.', link: 'True up in Warp ↓' },
+        { label: 'off, under 10 ms', fig: '~98', w: 400, ring: true, note: 'off its tempo · from your warp', say: 'Your warp is typed at 98. The audio holds 98.002: 4 ms by the end, too little to hear.', link: 'True up in Warp ↓' },
+        { label: 'steps in its grid', fig: '~140', w: 400, note: 'steps in its grid · from your warp', say: 'Your warp holds one tempo, but the beat jumps partway through. That takes a marker in Live where it jumps, not a retype.' },
+        { label: 'grid not confirmed', fig: '~86', w: 400, note: 'grid not confirmed · from your warp', say: 'Too few transients to check your warp against. The figure is the one you typed; crateside can’t vouch for it.' },
+        { label: 'after True up', fig: '125.02', w: 600, note: 'from your warp', say: 'Holds to the audio within 1 ms. Trued up on 13 Oct; the earlier warp is backed up.' }
+      ],
+      stepPills: pills.map(([k, l]) => ({ label: l, go: set(k), bg: st === k ? '#ece7dc' : 'transparent', fg: st === k ? '#0f0e0c' : 'rgba(236,231,220,.6)', bd: st === k ? '#ece7dc' : 'rgba(255,255,255,.14)' })),
+      ruler, barNums, times,
+      tFig: done ? '125.02' : '~125', tw: done ? 500 : 400, tNote: done ? 'from your warp' : 'off its tempo',
+      showBtn: st === 'offered', ask: set('confirm'), cancel: set('offered'),
+      doIt: () => { this.setState({ step: 'writing' }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ step: 'done' }), 1600); },
+      offFig: done ? '1 ms by the end' : '27 ms by the end', offSub: done ? 'holds' : 'runs 0.017 slow · grid falls behind',
+      offLine: off.line, offDots: off.dots,
+      isConfirm: st === 'confirm', isWriting: st === 'writing',
+      statusText: statusMap[st] ? statusMap[st][0] : '', statusInk: statusMap[st] ? statusMap[st][1] : '',
+      lanes: [
+        { name: 'Instrumental - Clean', chip: st === 'writing' ? 'Writing' : 'Your warp', chipBg: st === 'writing' ? '#6fc7d6' : '#ece7dc', chipFg: '#0f0e0c', chipBd: st === 'writing' ? '#6fc7d6' : '#ece7dc', sub: done ? 'trued up just now · lent to Vocal - Full' : 'saved 29 Sep · lent to Vocal - Full', wave: this._w[0] },
+        { name: 'Vocal - Full', chip: 'Borrowed', chipBg: 'transparent', chipFg: 'rgba(236,231,220,.85)', chipBd: 'rgba(255,255,255,.3)', sub: done ? 'from Instrumental - Clean · follows the true-up' : 'from Instrumental - Clean · unchanged since 29 Sep', wave: this._w[1] }
+      ],
+      shapes: [
+        { name: 'Off its tempo', fig: 'the warp’s fault · ~125 + pennant', line: a.line, dots: a.dots, say: 'A straight slope: the warp is typed a little off and the error builds steadily. One retype fixes it, so this is the one that gets True up.' },
+        { name: 'Drifts', fig: 'the music’s · ~111 · drifts 2%', line: b.line, dots: b.dots, say: 'It wanders both ways: the band speeds up and slows down. No single figure fits, so no retype helps. The fix is a denser warp, made in Live.' },
+        { name: 'Steps in its grid', fig: '~140 · steps in its grid', line: c.line, dots: c.dots, say: 'Flat, a jump, then flat: a dropped or added beat partway through. The fix is a marker at the jump, made in Live. No True up.' },
+        { name: 'Holds', fig: '128.02 · from your warp', line: d.line, dots: d.dots, say: 'Flat within a few ms all the way. Vouched, no mark. Grid not confirmed draws no dots at all, just the dashed line and “too few transients”.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

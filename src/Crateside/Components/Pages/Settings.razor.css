@@ -1,39 +1,139 @@
 .body {
-    display: flex;
-    flex-direction: column;
-    gap: 34px;
-    max-width: 720px;
-    padding: 28px 22px;
+    max-width: 112rem;
+    padding: 28px 48px 48px;
+}
+
+/* Sections flow down one column, then the next, once the page is wide enough for two. */
+@media (min-width: 1200px) {
+    .body {
+        columns: 2;
+        column-gap: 64px;
+    }
 }
 
 section {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    break-inside: avoid;
+    margin-bottom: 36px;
 }
 
-h2 {
-    margin: 0;
-    font-size: 11px;
+h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: minmax(140px, 220px) minmax(0, 1fr);
+    column-gap: 24px;
+    row-gap: 3px;
+    align-items: start;
+}
+
+.row + .row {
+    margin-top: 18px;
+}
+
+.row.folder {
+    grid-template-columns: minmax(140px, 220px) minmax(0, 1fr) auto;
+    align-items: center;
+}
+
+/* The name and control share the first line; the gist runs under both across the row. */
+.name {
+    display: contents;
+    font-size: 14px;
     font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-50);
 }
 
-.detail {
-    margin: 0;
-    max-width: 60ch;
+.name > span:first-child {
+    grid-column: 1;
+    grid-row: 1;
+    padding-top: 7px;
+}
+
+.row.folder .name > span:first-child {
+    padding-top: 0;
+}
+
+.name > .gist {
+    grid-column: 1 / -1;
+    grid-row: 2;
+}
+
+.row > .path {
+    grid-row: 1;
+    grid-column: 2;
+}
+
+/* The control's first child shares line 1; the rest (status, inputs) stack under the gist. */
+.row > .control {
+    display: contents;
+}
+
+.control > * {
+    grid-column: 2;
+    min-width: 0;
+    justify-self: start;
+}
+
+.control > :first-child {
+    grid-row: 1;
+}
+
+/* A tall control (the access rows) goes under the gist as one stack, leaving line 1 to the name. */
+.row.stacked > .control {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    grid-column: 2;
+    grid-row: 3;
+}
+
+.row > .actions {
+    grid-row: 1;
+    grid-column: 3;
+}
+
+.gist,
+.status {
     font-size: 12.5px;
+    font-weight: 400;
     line-height: 1.5;
-    color: var(--text-75);
+    color: var(--text-60);
+}
+
+.collections {
+    display: grid;
+    grid-template-columns: max-content max-content minmax(0, 1fr);
+    align-items: center;
+    gap: 8px 20px;
+}
+
+.meaning {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+}
+
+.control > .field,
+.control > .access,
+.control > .line,
+.control > .confirm,
+.control > .left {
+    justify-self: stretch;
 }
 
 .field {
     display: flex;
     gap: 8px;
-    width: 100%;
 }
 
 input {
@@ -48,65 +148,134 @@ input {
     padding: 7px 10px;
 }
 
+.numbers {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.numbers label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.numbers input {
+    flex: none;
+    width: 8ch;
+}
+
 input:focus {
     outline: none;
     border-color: rgba(255, 255, 255, 0.4);
 }
 
-.outline,
-.primary,
-.danger {
-    flex: none;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 500;
-    border-radius: 6px;
-    padding: 7px 12px;
-    cursor: pointer;
+.pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
-.outline {
-    color: var(--text);
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+.pick {
+    position: relative;
 }
 
-.outline:hover:not(:disabled) {
-    border-color: rgba(255, 255, 255, 0.4);
+.pick .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.primary {
-    color: var(--ink);
-    background: var(--text);
-    border: 0;
+.pick-list {
+    position: absolute;
+    left: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    margin-top: 4px;
+    padding: 6px;
+    white-space: nowrap;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
 }
 
-/* Red only on the press that actually deletes, and only behind the confirm step. */
-.danger {
-    color: var(--red);
-    background: transparent;
-    border: 1px solid rgba(224, 122, 109, 0.45);
-}
-
-button:disabled {
-    color: var(--text-40);
+.pill:disabled {
     cursor: default;
+    opacity: 0.4;
 }
 
-.primary:disabled {
-    background: var(--text-30);
-    color: var(--ink);
+.value {
+    color: var(--text);
 }
 
-.actions {
+.access {
+    display: grid;
+    grid-template-columns: 80px minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.caps {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-40);
+}
+
+.state {
+    font-size: 13.5px;
+}
+
+.state strong {
+    font-weight: 500;
+}
+
+.state-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.setup summary {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
+    padding: 7px 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-75);
+    cursor: pointer;
+    list-style: none;
+}
+
+.setup summary::before {
+    content: "▸";
+    font-family: var(--font-mono);
+}
+
+.setup[open] summary::before {
+    content: "▾";
+}
+
+.setup .aside {
+    margin-left: auto;
+    font-weight: 400;
+    color: var(--text-50);
+}
+
+.setup pre {
+    margin-top: 6px;
 }
 
 pre {
-    width: 100%;
     margin: 0;
     overflow-x: auto;
     font-size: 12px;
@@ -120,29 +289,83 @@ code {
     font-family: var(--font-mono);
 }
 
-.out {
-    font-size: 12px;
+a {
     color: var(--text-75);
     text-underline-offset: 2px;
 }
 
-.problem {
-    margin: 0;
-    font-size: 12px;
+.counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+    font-size: 13px;
+    color: var(--text-75);
+}
+
+.line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-75);
+}
+
+.left {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 0;
+}
+
+.left .title {
+    font-size: 13.5px;
+    font-weight: 500;
+}
+
+.path {
+    font-size: 12.5px;
+    color: var(--text-75);
+    overflow-wrap: anywhere;
+}
+
+.note {
+    padding-top: 10px;
+}
+
+.problem,
+.name .problem {
     color: var(--red);
 }
 
-select {
-    font: inherit;
-    font-size: 13px;
-    color: var(--text);
-    background: var(--bg);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 6px;
-    padding: 7px 10px;
+.actions {
+    display: flex;
+    gap: 8px;
 }
 
-select:focus {
-    outline: none;
-    border-color: rgba(255, 255, 255, 0.4);
+.swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: none;
 }
+
+.swatch.c1 { background: #e5534b; }
+.swatch.c2 { background: #f0963c; }
+.swatch.c3 { background: #e8c93f; }
+.swatch.c4 { background: #4fb86a; }
+.swatch.c5 { background: #4a8fe0; }
+.swatch.c6 { background: #9b6ad6; }
+.swatch.c7 { background: #9a9a96; }

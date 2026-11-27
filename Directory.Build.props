@@ -6,15 +6,22 @@
     <FileVersion>$(Version)</FileVersion>
   </PropertyGroup>
 
-  <!-- net10.0 everywhere. A .NET 11 preview SDK is installed on this machine;
-         global.json pins the SDK to 10 and this pins the target. Do not raise
-         either without a decision. Note that StemForge.Core targets net11.0 and
-         is therefore never project-referenced — crateside drives stemforge-cli
-         instead (docs/adr/0001-crateside-orchestrates-the-workflow.md). -->
+  <!-- net11.0 since 2026-11 (issue 199): crateside is an app, so it takes the newer STS release.
+         AbleKit stays on net10.0 for its users and runs unchanged here. StemForge.Core targets
+         net11.0 but is never project-referenced: crateside drives stemforge-cli instead
+         (docs/adr/0001-crateside-orchestrates-the-workflow.md). global.json pins the SDK. -->
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- Doc comments are written to files for the API's OpenAPI summaries (#167). Nothing requires
+       one, and a <param> is written only where it says what the name cannot (CLAUDE.md), so a
+       missing comment or param tag is not a fault. NoWarn rather than .editorconfig, which cannot
+       reach Razor's generated code. -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
   </PropertyGroup>
 </Project>

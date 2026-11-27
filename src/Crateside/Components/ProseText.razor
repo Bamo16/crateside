@@ -1,0 +1,53 @@
+@using Crateside.Core.Ledger
+
+@if (Inline)
+{
+    @Spans(JudgeProse.Inline(Text))
+}
+else
+{
+    <div class="prose">
+        @foreach (var paragraph in Paragraphs)
+        {
+            <p>@Spans(paragraph)</p>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>The judge's text, as written; it is typeset here.</summary>
+    [Parameter, EditorRequired]
+    public string? Text { get; set; }
+
+    /// <summary>One run of spans with no paragraph around it, for a clause inside a sentence or a list row.</summary>
+    [Parameter]
+    public bool Inline { get; set; }
+
+    /// <summary>Keys and chords in Plex Mono, for a table cell or the progression; prose sets them in the body face.</summary>
+    [Parameter]
+    public bool Mono { get; set; }
+
+    /// <summary>Cuts the text at a paragraph once it passes this many characters, ending it with an ellipsis.</summary>
+    [Parameter]
+    public int? Budget { get; set; }
+
+    private IReadOnlyList<ProseParagraph> Paragraphs =>
+        Budget is { } budget ? ShareText.Excerpt(Text, budget) : JudgeProse.Paragraphs(Text);
+
+    private RenderFragment Spans(ProseParagraph paragraph) =>
+        @<text>@foreach (var span in paragraph.Spans)
+        {
+            switch (span.Kind)
+            {
+                case ProseKind.Plain:
+                    @span.Text
+                    break;
+                case ProseKind.Confidence:
+                    <span class="confidence">@span.Text</span>
+                    break;
+                default:
+                    <span class="@(Mono ? "mono" : "token")">@span.Text</span>
+                    break;
+            }
+        }</text>;
+}

@@ -1,9 +1,8 @@
 using System.Text.Json;
-using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Ledger;
 
-public class RunEvidenceTests : IDisposable
+public sealed class RunEvidenceTests : IDisposable
 {
     private const string Song = "a - b";
 
@@ -26,12 +25,10 @@ public class RunEvidenceTests : IDisposable
     [Fact]
     public void A_restatement_does_not_become_the_evidence_for_its_song()
     {
-        // A restatement carries the verdict under a new source URL and no machine layer at all
-        // (keytag ADR 0008). Taken as the latest line it would empty this view the first time a
-        // track's source was swapped -- the one place the two resolvers had to differ.
+        // A restatement carries no machine layer at all (ADR 0055).
         File.WriteAllLines(_path, [Run("2026-09-01T00:00:00+00:00"), Restatement()]);
 
-        var evidence = RunEvidence.ReadLatestFor(_path, Song);
+        var evidence = TestLedger.EvidenceFor(_path, Song);
 
         Assert.NotNull(evidence);
         Assert.Equal("the argument", evidence.Reasoning);
@@ -50,10 +47,49 @@ public class RunEvidenceTests : IDisposable
             ]
         );
 
-        Assert.Equal("the newer argument", RunEvidence.ReadLatestFor(_path, Song)?.Reasoning);
+        Assert.Equal("the newer argument", TestLedger.EvidenceFor(_path, Song)?.Reasoning);
     }
 
-    private static string Run(string timestamp, string reasoning = "the argument") =>
+    [Fact]
+    public void A_runs_chord_starts_are_read_beside_its_chords()
+    {
+        File.WriteAllLines(_path, [Run("2026-09-01T00:00:00+00:00", chordStarts: [0.0, 2.5])]);
+
+        var run = TestLedger.EvidenceFor(_path, Song);
+
+        Assert.Equal(["Cm", "Ab"], run?.Chords);
+        Assert.Equal([0.0, 2.5], run?.ChordStarts);
+    }
+
+    [Fact]
+    public void A_runs_chord_timeline_is_read_whole()
+    {
+        File.WriteAllLines(_path, [Run("2026-09-01T00:00:00+00:00", timeline: true)]);
+
+        var run = TestLedger.EvidenceFor(_path, Song);
+
+        Assert.Equal([new("Cm", 0.0), new("Ab", 2.5), new("Cm", 9)], run?.ChordTimeline);
+    }
+
+    [Fact]
+    public void A_run_recorded_before_chord_starts_were_kept_has_none() =>
+        Assert.Empty(
+            TestLedger.EvidenceFor(WriteRun("2026-09-01T00:00:00+00:00"), Song)?.ChordStarts ?? [1]
+        );
+
+    private string WriteRun(string timestamp)
+    {
+        File.WriteAllLines(_path, [Run(timestamp)]);
+
+        return _path;
+    }
+
+    private static string Run(
+        string timestamp,
+        string reasoning = "the argument",
+        double[]? chordStarts = null,
+        bool timeline = false
+    ) =>
         JsonSerializer.Serialize(
             new
             {
@@ -67,6 +103,15 @@ public class RunEvidenceTests : IDisposable
                 machine = new
                 {
                     chords = new[] { "Cm", "Ab" },
+                    chord_starts = chordStarts,
+                    chord_timeline = timeline
+                        ? new[]
+                        {
+                            new { chord = "Cm", start = 0.0 },
+                            new { chord = "Ab", start = 2.5 },
+                            new { chord = "Cm", start = 9.0 },
+                        }
+                        : null,
                     key_events = new[] { new { t = 0.0, key = "C minor" } },
                 },
             }

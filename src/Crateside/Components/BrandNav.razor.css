@@ -6,9 +6,17 @@
     padding: 18px 22px;
 }
 
+/* The mark keeps its own amber: brand amber, not "your turn" (handoff 04). */
 .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-start;
     font-size: 15px;
     font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    text-decoration: none;
 }
 
 nav {
