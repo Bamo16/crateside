@@ -66,4 +66,40 @@ public sealed class JsonTypeInfoExtensionsTests : IDisposable
             PauseJsonContext.Default.PausedStages.ReadFileOrDefault(path)
         );
     }
+
+    [Fact]
+    public void A_renamed_property_reads_under_its_old_name_in_any_casing()
+    {
+        Directory.CreateDirectory(_folder);
+        File.WriteAllText(PathOf("old.json"), """{ "Judging": true, "BACKFILL": true }""");
+
+        var read = PauseJsonContext.Default.PausedStages.ReadFileOrDefault(
+            PathOf("old.json"),
+            new Dictionary<string, string> { ["judging"] = "judging", ["backfill"] = "backfill" }
+        );
+
+        Assert.Equal(new PausedStages { Judging = true, Backfill = true }, read);
+    }
+
+    [Fact]
+    public void An_old_name_gives_way_to_the_new_one_when_both_are_there()
+    {
+        var node = System.Text.Json.Nodes.JsonNode.Parse("""{ "old": 1, "new": 2 }""");
+
+        JsonTypeInfoExtensions.RenameKeys(node, new Dictionary<string, string> { ["old"] = "new" });
+
+        Assert.Equal("""{"old":1,"new":2}""", node!.ToJsonString());
+    }
+
+    [Fact]
+    public void A_renamed_property_is_found_inside_dictionaries_and_arrays()
+    {
+        var node = System.Text.Json.Nodes.JsonNode.Parse(
+            """{ "a": [ { "old": 1 } ], "b": { "c": { "Old": 2 } } }"""
+        );
+
+        JsonTypeInfoExtensions.RenameKeys(node, new Dictionary<string, string> { ["old"] = "new" });
+
+        Assert.Equal("""{"a":[{"new":1}],"b":{"c":{"new":2}}}""", node!.ToJsonString());
+    }
 }
