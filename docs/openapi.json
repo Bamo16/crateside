@@ -605,11 +605,27 @@
         },
         "description": "A stretch of audio, in seconds."
       },
+      "AutoWarpBar": {
+        "enum": [
+          "Downbeat",
+          "UnsureDownbeat",
+          "NotInFours",
+          "NoDownbeat"
+        ],
+        "description": "How an auto warp's marker was numbered within its bar."
+      },
+      "AutoWarpBeat": {
+        "enum": [
+          "ReadingRefinedByFold",
+          "FoldAlone"
+        ],
+        "description": "Where an auto warp's marker took its beat from."
+      },
       "AwaitedAnalysis": {
         "required": [
           "backup",
           "from",
-          "wasStarter",
+          "wasAutoWarp",
           "sent"
         ],
         "type": "object",
@@ -625,9 +641,9 @@
             ],
             "description": "The sibling it was borrowed from, or null."
           },
-          "wasStarter": {
+          "wasAutoWarp": {
             "type": "boolean",
-            "description": "Whether it held a starter warp crateside wrote."
+            "description": "Whether it held an auto warp crateside wrote."
           },
           "sent": {
             "type": "string",
@@ -638,13 +654,13 @@
             "description": "Whether it held a clip crateside saved with Warp off.",
             "default": false
           },
-          "starter": {
+          "autoWarp": {
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/WrittenStarter"
+                "$ref": "#/components/schemas/WrittenAutoWarp"
               }
             ]
           },
@@ -788,7 +804,7 @@
               "number",
               "string"
             ],
-            "description": "How sure the filter is of the downbeat; double StarterGrid.DownbeatSureAt and up is the working threshold.",
+            "description": "How sure the filter is of the downbeat; double AutoWarpGrid.DownbeatSureAt and up is the working threshold.",
             "format": "double"
           },
           "beatsPerBar": {
@@ -3000,7 +3016,7 @@
           "tempoFactor",
           "clipStartBar",
           "clipWasBar",
-          "fromStarter"
+          "fromAutoWarp"
         ],
         "type": "object",
         "properties": {
@@ -3050,9 +3066,9 @@
             "description": "The bar the clip started on before the save.",
             "format": "int32"
           },
-          "fromStarter": {
+          "fromAutoWarp": {
             "type": "boolean",
-            "description": "Whether the warp it started from was crateside's starter."
+            "description": "Whether the warp it started from was crateside's auto warp."
           }
         },
         "description": "What a save changed in the warp it started from."
@@ -3498,22 +3514,6 @@
             "description": "Every track counted as waiting for this stage, picked or not."
           }
         }
-      },
-      "StarterBar": {
-        "enum": [
-          "Downbeat",
-          "UnsureDownbeat",
-          "NotInFours",
-          "NoDownbeat"
-        ],
-        "description": "How a starter's marker was numbered within its bar."
-      },
-      "StarterBeat": {
-        "enum": [
-          "ReadingRefinedByFold",
-          "FoldAlone"
-        ],
-        "description": "Where a starter's marker took its beat from."
       },
       "StemDestination": {
         "enum": [
@@ -4635,7 +4635,7 @@
           },
           "autoWarp": {
             "type": "boolean",
-            "description": "Some stem's warp is a starter warp: the UI's \"Auto warp\"."
+            "description": "Some stem's warp is an auto warp: the UI's \"Auto warp\"."
           },
           "runningStage": {
             "oneOf": [
@@ -5004,7 +5004,7 @@
           },
           "autoWarp": {
             "type": "boolean",
-            "description": "Its warp is crateside's starter guess, not a saved one (#77)."
+            "description": "Its warp is crateside's auto warp guess, not a saved one (#77)."
           },
           "warpBorrowedFrom": {
             "type": [
@@ -5351,7 +5351,7 @@
             "$ref": "#/components/schemas/WarpOwnerShifted"
           },
           {
-            "$ref": "#/components/schemas/WarpOwnerStarter"
+            "$ref": "#/components/schemas/WarpOwnerAutoWarp"
           },
           {
             "$ref": "#/components/schemas/WarpOwnerUnwarped"
@@ -5376,7 +5376,7 @@
             "yours": "#/components/schemas/WarpOwnerYours",
             "borrowed": "#/components/schemas/WarpOwnerBorrowed",
             "shifted": "#/components/schemas/WarpOwnerShifted",
-            "starter": "#/components/schemas/WarpOwnerStarter",
+            "autoWarp": "#/components/schemas/WarpOwnerAutoWarp",
             "unwarped": "#/components/schemas/WarpOwnerUnwarped",
             "liveAnalysis": "#/components/schemas/WarpOwnerLiveAnalysis",
             "none": "#/components/schemas/WarpOwnerNone",
@@ -5384,6 +5384,25 @@
             "puttingBack": "#/components/schemas/WarpOwnerPuttingBack"
           }
         }
+      },
+      "WarpOwnerAutoWarp": {
+        "required": [
+          "written"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "enum": [
+              "autoWarp"
+            ],
+            "type": "string"
+          },
+          "written": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "An auto warp crateside wrote from beatdetect's reading, not yet saved over."
       },
       "WarpOwnerBorrowed": {
         "required": [
@@ -5472,25 +5491,6 @@
           }
         },
         "description": "The mix's warp, shifted onto this added source by its measured offset (ADR 0111)."
-      },
-      "WarpOwnerStarter": {
-        "required": [
-          "written"
-        ],
-        "type": "object",
-        "properties": {
-          "kind": {
-            "enum": [
-              "starter"
-            ],
-            "type": "string"
-          },
-          "written": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "description": "A starter warp crateside wrote from beatdetect's reading, not yet saved over."
       },
       "WarpOwnerUnwarped": {
         "required": [
@@ -5738,53 +5738,7 @@
         },
         "description": "One window's detector readings, and the section the verdict gave it, if any."
       },
-      "WrittenShift": {
-        "required": [
-          "samples",
-          "milliseconds"
-        ],
-        "type": "object",
-        "properties": {
-          "samples": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "description": "The offset the warp was shifted by: the added source's sample n sits at the mix's n plus this.",
-            "format": "int32"
-          },
-          "milliseconds": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-            "type": [
-              "number",
-              "string"
-            ],
-            "format": "double"
-          },
-          "clipStartWasBar": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "description": "The bar the mix's clip starts on, when the added source begins too late for it; null when the clip start stayed.",
-            "format": "int32"
-          },
-          "clipStartNowBar": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "description": "The bar the clip start moved to.",
-            "format": "int32"
-          }
-        }
-      },
-      "WrittenStarter": {
+      "WrittenAutoWarp": {
         "required": [
           "bpm",
           "readBpm",
@@ -5854,7 +5808,7 @@
             ]
           },
           "barFrom": {
-            "$ref": "#/components/schemas/StarterBar"
+            "$ref": "#/components/schemas/AutoWarpBar"
           },
           "downbeatSureAt": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -5866,7 +5820,7 @@
             "format": "double"
           },
           "beatFrom": {
-            "$ref": "#/components/schemas/StarterBeat"
+            "$ref": "#/components/schemas/AutoWarpBeat"
           },
           "readMarkerBeat": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
@@ -5879,7 +5833,53 @@
             "format": "double"
           }
         },
-        "description": "A starter as written: its tempo and marker, the reading they came from, and why the marker got its beat (#176)."
+        "description": "An auto warp as written: its tempo and marker, the reading they came from, and why the marker got its beat (#176)."
+      },
+      "WrittenShift": {
+        "required": [
+          "samples",
+          "milliseconds"
+        ],
+        "type": "object",
+        "properties": {
+          "samples": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The offset the warp was shifted by: the added source's sample n sits at the mix's n plus this.",
+            "format": "int32"
+          },
+          "milliseconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "clipStartWasBar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "The bar the mix's clip starts on, when the added source begins too late for it; null when the clip start stayed.",
+            "format": "int32"
+          },
+          "clipStartNowBar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "The bar the clip start moved to.",
+            "format": "int32"
+          }
+        }
       },
       "WrittenWarp": {
         "required": [
@@ -5894,7 +5894,7 @@
               "null",
               "string"
             ],
-            "description": "The sibling's audio file, or null for a starter warp."
+            "description": "The sibling's audio file, or null for an auto warp."
           },
           "length": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -5912,17 +5912,17 @@
           },
           "isUnwarped": {
             "type": "boolean",
-            "description": "A clip with Warp off, for a stem that gets no starter: no warp at all (ADR 0059).",
+            "description": "A clip with Warp off, for a stem that gets no auto warp: no warp at all (ADR 0059).",
             "default": false
           },
-          "starter": {
+          "autoWarp": {
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "description": "A starter's grid and why its marker got its beat; null for anything else, and for starters written before #176.",
-                "$ref": "#/components/schemas/WrittenStarter"
+                "description": "An auto warp's grid and why its marker got its beat; null for anything else, and for auto warps written before #176.",
+                "$ref": "#/components/schemas/WrittenAutoWarp"
               }
             ]
           },
@@ -5931,7 +5931,7 @@
               "null",
               "string"
             ],
-            "description": "Why a clip with Warp off got no starter; null for anything else, and for clips written before this was kept."
+            "description": "Why a clip with Warp off got no auto warp; null for anything else, and for clips written before this was kept."
           },
           "shift": {
             "oneOf": [
@@ -5945,7 +5945,7 @@
             ]
           }
         },
-        "description": "A sidecar crateside wrote: a sibling's warp, a starter warp, or a clip with Warp off."
+        "description": "A sidecar crateside wrote: a sibling's warp, an auto warp, or a clip with Warp off."
       },
       "YearKind": {
         "enum": [

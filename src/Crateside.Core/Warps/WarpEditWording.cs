@@ -17,7 +17,7 @@ public static class WarpEditWording
         AnalysisFile drafted,
         WarpDraft draft,
         double seconds,
-        bool starter
+        bool autoWarp
     )
     {
         var changed = draft.BarShift is not 0 || Math.Abs(draft.TempoFactor - 1) > 1e-9;
@@ -25,7 +25,7 @@ public static class WarpEditWording
 
         if (where.Outside || was.Outside)
             return new(
-                $"the marker falls on {where.Falls} · {(starter ? "crateside put it" : "it was")} on {was.Falls}",
+                $"the marker falls on {where.Falls} · {(autoWarp ? "crateside put it" : "it was")} on {was.Falls}",
                 changed
             );
 
@@ -33,23 +33,23 @@ public static class WarpEditWording
             ? new(
                 $"bar 1 starts on the marker's beat {where.Beat}"
                     + (
-                        starter
+                        autoWarp
                             ? $" · crateside put it on beat {was.Beat}"
                             : $" · was beat {was.Beat}"
                     ),
                 true
             )
             : new(
-                $"bar 1 starts on the marker's beat {where.Beat}, {(starter ? "where crateside put it" : "as saved")}",
+                $"bar 1 starts on the marker's beat {where.Beat}, {(autoWarp ? "where crateside put it" : "as saved")}",
                 false
             );
     }
 
-    public static EditReadout Nudge(WarpDraft draft, bool starter) =>
+    public static EditReadout Nudge(WarpDraft draft, bool autoWarp) =>
         draft.NudgeMs is 0
-            ? new(starter ? "on crateside's marker" : "as saved", false)
+            ? new(autoWarp ? "on crateside's marker" : "as saved", false)
             : new(
-                $"{Signed(draft.NudgeMs)} ms from {(starter ? "where crateside put it" : "the saved warp")}",
+                $"{Signed(draft.NudgeMs)} ms from {(autoWarp ? "where crateside put it" : "the saved warp")}",
                 true
             );
 

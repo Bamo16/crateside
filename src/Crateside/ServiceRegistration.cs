@@ -138,8 +138,17 @@ public static class ServiceRegistration
             .PostConfigure<WarpSettingsStore>(
                 (options, store) =>
                 {
+                    if (
+                        builder.Configuration["Warps:AutoWarps"] is null
+                        && LegacyWarpNames.AutoWarpsFromOldSetting(
+                            builder.Configuration["Warps:StarterWarps"]
+                        )
+                            is { } configured
+                    )
+                        options.AutoWarps = configured;
+
                     if (store.Read() is { } chosen)
-                        options.StarterWarps = chosen;
+                        options.AutoWarps = chosen;
 
                     if (store.ReadFlagClipOffBarLine() is { } flag)
                         options.FlagClipOffBarLine = flag;
@@ -536,7 +545,7 @@ public static class ServiceRegistration
         services.AddSingleton<IAudioDecoder, FfmpegAudioDecoder>();
         services.AddSingleton<ITransientDetector, OnsetDetector>();
         services.AddSingleton<SidecarWriter>();
-        services.AddSingleton<IStarterGrids, StarterGrids>();
+        services.AddSingleton<IAutoWarpGrids, AutoWarpGrids>();
         services.AddSingleton<WarpLending>();
         services.AddSingleton<WarpActions>();
         services.AddSingleton<WarpTrueUp>();

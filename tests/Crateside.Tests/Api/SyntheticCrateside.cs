@@ -170,17 +170,17 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         var written = new WrittenWarps();
         File.WriteAllBytes(Instrumental, [1, 2, 3]);
         Sidecar().Write($"{Instrumental}.asd");
-        written.RecordStarter(
+        written.RecordAutoWarp(
             Instrumental,
-            new WrittenStarter(
+            new WrittenAutoWarp(
                 120,
                 119.998,
                 0.5,
                 0,
                 0.5,
                 new ReadDownbeat(1.5, 0.317, 4),
-                StarterBar.UnsureDownbeat,
-                StarterGrid.DownbeatSureAt
+                AutoWarpBar.UnsureDownbeat,
+                AutoWarpGrid.DownbeatSureAt
             )
         );
         File.WriteAllBytes(

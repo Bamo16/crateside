@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Crateside.Core.Warps;
 
 /// <summary>
-/// The starter-warp setting the user chose in Settings, kept in <c>%APPDATA%\crateside\warp-settings.json</c>
+/// The auto-warp setting the user chose in Settings, kept in <c>%APPDATA%\crateside\warp-settings.json</c>
 /// so it outlives a restart and wins over appsettings.
 /// </summary>
 public sealed class WarpSettingsStore(CratesidePaths paths)
@@ -16,12 +16,15 @@ public sealed class WarpSettingsStore(CratesidePaths paths)
         : this(new CratesidePaths { WarpSettingsFile = path }) { }
 
     /// <summary>Never throws: an unreadable file reads as nothing chosen.</summary>
-    public StarterWarps? Read()
+    public AutoWarps? Read()
     {
         lock (_gate)
             return
-                WarpSettingsJsonContext.Default.WarpSettings.ReadFileOrDefault(_path)
-                    is { StarterWarps: { } chosen }
+                WarpSettingsJsonContext.Default.WarpSettings.ReadFileOrDefault(
+                    _path,
+                    LegacyWarpNames.StoredKeys
+                )
+                    is { AutoWarps: { } chosen }
                 ? chosen
                 : null;
     }
@@ -31,12 +34,12 @@ public sealed class WarpSettingsStore(CratesidePaths paths)
     {
         lock (_gate)
             return WarpSettingsJsonContext
-                .Default.WarpSettings.ReadFileOrDefault(_path)
+                .Default.WarpSettings.ReadFileOrDefault(_path, LegacyWarpNames.StoredKeys)
                 ?.FlagClipOffBarLine;
     }
 
-    public void Remember(StarterWarps chosen) =>
-        Write(settings => settings with { StarterWarps = chosen });
+    public void Remember(AutoWarps chosen) =>
+        Write(settings => settings with { AutoWarps = chosen });
 
     public void RememberFlagClipOffBarLine(bool flag) =>
         Write(settings => settings with { FlagClipOffBarLine = flag });
@@ -48,8 +51,10 @@ public sealed class WarpSettingsStore(CratesidePaths paths)
             try
             {
                 var settings =
-                    WarpSettingsJsonContext.Default.WarpSettings.ReadFileOrDefault(_path)
-                    ?? new WarpSettings();
+                    WarpSettingsJsonContext.Default.WarpSettings.ReadFileOrDefault(
+                        _path,
+                        LegacyWarpNames.StoredKeys
+                    ) ?? new WarpSettings();
 
                 WarpSettingsJsonContext.Default.WarpSettings.WriteFile(_path, change(settings));
             }
@@ -60,7 +65,7 @@ public sealed class WarpSettingsStore(CratesidePaths paths)
 
 public sealed record WarpSettings
 {
-    public StarterWarps? StarterWarps { get; init; }
+    public AutoWarps? AutoWarps { get; init; }
 
     public bool? FlagClipOffBarLine { get; init; }
 }
@@ -69,7 +74,7 @@ public sealed record WarpSettings
     WriteIndented = true,
     PropertyNameCaseInsensitive = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-    Converters = [typeof(JsonStringEnumConverter<StarterWarps>)],
+    Converters = [typeof(JsonStringEnumConverter<AutoWarps>)],
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
 )]
 [JsonSerializable(typeof(WarpSettings))]

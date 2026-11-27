@@ -13,9 +13,9 @@ public sealed class WarpSettingsStoreTests : IDisposable
         Assert.Null(new WarpSettingsStore(Path.Combine(_root, "none.json")).Read());
 
     [Theory]
-    [InlineData(StarterWarps.Off)]
-    [InlineData(StarterWarps.OnTheGrid)]
-    public void A_choice_outlives_the_store_that_made_it(StarterWarps chosen)
+    [InlineData(AutoWarps.Off)]
+    [InlineData(AutoWarps.OnTheGrid)]
+    public void A_choice_outlives_the_store_that_made_it(AutoWarps chosen)
     {
         var path = Path.Combine(_root, "choice.json");
 
@@ -28,7 +28,7 @@ public sealed class WarpSettingsStoreTests : IDisposable
     public void A_mode_since_removed_reads_as_nothing_chosen()
     {
         var path = Path.Combine(_root, "old.json");
-        File.WriteAllText(path, """{ "starterWarps": "TempoOnly" }""");
+        File.WriteAllText(path, """{ "autoWarps": "TempoOnly" }""");
 
         Assert.Null(new WarpSettingsStore(path).Read());
     }
@@ -60,11 +60,11 @@ public sealed class WarpSettingsStoreTests : IDisposable
         var path = Path.Combine(_root, "both.json");
         var store = new WarpSettingsStore(path);
 
-        store.Remember(StarterWarps.Off);
+        store.Remember(AutoWarps.Off);
         store.RememberFlagClipOffBarLine(false);
-        store.Remember(StarterWarps.OnTheGrid);
+        store.Remember(AutoWarps.OnTheGrid);
 
-        Assert.Equal(StarterWarps.OnTheGrid, store.Read());
+        Assert.Equal(AutoWarps.OnTheGrid, store.Read());
         Assert.False(store.ReadFlagClipOffBarLine());
     }
 }

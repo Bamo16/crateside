@@ -94,7 +94,7 @@ public sealed class TrackBpmTests
 
         Assert.Null(row.Beats);
         Assert.False(row.TempoDrifts);
-        Assert.Null(TrackTempo.StarterBpm(row.Beats));
+        Assert.Null(TrackTempo.AutoWarpBpm(row.Beats));
         Assert.False(row.Bpm!.IsVouched);
     }
 

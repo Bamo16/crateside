@@ -156,7 +156,7 @@ public sealed class LibraryKeyReader(
             ],
             Tempo = tempo,
             Beats = reading,
-            Starter = StarterFates.Of(reading, tempo),
+            AutoWarp = AutoWarpFates.Of(reading, tempo),
             Run = run,
         };
     }

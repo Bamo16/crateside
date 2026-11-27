@@ -430,7 +430,7 @@ public sealed class CratesidePaths
         set;
     }
 
-    /// <summary>The starter-warp setting chosen in Settings.</summary>
+    /// <summary>The auto-warp setting chosen in Settings.</summary>
     public string WarpSettingsFile
     {
         get => field ?? Roaming("warp-settings.json");

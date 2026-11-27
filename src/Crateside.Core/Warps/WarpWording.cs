@@ -48,33 +48,35 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             _ => mode.ToString(),
         };
 
-    /// <summary>Why a starter's marker got its beat, in one line, its beats numbered from 1 as Live's ruler numbers them (#176).</summary>
-    public static string StarterWhy(WrittenStarter starter)
+    /// <summary>Why an auto warp's marker got its beat, in one line, its beats numbered from 1 as Live's ruler numbers them (#176).</summary>
+    public static string AutoWarpWhy(WrittenAutoWarp autoWarp)
     {
-        var bar = starter switch
+        var bar = autoWarp switch
         {
-            { BarFrom: StarterBar.Downbeat, Downbeat.Confidence: { } sure } =>
+            { BarFrom: AutoWarpBar.Downbeat, Downbeat.Confidence: { } sure } =>
                 $"beatdetect's downbeat, confidence {Hundredths(sure)}",
-            { BarFrom: StarterBar.Downbeat } => "beatdetect's downbeat",
-            { BarFrom: StarterBar.UnsureDownbeat, Downbeat.Confidence: { } unsure } =>
-                $"downbeat confidence {Hundredths(unsure)} under {starter.DownbeatSureAt.ToString("0.0#", CultureInfo.InvariantCulture)}, so beat 1{ReadSaid(starter)}",
-            { BarFrom: StarterBar.UnsureDownbeat } =>
-                $"no downbeat confidence, so beat 1{ReadSaid(starter)}",
-            { BarFrom: StarterBar.NotInFours, Downbeat.BeatsPerBar: { } beats } =>
+            { BarFrom: AutoWarpBar.Downbeat } => "beatdetect's downbeat",
+            { BarFrom: AutoWarpBar.UnsureDownbeat, Downbeat.Confidence: { } unsure } =>
+                $"downbeat confidence {Hundredths(unsure)} under {autoWarp.DownbeatSureAt.ToString("0.0#", CultureInfo.InvariantCulture)}, so beat 1{ReadSaid(autoWarp)}",
+            { BarFrom: AutoWarpBar.UnsureDownbeat } =>
+                $"no downbeat confidence, so beat 1{ReadSaid(autoWarp)}",
+            { BarFrom: AutoWarpBar.NotInFours, Downbeat.BeatsPerBar: { } beats } =>
                 $"beatdetect counted {beats} beats to the bar, so beat 1",
-            { BarFrom: StarterBar.NotInFours } => "beatdetect's bars are not of four, so beat 1",
+            { BarFrom: AutoWarpBar.NotInFours } => "beatdetect's bars are not of four, so beat 1",
             _ => "beatdetect read no downbeat, so beat 1",
         };
         var beat =
-            starter.BeatFrom is StarterBeat.FoldAlone
+            autoWarp.BeatFrom is AutoWarpBeat.FoldAlone
                 ? "; beatdetect gave no beat, so the transients alone placed it"
                 : string.Empty;
 
-        return $"marker on beat {starter.MarkerBeat + 1:0}: {bar}{beat}";
+        return $"marker on beat {autoWarp.MarkerBeat + 1:0}: {bar}{beat}";
     }
 
-    private static string ReadSaid(WrittenStarter starter) =>
-        starter.ReadMarkerBeat is { } said ? $" (beatdetect said beat {said + 1:0})" : string.Empty;
+    private static string ReadSaid(WrittenAutoWarp autoWarp) =>
+        autoWarp.ReadMarkerBeat is { } said
+            ? $" (beatdetect said beat {said + 1:0})"
+            : string.Empty;
 
     private static string Hundredths(double value) =>
         value.ToString("0.00", CultureInfo.InvariantCulture);
@@ -84,7 +86,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
         {
             WarpOwner.Yours or WarpOwner.Borrowed => new("Your warp", ChipStyle.Filled),
             WarpOwner.Shifted => new("Shifted from the mix", ChipStyle.Outlined),
-            WarpOwner.Starter => new("Auto warp", ChipStyle.Auto),
+            WarpOwner.AutoWarp => new("Auto warp", ChipStyle.Auto),
             WarpOwner.Unwarped => new("Warp off", ChipStyle.Dashed),
             WarpOwner.LiveAnalysis => new("Live's analysis", ChipStyle.Dashed),
             WarpOwner.WaitingForLive => new("Waiting for Live", ChipStyle.Amber),
@@ -111,7 +113,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             WarpOwner.Borrowed(_, var written) => $"saved {Day(written)}",
             WarpOwner.Shifted(var written, var shift) =>
                 $"{Offset(shift.Milliseconds)} · {Day(written)}",
-            WarpOwner.Starter => "one marker · not finished",
+            WarpOwner.AutoWarp => "one marker · not finished",
             WarpOwner.Unwarped => "gain and color only · warp it by hand",
             WarpOwner.LiveAnalysis => "not saved, so Live ignores it",
             WarpOwner.WaitingForLive => "preview it in Live",
@@ -134,8 +136,8 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
                 $"crateside copied {Name(from)}'s warp on {Day(written)}. Unchanged since.",
             WarpOwner.Shifted(var written, var shift) =>
                 $"Shifted from the mix's warp by {Offset(shift.Milliseconds)} on {Day(written)}, from where the two files line up.{ClipStartMoved(shift)}",
-            WarpOwner.Starter =>
-                $"One marker at crateside's reading{StarterTempo(stem)}, so dropping it into an empty set sets the set's tempo. Not a finished warp: warp it in Live and press Save Default Clip.",
+            WarpOwner.AutoWarp =>
+                $"One marker at crateside's reading{AutoWarpTempo(stem)}, so dropping it into an empty set sets the set's tempo. Not a finished warp: warp it in Live and press Save Default Clip.",
             WarpOwner.Unwarped(var written, { } because) =>
                 $"crateside saved its clip with Warp off on {Day(written)}, so it comes in at the loudness target in its color. It has no auto warp because {because}: warp it in Live and press Save Default Clip.",
             WarpOwner.Unwarped(var written, _) =>
@@ -156,7 +158,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
         && stem.Owner switch
         {
             WarpOwner.Yours => group.PartsFrom(stem) is not null,
-            WarpOwner.LiveAnalysis or WarpOwner.Starter or WarpOwner.Unwarped => true,
+            WarpOwner.LiveAnalysis or WarpOwner.AutoWarp or WarpOwner.Unwarped => true,
             _ => false,
         };
 
@@ -165,7 +167,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
         {
             (true, WarpOwner.Yours, { } lender) =>
                 $"Writes {Name(lender.Path)}'s warp over yours again. Yours is backed up first.",
-            (true, WarpOwner.Starter, { } lender) =>
+            (true, WarpOwner.AutoWarp, { } lender) =>
                 $"Writes {Name(lender.Path)}'s warp over the auto warp. The auto warp is backed up first.",
             (true, WarpOwner.Unwarped, { } lender) =>
                 $"Writes {Name(lender.Path)}'s warp over the clip with Warp off. It is backed up first.",
@@ -176,7 +178,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             (_, WarpOwner.Yours, _) => "Nothing to re-apply: crateside has lent this stem nothing.",
             (_, WarpOwner.Borrowed(var from, _), _) =>
                 $"Nothing to re-apply: it is still {Name(from)}'s warp, unchanged.",
-            (_, WarpOwner.Starter or WarpOwner.LiveAnalysis or WarpOwner.Unwarped, _) =>
+            (_, WarpOwner.AutoWarp or WarpOwner.LiveAnalysis or WarpOwner.Unwarped, _) =>
                 "Nothing to lend yet: no stem of this upload has a saved warp.",
             _ => "Nothing to re-apply.",
         };
@@ -309,7 +311,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
         lentTo is { Count: > 0 } ? $" crateside lends it to {Names(lentTo)}." : string.Empty;
 
     private static string WhatSaved(SavedEdits edits) =>
-        $"from {(edits.FromStarter ? "crateside's auto warp" : "the saved warp")}: {Changes(edits)}";
+        $"from {(edits.FromAutoWarp ? "crateside's auto warp" : "the saved warp")}: {Changes(edits)}";
 
     /// <summary>The edits in the edit bar's order: bar, nudge, tempo, clip start; "no edits" for none.</summary>
     public static string Changes(SavedEdits edits)
@@ -357,7 +359,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             _ => "gave it an auto warp",
         };
 
-    private static string StarterTempo(StemWarp stem) =>
+    private static string AutoWarpTempo(StemWarp stem) =>
         stem.Sidecar?.Warp.TempoAt(0) is { } bpm ? $", {Tempo(bpm)}" : string.Empty;
 }
 

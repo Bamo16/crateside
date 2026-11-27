@@ -108,7 +108,7 @@ public sealed class WarpWordingTests
         Assert.False(Wording(Lender()).CanTrueUp(holds));
         Assert.False(Wording(Lender() with { IsAuthority = false }).CanTrueUp(off));
         Assert.False(
-            Wording(Lender() with { Owner = new WarpOwner.Starter(Saved) }).CanTrueUp(off)
+            Wording(Lender() with { Owner = new WarpOwner.AutoWarp(Saved) }).CanTrueUp(off)
         );
     }
 
@@ -263,37 +263,37 @@ public sealed class WarpWordingTests
             },
         };
 
-    private static WrittenStarter Starter(
-        StarterBar bar,
+    private static WrittenAutoWarp AutoWarp(
+        AutoWarpBar bar,
         ReadDownbeat? downbeat,
         double? readBeat = 0.23209
-    ) => new(126, 125.99913, 0.23209, 0, readBeat, downbeat, bar, StarterGrid.DownbeatSureAt);
+    ) => new(126, 125.99913, 0.23209, 0, readBeat, downbeat, bar, AutoWarpGrid.DownbeatSureAt);
 
     [Fact]
-    public void A_starter_with_no_downbeat_says_so()
+    public void An_auto_warp_with_no_downbeat_says_so()
     {
         Assert.Equal(
             "marker on beat 1: beatdetect read no downbeat, so beat 1",
-            WarpWording.StarterWhy(Starter(StarterBar.NoDownbeat, null))
+            WarpWording.AutoWarpWhy(AutoWarp(AutoWarpBar.NoDownbeat, null))
         );
     }
 
     [Fact]
-    public void A_starter_whose_reading_counts_bars_of_three_says_so()
+    public void An_auto_warp_whose_reading_counts_bars_of_three_says_so()
     {
         Assert.Equal(
             "marker on beat 1: beatdetect counted 3 beats to the bar, so beat 1",
-            WarpWording.StarterWhy(Starter(StarterBar.NotInFours, new(1.18447, 0.8, 3)))
+            WarpWording.AutoWarpWhy(AutoWarp(AutoWarpBar.NotInFours, new(1.18447, 0.8, 3)))
         );
     }
 
     [Fact]
-    public void A_starter_whose_beat_the_transients_alone_placed_says_so()
+    public void An_auto_warp_whose_beat_the_transients_alone_placed_says_so()
     {
         Assert.Equal(
             "marker on beat 1: downbeat confidence 0.33 under 0.6, so beat 1 (beatdetect said beat 3); beatdetect gave no beat, so the transients alone placed it",
-            WarpWording.StarterWhy(
-                Starter(StarterBar.UnsureDownbeat, new(1.18447, 0.33, 4), readBeat: null)
+            WarpWording.AutoWarpWhy(
+                AutoWarp(AutoWarpBar.UnsureDownbeat, new(1.18447, 0.33, 4), readBeat: null)
             )
         );
     }

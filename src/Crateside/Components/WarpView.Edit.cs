@@ -587,9 +587,9 @@ public partial class WarpView
         )
             yield break;
 
-        var starter = lender.Owner is WarpOwner.Starter;
-        var bar = WarpEditWording.Bar(was, now, _draft, lender.Seconds, starter);
-        var nudge = WarpEditWording.Nudge(_draft, starter);
+        var autoWarp = lender.Owner is WarpOwner.AutoWarp;
+        var bar = WarpEditWording.Bar(was, now, _draft, lender.Seconds, autoWarp);
+        var nudge = WarpEditWording.Nudge(_draft, autoWarp);
         var tempo = WarpEditWording.Tempo(was, now, _draft);
         var clip = WarpEditWording.ClipStart(was, _draft);
 

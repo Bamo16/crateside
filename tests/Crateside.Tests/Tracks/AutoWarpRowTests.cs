@@ -7,8 +7,8 @@ using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Tracks;
 
-/// <summary>A starter warp is crateside's guess at the tempo, so its stem still waits to be warped (#77).</summary>
-public sealed class StarterWarpRowTests : IDisposable
+/// <summary>An auto warp is crateside's guess at the tempo, so its stem still waits to be warped (#77).</summary>
+public sealed class AutoWarpRowTests : IDisposable
 {
     private const string Upload = "AhtkGlO7O8c";
     private const string StagingRoot = @"D:\Music\Sample Staging";
@@ -19,7 +19,7 @@ public sealed class StarterWarpRowTests : IDisposable
         Guid.NewGuid().ToString("n")
     );
 
-    public StarterWarpRowTests() => Directory.CreateDirectory(_root);
+    public AutoWarpRowTests() => Directory.CreateDirectory(_root);
 
     public void Dispose()
     {
@@ -30,7 +30,7 @@ public sealed class StarterWarpRowTests : IDisposable
     }
 
     [Fact]
-    public void A_stem_holding_a_starter_warp_reads_as_unwarped_and_a_borrowed_one_as_warped()
+    public void A_stem_holding_a_auto_warp_reads_as_unwarped_and_a_borrowed_one_as_warped()
     {
         var samples = Row(path =>
             path.Contains("Vocal", StringComparison.Ordinal)
@@ -62,23 +62,23 @@ public sealed class StarterWarpRowTests : IDisposable
     }
 
     [Fact]
-    public void A_row_is_an_auto_warp_where_any_stem_holds_a_starter_warp()
+    public void A_row_is_an_auto_warp_where_any_stem_holds_a_auto_warp_warp()
     {
-        var starter = Row(path =>
+        var autoWarp = Row(path =>
             path.Contains("Vocal", StringComparison.Ordinal)
                 ? new WrittenWarp(null, 0, default)
                 : null
         );
         var none = Row(_ => null);
 
-        Assert.True(starter.AutoWarp);
-        Assert.True(starter.Matches(TrackFilter.AutoWarp));
+        Assert.True(autoWarp.AutoWarp);
+        Assert.True(autoWarp.Matches(TrackFilter.AutoWarp));
         Assert.False(none.AutoWarp);
         Assert.False(none.Matches(TrackFilter.AutoWarp));
     }
 
     [Fact]
-    public void A_track_whose_stems_hold_only_starter_warps_is_not_ready_to_move() =>
+    public void A_track_whose_stems_hold_only_auto_warps_is_not_ready_to_move() =>
         Assert.NotEqual(TrackState.ReadyToMove, Row(_ => new WrittenWarp(null, 0, default)).State);
 
     private TrackRow Row(Func<string, WrittenWarp?> writtenWarp) =>

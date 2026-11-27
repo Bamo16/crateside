@@ -83,21 +83,21 @@ public sealed class TrackTempoTests
     [InlineData(128.001, new[] { 128.001, 128.001, 128.001, 128.001 }, 128.001)]
     [InlineData(128.02, new[] { 128.02, 128.01, 128.03, 128.02 }, 128.02)]
     [InlineData(126.0, new[] { 120.0, 124.0, 128.0, 132.0 }, null)]
-    public void A_starter_warp_is_written_at_the_tempo_of_a_steady_reading_as_read(
+    public void An_auto_warp_is_written_at_the_tempo_of_a_steady_reading_as_read(
         double bpm,
         double[] windows,
-        double? starter
+        double? autoWarp
     ) =>
         Assert.Equal(
-            starter,
-            TrackTempo.StarterBpm(new BeatReading { Bpm = bpm, Windows = windows })
+            autoWarp,
+            TrackTempo.AutoWarpBpm(new BeatReading { Bpm = bpm, Windows = windows })
         );
 
     [Fact]
-    public void A_reading_the_filter_calls_moving_still_gives_a_starter_tempo() =>
+    public void A_reading_the_filter_calls_moving_still_gives_a_auto_warp_tempo() =>
         Assert.Equal(
             136,
-            TrackTempo.StarterBpm(
+            TrackTempo.AutoWarpBpm(
                 new BeatReading
                 {
                     Bpm = 136,

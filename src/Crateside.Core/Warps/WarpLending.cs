@@ -6,7 +6,7 @@ namespace Crateside.Core.Warps;
 
 /// <summary>
 /// Gives every staged stem without a finished warp the warp its siblings agree on, whether the
-/// stem just landed or the user just saved a sibling (#54, ADR 0043), or a starter warp at the
+/// stem just landed or the user just saved a sibling (#54, ADR 0043), or an auto warp at the
 /// measured tempo when nothing of its upload is warped (#77, ADR 0047, ADR 0048), else a clip with
 /// Warp off so it still arrives at its gain and color (ADR 0059).
 /// </summary>
@@ -15,7 +15,7 @@ public sealed class WarpLending(
     CratesidePaths paths,
     SidecarWriter writer,
     IOptions<WarpOptions> options,
-    IStarterGrids? starterGrids = null,
+    IAutoWarpGrids? autoWarpGrids = null,
     LiveAnalyses? waiting = null,
     StageNotes? notes = null
 )
@@ -43,7 +43,7 @@ public sealed class WarpLending(
             [
                 .. authorities.Union(sameKind, StringComparer.OrdinalIgnoreCase),
             ];
-            var tempo = _options.StarterWarps is not StarterWarps.Off
+            var tempo = _options.AutoWarps is not AutoWarps.Off
                 ? TempoOf(siblings.CutsOf(target))
                 : null;
             var grid = tempo?.Grid;
@@ -81,10 +81,10 @@ public sealed class WarpLending(
     }
 
     /// <summary>The group's grid and the stem it was read from, which also times every stem's marker.</summary>
-    private (StarterGrid Grid, string From)? TempoOf(IEnumerable<SiblingFile> cuts) =>
+    private (AutoWarpGrid Grid, string From)? TempoOf(IEnumerable<SiblingFile> cuts) =>
         WarpSiblings
             .TempoSources(cuts)
-            .Select(cut => (Grid: starterGrids?.Of(cut), From: cut.Path))
+            .Select(cut => (Grid: autoWarpGrids?.Of(cut), From: cut.Path))
             .FirstOrDefault(source => source.Grid is not null)
             is { Grid: { } grid } source
             ? (grid, source.From)
@@ -92,15 +92,15 @@ public sealed class WarpLending(
 
     private string WhyNoTempo(IEnumerable<SiblingFile> cuts) =>
         WarpSiblings.TempoSources(cuts).FirstOrDefault() is { } source
-            ? starterGrids?.WhyNone(source) ?? StarterGrid.WhyNone(null)
+            ? autoWarpGrids?.WhyNone(source) ?? AutoWarpGrid.WhyNone(null)
             : "no instrumental, kept source or karaoke stem to read a tempo from";
 
-    /// <summary>A lent warp when a sibling holds one, else a starter, else Warp off; null when what applies is switched off.</summary>
+    /// <summary>A lent warp when a sibling holds one, else an auto warp, else Warp off; null when what applies is switched off.</summary>
     private async Task<WarpOutcome?> OutcomeAsync(
         string target,
         IReadOnlyList<string> authorities,
         IReadOnlyList<string> sameKind,
-        (StarterGrid Grid, string From)? tempo,
+        (AutoWarpGrid Grid, string From)? tempo,
         IEnumerable<SiblingFile> cuts,
         CancellationToken ct
     )
@@ -110,9 +110,9 @@ public sealed class WarpLending(
                 ? await writer.BorrowAsync(target, authorities, sameKind, ct)
                 : null;
 
-        return (_options.StarterWarps, tempo) switch
+        return (_options.AutoWarps, tempo) switch
         {
-            (StarterWarps.Off, _) => null,
+            (AutoWarps.Off, _) => null,
             (_, var (grid, from)) => await writer.StartAsync(target, sameKind, grid, from, ct),
             _ => await writer.UnwarpAsync(target, sameKind, ct, because: WhyNoTempo(cuts)),
         };
@@ -121,7 +121,7 @@ public sealed class WarpLending(
     private static string Signature(
         string target,
         IReadOnlyList<string> lenders,
-        StarterGrid? grid
+        AutoWarpGrid? grid
     ) =>
         string.Join(
             '|',
@@ -160,7 +160,7 @@ public sealed class WarpOptions
     /// What stems of an upload nothing is warped on get (ADR 0047, ADR 0048, ADR 0054). Changed from
     /// Settings while crateside runs, so every reader looks again each time.
     /// </summary>
-    public StarterWarps StarterWarps { get; set; } = StarterWarps.OnTheGrid;
+    public AutoWarps AutoWarps { get; set; } = AutoWarps.OnTheGrid;
 
     /// <summary>
     /// Whether the song page flags a default clip whose start is off a bar line, and the Tracks page
@@ -170,7 +170,7 @@ public sealed class WarpOptions
 }
 
 /// <summary>What crateside writes for a stem nothing of its upload is warped on.</summary>
-public enum StarterWarps
+public enum AutoWarps
 {
     /// <summary>Nothing: the sidecar is left for Live to write, with Live's own transients.</summary>
     Off,

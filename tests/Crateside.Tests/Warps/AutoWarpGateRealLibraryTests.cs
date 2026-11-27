@@ -9,8 +9,8 @@ using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Warps;
 
-/// <summary>Why a reading beatdetect calls moving still gets a starter: one tempo holds on most of them (#135).</summary>
-public sealed class StarterGateRealLibraryTests
+/// <summary>Why a reading beatdetect calls moving still gets an auto warp: one tempo holds on most of them (#135).</summary>
+public sealed class AutoWarpGateRealLibraryTests
 {
     private const double WandersAt = 0.7;
     private const int MinToJudge = 20;

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace Crateside;
 
 /// <summary>
-/// Lends staged stems their siblings' finished warps, or writes starter warps, and marks each stem's
+/// Lends staged stems their siblings' finished warps, or writes auto warps, and marks each stem's
 /// state in Live (#130), when Staging or the library changes and every ten minutes besides.
 /// Decoding runs on the CPU and contends for nothing, so this runs unattended like detection
 /// (ADR 0043, ADR 0047).
@@ -30,8 +30,7 @@ public sealed class WarpWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var lends =
-            options.Value is not { LendAutomatically: false, StarterWarps: StarterWarps.Off };
+        var lends = options.Value is not { LendAutomatically: false, AutoWarps: AutoWarps.Off };
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -134,7 +133,7 @@ public sealed class WarpWorker(
 
             case WarpOutcome.Started(var bpm, var transientsFrom, _):
                 logger.LogInformation(
-                    "Gave {Target} a starter warp at {Bpm} BPM, transients {Transients}",
+                    "Gave {Target} an auto warp at {Bpm} BPM, transients {Transients}",
                     target,
                     bpm,
                     Transients(transientsFrom)

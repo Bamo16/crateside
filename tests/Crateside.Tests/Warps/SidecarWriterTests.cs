@@ -278,12 +278,12 @@ public sealed class SidecarWriterTests : IDisposable
         );
 
         Assert.Equal(new WarpOutcome.Unwarped(null, "no beat to put a marker on"), outcome);
-        Assert.False(_written.IsStarter(Target));
+        Assert.False(_written.IsAutoWarp(Target));
         Assert.Equal(Warp.Off(0).Markers, AnalysisFile.Read($"{Target}.asd").Warp.Markers);
     }
 
     [Fact]
-    public async Task A_starter_takes_the_tempo_its_transients_fit_best_around_the_reading()
+    public async Task An_auto_warp_takes_the_tempo_its_transients_fit_best_around_the_reading()
     {
         Audio(Target);
         var hits = Enumerable
@@ -310,7 +310,7 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_starter_puts_its_marker_on_the_first_beat_the_loud_transients_fall_on()
+    public async Task An_auto_warp_puts_its_marker_on_the_first_beat_the_loud_transients_fall_on()
     {
         Audio(Target);
 
@@ -347,7 +347,7 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_starter_is_written_again_when_the_downbeat_changes_its_numbering()
+    public async Task An_auto_warp_is_written_again_when_the_downbeat_changes_its_numbering()
     {
         Audio(Target);
         var writer = OnTheHalfSecond();
@@ -374,7 +374,7 @@ public sealed class SidecarWriterTests : IDisposable
         Assert.IsType<WarpOutcome.Started>(renumbered);
         Assert.IsType<WarpOutcome.AlreadyWarped>(again);
         Assert.Equal(2, AnalysisFile.Read($"{Target}.asd").Warp.Markers[0].Beat);
-        Assert.True(_written.IsStarter(Target));
+        Assert.True(_written.IsAutoWarp(Target));
     }
 
     /// <summary>beatdetect 1.4.0 on Basement Jaxx – <i>Never Say Never</i> (<c>-pS4u1qPaiM</c>): its downbeat two beats after its first beat, at confidence 0.317.</summary>
@@ -413,7 +413,7 @@ public sealed class SidecarWriterTests : IDisposable
         );
 
     [Fact]
-    public async Task A_starter_under_the_downbeat_gate_records_its_grid_and_why_its_marker_is_a_downbeat()
+    public async Task An_auto_warp_under_the_downbeat_gate_records_its_grid_and_why_its_marker_is_a_downbeat()
     {
         Audio(Target);
         var file = Path.Combine(_root, "written-warps.json");
@@ -422,33 +422,33 @@ public sealed class SidecarWriterTests : IDisposable
             .StartAsync(
                 Target,
                 [],
-                StarterGrid.Of(NeverSayNever())!,
+                AutoWarpGrid.Of(NeverSayNever())!,
                 ct: TestContext.Current.CancellationToken
             );
 
-        var starter = new WrittenWarps(file).Of(Target)?.Starter;
+        var autoWarp = new WrittenWarps(file).Of(Target)?.AutoWarp;
 
-        Assert.NotNull(starter);
-        Assert.Equal(126, starter.Bpm, 1);
-        Assert.Equal(125.99913, starter.ReadBpm);
-        Assert.Equal(0.232, starter.MarkerSeconds, 2);
-        Assert.Equal(0, starter.MarkerBeat);
-        Assert.Equal(0.23209, starter.ReadBeatSeconds);
-        Assert.Equal(StarterBeat.ReadingRefinedByFold, starter.BeatFrom);
-        Assert.Equal(StarterBar.UnsureDownbeat, starter.BarFrom);
-        Assert.NotNull(starter.Downbeat);
-        Assert.Equal(1.18447, starter.Downbeat.Seconds, 5);
-        Assert.Equal((0.317, 4), (starter.Downbeat.Confidence, starter.Downbeat.BeatsPerBar));
-        Assert.Equal(2, starter.ReadMarkerBeat);
-        Assert.Equal(0.6, starter.DownbeatSureAt);
+        Assert.NotNull(autoWarp);
+        Assert.Equal(126, autoWarp.Bpm, 1);
+        Assert.Equal(125.99913, autoWarp.ReadBpm);
+        Assert.Equal(0.232, autoWarp.MarkerSeconds, 2);
+        Assert.Equal(0, autoWarp.MarkerBeat);
+        Assert.Equal(0.23209, autoWarp.ReadBeatSeconds);
+        Assert.Equal(AutoWarpBeat.ReadingRefinedByFold, autoWarp.BeatFrom);
+        Assert.Equal(AutoWarpBar.UnsureDownbeat, autoWarp.BarFrom);
+        Assert.NotNull(autoWarp.Downbeat);
+        Assert.Equal(1.18447, autoWarp.Downbeat.Seconds, 5);
+        Assert.Equal((0.317, 4), (autoWarp.Downbeat.Confidence, autoWarp.Downbeat.BeatsPerBar));
+        Assert.Equal(2, autoWarp.ReadMarkerBeat);
+        Assert.Equal(0.6, autoWarp.DownbeatSureAt);
         Assert.Equal(
             "marker on beat 1: downbeat confidence 0.32 under 0.6, so beat 1 (beatdetect said beat 3)",
-            WarpWording.StarterWhy(starter)
+            WarpWording.AutoWarpWhy(autoWarp)
         );
     }
 
     [Fact]
-    public async Task A_starter_over_the_downbeat_gate_records_that_beatdetects_downbeat_numbered_it()
+    public async Task An_auto_warp_over_the_downbeat_gate_records_that_beatdetects_downbeat_numbered_it()
     {
         Audio(Target);
 
@@ -456,37 +456,37 @@ public sealed class SidecarWriterTests : IDisposable
             .StartAsync(
                 Target,
                 [],
-                StarterGrid.Of(NeverSayNever(downbeatConfidence: 0.71))!,
+                AutoWarpGrid.Of(NeverSayNever(downbeatConfidence: 0.71))!,
                 ct: TestContext.Current.CancellationToken
             );
 
-        var starter = _written.Of(Target)?.Starter;
+        var autoWarp = _written.Of(Target)?.AutoWarp;
 
-        Assert.NotNull(starter);
-        Assert.Equal(2, starter.MarkerBeat);
-        Assert.Equal(StarterBar.Downbeat, starter.BarFrom);
+        Assert.NotNull(autoWarp);
+        Assert.Equal(2, autoWarp.MarkerBeat);
+        Assert.Equal(AutoWarpBar.Downbeat, autoWarp.BarFrom);
         Assert.Equal(2, AnalysisFile.Read($"{Target}.asd").Warp.Markers[0].Beat);
         Assert.Equal(
             "marker on beat 3: beatdetect's downbeat, confidence 0.71",
-            WarpWording.StarterWhy(starter)
+            WarpWording.AutoWarpWhy(autoWarp)
         );
     }
 
     [Fact]
-    public async Task A_starter_keeps_its_reasons_when_its_clip_is_recolored()
+    public async Task An_auto_warp_keeps_its_reasons_when_its_clip_is_recolored()
     {
         Audio(Target);
         var writer = OnNeverSayNeversBeats(_written);
         await writer.StartAsync(
             Target,
             [],
-            StarterGrid.Of(NeverSayNever())!,
+            AutoWarpGrid.Of(NeverSayNever())!,
             ct: TestContext.Current.CancellationToken
         );
 
         writer.Level(Target, 0.5f);
 
-        Assert.Equal(StarterBar.UnsureDownbeat, _written.Of(Target)?.Starter?.BarFrom);
+        Assert.Equal(AutoWarpBar.UnsureDownbeat, _written.Of(Target)?.AutoWarp?.BarFrom);
     }
 
     private SidecarWriter OnTheHalfSecond() =>
@@ -536,7 +536,7 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task The_transients_a_starter_carries_are_recorded_with_the_detector_that_found_them()
+    public async Task The_transients_a_auto_warp_carries_are_recorded_with_the_detector_that_found_them()
     {
         Audio(Target);
 
@@ -555,7 +555,7 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_starter_warp_never_lends()
+    public async Task An_auto_warp_never_lends()
     {
         Audio(Target);
         Audio(Sibling);
@@ -574,7 +574,7 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_lent_warp_replaces_a_starter()
+    public async Task A_lent_warp_replaces_a_auto_warp()
     {
         Audio(Target);
         await Borrower()
@@ -591,11 +591,11 @@ public sealed class SidecarWriterTests : IDisposable
 
         Assert.IsType<WarpOutcome.Written>(outcome);
         Assert.Equal(Markers, AnalysisFile.Read($"{Target}.asd").Warp.Markers);
-        Assert.False(_written.IsStarter(Target));
+        Assert.False(_written.IsAutoWarp(Target));
     }
 
     [Fact]
-    public async Task Once_Live_saves_over_a_starter_it_is_the_users_warp()
+    public async Task Once_Live_saves_over_a_auto_warp_it_is_the_users_warp()
     {
         Audio(Target);
         await Borrower()
@@ -609,7 +609,7 @@ public sealed class SidecarWriterTests : IDisposable
         Analysis(saved: true).Write($"{Target}.asd");
         File.SetLastWriteTimeUtc($"{Target}.asd", DateTime.UtcNow.AddMinutes(1));
 
-        Assert.False(_written.IsStarter(Target));
+        Assert.False(_written.IsAutoWarp(Target));
         Assert.IsType<WarpOutcome.AlreadyWarped>(
             await Borrower()
                 .StartAsync(
@@ -622,7 +622,7 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_starter_carries_the_stems_clip_gain_from_its_first_write()
+    public async Task An_auto_warp_carries_the_stems_clip_gain_from_its_first_write()
     {
         Audio(Target);
 
@@ -655,7 +655,7 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_stem_with_no_starter_gets_a_saved_clip_with_Warp_off_over_the_whole_file()
+    public async Task A_stem_with_no_auto_warp_gets_a_saved_clip_with_Warp_off_over_the_whole_file()
     {
         Audio(Target);
 
@@ -679,7 +679,7 @@ public sealed class SidecarWriterTests : IDisposable
         );
         Assert.Equal(ClipColors.For(Target), written.Clip.Color);
         Assert.Equal(PlusSixDb, written.Clip.SampleVolume, 4);
-        Assert.True(_written.Of(Target) is { IsUnwarped: true, IsStarter: false, From: null });
+        Assert.True(_written.Of(Target) is { IsUnwarped: true, IsAutoWarp: false, From: null });
     }
 
     [Fact]
@@ -713,7 +713,7 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_starter_and_a_clip_with_Warp_off_replace_each_other_as_the_tempo_allows()
+    public async Task An_auto_warp_and_a_clip_with_Warp_off_replace_each_other_as_the_tempo_allows()
     {
         Audio(Target);
         await Steady().UnwarpAsync(Target, [], TestContext.Current.CancellationToken);
@@ -736,7 +736,7 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_stem_whose_beats_one_tempo_does_not_hold_gets_Warp_off_instead_of_a_starter()
+    public async Task A_stem_whose_beats_one_tempo_does_not_hold_gets_Warp_off_instead_of_a_auto_warp()
     {
         Audio(Target);
 
@@ -760,7 +760,7 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_clip_with_Warp_off_after_a_starter_that_does_not_hold_spaces_its_pair_at_the_tempo()
+    public async Task A_clip_with_Warp_off_after_a_auto_warp_that_does_not_hold_spaces_its_pair_at_the_tempo()
     {
         Audio(Target);
 
@@ -788,7 +788,7 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_starter_written_before_the_check_is_replaced_by_Warp_off_once_its_beats_do_not_hold()
+    public async Task An_auto_warp_written_before_the_check_is_replaced_by_Warp_off_once_its_beats_do_not_hold()
     {
         Audio(Target);
         await Steady()
@@ -808,7 +808,7 @@ public sealed class SidecarWriterTests : IDisposable
             );
 
         Assert.IsType<WarpOutcome.Unwarped>(outcome);
-        Assert.False(_written.IsStarter(Target));
+        Assert.False(_written.IsAutoWarp(Target));
     }
 
     [Fact]

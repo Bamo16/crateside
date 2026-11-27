@@ -78,7 +78,10 @@ public sealed class SavedWarps
     private static Dictionary<string, SavedWarp> Load(string? path) =>
         new(
             path is not null
-            && SavedWarpsJsonContext.Default.DictionaryStringSavedWarp.ReadFileOrDefault(path)
+            && SavedWarpsJsonContext.Default.DictionaryStringSavedWarp.ReadFileOrDefault(
+                path,
+                LegacyWarpNames.StoredKeys
+            )
                 is { } entries
                 ? entries
                 : [],
@@ -96,14 +99,14 @@ public sealed record SavedWarp(DateTimeOffset At, long Length, DateTime Written,
 /// <param name="TempoFactor">The tempo's net scaling: 0.5 for halved, 2 for doubled, 1 for none.</param>
 /// <param name="ClipStartBar">The bar the clip now starts on, or null when it stayed.</param>
 /// <param name="ClipWasBar">The bar the clip started on before the save.</param>
-/// <param name="FromStarter">Whether the warp it started from was crateside's starter.</param>
+/// <param name="FromAutoWarp">Whether the warp it started from was crateside's auto warp.</param>
 public sealed record SavedEdits(
     int BarShift,
     double NudgeMs,
     double TempoFactor,
     int? ClipStartBar,
     int? ClipWasBar,
-    bool FromStarter
+    bool FromAutoWarp
 )
 {
     [JsonIgnore]

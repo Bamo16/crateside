@@ -364,9 +364,9 @@
                                 </section>
                             }
 
-                            @if (_starters.Compared > 0)
+                            @if (_autoWarps.Compared > 0)
                             {
-                                <StarterWarps Counts="_starters" />
+                                <AutoWarps Counts="_autoWarps" />
                             }
 
                             <section id="p-genre">
@@ -528,7 +528,7 @@
     private TempoCounts _tempo = null!;
     private ArtistCounts _artists = null!;
     private IReadOnlyList<DriftCount> _drift = [];
-    private StarterWarpCounts _starters = new([], 0);
+    private AutoWarpCounts _autoWarps = new([], 0);
     private IReadOnlyList<(string? Value, int Songs)> _familiarity = [];
     private KeyDetectorCounts _keysBoth = new(0, [], []);
     private KeyDetectorCounts _keysHigh = new(0, [], []);
@@ -617,7 +617,7 @@
             new("p-key", "By key", Represented, IsPanel: true),
             LoudnessCounted > 0 ? new("p-loud", "Loudness adjustments", LoudnessCounted, IsPanel: true) : null,
             _tempo.Warped > 0 ? new("p-tempo", "By tempo", _tempo.Warped, IsPanel: true) : null,
-            _starters.Compared > 0 ? new("p-starter", "Auto warps", _starters.Compared, IsPanel: true) : null,
+            _autoWarps.Compared > 0 ? new("p-auto-warp", "Auto warps", _autoWarps.Compared, IsPanel: true) : null,
             new("p-genre", "By genre", _distribution.Genres.Count(g => g.Tracks > 0), IsPanel: true),
             new("p-familiarity", "By familiarity", _familiarity.Count(f => f is { Value: not null, Songs: > 0 }), IsPanel: true),
             _artists.Artists.Count > 0 ? new("p-artist", "By artist", _artists.Artists.Count, IsPanel: true) : null,
@@ -802,7 +802,7 @@
         _gaps = GenreGaps.From(GenreRecords.Read().Values);
         _tempo = TempoCounts.From(distribution.Songs);
         _artists = ArtistCounts.From(distribution.Songs);
-        _starters = StarterWarpCounts.From(distribution.Songs.ToList());
+        _autoWarps = AutoWarpCounts.From(distribution.Songs.ToList());
         _drift = DriftCount.From(distribution.Songs);
 
         var evidence = Ledger.LatestEvidence().Values;

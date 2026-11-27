@@ -38,7 +38,7 @@ public static class StagedSongs
             Genres = row.Genre?.Genres ?? [],
             Tempo = row.Tempo,
             Beats = row.Beats,
-            Starter = StarterFates.Of(row.Beats, row.Tempo),
+            AutoWarp = AutoWarpFates.Of(row.Beats, row.Tempo),
             Run = row.Verdict,
             IsStaged = true,
         };

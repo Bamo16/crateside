@@ -311,13 +311,13 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                 </div>
                 <div class="control">
                     <div class="pills">
-                        @foreach (var mode in Enum.GetValues<StarterWarps>())
+                        @foreach (var mode in Enum.GetValues<AutoWarps>())
                         {
-                            <button class="pill @(Starter == mode ? "on plain" : "off")"
-                                    @onclick="() => SetStarter(mode)">@StarterName(mode)</button>
+                            <button class="pill @(AutoWarp == mode ? "on plain" : "off")"
+                                    @onclick="() => SetAutoWarp(mode)">@AutoWarpName(mode)</button>
                         }
                     </div>
-                    <span class="status">@StarterNote(Starter)</span>
+                    <span class="status">@AutoWarpNote(AutoWarp)</span>
                 </div>
             </div>
 
@@ -764,7 +764,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             ? "Counted like an authoritative source: it can settle a split by itself."
             : "Weighed with the rest, but it never raises confidence on its own.";
 
-    private StarterWarps Starter => Warps.Value.StarterWarps;
+    private AutoWarps AutoWarp => Warps.Value.AutoWarps;
 
     private SourceRetention _retention = new();
     private Recipe _recipe;
@@ -897,9 +897,9 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     }
 
     // Read again by the workers each time they look, so it applies to the next stem to land.
-    private void SetStarter(StarterWarps mode)
+    private void SetAutoWarp(AutoWarps mode)
     {
-        Warps.Value.StarterWarps = mode;
+        Warps.Value.AutoWarps = mode;
         WarpStore.Remember(mode);
     }
 
@@ -946,17 +946,17 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         WarpStore.RememberFlagClipOffBarLine(flag);
     }
 
-    private static string StarterName(StarterWarps mode) =>
+    private static string AutoWarpName(AutoWarps mode) =>
         mode switch
         {
-            StarterWarps.Off => "Off",
+            AutoWarps.Off => "Off",
             _ => "On the grid",
         };
 
-    private static string StarterNote(StarterWarps mode) =>
+    private static string AutoWarpNote(AutoWarps mode) =>
         mode switch
         {
-            StarterWarps.Off =>
+            AutoWarps.Off =>
                 "Nothing is written, so Live analyzes each stem itself, with its own transients.",
             _ =>
                 "One marker at crateside's tempo reading, on a beat the transients place, and the clip starting on it. A stem whose beat cannot be placed arrives with Warp off. About one track in eleven lands half a beat off.",

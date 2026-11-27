@@ -65,7 +65,7 @@ public sealed class StagingMarksTests : IDisposable
         Sidecar(saved, markerBeat: 0);
         var onTheGrid = Stem("Song (Vocal - Full).flac", "Vocal - Full");
         Sidecar(onTheGrid, markerBeat: 1);
-        _written.RecordStarter(onTheGrid);
+        _written.RecordAutoWarp(onTheGrid);
         var unwarped = Stem("Song (Drums).flac", "Drums");
         var warpOff = Stem("Other (Instrumental - Full).flac", "Instrumental - Full");
         Sidecar(warpOff, markerBeat: 0);
@@ -223,15 +223,15 @@ public sealed class StagingMarksTests : IDisposable
     }
 
     [Fact]
-    public void A_starter_recolored_is_still_crateside_s_to_replace()
+    public void An_auto_warp_recolored_is_still_crateside_s_to_replace()
     {
         var stem = Stem("Song (Vocal - Full).flac", "Vocal - Full");
         Sidecar(stem, markerBeat: 1);
-        _written.RecordStarter(stem);
+        _written.RecordAutoWarp(stem);
 
         Assert.Equal([stem], _marks.Recolor());
 
-        Assert.True(_written.IsStarter(stem));
+        Assert.True(_written.IsAutoWarp(stem));
     }
 
     [Fact]

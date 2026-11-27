@@ -673,9 +673,9 @@
                     </div>
 
                     <p class="provenance">@wording.Sentence(selected)</p>
-                    @if (selected.Starter is { } starter)
+                    @if (selected.AutoWarp is { } autoWarp)
                     {
-                        <p class="starter-why mono">@WarpWording.StarterWhy(starter)</p>
+                        <p class="auto-warp-why mono">@WarpWording.AutoWarpWhy(autoWarp)</p>
                     }
 
                     <div class="controls">
@@ -1731,7 +1731,7 @@
         yield return tempo is not null && TempoFormat.Format(tempo) is var formatted
             ? ("Tempo", formatted.Text, formatted.Brief, formatted.IsApproximate ? "approx" : null)
             : sidecar.Warp is { IsWarped: true } && sidecar.Warp.TempoAt(stem.Clip.Start) is { } own
-                ? ("Tempo", WarpWording.Tempo(own), stem.Owner is WarpOwner.Starter ? "crateside's reading" : string.Empty, null)
+                ? ("Tempo", WarpWording.Tempo(own), stem.Owner is WarpOwner.AutoWarp ? "crateside's reading" : string.Empty, null)
                 : ("Tempo", "—", string.Empty, "faint");
 
         yield return ("Mode", WarpWording.Mode(sidecar.Warp.Mode), string.Empty, null);

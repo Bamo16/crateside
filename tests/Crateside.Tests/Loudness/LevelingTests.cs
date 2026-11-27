@@ -160,15 +160,15 @@ public sealed class LevelingTests : IDisposable
     }
 
     [Fact]
-    public async Task A_starter_leveled_is_still_crateside_s_to_replace()
+    public async Task An_auto_warp_leveled_is_still_crateside_s_to_replace()
     {
         var stem = Sample(Path.Combine("Staging", "Song (Vocal - Full).flac"), gain: 1);
-        _written.RecordStarter(stem);
+        _written.RecordAutoWarp(stem);
         var leveling = Leveling(_ => -20);
         await leveling.ReadAsync(leveling.Unread(), TestContext.Current.CancellationToken);
 
         Assert.Equal([stem], leveling.Level());
-        Assert.True(_written.IsStarter(stem));
+        Assert.True(_written.IsAutoWarp(stem));
     }
 
     [Fact]

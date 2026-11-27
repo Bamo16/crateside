@@ -229,7 +229,7 @@ public sealed record TrackRow
     public bool ClipStartsOffBarLine =>
         Samples.Any(sample => sample.Tempo is { ClipStart.OnBarLine: false });
 
-    /// <summary>Some stem's warp is a starter warp: the UI's "Auto warp".</summary>
+    /// <summary>Some stem's warp is an auto warp: the UI's "Auto warp".</summary>
     public bool AutoWarp => Samples.Any(sample => sample.AutoWarp);
 
     /// <summary>The stage crateside currently believes is working this track, if any.</summary>
@@ -690,7 +690,7 @@ public sealed record TrackSample
     /// </summary>
     public bool HasDefaultClip { get; init; }
 
-    /// <summary>Its warp is crateside's starter guess, not a saved one (#77).</summary>
+    /// <summary>Its warp is crateside's auto warp guess, not a saved one (#77).</summary>
     public bool AutoWarp { get; init; }
 
     /// <summary>The sibling whose warp crateside copied onto it, until the user saves over it (ADR 0043).</summary>

@@ -2,7 +2,7 @@ using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Tracks;
 
-/// <summary>The UI's "Auto warp": a row where any stem's warp is a starter.</summary>
+/// <summary>The UI's "Auto warp": a row where any stem's warp is an auto warp.</summary>
 public sealed class AutoWarpTests
 {
     [Fact]

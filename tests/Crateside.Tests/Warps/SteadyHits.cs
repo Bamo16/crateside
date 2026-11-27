@@ -3,7 +3,7 @@ using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Warps;
 
-/// <summary>70 s of audio with a hit every half second, 120 BPM, which a starter's grid holds on unless the hits jump.</summary>
+/// <summary>70 s of audio with a hit every half second, 120 BPM, which an auto warp's grid holds on unless the hits jump.</summary>
 internal static class SteadyHits
 {
     public const int Seconds = 70;

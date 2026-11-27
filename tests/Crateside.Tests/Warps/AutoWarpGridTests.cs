@@ -5,10 +5,10 @@ using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Warps;
 
-public sealed class StarterGridTests : IDisposable
+public sealed class AutoWarpGridTests : IDisposable
 {
     private const double BeatSeconds = 0.5;
-    private const double BarSeconds = BeatSeconds * StarterGrid.BeatsPerBar;
+    private const double BarSeconds = BeatSeconds * AutoWarpGrid.BeatsPerBar;
 
     /// <summary>Where the synthesized tracks' first bar starts, so a downbeat read at the top of the file is wrong.</summary>
     private const double FirstBarSeconds = 1;
@@ -18,40 +18,40 @@ public sealed class StarterGridTests : IDisposable
     public void Dispose() => Directory.Delete(_folder, recursive: true);
 
     [Fact]
-    public void A_sure_downbeat_numbers_the_starters_beats() =>
+    public void A_sure_downbeat_numbers_the_auto_warps_beats() =>
         Assert.Equal(
-            new StarterGrid(120, 0.5, 1.5) { Read = new(1.5, 0.6, 4) },
-            StarterGrid.Of(Reading(confidence: 0.6))
+            new AutoWarpGrid(120, 0.5, 1.5) { Read = new(1.5, 0.6, 4) },
+            AutoWarpGrid.Of(Reading(confidence: 0.6))
         );
 
     [Fact]
     public void An_unsure_downbeat_leaves_which_beat_starts_a_bar_a_guess_and_keeps_what_was_read() =>
         Assert.Equal(
-            new StarterGrid(120, 0.5, null) { Read = new(1.5, 0.599, 4) },
-            StarterGrid.Of(Reading(confidence: 0.599))
+            new AutoWarpGrid(120, 0.5, null) { Read = new(1.5, 0.599, 4) },
+            AutoWarpGrid.Of(Reading(confidence: 0.599))
         );
 
     [Fact]
     public void A_downbeat_in_bars_of_three_is_not_used_on_a_grid_of_four() =>
         Assert.Equal(
-            new StarterGrid(120, 0.5, null) { Read = new(1.5, 0.2, 3) },
-            StarterGrid.Of(Reading(confidence: 0.2) with { BeatsPerBar = 3 })
+            new AutoWarpGrid(120, 0.5, null) { Read = new(1.5, 0.2, 3) },
+            AutoWarpGrid.Of(Reading(confidence: 0.2) with { BeatsPerBar = 3 })
         );
 
     [Fact]
     public void A_reading_without_a_tempo_gives_no_grid() =>
-        Assert.Null(StarterGrid.Of(new BeatReading { BeatOffsetMs = 500 }));
+        Assert.Null(AutoWarpGrid.Of(new BeatReading { BeatOffsetMs = 500 }));
 
     [Fact]
     public void A_drifting_reading_gives_no_grid() =>
         Assert.Null(
-            StarterGrid.Of(Reading(confidence: 0.2) with { Windows = [118, 119, 120, 121, 122] })
+            AutoWarpGrid.Of(Reading(confidence: 0.2) with { Windows = [118, 119, 120, 121, 122] })
         );
 
     [Fact]
     public async Task A_track_with_a_clear_downbeat_puts_it_on_a_bar_line()
     {
-        var grid = StarterGrid.Of(await ReadAsync("accented.wav", Accented()));
+        var grid = AutoWarpGrid.Of(await ReadAsync("accented.wav", Accented()));
 
         Assert.NotNull(grid?.DownbeatSeconds);
 
@@ -63,7 +63,7 @@ public sealed class StarterGridTests : IDisposable
     [Fact]
     public async Task A_track_whose_beats_are_all_alike_gives_no_downbeat()
     {
-        var grid = StarterGrid.Of(await ReadAsync("flat.wav", seconds => Kick(1, seconds)));
+        var grid = AutoWarpGrid.Of(await ReadAsync("flat.wav", seconds => Kick(1, seconds)));
 
         Assert.NotNull(grid);
         Assert.Null(grid.DownbeatSeconds);

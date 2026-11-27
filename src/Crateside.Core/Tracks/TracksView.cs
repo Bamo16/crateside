@@ -474,15 +474,15 @@ public sealed record TracksView
                     Sample(StemOnDisk.Of(staged.sample), readings.Presets, sourceTrackKey) with
                     {
                         AbletonKey = staged.sample.AbletonKey,
-                        // A starter warp is crateside's guess at the tempo, not a warp (#77), and a
+                        // An auto warp is crateside's guess at the tempo, not a warp (#77), and a
                         // clip with Warp off is none at all (ADR 0059).
                         HasDefaultClip =
                             staged
                                 is {
                                     sample.HasDefaultClip: true,
-                                    written: null or { IsStarter: false, IsUnwarped: false },
+                                    written: null or { IsAutoWarp: false, IsUnwarped: false },
                                 },
-                        AutoWarp = staged.written is { IsStarter: true },
+                        AutoWarp = staged.written is { IsAutoWarp: true },
                         Tempo = staged.sample.HasDefaultClip
                             ? readings.TempoOf?.Invoke(staged.sample.Path)
                             : null,

@@ -145,7 +145,7 @@ public sealed class WarpLendingTests : IDisposable
     }
 
     [Fact]
-    public async Task Stems_of_an_upload_nothing_is_warped_on_get_starter_warps_at_the_measured_tempo()
+    public async Task Stems_of_an_upload_nothing_is_warped_on_get_auto_warps_at_the_measured_tempo()
     {
         var vocal = Stem(_paths.StagingFolder, "Song (Vocal - Full).flac", "Vocal - Full");
         var instrumental = Stem(
@@ -155,7 +155,7 @@ public sealed class WarpLendingTests : IDisposable
         );
 
         var loans = await Lending(
-                new WarpOptions { StarterWarps = StarterWarps.OnTheGrid },
+                new WarpOptions { AutoWarps = AutoWarps.OnTheGrid },
                 bpm: 120,
                 steady: true
             )
@@ -186,14 +186,14 @@ public sealed class WarpLendingTests : IDisposable
     }
 
     [Fact]
-    public async Task Without_a_steady_measured_tempo_a_stem_gets_a_clip_with_Warp_off_and_no_starter()
+    public async Task Without_a_steady_measured_tempo_a_stem_gets_a_clip_with_Warp_off_and_no_auto_warp()
     {
         var vocal = Stem(_paths.StagingFolder, "Song (Vocal - Full).flac", "Vocal - Full");
 
         var written = new WrittenWarps();
 
         var loans = await Lending(
-                new WarpOptions { StarterWarps = StarterWarps.OnTheGrid },
+                new WarpOptions { AutoWarps = AutoWarps.OnTheGrid },
                 written: written
             )
             .LendAsync(TestContext.Current.CancellationToken);
@@ -208,21 +208,19 @@ public sealed class WarpLendingTests : IDisposable
     }
 
     [Fact]
-    public async Task With_starter_warps_off_a_stem_with_no_tempo_is_left_for_Live()
+    public async Task With_auto_warps_off_a_stem_with_no_tempo_is_left_for_Live()
     {
         var vocal = Stem(_paths.StagingFolder, "Song (Vocal - Full).flac", "Vocal - Full");
 
         Assert.Empty(
-            await Lending(
-                    new WarpOptions { LendAutomatically = true, StarterWarps = StarterWarps.Off }
-                )
+            await Lending(new WarpOptions { LendAutomatically = true, AutoWarps = AutoWarps.Off })
                 .LendAsync(TestContext.Current.CancellationToken)
         );
         Assert.False(File.Exists($"{vocal}.asd"));
     }
 
     [Fact]
-    public async Task With_lending_off_a_finished_sibling_still_holds_back_a_starter()
+    public async Task With_lending_off_a_finished_sibling_still_holds_back_a_auto_warp()
     {
         var finished = Stem(
             _paths.LibraryFolder,
@@ -233,7 +231,7 @@ public sealed class WarpLendingTests : IDisposable
         var recut = Stem(_paths.StagingFolder, "Song (Vocal - Clean).flac", "Vocal - Clean");
 
         Assert.Empty(
-            await Lending(new WarpOptions { StarterWarps = StarterWarps.OnTheGrid }, bpm: 128)
+            await Lending(new WarpOptions { AutoWarps = AutoWarps.OnTheGrid }, bpm: 128)
                 .LendAsync(TestContext.Current.CancellationToken)
         );
         Assert.False(File.Exists($"{recut}.asd"));
@@ -254,7 +252,7 @@ public sealed class WarpLendingTests : IDisposable
                 new TransientOrigins()
             ),
             Options.Create(options),
-            new Grids(bpm is { } tempo ? new StarterGrid(tempo, null, null) : null),
+            new Grids(bpm is { } tempo ? new AutoWarpGrid(tempo, null, null) : null),
             notes: _notes
         );
 
@@ -295,8 +293,8 @@ public sealed class WarpLendingTests : IDisposable
             Task.FromResult<DecodedAudio?>(new DecodedAudio(new float[Frames * 2], 2, 44_100));
     }
 
-    private sealed class Grids(StarterGrid? grid) : IStarterGrids
+    private sealed class Grids(AutoWarpGrid? grid) : IAutoWarpGrids
     {
-        public StarterGrid? Of(SiblingFile cut) => grid;
+        public AutoWarpGrid? Of(SiblingFile cut) => grid;
     }
 }

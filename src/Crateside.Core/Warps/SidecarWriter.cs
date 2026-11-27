@@ -8,7 +8,7 @@ using Crateside.Core.Tempo;
 namespace Crateside.Core.Warps;
 
 /// <summary>
-/// Writes a stem's sidecar: a sibling's finished warp (#54, ADR 0043–0045), a starter warp at the
+/// Writes a stem's sidecar: a sibling's finished warp (#54, ADR 0043–0045), an auto warp at the
 /// measured BPM (#77, ADR 0047), or a clip with Warp off; each at its clip gain (ADR 0059).
 /// </summary>
 public sealed class SidecarWriter(
@@ -26,15 +26,15 @@ public sealed class SidecarWriter(
 
     private const double MaxDetune = 50;
 
-    /// <summary>How far apart any two 30 s of the track may sit on a starter's grid, in ms; more and the stem gets Warp off.</summary>
-    public const double StarterHoldsWithinMs = 10;
+    /// <summary>How far apart any two 30 s of the track may sit on an auto warp's grid, in ms; more and the stem gets Warp off.</summary>
+    public const double AutoWarpHoldsWithinMs = 10;
 
     private const double HoldBlockSeconds = 30;
     private const int MinWindowsToHold = 6;
 
     private readonly ConcurrentDictionary<
         (string Reference, long Length, double Bpm, double? BeatSeconds),
-        StarterTiming
+        AutoWarpTiming
     > _timings = new();
 
     // The warp worker and the leveling pass both rewrite sidecars; neither may undo the other.
@@ -72,12 +72,12 @@ public sealed class SidecarWriter(
     public async Task<WarpOutcome> StartAsync(
         string target,
         IReadOnlyList<string> sameKind,
-        StarterGrid grid,
+        AutoWarpGrid grid,
         string? timingFrom = null,
         CancellationToken ct = default
-    ) => Settle(await PrepareStarterAsync(target, sameKind, grid, timingFrom, ct), target);
+    ) => Settle(await PrepareAutoWarpAsync(target, sameKind, grid, timingFrom, ct), target);
 
-    /// <summary>Writes a clip with Warp off over the whole file, for a stem that gets no starter (ADR 0059).</summary>
+    /// <summary>Writes a clip with Warp off over the whole file, for a stem that gets no auto warp (ADR 0059).</summary>
     public async Task<WarpOutcome> UnwarpAsync(
         string target,
         IReadOnlyList<string> sameKind,
@@ -161,13 +161,13 @@ public sealed class SidecarWriter(
     }
 
     /// <summary>
-    /// Works out the sidecar <see cref="StartAsync"/> would write, without writing it, over a starter that
+    /// Works out the sidecar <see cref="StartAsync"/> would write, without writing it, over an auto warp that
     /// differs; Warp off instead when one tempo does not hold on the group's beats or no beat is placed.
     /// </summary>
-    public async Task<SidecarPlan> PrepareStarterAsync(
+    public async Task<SidecarPlan> PrepareAutoWarpAsync(
         string target,
         IReadOnlyList<string> sameKind,
-        StarterGrid grid,
+        AutoWarpGrid grid,
         string? timingFrom = null,
         CancellationToken ct = default
     )
@@ -183,7 +183,7 @@ public sealed class SidecarWriter(
                 return Refuse(Undecodable(timingFrom ?? target));
 
             if (timing is not { WarpOffBecause: null, FirstBeat: { } firstBeat })
-                return written.Of(target) is { IsStarter: false }
+                return written.Of(target) is { IsAutoWarp: false }
                     ? Refuse(new WarpOutcome.AlreadyWarped())
                     : await UnwarpedAsync(
                         target,
@@ -193,11 +193,11 @@ public sealed class SidecarWriter(
                         ct
                     );
 
-            var warp = StarterWarp(timing.Bpm, firstBeat, grid.DownbeatSeconds);
-            var starter = WrittenStarter.Of(grid, timing.Bpm, warp.Markers[0]);
+            var warp = AutoWarp(timing.Bpm, firstBeat, grid.DownbeatSeconds);
+            var autoWarp = WrittenAutoWarp.Of(grid, timing.Bpm, warp.Markers[0]);
 
             if (
-                own is { IsStarter: true, Analysis: { Clip.LoopStart: 0 } kept }
+                own is { IsAutoWarp: true, Analysis: { Clip.LoopStart: 0 } kept }
                 && kept.Warp.Markers.SequenceEqual(warp.Markers)
             )
                 return Refuse(new WarpOutcome.AlreadyWarped());
@@ -213,7 +213,7 @@ public sealed class SidecarWriter(
                 await GainAsync(target, ct),
                 analysis =>
                     (
-                        Starter(
+                        AutoWarp(
                             warp,
                             timing.Bpm,
                             (double)audio.Frames / audio.SampleRate,
@@ -221,7 +221,7 @@ public sealed class SidecarWriter(
                         ),
                         timing.Bpm
                     ),
-                starter: starter
+                autoWarp: autoWarp
             );
         }
         catch (Exception ex)
@@ -231,7 +231,7 @@ public sealed class SidecarWriter(
         }
     }
 
-    /// <summary>Works out the sidecar <see cref="UnwarpAsync"/> would write, without writing it; over a starter, but never a lent warp or the user's.</summary>
+    /// <summary>Works out the sidecar <see cref="UnwarpAsync"/> would write, without writing it; over an auto warp, but never a lent warp or the user's.</summary>
     public async Task<SidecarPlan> PrepareUnwarpedAsync(
         string target,
         IReadOnlyList<string> sameKind,
@@ -241,7 +241,7 @@ public sealed class SidecarWriter(
     {
         try
         {
-            return Own(target) is { IsUsers: true } || written.Of(target) is { IsStarter: false }
+            return Own(target) is { IsUsers: true } || written.Of(target) is { IsAutoWarp: false }
                 ? Refuse(new WarpOutcome.AlreadyWarped())
                 : await UnwarpedAsync(target, sameKind, because, null, ct);
         }
@@ -295,7 +295,7 @@ public sealed class SidecarWriter(
                 else if (sidecar.IsUnwarped)
                     written.RecordUnwarped(audioPath, sidecar.WarpOffBecause);
                 else
-                    written.RecordStarter(audioPath, sidecar.Starter);
+                    written.RecordAutoWarp(audioPath, sidecar.AutoWarp);
             }
 
             var transients = sidecar.File.Audio.Transients;
@@ -474,11 +474,11 @@ public sealed class SidecarWriter(
     /// One marker on the first beat (#72), numbered within its bar from the downbeat when there is one,
     /// else as a downbeat, with bar lines on every fourth beat from 0 (ADR 0054).
     /// </summary>
-    private static Warp StarterWarp(double bpm, double markerSeconds, double? downbeatSeconds)
+    private static Warp AutoWarp(double bpm, double markerSeconds, double? downbeatSeconds)
     {
         var beatSeconds = 60 / bpm;
         var markerBeat = downbeatSeconds is { } downbeat
-            ? StarterGrid.BeatInBar(markerSeconds, downbeat, bpm)
+            ? AutoWarpGrid.BeatInBar(markerSeconds, downbeat, bpm)
             : 0;
 
         return new Warp
@@ -495,10 +495,10 @@ public sealed class SidecarWriter(
     }
 
     /// <summary>
-    /// The starter laid out as Live saves one: the clip from beat 0, the bar line at or before the
+    /// The auto warp laid out as Live saves one: the clip from beat 0, the bar line at or before the
     /// marker even when that is before the audio, to the end of the audio, looping off.
     /// </summary>
-    private static AnalysisFile Starter(Warp warp, double bpm, double seconds, AudioAnalysis audio)
+    private static AnalysisFile AutoWarp(Warp warp, double bpm, double seconds, AudioAnalysis audio)
     {
         var marker = warp.Markers[0];
         var end = marker.Beat + (seconds - marker.Seconds) * bpm / 60;
@@ -539,9 +539,9 @@ public sealed class SidecarWriter(
         };
 
     /// <summary>The tempo and first beat one stem gives a whole group, so their warps match and Live can adjust them together.</summary>
-    private async Task<StarterTiming?> TimingAsync(
+    private async Task<AutoWarpTiming?> TimingAsync(
         string reference,
-        StarterGrid grid,
+        AutoWarpGrid grid,
         CancellationToken ct
     )
     {
@@ -562,7 +562,7 @@ public sealed class SidecarWriter(
         );
         var tempo = Refined(grid.Bpm, transients, audio.SampleRate);
 
-        return _timings[key] = new StarterTiming(
+        return _timings[key] = new AutoWarpTiming(
             tempo,
             GridCheck.FirstBeat(transients, audio.SampleRate, tempo, grid.BeatSeconds),
             WhyNotHeld(GridCheck.Against(GridCheck.Strongest(transients, audio.SampleRate), tempo))
@@ -570,7 +570,7 @@ public sealed class SidecarWriter(
     }
 
     /// <param name="WarpOffBecause">Null when one tempo keeps the stronger transients on its grid through the whole track, else why not.</param>
-    private sealed record StarterTiming(double Bpm, double? FirstBeat, string? WarpOffBecause);
+    private sealed record AutoWarpTiming(double Bpm, double? FirstBeat, string? WarpOffBecause);
 
     internal static bool Holds(GridReport report) => WhyNotHeld(report) is null;
 
@@ -581,7 +581,7 @@ public sealed class SidecarWriter(
             { Steps.Count: > 0 } => "the tempo steps part-way",
             _ when report.OffsetsPer(HoldBlockSeconds).ToArray() is { Length: > 0 } blocks
                     && blocks.Max() - blocks.Min() is var spread
-                    && spread > StarterHoldsWithinMs => $"one tempo misses by {spread:0} ms",
+                    && spread > AutoWarpHoldsWithinMs => $"one tempo misses by {spread:0} ms",
             _ when report.OffsetsPer(HoldBlockSeconds).Any() => null,
             _ => "no transients to hold a tempo",
         };
@@ -605,7 +605,7 @@ public sealed class SidecarWriter(
         float? gain,
         Func<AudioAnalysis, (AnalysisFile File, double? Bpm)> sidecar,
         string? warpOffBecause = null,
-        WrittenStarter? starter = null
+        WrittenAutoWarp? autoWarp = null
     )
     {
         var size = new FileInfo(target).Length;
@@ -632,7 +632,7 @@ public sealed class SidecarWriter(
             new PreparedSidecar(target, file, from, bpm, transientsFrom)
             {
                 WarpOffBecause = warpOffBecause,
-                Starter = starter,
+                AutoWarp = autoWarp,
             }
         );
     }
@@ -642,11 +642,11 @@ public sealed class SidecarWriter(
             ? new OwnSidecar(
                 analysis,
                 analysis.IsDefaultClipSaved && !written.IsCratesides(target),
-                written.IsStarter(target)
+                written.IsAutoWarp(target)
             )
             : null;
 
-    /// <summary>The siblings with a saved warp the user made: never one crateside wrote, a copy or a starter.</summary>
+    /// <summary>The siblings with a saved warp the user made: never one crateside wrote, a copy or an auto warp.</summary>
     private List<(string Path, AnalysisFile Analysis)> SavedAmong(IEnumerable<string> siblings) =>
         [
             .. siblings
@@ -734,7 +734,7 @@ public sealed class SidecarWriter(
         new($"ffmpeg could not decode {Path.GetFileName(target)}");
 
     /// <param name="IsUsers">A saved default clip crateside did not write: the user's warp, never replaced.</param>
-    private sealed record OwnSidecar(AnalysisFile Analysis, bool IsUsers, bool IsStarter);
+    private sealed record OwnSidecar(AnalysisFile Analysis, bool IsUsers, bool IsAutoWarp);
 }
 
 public abstract record WarpOutcome
@@ -752,7 +752,7 @@ public abstract record WarpOutcome
     /// <param name="TransientsFrom">As for <see cref="Written"/>.</param>
     public sealed record Unwarped(string? TransientsFrom, string? Because = null) : WarpOutcome;
 
-    /// <summary>The target holds the user's warp, never replaced (ADR 0037), or already a starter.</summary>
+    /// <summary>The target holds the user's warp, never replaced (ADR 0037), or already an auto warp.</summary>
     public sealed record AlreadyWarped : WarpOutcome;
 
     public sealed record NoWarpedSibling : WarpOutcome;
@@ -778,8 +778,8 @@ public abstract record SidecarPlan
 }
 
 /// <param name="Target">The audio file it was worked out for.</param>
-/// <param name="From">The sibling whose warp it carries, or null for a starter.</param>
-/// <param name="Bpm">A starter's tempo; null for a borrowed warp.</param>
+/// <param name="From">The sibling whose warp it carries, or null for an auto warp.</param>
+/// <param name="Bpm">An auto warp's tempo; null for a borrowed warp.</param>
 /// <param name="TransientsFrom">The file whose Live-detected transients it carries, or null if crateside detected them.</param>
 public sealed record PreparedSidecar(
     string Target,
@@ -789,11 +789,11 @@ public sealed record PreparedSidecar(
     string? TransientsFrom
 )
 {
-    /// <summary>Why a clip with Warp off was written instead of a starter, where a starter was tried.</summary>
+    /// <summary>Why a clip with Warp off was written instead of an auto warp, where an auto warp was tried.</summary>
     public string? WarpOffBecause { get; init; }
 
-    /// <summary>A starter's grid and why its marker got its beat, recorded when it is written (#176).</summary>
-    public WrittenStarter? Starter { get; init; }
+    /// <summary>An auto warp's grid and why its marker got its beat, recorded when it is written (#176).</summary>
+    public WrittenAutoWarp? AutoWarp { get; init; }
 
     public bool IsUnwarped => !File.Warp.IsWarped;
 }

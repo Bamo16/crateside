@@ -34,8 +34,8 @@ public sealed record StemWarp
     /// <summary>Whether its sibling's warp is the track's: an instrumental, karaoke or the kept source.</summary>
     public bool IsAuthority { get; init; }
 
-    /// <summary>The starter the sidecar still holds, with why its marker got its beat; null for anything else.</summary>
-    public WrittenStarter? Starter { get; init; }
+    /// <summary>The auto warp the sidecar still holds, with why its marker got its beat; null for anything else.</summary>
+    public WrittenAutoWarp? AutoWarp { get; init; }
 
     /// <summary>The markers Live shows: every one but the last, which Live keeps and never draws.</summary>
     // Usually 1/32 beat past the anchor, but not always: a few hold it hundreds of beats out and
@@ -102,7 +102,7 @@ public sealed record StemWarp
 [JsonDerivedType(typeof(Yours), "yours")]
 [JsonDerivedType(typeof(Borrowed), "borrowed")]
 [JsonDerivedType(typeof(Shifted), "shifted")]
-[JsonDerivedType(typeof(Starter), "starter")]
+[JsonDerivedType(typeof(AutoWarp), "autoWarp")]
 [JsonDerivedType(typeof(Unwarped), "unwarped")]
 [JsonDerivedType(typeof(LiveAnalysis), "liveAnalysis")]
 [JsonDerivedType(typeof(None), "none")]
@@ -128,8 +128,8 @@ public abstract record WarpOwner
     /// <summary>The mix's warp, shifted onto this added source by its measured offset (ADR 0111).</summary>
     public sealed record Shifted(DateTime Written, WrittenShift Shift) : WarpOwner;
 
-    /// <summary>A starter warp crateside wrote from beatdetect's reading, not yet saved over.</summary>
-    public sealed record Starter(DateTime Written) : WarpOwner;
+    /// <summary>An auto warp crateside wrote from beatdetect's reading, not yet saved over.</summary>
+    public sealed record AutoWarp(DateTime Written) : WarpOwner;
 
     /// <summary>A clip crateside saved with Warp off, so the stem arrives at its gain and color for the user to warp (ADR 0059).</summary>
     public sealed record Unwarped(DateTime Written, string? Because = null) : WarpOwner;
@@ -225,7 +225,7 @@ public sealed class StemWarpReader(
         {
             ({ } waited, _, false) => new WarpOwner.PuttingBack(waited),
             (_, { IsUnwarped: true }, _) => new WarpOwner.Unwarped(changed, ours?.WarpOffBecause),
-            (_, { IsStarter: true }, _) => new WarpOwner.Starter(changed),
+            (_, { IsAutoWarp: true }, _) => new WarpOwner.AutoWarp(changed),
             (_, { Shift: { } shift }, _) => new WarpOwner.Shifted(changed, shift),
             (_, { From: { } from }, _) => new WarpOwner.Borrowed(from, changed),
             (_, _, true) => new WarpOwner.Yours(
@@ -250,7 +250,7 @@ public sealed class StemWarpReader(
                 : duration,
             TransientOrigin = origins.Of(sidecar.Audio.Transients, audioPath),
             IsAuthority = isAuthority,
-            Starter = owner is WarpOwner.Starter ? ours?.Starter : null,
+            AutoWarp = owner is WarpOwner.AutoWarp ? ours?.AutoWarp : null,
         };
     }
 

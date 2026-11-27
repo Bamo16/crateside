@@ -67,7 +67,7 @@ public sealed class CratesideApiTests : IAsyncLifetime
         var warp = stem["warp"]!;
 
         Assert.Equal(_crateside.Instrumental, (string?)stem["path"]);
-        Assert.Equal("starter", (string?)warp["owner"]!["kind"]);
+        Assert.Equal("autoWarp", (string?)warp["owner"]!["kind"]);
         Assert.True((bool?)warp["isWarped"]);
         Assert.Equal(
             [(0.5, 0.0), (2.5, 4.0)],
@@ -79,9 +79,9 @@ public sealed class CratesideApiTests : IAsyncLifetime
         Assert.Equal(120, (double?)warp["tempo"]!["bpm"]);
         Assert.True((bool?)warp["loop"]!["on"]);
         Assert.Null((string?)warp["written"]!["from"]);
-        Assert.Equal("UnsureDownbeat", (string?)warp["written"]!["starter"]!["barFrom"]);
-        Assert.Equal(0.317, (double?)warp["written"]!["starter"]!["downbeat"]!["confidence"]);
-        Assert.Equal(2, (double?)warp["written"]!["starter"]!["readMarkerBeat"]);
+        Assert.Equal("UnsureDownbeat", (string?)warp["written"]!["autoWarp"]!["barFrom"]);
+        Assert.Equal(0.317, (double?)warp["written"]!["autoWarp"]!["downbeat"]!["confidence"]);
+        Assert.Equal(2, (double?)warp["written"]!["autoWarp"]!["readMarkerBeat"]);
         Assert.Equal(
             [
                 Path.Combine(

@@ -61,7 +61,8 @@ public sealed class LiveAnalyses
         new(
             path is not null
             && LiveAnalysesJsonContext.Default.DictionaryStringAwaitedAnalysis.ReadFileOrDefault(
-                path
+                path,
+                LegacyWarpNames.StoredKeys
             )
                 is { } entries
                 ? entries
@@ -73,17 +74,17 @@ public sealed class LiveAnalyses
 /// <summary>A sidecar sent to the Recycle Bin for Live to analyze again, and what to put back once it has.</summary>
 /// <param name="Backup">The sidecar as it was before it went to the Recycle Bin, whose clip and warp are put back.</param>
 /// <param name="From">The sibling it was borrowed from, or null.</param>
-/// <param name="WasStarter">Whether it held a starter warp crateside wrote.</param>
+/// <param name="WasAutoWarp">Whether it held an auto warp crateside wrote.</param>
 /// <param name="WasUnwarped">Whether it held a clip crateside saved with Warp off.</param>
 public sealed record AwaitedAnalysis(
     string Backup,
     string? From,
-    bool WasStarter,
+    bool WasAutoWarp,
     DateTime Sent,
     bool WasUnwarped = false
 )
 {
-    public WrittenStarter? Starter { get; init; }
+    public WrittenAutoWarp? AutoWarp { get; init; }
 
     public string? WarpOffBecause { get; init; }
 }
@@ -196,12 +197,12 @@ public sealed class WarpActions(
                 new AwaitedAnalysis(
                     backup,
                     crateside?.From,
-                    crateside is { IsStarter: true },
+                    crateside is { IsAutoWarp: true },
                     time.GetUtcNow().UtcDateTime,
                     crateside is { IsUnwarped: true }
                 )
                 {
-                    Starter = crateside?.Starter,
+                    AutoWarp = crateside?.AutoWarp,
                     WarpOffBecause = crateside?.WarpOffBecause,
                 }
             );
@@ -249,8 +250,8 @@ public sealed class WarpActions(
 
                 if (awaited.From is { } from)
                     written.RecordBorrowed(target, from);
-                else if (awaited.WasStarter)
-                    written.RecordStarter(target, awaited.Starter);
+                else if (awaited.WasAutoWarp)
+                    written.RecordAutoWarp(target, awaited.AutoWarp);
                 else if (awaited.WasUnwarped)
                     written.RecordUnwarped(target, awaited.WarpOffBecause);
 

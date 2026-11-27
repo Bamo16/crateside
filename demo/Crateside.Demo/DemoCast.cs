@@ -39,8 +39,8 @@ internal sealed record DemoTrack(
 
     public double? VocalLufs { get; init; }
 
-    /// <summary>How the starter warp fared against the finished one; null leaves the song out of that panel.</summary>
-    public StarterFate? Fate { get; init; }
+    /// <summary>How the auto warp fared against the finished one; null leaves the song out of that panel.</summary>
+    public AutoWarpFate? Fate { get; init; }
 
     public int? Listeners { get; init; }
 
@@ -316,7 +316,7 @@ internal sealed record LibrarySeed
     public string? Familiarity { get; init; }
     public double? InstrumentalLufs { get; init; }
     public double? VocalLufs { get; init; }
-    public StarterFate? Fate { get; init; }
+    public AutoWarpFate? Fate { get; init; }
     public int? Listeners { get; init; }
     public int? Pageviews { get; init; }
     public IReadOnlyList<string> Heard { get; init; } = [];

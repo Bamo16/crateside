@@ -64,8 +64,8 @@ internal static class DemoAudio
     }
 
     /// <summary>
-    /// What beatdetect read on the song's instrumental, set up so the starter warp fares as it did on a real machine
-    /// (the sidecar's first beat is beat 1 for a starter left at beat 0); null where the song is left out of that panel.
+    /// What beatdetect read on the song's instrumental, set up so the auto warp fares as it did on a real machine
+    /// (the sidecar's first beat is beat 1 for an auto warp left at beat 0); null where the song is left out of that panel.
     /// </summary>
     public static BeatReading? Reading(DemoTrack track)
     {
@@ -75,17 +75,17 @@ internal static class DemoAudio
         var beatMs = 60_000 / track.Bpm;
         var lead = Lead * 1000;
         var bpm =
-            fate is StarterFate.OtherOctave
+            fate is AutoWarpFate.OtherOctave
                 ? track.Bpm < 110
                     ? track.Bpm * 2
                     : track.Bpm / 2
                 : track.Bpm;
         var (beat, downbeat, confidence) = fate switch
         {
-            StarterFate.Kept => (lead, lead, 0.8),
-            StarterFate.OtherOctave => (lead, lead, 0.8),
-            StarterFate.BeatMoved => (lead + 0.4 * beatMs, lead + 0.4 * beatMs, 0.8),
-            StarterFate.LeftAtBeatZero => (lead, lead, 0.3),
+            AutoWarpFate.Kept => (lead, lead, 0.8),
+            AutoWarpFate.OtherOctave => (lead, lead, 0.8),
+            AutoWarpFate.BeatMoved => (lead + 0.4 * beatMs, lead + 0.4 * beatMs, 0.8),
+            AutoWarpFate.LeftAtBeatZero => (lead, lead, 0.3),
             _ => throw new UnreachableException(),
         };
 
@@ -110,8 +110,8 @@ internal static class DemoAudio
         var samples = Waveform(track, stem);
         var tail = 1 / 64.0;
 
-        // A starter left at beat 0 is wrong when the finished warp numbers its first beat 1; the clip then starts a bar on.
-        var first = track.Fate is StarterFate.LeftAtBeatZero ? 1 : 0;
+        // An auto warp left at beat 0 is wrong when the finished warp numbers its first beat 1; the clip then starts a bar on.
+        var first = track.Fate is AutoWarpFate.LeftAtBeatZero ? 1 : 0;
         List<Transient> transients = [];
 
         if (track.IsShowcase)

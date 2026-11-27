@@ -23,7 +23,7 @@ public sealed class StageNotesTests : IDisposable
         var time = new FakeTimeProvider(new DateTimeOffset(2026, 11, 1, 12, 0, 0, TimeSpan.Zero));
         var notes = new StageNotes(Path.Combine(_root, "stage-notes.jsonl"), time);
 
-        notes.Record("a", "Warp", "starter warp at 190.00 BPM, marker at 0.75 s");
+        notes.Record("a", "Warp", "auto warp at 190.00 BPM, marker at 0.75 s");
         time.Advance(TimeSpan.FromMinutes(1));
         notes.Record("b", "Loudness", "clip gain −3.2 dB to −14 LUFS");
         time.Advance(TimeSpan.FromMinutes(1));

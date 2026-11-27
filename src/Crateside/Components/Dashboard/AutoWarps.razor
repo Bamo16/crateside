@@ -1,6 +1,6 @@
 @using Crateside.Core.Library
 
-<section id="p-starter" class="starter">
+<section id="p-auto-warp" class="auto-warp">
     <h3>How the auto warps fared</h3>
     <p class="lead">
         The auto warp crateside writes from beatdetect's reading, set against the warp you finished in Live,
@@ -17,7 +17,7 @@
     <div class="rows">
         @foreach (var bucket in Counts.Buckets)
         {
-            <div class="row @(bucket.Fate is StarterFate.Kept ? "kept" : null)">
+            <div class="row @(bucket.Fate is AutoWarpFate.Kept ? "kept" : null)">
                 <span class="what">
                     <span class="title">@Title(bucket.Fate)</span>
                     <span class="rule">@Rule(bucket.Fate)</span>
@@ -67,15 +67,15 @@
 @code {
     private const int SongsShown = 8;
 
-    private StarterFate? _open;
+    private AutoWarpFate? _open;
     private bool _all;
 
     [Parameter, EditorRequired]
-    public required StarterWarpCounts Counts { get; set; }
+    public required AutoWarpCounts Counts { get; set; }
 
     private int Largest => Counts.Buckets.Select(bucket => bucket.Songs.Count).DefaultIfEmpty().Max();
 
-    private void Toggle(StarterFate fate)
+    private void Toggle(AutoWarpFate fate)
     {
         _open = _open == fate ? null : fate;
         _all = false;
@@ -84,25 +84,25 @@
     private string Width(int count) =>
         $"{(Largest is 0 ? 0 : count * 100.0 / Largest).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}%";
 
-    internal static string Title(StarterFate fate) =>
+    internal static string Title(AutoWarpFate fate) =>
         fate switch
         {
-            StarterFate.Kept => "Kept as written",
-            StarterFate.BeatMoved => "Marker moved",
-            StarterFate.OtherOctave => "Tempo at half or double",
-            StarterFate.BarCorrected => "Bar corrected",
-            StarterFate.LeftAtBeatZero => "Left at beat 0",
+            AutoWarpFate.Kept => "Kept as written",
+            AutoWarpFate.BeatMoved => "Marker moved",
+            AutoWarpFate.OtherOctave => "Tempo at half or double",
+            AutoWarpFate.BarCorrected => "Bar corrected",
+            AutoWarpFate.LeftAtBeatZero => "Left at beat 0",
             _ => "No auto warp written",
         };
 
-    internal static string Rule(StarterFate fate) =>
+    internal static string Rule(AutoWarpFate fate) =>
         fate switch
         {
-            StarterFate.Kept => "the marker is on a beat of your warp, in the right bar",
-            StarterFate.BeatMoved => "your warp's beats are not where the marker went (beat wrong)",
-            StarterFate.OtherOctave => "you retyped the tempo, half or double the auto warp's",
-            StarterFate.BarCorrected => "the downbeat was trusted and was wrong (downbeat wrong)",
-            StarterFate.LeftAtBeatZero => "the downbeat was not trusted (low confidence), and your bar differs",
+            AutoWarpFate.Kept => "the marker is on a beat of your warp, in the right bar",
+            AutoWarpFate.BeatMoved => "your warp's beats are not where the marker went (beat wrong)",
+            AutoWarpFate.OtherOctave => "you retyped the tempo, half or double the auto warp's",
+            AutoWarpFate.BarCorrected => "the downbeat was trusted and was wrong (downbeat wrong)",
+            AutoWarpFate.LeftAtBeatZero => "the downbeat was not trusted (low confidence), and your bar differs",
             _ => "beatdetect read no steady tempo to start from",
         };
 }

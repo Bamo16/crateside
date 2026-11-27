@@ -151,8 +151,8 @@ public sealed record TrackTempo
 
     public static TrackTempo Typed(double bpm) => new() { Source = TempoSource.Typed, Value = bpm };
 
-    /// <summary>The tempo a starter warp's single marker is written at, as read; null when the reading drifts or there is none (ADR 0048).</summary>
-    public static double? StarterBpm(BeatReading? reading) =>
+    /// <summary>The tempo an auto warp's single marker is written at, as read; null when the reading drifts or there is none (ADR 0048).</summary>
+    public static double? AutoWarpBpm(BeatReading? reading) =>
         Of(null, reading, null) is { Source: TempoSource.Reading, Drifts: false, Value: var bpm }
             ? bpm
             : null;

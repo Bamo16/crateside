@@ -23,12 +23,12 @@ public sealed class HandoffSidecars(
         CancellationToken ct = default
     )
     {
-        if (_options is { LendAutomatically: false, StarterWarps: StarterWarps.Off })
+        if (_options is { LendAutomatically: false, AutoWarps: AutoWarps.Off })
             return new Dictionary<string, PreparedSidecar>();
 
         var siblings = WarpSiblings.Scan([paths.StagingFolder, paths.LibraryFolder]);
         var cuts = stems.Select(WarpSiblings.Read).OfType<SiblingFile>().ToList();
-        StarterGrid? grid = null;
+        AutoWarpGrid? grid = null;
         string? whyNoGrid = null;
         var measured = false;
         Dictionary<string, PreparedSidecar> prepared = [with(StringComparer.OrdinalIgnoreCase)];
@@ -55,16 +55,16 @@ public sealed class HandoffSidecars(
                 if (_options.LendAutomatically)
                     plan = await writer.PrepareBorrowAsync(cut.Path, authorities, sameKind, ct);
             }
-            else if (_options.StarterWarps is not StarterWarps.Off)
+            else if (_options.AutoWarps is not AutoWarps.Off)
             {
                 if (!measured)
                 {
-                    (grid, whyNoGrid) = await StarterGridAsync(cuts, ct);
+                    (grid, whyNoGrid) = await AutoWarpGridAsync(cuts, ct);
                     measured = true;
                 }
 
                 plan = grid is not null
-                    ? await writer.PrepareStarterAsync(
+                    ? await writer.PrepareAutoWarpAsync(
                         cut.Path,
                         sameKind,
                         grid,
@@ -93,8 +93,8 @@ public sealed class HandoffSidecars(
         return prepared.TryGetValue(from, out var sidecar) ? writer.Commit(sidecar, to) : null;
     }
 
-    /// <summary>The starter grid of the upload's reference file when its tempo holds steady; a drifting one gets Warp off instead of a starter.</summary>
-    private async Task<(StarterGrid? Grid, string? Why)> StarterGridAsync(
+    /// <summary>The auto warp grid of the upload's reference file when its tempo holds steady; a drifting one gets Warp off instead of an auto warp.</summary>
+    private async Task<(AutoWarpGrid? Grid, string? Why)> AutoWarpGridAsync(
         List<SiblingFile> cuts,
         CancellationToken ct
     )
@@ -109,8 +109,8 @@ public sealed class HandoffSidecars(
             beats.ReadFor(stem.SourceTrackKey, stem.Path)
             ?? await beats.MeasureAsync(beats.ReferenceFor(stem.SourceTrackKey, stem.Path), ct);
 
-        return StarterGrid.Of(reading) is { } grid
+        return AutoWarpGrid.Of(reading) is { } grid
             ? (grid, null)
-            : (null, StarterGrid.WhyNone(reading));
+            : (null, AutoWarpGrid.WhyNone(reading));
     }
 }

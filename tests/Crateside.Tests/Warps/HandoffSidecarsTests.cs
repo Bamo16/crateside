@@ -46,7 +46,7 @@ public sealed class HandoffSidecarsTests : IDisposable
             _written,
             _origins
         );
-        var plan = await writer.PrepareStarterAsync(
+        var plan = await writer.PrepareAutoWarpAsync(
             working,
             [],
             new(120, null, null),
@@ -60,7 +60,7 @@ public sealed class HandoffSidecarsTests : IDisposable
             _paths,
             writer,
             new BeatReader(new ProcessRunner()),
-            Options.Create(new WarpOptions { StarterWarps = StarterWarps.OnTheGrid })
+            Options.Create(new WarpOptions { AutoWarps = AutoWarps.OnTheGrid })
         );
 
         new HandoffRunner(_paths).Run(
@@ -70,7 +70,7 @@ public sealed class HandoffSidecarsTests : IDisposable
 
         var staged = Path.Combine(_paths.StagingFolder, "Song (Vocal - Full).flac");
         Assert.True(AnalysisFile.Read($"{staged}.asd").IsDefaultClipSaved);
-        Assert.True(_written.IsStarter(staged));
+        Assert.True(_written.IsAutoWarp(staged));
         Assert.False(File.Exists($"{working}.asd"));
         Assert.Equal(
             "steady 1",

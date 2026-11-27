@@ -25,7 +25,7 @@ else
     <TrackMarkStrip Row="Row" Mark="TrackMark.OddBars" />
 }
 
-@if (StarterFates.Of(Row.Beats, Row.Tempo) is { } fate)
+@if (AutoWarpFates.Of(Row.Beats, Row.Tempo) is { } fate)
 {
     <div class="tag-line">
         <span class="tag-label">Auto warp</span>
@@ -37,15 +37,15 @@ else
     [Parameter, EditorRequired]
     public required TrackRow Row { get; set; }
 
-    private static string Outcome(StarterFate fate) =>
+    private static string Outcome(AutoWarpFate fate) =>
         fate switch
         {
-            StarterFate.Kept => "Kept as written",
-            StarterFate.BeatMoved => "Marker moved",
-            StarterFate.OtherOctave => "Tempo halved or doubled",
-            StarterFate.BarCorrected => "Bar corrected",
-            StarterFate.LeftAtBeatZero => "Left at beat 0, bars renumbered",
-            StarterFate.NoStarter => "No auto warp written",
+            AutoWarpFate.Kept => "Kept as written",
+            AutoWarpFate.BeatMoved => "Marker moved",
+            AutoWarpFate.OtherOctave => "Tempo halved or doubled",
+            AutoWarpFate.BarCorrected => "Bar corrected",
+            AutoWarpFate.LeftAtBeatZero => "Left at beat 0, bars renumbered",
+            AutoWarpFate.NoAutoWarp => "No auto warp written",
             _ => throw new UnreachableException(),
         };
 }

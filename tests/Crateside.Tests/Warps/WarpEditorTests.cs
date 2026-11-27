@@ -51,10 +51,10 @@ public sealed class WarpEditorTests : IDisposable
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
     [Fact]
-    public async Task A_save_with_no_draft_on_starter_warps_leaves_every_stem_the_users_own()
+    public async Task A_save_with_no_draft_on_auto_warps_leaves_every_stem_the_users_own()
     {
-        var (editor, siblings, plan) = await StarterGroup();
-        Assert.All([Instrumental, Vocal, Drums], stem => Assert.True(_written.IsStarter(stem)));
+        var (editor, siblings, plan) = await AutoWarpGroup();
+        Assert.All([Instrumental, Vocal, Drums], stem => Assert.True(_written.IsAutoWarp(stem)));
 
         var outcome = await editor.SaveAsync(
             plan,
@@ -69,7 +69,7 @@ public sealed class WarpEditorTests : IDisposable
             stem =>
             {
                 Assert.False(_written.IsCratesides(stem));
-                Assert.False(_written.IsStarter(stem));
+                Assert.False(_written.IsAutoWarp(stem));
                 Assert.True(AnalysisFile.Read($"{stem}.asd").IsDefaultClipSaved);
                 Assert.NotNull(new WarpTempoReader((string?)null, _written).Read(stem));
                 Assert.NotNull(_saved.Of(stem));
@@ -82,7 +82,7 @@ public sealed class WarpEditorTests : IDisposable
     [Fact]
     public async Task A_saved_warp_is_kept_for_a_recut_and_counts_as_warped_for_the_handoff()
     {
-        var (editor, siblings, plan) = await StarterGroup();
+        var (editor, siblings, plan) = await AutoWarpGroup();
 
         await editor.SaveAsync(
             plan,
@@ -100,7 +100,7 @@ public sealed class WarpEditorTests : IDisposable
     [Fact]
     public async Task Saving_writes_the_draft_to_every_stem_of_the_group()
     {
-        var (editor, siblings, plan) = await StarterGroup();
+        var (editor, siblings, plan) = await AutoWarpGroup();
         var before = AnalysisFile.Read($"{Instrumental}.asd");
 
         await editor.SaveAsync(
@@ -129,7 +129,7 @@ public sealed class WarpEditorTests : IDisposable
     [Fact]
     public async Task A_save_reaches_a_lent_drums_stem_after_the_instrumental_moved_to_the_library()
     {
-        await StarterGroup();
+        await AutoWarpGroup();
         _written.RecordBorrowed(Drums, Instrumental);
         var moved = Path.Combine(_paths.LibraryFolder, Path.GetFileName(Instrumental));
         File.Move(Instrumental, moved);
@@ -158,7 +158,7 @@ public sealed class WarpEditorTests : IDisposable
     [Fact]
     public async Task A_stem_saved_over_since_the_draft_began_stops_the_save_and_nothing_is_written()
     {
-        var (editor, siblings, plan) = await StarterGroup();
+        var (editor, siblings, plan) = await AutoWarpGroup();
         var vocalBefore = File.ReadAllBytes($"{Vocal}.asd");
         File.SetLastWriteTimeUtc($"{Instrumental}.asd", DateTime.UtcNow.AddMinutes(1));
 
@@ -174,9 +174,9 @@ public sealed class WarpEditorTests : IDisposable
     }
 
     [Fact]
-    public async Task Undo_puts_every_stem_back_as_the_starter_it_was()
+    public async Task Undo_puts_every_stem_back_as_the_auto_warp_it_was()
     {
-        var (editor, siblings, plan) = await StarterGroup();
+        var (editor, siblings, plan) = await AutoWarpGroup();
         var before = File.ReadAllBytes($"{Instrumental}.asd");
         var saved = Assert.IsType<WarpSaveOutcome.Saved>(
             await editor.SaveAsync(
@@ -194,7 +194,7 @@ public sealed class WarpEditorTests : IDisposable
             [Instrumental, Vocal, Drums],
             stem =>
             {
-                Assert.True(_written.IsStarter(stem));
+                Assert.True(_written.IsAutoWarp(stem));
                 Assert.Null(_saved.Of(stem));
             }
         );
@@ -203,7 +203,7 @@ public sealed class WarpEditorTests : IDisposable
     [Fact]
     public async Task Undo_does_nothing_once_a_stem_has_been_saved_over_in_Live()
     {
-        var (editor, siblings, plan) = await StarterGroup();
+        var (editor, siblings, plan) = await AutoWarpGroup();
         var saved = Assert.IsType<WarpSaveOutcome.Saved>(
             await editor.SaveAsync(
                 plan,
@@ -215,13 +215,13 @@ public sealed class WarpEditorTests : IDisposable
         File.SetLastWriteTimeUtc($"{Vocal}.asd", DateTime.UtcNow.AddMinutes(5));
 
         Assert.Equal(new WarpUndoOutcome.Changed(Vocal), editor.Undo(saved.Save));
-        Assert.False(_written.IsStarter(Instrumental));
+        Assert.False(_written.IsAutoWarp(Instrumental));
     }
 
     [Fact]
     public async Task A_save_is_worded_as_made_in_crateside_until_Live_saves_over_it()
     {
-        var (editor, siblings, plan) = await StarterGroup();
+        var (editor, siblings, plan) = await AutoWarpGroup();
 
         await editor.SaveAsync(
             plan,
@@ -398,7 +398,7 @@ public sealed class WarpEditorTests : IDisposable
     [Fact]
     public async Task A_source_that_starts_after_the_mixs_clip_gets_a_clip_start_on_the_next_bar_line()
     {
-        var (_, siblings, plan) = await StarterGroup();
+        var (_, siblings, plan) = await AutoWarpGroup();
         await Editor()
             .SaveAsync(plan, siblings, new WarpDraft(), ct: TestContext.Current.CancellationToken);
         var mix = AnalysisFile.Read($"{Instrumental}.asd");
@@ -417,7 +417,7 @@ public sealed class WarpEditorTests : IDisposable
     [Fact]
     public async Task A_source_shorter_than_the_mix_ends_on_a_hidden_marker_inside_the_file()
     {
-        var (_, siblings, plan) = await StarterGroup();
+        var (_, siblings, plan) = await AutoWarpGroup();
         await Editor()
             .SaveAsync(plan, siblings, new WarpDraft(), ct: TestContext.Current.CancellationToken);
         var mix = AnalysisFile.Read($"{Instrumental}.asd");
@@ -481,8 +481,8 @@ public sealed class WarpEditorTests : IDisposable
         var lending = new WarpLending(
             _paths,
             _writer,
-            Options.Create(new WarpOptions { StarterWarps = StarterWarps.OnTheGrid }),
-            new Grids(new StarterGrid(120, null, null))
+            Options.Create(new WarpOptions { AutoWarps = AutoWarps.OnTheGrid }),
+            new Grids(new AutoWarpGrid(120, null, null))
         );
         await lending.LendAsync(TestContext.Current.CancellationToken);
 
@@ -641,7 +641,7 @@ public sealed class WarpEditorTests : IDisposable
         bool mixIsSource = false
     )
     {
-        var (editor, siblings, _) = mixIsSource ? await SourceGroup() : await StarterGroup();
+        var (editor, siblings, _) = mixIsSource ? await SourceGroup() : await AutoWarpGroup();
         var mix = mixIsSource ? Source : Instrumental;
         var asd = $"{Extra}.asd";
 
@@ -649,7 +649,7 @@ public sealed class WarpEditorTests : IDisposable
         (AnalysisFile.Read($"{mix}.asd") with { IsDefaultClipSaved = true }).Write(asd);
 
         if (recorded)
-            _written.RecordStarter(Extra);
+            _written.RecordAutoWarp(Extra);
 
         var offsets = _offsets;
 
@@ -713,7 +713,7 @@ public sealed class WarpEditorTests : IDisposable
         WarpEditor Editor,
         WarpSiblings Siblings,
         WarpSavePlan.Ready Plan
-    )> StarterGroup()
+    )> AutoWarpGroup()
     {
         Stem(Instrumental, "Instrumental - Full");
         Stem(Vocal, "Vocal - Full");
@@ -722,8 +722,8 @@ public sealed class WarpEditorTests : IDisposable
         var lending = new WarpLending(
             _paths,
             _writer,
-            Options.Create(new WarpOptions { StarterWarps = StarterWarps.OnTheGrid }),
-            new Grids(new StarterGrid(120, null, null))
+            Options.Create(new WarpOptions { AutoWarps = AutoWarps.OnTheGrid }),
+            new Grids(new AutoWarpGrid(120, null, null))
         );
         await lending.LendAsync(TestContext.Current.CancellationToken);
 
@@ -745,8 +745,8 @@ public sealed class WarpEditorTests : IDisposable
         file.Save();
     }
 
-    private sealed class Grids(StarterGrid grid) : IStarterGrids
+    private sealed class Grids(AutoWarpGrid grid) : IAutoWarpGrids
     {
-        public StarterGrid? Of(SiblingFile cut) => grid;
+        public AutoWarpGrid? Of(SiblingFile cut) => grid;
     }
 }

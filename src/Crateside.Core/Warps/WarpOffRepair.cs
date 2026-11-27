@@ -89,7 +89,7 @@ public sealed class WarpOffRepair(
 
     /// <summary>The track's estimated tempo when crateside has one; it only spaces the pair.</summary>
     private double? TempoOf(string audioPath) =>
-        StarterGrid
+        AutoWarpGrid
             .Of(beats.ReadFor(StemTagReader.Read(audioPath)?.SourceTrackKey, audioPath))
             ?.Bpm;
 

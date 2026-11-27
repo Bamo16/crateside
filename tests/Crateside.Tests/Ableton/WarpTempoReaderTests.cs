@@ -32,12 +32,12 @@ public sealed class WarpTempoReaderTests : IDisposable
     }
 
     [Fact]
-    public void A_starter_warp_gives_no_tempo_since_it_is_only_a_guess()
+    public void An_auto_warp_gives_no_tempo_since_it_is_only_a_guess()
     {
         var audio = Sample("sidecar-clicks.asd");
 
         var written = new WrittenWarps();
-        written.RecordStarter(audio);
+        written.RecordAutoWarp(audio);
 
         Assert.Null(new WarpTempoReader(written: written).Read(audio));
     }

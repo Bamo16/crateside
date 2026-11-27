@@ -84,7 +84,7 @@ public sealed class AddedSourcesRealLibraryTests : IDisposable
                 Copy(Path.Combine(folder, name));
 
             if (realWritten.IsCratesides(Path.Combine(folder, name)))
-                written.RecordStarter(copy);
+                written.RecordAutoWarp(copy);
 
             bytes[copy] = File.ReadAllBytes($"{copy}.asd");
             files.Add(new AddedSourceFile(copy, name, name));

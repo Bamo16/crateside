@@ -157,7 +157,7 @@
     font-weight: 400;
 }
 
-/* The library's panels, three across on a wide window. Key detectors, Loudness adjustments and the starter warps take two. */
+/* The library's panels, three across on a wide window. Key detectors, Loudness adjustments and the auto warps take two. */
 .library {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -170,7 +170,7 @@
 
 .library > ::deep .kdet,
 .library > ::deep .loud,
-.library > ::deep .starter {
+.library > ::deep .auto-warp {
     grid-column: span 2;
 }
 
@@ -200,7 +200,7 @@
 
     .library > ::deep .kdet,
     .library > ::deep .loud,
-    .library > ::deep .starter {
+    .library > ::deep .auto-warp {
         grid-column: auto;
     }
 

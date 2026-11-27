@@ -3,22 +3,22 @@ using Crateside.Core.Tempo;
 
 namespace Crateside.Core.Warps;
 
-/// <summary>What a starter warp takes from the reference stem's reading: its tempo, a beat, and the downbeat when the filter is sure of it (#134, ADR 0054).</summary>
+/// <summary>What an auto warp takes from the reference stem's reading: its tempo, a beat, and the downbeat when the filter is sure of it (#134, ADR 0054).</summary>
 /// <param name="BeatSeconds">A beat in the file, which picks the 16th the marker goes on; null from a build without it.</param>
 /// <param name="DownbeatSeconds">A downbeat in the file, or null when which beat starts a bar is a guess.</param>
-public sealed record StarterGrid(double Bpm, double? BeatSeconds, double? DownbeatSeconds)
+public sealed record AutoWarpGrid(double Bpm, double? BeatSeconds, double? DownbeatSeconds)
 {
     /// <summary>The downbeat confidence from which the filter's downbeat is trusted.</summary>
     public const double DownbeatSureAt = 0.6;
 
     public const int BeatsPerBar = 4;
 
-    /// <summary>The filter's downbeat as read, sure or not, so a starter can say why its marker got its beat (#176).</summary>
+    /// <summary>The filter's downbeat as read, sure or not, so an auto warp can say why its marker got its beat (#176).</summary>
     public ReadDownbeat? Read { get; init; }
 
-    /// <summary>Null when the reading gives no starter tempo (<see cref="TrackTempo.StarterBpm"/>).</summary>
-    public static StarterGrid? Of(BeatReading? reading) =>
-        TrackTempo.StarterBpm(reading) is { } bpm
+    /// <summary>Null when the reading gives no auto warp tempo (<see cref="TrackTempo.AutoWarpBpm"/>).</summary>
+    public static AutoWarpGrid? Of(BeatReading? reading) =>
+        TrackTempo.AutoWarpBpm(reading) is { } bpm
             ? new(
                 bpm,
                 reading?.BeatOffsetMs / 1000,
@@ -38,7 +38,7 @@ public sealed record StarterGrid(double Bpm, double? BeatSeconds, double? Downbe
             }
             : null;
 
-    /// <summary>Why a reading gives no starter tempo, in a line for a clip with Warp off to carry.</summary>
+    /// <summary>Why a reading gives no auto warp tempo, in a line for a clip with Warp off to carry.</summary>
     public static string WhyNone(BeatReading? reading) =>
         reading switch
         {

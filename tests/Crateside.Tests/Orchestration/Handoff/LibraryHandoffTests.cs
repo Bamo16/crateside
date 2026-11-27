@@ -70,7 +70,7 @@ public sealed class LibraryHandoffTests : IDisposable
     {
         Stage(Path.Combine(_paths.LibraryFolder, "Song"), "Vocal - Full", warped: true);
 
-        Assert.Null(_handoff.FolderFor(Video, Starter(), isOwnSource: true));
+        Assert.Null(_handoff.FolderFor(Video, AutoWarp(), isOwnSource: true));
     }
 
     [Fact]
@@ -104,7 +104,7 @@ public sealed class LibraryHandoffTests : IDisposable
     private static Dictionary<string, PreparedSidecar> Lent() =>
         new() { ["new.flac"] = Prepared(from: "lender.flac", warped: true) };
 
-    private static Dictionary<string, PreparedSidecar> Starter() =>
+    private static Dictionary<string, PreparedSidecar> AutoWarp() =>
         new() { ["new.flac"] = Prepared(from: null, warped: true) };
 
     private static PreparedSidecar Prepared(string? from, bool warped) =>

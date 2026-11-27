@@ -344,7 +344,7 @@ public sealed class WarpEditor(
             file.DefaultClip is { Start: var start }
                 ? BarRuler.Of(file.Warp.TimeSignature).BarAt(start)
                 : null,
-            was is { IsStarter: true }
+            was is { IsAutoWarp: true }
         );
 
     private static AnalysisFile? Warped(string audioPath) =>

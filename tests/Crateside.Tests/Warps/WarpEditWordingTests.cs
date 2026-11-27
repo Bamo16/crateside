@@ -34,8 +34,8 @@ public sealed class WarpEditWordingTests
 
     private static AnalysisFile Track => SteadyTrack.Analysis(120, 120, seconds: 60);
 
-    private static EditReadout BarOf(WarpDraft draft, bool starter = false) =>
-        WarpEditWording.Bar(Track, WarpEdit.Apply(Track, draft), draft, seconds: 60, starter);
+    private static EditReadout BarOf(WarpDraft draft, bool autoWarp = false) =>
+        WarpEditWording.Bar(Track, WarpEdit.Apply(Track, draft), draft, seconds: 60, autoWarp);
 
     [Fact]
     public void An_untouched_bar_reads_as_saved_and_unchanged()
@@ -46,7 +46,7 @@ public sealed class WarpEditWordingTests
         );
         Assert.Equal(
             new EditReadout("bar 1 starts on the marker's beat 1, where crateside put it", false),
-            BarOf(new WarpDraft(), starter: true)
+            BarOf(new WarpDraft(), autoWarp: true)
         );
     }
 
@@ -62,7 +62,7 @@ public sealed class WarpEditWordingTests
                 "bar 1 starts on the marker's beat 2 · crateside put it on beat 1",
                 true
             ),
-            BarOf(new WarpDraft().Later(1), starter: true)
+            BarOf(new WarpDraft().Later(1), autoWarp: true)
         );
     }
 
@@ -137,25 +137,25 @@ public sealed class WarpEditWordingTests
     }
 
     [Fact]
-    public void A_nudge_earlier_uses_a_real_minus_and_names_the_saved_warp_when_not_a_starter()
+    public void A_nudge_earlier_uses_a_real_minus_and_names_the_saved_warp_when_not_a_auto_warp()
     {
         Assert.Equal(
             new EditReadout("−2.5 ms from the saved warp", true),
-            WarpEditWording.Nudge(new WarpDraft().Nudged(-2.5), starter: false)
+            WarpEditWording.Nudge(new WarpDraft().Nudged(-2.5), autoWarp: false)
         );
         Assert.Equal(
             new EditReadout("as saved", false),
-            WarpEditWording.Nudge(new WarpDraft(), starter: false)
+            WarpEditWording.Nudge(new WarpDraft(), autoWarp: false)
         );
     }
 
     [Fact]
     public void Nudge_reads_as_on_disk_until_it_is_moved()
     {
-        Assert.False(WarpEditWording.Nudge(new WarpDraft(), starter: true).Changed);
+        Assert.False(WarpEditWording.Nudge(new WarpDraft(), autoWarp: true).Changed);
         Assert.Equal(
             "+3 ms from where crateside put it",
-            WarpEditWording.Nudge(new WarpDraft().Nudged(3), starter: true).Text
+            WarpEditWording.Nudge(new WarpDraft().Nudged(3), autoWarp: true).Text
         );
     }
 }

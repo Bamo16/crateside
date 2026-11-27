@@ -30,13 +30,13 @@ public sealed class WarpTempoReader
         _read = new(Load(path), StringComparer.OrdinalIgnoreCase);
     }
 
-    /// <summary>Null when the sample has no sidecar, no saved default clip, only a starter warp, or cannot be read.</summary>
+    /// <summary>Null when the sample has no sidecar, no saved default clip, only an auto warp, or cannot be read.</summary>
     public WarpTempo? Read(string audioPath)
     {
         if (
             new FileInfo($"{audioPath}.asd") is not { Exists: true } sidecar
-            // A starter warp is crateside's own reading, not the user's (#77).
-            || _written?.IsStarter(audioPath) is true
+            // An auto warp is crateside's own reading, not the user's (#77).
+            || _written?.IsAutoWarp(audioPath) is true
         )
             return null;
 
