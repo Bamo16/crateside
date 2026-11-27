@@ -45,7 +45,7 @@ public sealed class AddedSourcesRealLibraryTests : IDisposable
         ShiftedAsync(
             Mashups,
             "Kreayshawn - Gucci Gucci (Instrumental - Full).flac",
-            [("Kreayshawn - Gucci Gucci (Acapella).flac", -2_812)]
+            [("Kreayshawn - Gucci Gucci (A Cappella).flac", -2_812)]
         );
 
     private async Task ShiftedAsync(
@@ -57,6 +57,10 @@ public sealed class AddedSourcesRealLibraryTests : IDisposable
         var source = Path.Combine(folder, reference);
 
         Assert.SkipUnless(File.Exists(source), "The library is not here.");
+        Assert.SkipUnless(
+            added.All(item => File.Exists($"{Path.Combine(folder, item.Name)}.asd")),
+            "An added file or its .asd is not in the library."
+        );
 
         var realWritten = new WrittenWarps(RealPaths.WrittenWarpsFile);
         var written = new WrittenWarps();
